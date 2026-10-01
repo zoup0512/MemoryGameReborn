@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/chart_container" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="22.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/title" android:paddingBottom="@dimen/padding_medium" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/game_statistic" />
+    <GridLayout android:layout_gravity="center_horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:rowCount="2" android:columnCount="2">
+        <TextView android:textSize="16.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/max" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/maximum_level" />
+        <TextView android:textSize="16.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/max_value" android:paddingLeft="@dimen/padding_small" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="10" />
+        <TextView android:textSize="16.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/average" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/average_level" />
+        <TextView android:textSize="16.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/average_value" android:paddingLeft="@dimen/padding_small" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5.5" />
+    </GridLayout>
+    <TextView android:textSize="20.0sp" android:textColor="@android:color/black" android:gravity="center_horizontal" android:id="@id/last_games" android:paddingTop="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/last_games" />
+    <com.github.mikephil.charting.charts.LineChart android:id="@id/chart" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_margin="@dimen/padding_medium" android:layout_weight="1.0" />
+</LinearLayout>

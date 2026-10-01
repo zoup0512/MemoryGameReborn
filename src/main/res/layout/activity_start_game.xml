@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@id/panel_header"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/top_bar_height"
+        android:orientation="horizontal"
+        android:paddingRight="@dimen/padding_horizontal_top_bar">
+
+        <ImageView
+            android:id="@id/btnBack"
+            android:layout_width="@dimen/top_bar_height"
+            android:layout_height="@dimen/top_bar_height"
+            android:layout_marginLeft="8.0dip"
+            android:layout_marginRight="8.0dip"
+            android:padding="8.0dip"
+            android:src="@drawable/ic_arrow_back_white"
+            android:tint="@android:color/black" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="0.0dip"
+        android:layout_weight="1.0">
+
+        <android.support.v4.view.ViewPager
+            android:id="@id/view_pager"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical">
+
+            <me.grantland.widget.AutofitTextView
+                android:id="@id/txt_start_game_description"
+                fontPath="@string/font_roboto_regular"
+                android:layout_width="fill_parent"
+                android:layout_height="70.0dip"
+                android:gravity="center"
+                android:maxLines="3"
+                android:paddingLeft="32.0dip"
+                android:paddingRight="32.0dip"
+                android:textColor="@android:color/black"
+                android:textSize="20.0sp"
+                android:textStyle="italic" />
+
+            <View
+                android:layout_width="fill_parent"
+                android:layout_height="0.0dip"
+                android:layout_weight="1.0" />
+
+            <com.viewpagerindicator.CirclePageIndicator
+                android:id="@id/indicator"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="32.0dip"
+                app:centered="true"
+                app:fillColor="@color/grid_unclicked"
+                app:pageColor="@color/grid_stroke"
+                app:radius="4.0dip"
+                app:strokeColor="@color/grid_stroke"
+                app:strokeWidth="0.0dip" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <View
+        android:id="@id/divider"
+        android:layout_width="fill_parent"
+        android:layout_height="1.0dip"
+        android:background="@color/grid_stroke" />
+
+    <FrameLayout
+        android:id="@id/play_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@android:color/white"
+        android:orientation="horizontal"
+        android:paddingBottom="24.0dip"
+        android:paddingTop="24.0dip">
+
+        <TextView
+            android:id="@id/text_play_button"
+            fontPath="@string/font_roboto_regular"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/play_button_size"
+            android:layout_gravity="center"
+            android:background="@drawable/button_play"
+            android:gravity="center"
+            android:paddingLeft="36.0dip"
+            android:paddingRight="36.0dip"
+            android:text="@string/play"
+            android:textColor="@android:color/white"
+            android:textSize="20.0sp" />
+    </FrameLayout>
+</LinearLayout>

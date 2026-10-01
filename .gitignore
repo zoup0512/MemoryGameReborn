@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+build_log.txt
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# OS
+Thumbs.db
+.DS_Store
+
+# 还原过程产物（脚本保留，中间产物不入库）
+tools/aars/
+tools/*.png
+tools/*.xml
+tools/errors.txt
+tools/cp.txt

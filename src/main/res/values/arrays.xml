@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="game10_colors">
+        <item>@color/game10_color0</item>
+        <item>@color/game10_color1</item>
+        <item>@color/game10_color2</item>
+        <item>@color/game10_color3</item>
+    </array>
+    <array name="game13_colors">
+        <item>@color/game13_color0</item>
+        <item>@color/game13_color1</item>
+        <item>@color/game13_color2</item>
+        <item>@color/game13_color3</item>
+    </array>
+    <array name="game14_colors">
+        <item>@color/game14_color0</item>
+        <item>@color/game10_color1</item>
+        <item>@color/game10_color2</item>
+        <item>@color/game10_color3</item>
+    </array>
+    <array name="game18_colors">
+        <item>@color/game18_color0</item>
+        <item>@color/game18_color1</item>
+        <item>@color/game18_color2</item>
+        <item>@color/game18_color3</item>
+        <item>@color/game18_color4</item>
+    </array>
+    <array name="game19_colors">
+        <item>@color/game19_color0</item>
+        <item>@color/game19_color1</item>
+        <item>@color/game19_color2</item>
+        <item>@color/game19_color3</item>
+        <item>@color/game19_color4</item>
+        <item>@color/game19_color5</item>
+    </array>
+    <array name="game20_colors">
+        <item>@color/game20_color0</item>
+        <item>@color/game20_color1</item>
+        <item>@color/game20_color2</item>
+        <item>@color/game20_color3</item>
+        <item>@color/game20_color4</item>
+        <item>@color/game20_color5</item>
+    </array>
+    <array name="game23_colors">
+        <item>@color/game23_color0</item>
+        <item>@color/game23_color1</item>
+        <item>@color/game23_color2</item>
+        <item>@color/game23_color3</item>
+    </array>
+</resources>

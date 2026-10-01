@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@color/tab3" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/menu_padding_small"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <de.hdodenhof.circleimageview.CircleImageView android:layout_gravity="center_horizontal" android:id="@id/profilePicture" android:layout_width="@dimen/avatar_size" android:layout_height="@dimen/avatar_size" android:layout_marginTop="@dimen/menu_padding_small" app:civ_border_width="0.0dip" app:civ_border_color="#00000000" />
+    <TextView android:textSize="22.0sp" android:textColor="@android:color/white" android:gravity="center_horizontal" android:layout_gravity="center_horizontal" android:id="@id/userName" android:paddingTop="@dimen/menu_padding_small" android:paddingBottom="@dimen/menu_padding_small" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+</LinearLayout>

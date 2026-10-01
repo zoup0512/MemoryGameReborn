@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="12.0sp" android:textColor="@android:color/black" android:gravity="center" android:layout_gravity="center" android:id="@id/dayOfWeek" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="Mon" />
+    <TextView android:textSize="18.0sp" android:textColor="@android:color/black" android:gravity="center" android:layout_gravity="center" android:id="@id/dayOfMonth" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="2.0dip" android:text="11" />
+    <ImageView android:id="@id/result" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="2.0dip" app:srcCompat="@drawable/calendar_4" />
+</LinearLayout>

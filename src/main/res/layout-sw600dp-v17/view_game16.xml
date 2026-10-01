@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0">
+        <com.wenchao.cardstack.CardStack android:id="@id/container" android:paddingTop="80.0dip" android:clipChildren="false" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" />
+    </FrameLayout>
+    <LinearLayout android:layout_gravity="bottom" android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="16.0dip">
+        <ImageView android:id="@id/incorrect" android:background="@drawable/background_game11_white" android:padding="@dimen/padding_game_20_controls" android:layout_width="0.0dip" android:layout_height="@dimen/game_20_button_height" android:layout_marginRight="8.0dip" android:layout_weight="0.5" android:layout_marginEnd="8.0dip" app:srcCompat="@drawable/ic_game12_cancel" />
+        <ImageView android:id="@id/correct" android:background="@drawable/background_game11_white" android:padding="@dimen/padding_game_20_controls" android:layout_width="0.0dip" android:layout_height="@dimen/game_20_button_height" android:layout_marginLeft="8.0dip" android:layout_weight="0.5" android:layout_marginStart="8.0dip" app:srcCompat="@drawable/ic_game12_tick" />
+    </LinearLayout>
+</LinearLayout>

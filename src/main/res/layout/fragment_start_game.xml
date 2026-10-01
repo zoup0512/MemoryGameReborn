@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <fragment android:name="com.cube.memorygames.activity.fragments.HeaderFragment" android:id="@id/header_fragment" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+    <View android:background="@color/grid_stroke" android:layout_width="fill_parent" android:layout_height="1.0dip" android:layout_marginTop="@dimen/padding_small" android:layout_marginBottom="@dimen/padding_small" />
+    <android.support.v7.widget.RecyclerView android:textSize="18.0sp" android:gravity="center" android:id="@id/recyclerView" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0" />
+    <com.cube.memorygames.ui.TimerView android:layout_gravity="center_horizontal" android:id="@id/timerView" android:layout_width="100.0dip" android:layout_height="100.0dip" android:layout_marginTop="@dimen/padding_small" android:layout_marginBottom="@dimen/padding_small" />
+</LinearLayout>

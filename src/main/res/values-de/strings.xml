@@ -1,0 +1,362 @@
+<resources><string name="common_google_play_services_enable_button">Aktivieren</string>
+    <string name="common_google_play_services_enable_text">%1$s funktioniert erst nach der Aktivierung der Google Play-Dienste.</string>
+    <string name="common_google_play_services_enable_title">Google Play-Dienste aktivieren</string>
+    <string name="common_google_play_services_install_button">Google Play-Dienste installieren</string>
+    <string name="common_google_play_services_install_text_phone">Zur Nutzung von %1$s sind Google Play-Dienste erforderlich, die auf deinem Smartphone nicht installiert sind.</string>
+    <string name="common_google_play_services_install_text_tablet">Zur Nutzung von %1$s sind Google Play-Dienste erforderlich, die auf deinem Tablet nicht installiert sind.</string>
+    <string name="common_google_play_services_install_title">Google Play-Dienste installieren</string>
+    <string name="common_google_play_services_notification_ticker">Fehler bei Zugriff auf Google Play-Dienste</string>
+    <string name="common_google_play_services_unknown_issue">%1$s hat Probleme mit Google Play-Diensten. Wenn das Problem weiterhin besteht, kontaktiere bitte den Entwickler.</string>
+    <string name="common_google_play_services_unsupported_text">Zur Nutzung von %1$s sind Google Play-Dienste erforderlich. Diese werden auf deinem Gerät jedoch nicht unterstützt. Wende dich für weitere Informationen an den Hersteller.</string>
+    <string name="common_google_play_services_unsupported_title">Google Play-Dienste</string>
+    <string name="common_google_play_services_update_button">Aktualisieren</string>
+    <string name="common_google_play_services_update_text">%1$s wird nur ausgeführt, wenn du die Google Play-Dienste aktualisierst.</string>
+    <string name="common_google_play_services_update_title">Google Play-Dienste aktualisieren</string>
+    <string name="common_google_play_services_updating_text">Zur Nutzung von %1$s sind Google Play-Dienste erforderlich, die gerade aktualisiert werden.</string>
+    <string name="common_google_play_services_updating_title">Google Play-Dienste werden aktualisiert</string>
+    <string name="common_google_play_services_wear_update_text">Eine neue Version der Google Play-Dienste wird benötigt. Diese wird in Kürze automatisch aktualisiert.</string>
+    <string name="common_open_on_phone">Auf Smartphone öffnen</string>
+    <string name="common_signin_button_text">Anmelden</string>
+    <string name="common_signin_button_text_long">Über Google anmelden</string>
+    <string name="messenger_send_button_text">Senden</string>
+    <string name="all_games">Alle Spiele</string>
+    <string name="all_games_text">alle Spiele</string>
+    <string name="already_shared">Vielen Dank. Sie haben bereits Informationen über das Spiel verbreitet.</string>
+    <string name="app_name">Gehirn-Training</string>
+    <string name="at_current_level_placeholder">auf der Ebene %d</string>
+    <string name="average_level">Durchschnittliches Niveau</string>
+    <string name="back">Zurück</string>
+    <string name="banner_remove_ads">● Entfernen Sie die Werbung, um sie nie mehr zu sehen</string>
+    <string name="banner_remove_ads2">Entfernen Sie die Werbung, um sie nie mehr zu sehen</string>
+    <string name="banner_text">"● Entfernen Sie die Werbung, um sie nie mehr zu sehen
+
+● Replay Ebenen ohne Anschauen der Werbung!
+
+ ● Entsperren Sie alle Spiele. Aktuelle und alle folgenden Spiele werden entsperrt
+
+● +1000 Münzen als netter Bonus;)"</string>
+    <string name="banner_text2_1">Entfernen Sie die Werbung überall</string>
+    <string name="banner_text2_2">Entsperren Sie alle Spiele</string>
+    <string name="banner_text2_3">+1000 Münzen</string>
+    <string name="bets">EINSÄTZE</string>
+    <string name="brain_games">GEDÄCHTNIS SPIELE</string>
+    <string name="button_text_ok">Ok</string>
+    <string name="categoryAttention">ACHTUNG</string>
+    <string name="categoryFlexibility">FLEXIBILITÄT</string>
+    <string name="categoryImagination">RAUMPHANTASIE</string>
+    <string name="categoryMemory">SPEICHER</string>
+    <string name="categoryProblemSolving">LÖSUNG VON AUFGABEN</string>
+    <string name="categorySpeed">GESCHWINDIGKEIT</string>
+    <string name="challenge">Challenge</string>
+    <string name="choose_answer">Wählen Sie die richtige Antwort</string>
+    <string name="choose_photo">Wählen Sie ein Foto</string>
+    <string name="coins">Münzen</string>
+    <string name="congratulations">Herzlichen Glückwunsch !</string>
+    <string name="continueText">Fortsetzen</string>
+    <string name="current_level_placeholder">Die laufende Stufe %d</string>
+    <string name="dialog_fail">Du hast verloren :(</string>
+    <string name="dialog_feedback_title">Möchten Sie einen Kommentar schreiben, was wir verbessern müssen?</string>
+    <string name="dialog_leave_feedback_no">Nicht jetzt</string>
+    <string name="dialog_leave_feedback_yes">Ja</string>
+    <string name="dialog_look_ranks">Bitte anmelden, um die Top-Spieler zu sehen</string>
+    <string name="dialog_lose_bet">Sie verlieren den Einsatz, wenn Sie abmelden. Sind sie sicher?</string>
+    <string name="dialog_new_like_title">Gefällt es Ihnen?</string>
+    <string name="dialog_new_like_us_no">Nicht besonders</string>
+    <string name="dialog_new_like_us_yes">Ja</string>
+    <string name="dialog_new_rate_title">Wie wäre es mit einem kleinen Kommentar über Google Play?</string>
+    <string name="dialog_new_rate_title_2">Bitte bewerten Sie uns!</string>
+    <string name="dialog_new_rate_us_no">Nein, danke</string>
+    <string name="dialog_new_rate_us_yes">Ja, natürlich</string>
+    <string name="dialog_replay_options_1">Fortsetzen</string>
+    <string name="dialog_replay_options_2">Spiel</string>
+    <string name="dialog_timeout_title">Die Zeit ist um:)</string>
+    <string name="dialog_try_workout_confirm_button_text">Gehen Sie zum Trainieren</string>
+    <string name="dialog_unlock_online_warning">Sie haben nicht genügend Münzen für Online-Spiele</string>
+    <string name="dialog_unlock_title">Wollen Sie das Spiel entsperren?</string>
+    <string name="dialog_unlock_warning">Sie haben nicht genug Münzen, um das Spiel zu entsperren</string>
+    <string name="dialog_win">Sehr gut!</string>
+    <string name="dialog_you_finished_game">Das Spiel ist beendet</string>
+    <string name="earnings">Einkommen</string>
+    <string name="edit_profile">Profil bearbeiten</string>
+    <string name="exit">Ausgang</string>
+    <string name="explore">der Reihe nach</string>
+    <string name="facebook_login">Einloggen</string>
+    <string name="facebook_share_messages">Gehirn-Training ist einfach und leicht, alles erfolgt auf eine spielerische Art und Weise. Ich bin sehr zufrieden, und ich empfehle diese App herunterzuladen:</string>
+    <string name="fail">Falsch</string>
+    <string name="fail_dialog_game_suggestion_text">Hier ist ein weiteres Spiel für Sie</string>
+    <string name="fail_title">Sie haben es noch nicht fertig gemacht</string>
+    <string name="finish">Endziel</string>
+    <string name="game">Spiel</string>
+    <string name="game20_color0">Gelb</string>
+    <string name="game20_color1">Rot</string>
+    <string name="game20_color2">Braun</string>
+    <string name="game20_color3">Grün</string>
+    <string name="game20_color4">Blau</string>
+    <string name="game20_color5">Schwarz</string>
+    <string name="game5_dialog_text">Wie viele?</string>
+    <string name="game7_success_text">Richtig!</string>
+    <string name="game7_timer_prefix">Zeit:</string>
+    <string name="game_dexcription_banner">"- thousands of wallpapers
+- only HD and QHD images
+- new images every day"</string>
+    <string name="game_finished">Das Spiel ist beendet</string>
+    <string name="game_name_1">Speicher-Mosaik</string>
+    <string name="game_name_10">Eigenartig</string>
+    <string name="game_name_11">Richtig oder falsch?</string>
+    <string name="game_name_12">Mehr, Weniger</string>
+    <string name="game_name_13">Alle gleich</string>
+    <string name="game_name_14">Sortiere die Ziffern</string>
+    <string name="game_name_15">Papierflieger</string>
+    <string name="game_name_16">Vorherige</string>
+    <string name="game_name_17">248</string>
+    <string name="game_name_18">Pyramiden</string>
+    <string name="game_name_19">Finde Alle</string>
+    <string name="game_name_2">Rotation</string>
+    <string name="game_name_20">Farben</string>
+    <string name="game_name_21">Symmetrie</string>
+    <string name="game_name_22">Laser</string>
+    <string name="game_name_23">Tabelle Schulte</string>
+    <string name="game_name_3">Hexagons</string>
+    <string name="game_name_4">Honigwaben</string>
+    <string name="game_name_5">Zähle sie</string>
+    <string name="game_name_6">Gehe auf der Spur</string>
+    <string name="game_name_7">"Icons' Vortex"</string>
+    <string name="game_name_8">Fange sie</string>
+    <string name="game_name_9">Finde ein Bild</string>
+    <string name="game_name_banner">Wallpapers HD</string>
+    <string name="game_paused">Pause</string>
+    <string name="game_statistic">Spielstatistik</string>
+    <string name="generating_game_list">Generierung von Spieleliste…</string>
+    <string name="get_coins">Mehr Münzen</string>
+    <string name="get_more_coins">Mehr Münzen</string>
+    <string name="get_pro">Bekommen PRO</string>
+    <string name="get_ready">Anleitung:</string>
+    <string name="get_unlimited_online">"Erhalten Sie unbegrenzte Online 
+ ohne Einsätze der Münzen nur für 1.5$"</string>
+    <string name="get_unlimited_online2">"Erhalten Sie unbegrenzte Online 
+ ohne Einsätze der Münzen nur für"</string>
+    <string name="help_games_in_workout_description">Jeden Tag 4-Spiele sind für Sie generiert</string>
+    <string name="help_games_in_workout_title">SPIELE IN TRAINING</string>
+    <string name="help_level_description">Erhalten Sie höhere Niveaus, indem Sie große Resultate zeigen</string>
+    <string name="help_level_title">EBENE</string>
+    <string name="help_smart_points_description">SP - einzigartiges System, das Ihre Gehirnfähigkeiten misst</string>
+    <string name="help_smart_points_title">SMART POINTS</string>
+    <string name="help_workout_calendar_description">Der Kalender zeigt die abgeschlossene Ausbildung</string>
+    <string name="help_workout_calendar_title">TRAININGS KALENDER</string>
+    <string name="hint_nick_name">Name</string>
+    <string name="home">Menü</string>
+    <string name="internet_warning">Keine Internetverbindung</string>
+    <string name="iq_level_text">Ebene %s</string>
+    <string name="last_games">Die letzten Spiele</string>
+    <string name="level_number_248">Stufe %1$d (%2$d Punkte)</string>
+    <string name="level_number_prefix">Niveau</string>
+    <string name="level_ready">Bereit?</string>
+    <string name="loading">Beladung…</string>
+    <string name="locked_warning">Das Spiel ist versperrt</string>
+    <string name="login_title">Bitte geben Sie Ihren Benutzernamen</string>
+    <string name="maximum_level">Höchststand</string>
+    <string name="menu">Menü</string>
+    <string name="menuOnlineHistory">Geschichte</string>
+    <string name="menuOnlinePlay">Online spielen</string>
+    <string name="menuOnlineTop">Online Rating</string>
+    <string name="message_type_1">Die Spieler warten! Vorwärts zu Siegen!</string>
+    <string name="message_type_2">Trainiere dein Gehirn. Zeige hervorragende Ergebnisse</string>
+    <string name="message_type_3">Heute ist ein guter Tag. Trainiere dein Gehirn</string>
+    <string name="message_type_4">Zeige, was du tun kannst. Spiele und gewinne!</string>
+    <string name="money_statistic">Statistik der Münzen</string>
+    <string name="new_current_level_placeholder">Niveau %d</string>
+    <string name="new_puzzle_game">"- neues puzzle-spiel 
+ von Pixing"</string>
+    <string name="next">Weiter</string>
+    <string name="nextDuel">Nächstes Spiel</string>
+    <string name="next_level">Nächster</string>
+    <string name="next_level_placeholder">Die nächste Stufe %d</string>
+    <string name="no_ads_message">Die Werbung ist abwesend. Versuchen Sie es später noch einmal.</string>
+    <string name="no_internet_info">"Um das Spiel Online 
+ durchzuführen, müssen Sie sich mit dem Internet verbinden"</string>
+    <string name="no_internet_message">Keine Internetverbindung</string>
+    <string name="no_internet_ooops">Ooops…</string>
+    <string name="no_internet_settings">Einstellungen</string>
+    <string name="not_enough_coins">Nicht genügend Münzen? Holen Sie sich sie hier kostenlos an!</string>
+    <string name="ok">Jawohl</string>
+    <string name="online_draw">Unentschieden!</string>
+    <string name="online_lose">Sie haben verloren</string>
+    <string name="online_title_draws">Unentschieden</string>
+    <string name="online_title_loses">Verluste</string>
+    <string name="online_title_ratio">Prozentsatz der Siege</string>
+    <string name="online_title_wins">Siege</string>
+    <string name="online_top_title">TOP Online</string>
+    <string name="online_tutorial_1">Sie müssen &lt;b&gt;30 Münzen&lt;/b&gt; haben, um online zu spielen</string>
+    <string name="online_tutorial_2">Wenn Sie gewinnen, erhalten Sie Münzen</string>
+    <string name="online_tutorial_3">Wenn Sie verlieren, verlieren Sie Münzen</string>
+    <string name="online_tutorial_4">Wenn Sie gewinnen, wächst Ihr Rating</string>
+    <string name="online_tutorial_5">Wenn Sie verlieren, so fällt Ihr Rating</string>
+    <string name="online_tutorial_bets">Einsätze</string>
+    <string name="online_tutorial_rating">Online Rating</string>
+    <string name="online_win">"Herzlichen Glückwunsch ! 
+ Sie haben gewonnen!"</string>
+    <string name="opponent_is_ready">"Ihr Gegner 
+ ist bereit"</string>
+    <string name="opponent_waiting">"Erwarten Sie 
+ den Rivalen"</string>
+    <string name="performance">Ihre Errungenschaften</string>
+    <string name="play">Spielen</string>
+    <string name="popup_top">Hier können Sie Ihre Rankings mit anderen vergleichen</string>
+    <string name="pro_discount_upgrade_for">UPGRADE für 1.99$</string>
+    <string name="pro_discount_upgrade_for2">UPGRADE für</string>
+    <string name="pro_discount_version_title">Gute Nachricht! Pro-Version -50%!</string>
+    <string name="pro_upgrade_for">Verbessern bis PRO 3.99$</string>
+    <string name="pro_upgrade_for2">Verbessern bis PRO</string>
+    <string name="pro_version">PRO-Version</string>
+    <string name="pro_version_title">PRO-Version</string>
+    <string name="rank">Ihr Rating</string>
+    <string name="remove_ads">Entfernen Sie die Werbung</string>
+    <string name="remove_ads_dialog_title">"Haben Sie die Werbung genug? 
+Schalten Sie aus!"</string>
+    <string name="remove_for">ENTFERNEN für 1$</string>
+    <string name="remove_for2">ENTFERNEN für</string>
+    <string name="replay">Wiederholung</string>
+    <string name="replay_from_this_level">Replay dieses Niveau</string>
+    <string name="restart">Restart</string>
+    <string name="restart_game">Spiel neu starten</string>
+    <string name="resume">Fortsetzen</string>
+    <string name="score">Ergebnis</string>
+    <string name="searching_for_opponents">Suche nach Rivalen ...</string>
+    <string name="secret_game_button">Einladen</string>
+    <string name="secret_game_description">"● Laden Sie Ihren Freund ein
+
+ ● Wenn er das Spiel startet, erhalten Sie ein exklusives Super Secret Game!"</string>
+    <string name="secret_game_opened_txt">Sie eröffneten Secret Game</string>
+    <string name="secret_game_title">Wollen Sie ein Geheimnis Spiel?</string>
+    <string name="settings">Kontoeinstellungen</string>
+    <string name="skip">Weglassen</string>
+    <string name="smart">Smart</string>
+    <string name="spent">Ausgaben</string>
+    <string name="sprint">Sprint</string>
+    <string name="stars_to_next_level">" zum nächsten ebene"</string>
+    <string name="start">Start</string>
+    <string name="stats">STATISTIK</string>
+    <string name="tab_online">Online</string>
+    <string name="take_photo">Machen Sie ein Foto</string>
+    <string name="tell_friends">Erzählen Sie den Freunden</string>
+    <string name="text_today">Heute</string>
+    <string name="text_yesterday">Gestern</string>
+    <string name="textview_start_game_top">Wie soll man spielen</string>
+    <string name="title_online_history">Online-Geschichte</string>
+    <string name="toast_game_not_accepted">Das Spiel wurde nicht akzeptiert</string>
+    <string name="top_ranks_text">TOP Spieler</string>
+    <string name="transfer_title">Konvertieren der Daten in das neue Format</string>
+    <string name="trophies_title">Pokale</string>
+    <string name="try_another_game">Versuchen Sie ein anderes Spiel:</string>
+    <string name="try_workout_dialog_cancel_button_text">Nie wieder zeigen</string>
+    <string name="tutorial">Anleitung</string>
+    <string name="tutorial_game10_slide1">Auf dem Spielfeld erscheinen geometrische Formen</string>
+    <string name="tutorial_game10_slide2">Finden Sie eine einzigartige Form</string>
+    <string name="tutorial_game11_slide1">Berechnen Sie die mathematische Formel</string>
+    <string name="tutorial_game11_slide2">Vergleichen Sie den Wert mit der Antwort</string>
+    <string name="tutorial_game11_slide3">Geben Sie wahr oder unwahr</string>
+    <string name="tutorial_game12_slide1">Berechnen Sie die mathematische Formel</string>
+    <string name="tutorial_game12_slide2">Vergleichen Sie die Ergebnisse</string>
+    <string name="tutorial_game12_slide3">Wählen Sie einen höheren Wert</string>
+    <string name="tutorial_game13_slide1">Auf dem Spielfeld erscheinen geometrische Formen</string>
+    <string name="tutorial_game13_slide2">Tippen Sie auf ein Element, um es zu einem anderen zu wechseln</string>
+    <string name="tutorial_game13_slide3">Machen Sie alle Elemente gleich</string>
+    <string name="tutorial_game14_slide1">Es erscheinen Zahlen</string>
+    <string name="tutorial_game14_slide2">Finden Sie den kleinsten Wert</string>
+    <string name="tutorial_game14_slide3">Gehen Sie vom niedrigsten zum höchsten Wert</string>
+    <string name="tutorial_game15_slide1">Auf dem Spielfeld erscheinen Papierflieger</string>
+    <string name="tutorial_game15_slide2">Wenn die Farbe der Papierflieger gelb ist, dann schieben Sie mit Ihrem Finger in die Richtung, auf die sie verweisen</string>
+    <string name="tutorial_game15_slide3">Wenn die Farbe der Papierflieger grün ist, dann schieben Sie mit Ihrem Finger in die Richtung ihrer Bewegung</string>
+    <string name="tutorial_game16_slide1">Auf dem Feld erscheint eine Form. Notieren Sie sie</string>
+    <string name="tutorial_game16_slide2">Es erscheint eine neue Form</string>
+    <string name="tutorial_game16_slide3">Wählen Sie: ob es die gleiche ist oder nicht</string>
+    <string name="tutorial_game17_slide1">Spielbrett erscheint</string>
+    <string name="tutorial_game17_slide2">Sie können Zeilen und Spalten verschieben</string>
+    <string name="tutorial_game17_slide3">Verbinden Sie so viele Zellen wie möglich, um eine hohe Punktzahl zu erhalten</string>
+    <string name="tutorial_game18_slide1">Schauen Sie sorgfältig auf die Pyramide an der Spitze</string>
+    <string name="tutorial_game18_slide2">Wählen Sie die richtige Projektion unten</string>
+    <string name="tutorial_game19_slide1">Schauen Sie sorgfältig auf die Form an der Spitze</string>
+    <string name="tutorial_game19_slide2">Finden Sie den gleichen Shaper auf dem Spielbrett</string>
+    <string name="tutorial_game1_slide1">"Notieren Sie den Speicherort von farbigen Quadraten 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game1_slide2">Das Spielfeld verschwindet</string>
+    <string name="tutorial_game1_slide3">"Geben Sie den Speicherort der 
+ farbigen Quadrate"</string>
+    <string name="tutorial_game20_slide1">Vergleichen Sie den Farbnamen und die Farbe der figuren</string>
+    <string name="tutorial_game20_slide2">Wählen Sie aus, ob sie übereinstimmen</string>
+    <string name="tutorial_game21_slide1">Spielbrett erscheint</string>
+    <string name="tutorial_game21_slide2">Platzieren Sie die Quadrate auf der rechten Seite symmetrisch zur linken Seite</string>
+    <string name="tutorial_game22_slide1">Spielbrett erscheint</string>
+    <string name="tutorial_game22_slide2">Ziehen und platzieren Sie die Spiegel, um den Laser von der Quelle zum Ziel zu bringen</string>
+    <string name="tutorial_game23_slide1">Es erscheinen Zahlen</string>
+    <string name="tutorial_game23_slide2">Finden Sie den kleinsten Wert</string>
+    <string name="tutorial_game23_slide3">Gehen Sie vom niedrigsten zum höchsten Wert</string>
+    <string name="tutorial_game2_slide1">"Notieren Sie den Speicherort von farbigen Quadraten 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game2_slide2">Das Spielfeld verschwindet und rotiert</string>
+    <string name="tutorial_game2_slide3">"Geben Sie den Speicherort der 
+ farbigen Quadrate"</string>
+    <string name="tutorial_game3_slide1">"Notieren Sie den Speicherort der farbigen Hexagone 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game3_slide2">Das Spielfeld verschwindet</string>
+    <string name="tutorial_game3_slide3">"Geben Sie den Speicherort der 
+ farbigen Hexagone"</string>
+    <string name="tutorial_game4_slide1">"Notieren Sie den Speicherort von farbigen Quadraten 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game4_slide2">"Auf dem Spielfeld erscheint 
+ ein neues farbiges Quadrat"</string>
+    <string name="tutorial_game4_slide3">"Geben Sie ein neues 
+ farbiges Quadrat"</string>
+    <string name="tutorial_game5_slide1">"Zählen Sie die Piktogramme 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game5_slide2">"Wählen Sie die richtige 
+ Antwort"</string>
+    <string name="tutorial_game6_slide1">"Notieren Sie die Reihenfolge des Erscheinens von 
+ farbigen Kreisen"</string>
+    <string name="tutorial_game6_slide2">Das Spielfeld verschwindet</string>
+    <string name="tutorial_game6_slide3">"Geben Sie die Reihenfolge des Erscheinens von 
+ farbigen Kreisen"</string>
+    <string name="tutorial_game7_slide1">"Notieren Sie alle Symbole 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game7_slide2">"Auf dem Spielfeld 
+ wird ein neues Symbol hinzugefügt"</string>
+    <string name="tutorial_game7_slide3">"Geben Sie ein neues Symbol. 
+ Zeit 60 Sek."</string>
+    <string name="tutorial_game8_slide1">"Notieren Sie den Speicherort von farbigen Quadraten 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game8_slide2">"Farbige Quadrate bewegen sich 
+ auf dem Spielfeld"</string>
+    <string name="tutorial_game8_slide3">Quadrate halten an</string>
+    <string name="tutorial_game8_slide4">"Geben Sie den Speicherort 
+ von farbigen Quadraten"</string>
+    <string name="tutorial_game9_slide1">Notieren Sie alle Symbole auf dem Spielfeld</string>
+    <string name="tutorial_game9_slide2">Über dem Spielfeld zeigt sich das Symbol</string>
+    <string name="tutorial_game9_slide3">Geben Sie den Speicherort des Symbols auf dem Spielfeld</string>
+    <string name="unlimited_upgrade_for">Bekommen für 1.5$</string>
+    <string name="unlimited_upgrade_for2">Bekommen für</string>
+    <string name="unlock_games">Entsperren Sie alle Spiele</string>
+    <string name="unlock_text">Entsperren Sie</string>
+    <string name="upgrade_pro">PRO-Version</string>
+    <string name="video_hint">Sie können die Werbung sehen, um dieses Niveau wieder zu starten</string>
+    <string name="video_limit_message">Vielen Dank. Sie haben die Grenze der Werbeaufrufe pro Tag erreicht</string>
+    <string name="view_all">SEHEN SIE ALLE POKALE</string>
+    <string name="view_video_ads">Schauen Sie die Werbung an</string>
+    <string name="wallpapers">Die besten Wallpapers für Sie</string>
+    <string name="want_online_without_coins">"Möchten Sie Online 
+ ohne Münzen?"</string>
+    <string name="want_save_your_coins">"Möchten Sie 
+ Ihre Münzen speichern?"</string>
+    <string name="watch_ad">Schauen Sie die Werbung an</string>
+    <string name="won_bronze">Sie haben den Bronzepokal gewonnen!</string>
+    <string name="won_glass">Sie haben den Kristallpokal gewonnen!</string>
+    <string name="won_gold">Sie haben den Goldpokal gewonnen!</string>
+    <string name="won_silver">Sie haben den Silberpokal gewonnen!</string>
+    <string name="workout">Trainieren</string>
+    <string name="workout_calendar_title">Trainieren Kalender</string>
+    <string name="workout_games_title">Spiele in deinem Trainieren:</string>
+    <string name="workout_sp_title">Ihre SP:</string>
+    <string name="workout_sp_to_next_level">%s bis zur nächsten Stufe</string>
+    <string name="your_score">Ihr Ergebnis</string>
+    <string name="your_trophies">Ihre Trophäen</string>
+    <string name="your_trophy">Trophäen</string>
+</resources>

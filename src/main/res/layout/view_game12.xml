@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <android.support.percent.PercentFrameLayout android:orientation="vertical" android:paddingTop="16.0dip" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <TextView android:textSize="36.0sp" android:textColor="@android:color/black" android:gravity="center" android:layout_gravity="center" android:id="@id/textEquals" android:background="@drawable/text_compare_background_equals" android:layout_width="64.0dip" android:layout_height="64.0dip" android:layout_marginBottom="8.0dip" android:text="=" />
+        <com.wenchao.cardstack.CardStack android:id="@id/container1" android:clipChildren="false" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" app:layout_marginBottomPercent="50.0%" />
+        <com.wenchao.cardstack.CardStack android:id="@id/container2" android:clipChildren="false" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" app:layout_marginTopPercent="50.0%" />
+    </android.support.percent.PercentFrameLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <View android:id="@id/click1" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.4" />
+        <View android:id="@id/click2" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.2" />
+        <View android:id="@id/click3" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.4" />
+    </LinearLayout>
+</FrameLayout>

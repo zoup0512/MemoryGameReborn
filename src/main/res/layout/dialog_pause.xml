@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/root" android:background="@color/background" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/panel_pause" android:background="?selectableItemBackground" android:padding="16.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentLeft="true" android:layout_centerVertical="true">
+        <ToggleButton android:layout_gravity="center" android:id="@id/sound" android:background="@drawable/button_sounds_on_off" android:clickable="false" android:layout_width="28.0dip" android:layout_height="28.0dip" android:checked="true" android:textOn="" android:textOff="" android:text="" />
+    </FrameLayout>
+    <TextView android:textSize="22.0sp" android:textColor="@color/grid_unclicked" android:gravity="center_horizontal" android:id="@id/title" android:paddingTop="@dimen/padding_small" android:paddingBottom="64.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/game_paused" />
+    <LinearLayout android:layout_gravity="center_horizontal" android:orientation="vertical" android:background="@color/background" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/resumeContainer" android:background="@drawable/button_play" android:paddingRight="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/padding_big">
+            <ImageView android:padding="@dimen/padding_small" android:layout_width="@dimen/play_button_size" android:layout_height="@dimen/play_button_size" android:tint="@android:color/white" app:srcCompat="@drawable/ic_play_rounded_button" />
+            <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="start|center" android:id="@id/resumeButton" android:layout_width="wrap_content" android:layout_height="@dimen/play_button_size" android:text="@string/resume" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/replayContainer" android:background="@drawable/button_play" android:paddingRight="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/padding_big">
+            <ImageView android:padding="@dimen/padding_small" android:layout_width="@dimen/play_button_size" android:layout_height="@dimen/play_button_size" android:tint="@android:color/white" app:srcCompat="@drawable/ic_reload" />
+            <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="start|center" android:id="@id/replayButton" android:layout_width="wrap_content" android:layout_height="@dimen/play_button_size" android:text="@string/replay" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/tutorialContainer" android:background="@drawable/button_play" android:paddingRight="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/padding_big">
+            <ImageView android:padding="@dimen/padding_small" android:layout_width="@dimen/play_button_size" android:layout_height="@dimen/play_button_size" android:tint="@android:color/white" app:srcCompat="@drawable/ic_questions_circular_button" />
+            <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="start|center" android:id="@id/tutorialButton" android:layout_width="wrap_content" android:layout_height="@dimen/play_button_size" android:text="@string/tutorial" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/exitContainer" android:background="@drawable/button_play" android:paddingRight="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/padding_big">
+            <ImageView android:padding="@dimen/padding_small" android:layout_width="@dimen/play_button_size" android:layout_height="@dimen/play_button_size" android:tint="@android:color/white" app:srcCompat="@drawable/ic_arrow_back_white" />
+            <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="start|center" android:id="@id/exitButton" android:layout_width="wrap_content" android:layout_height="@dimen/play_button_size" android:text="@string/exit" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

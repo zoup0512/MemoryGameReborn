@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:id="@id/chart_container" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="20.0sp" android:textColor="@android:color/black" android:id="@id/title" android:padding="@dimen/padding_big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/your_trophy" android:layout_alignParentTop="true" android:layout_centerHorizontal="true" />
+    <ImageView android:id="@id/cupImage" android:layout_width="@dimen/cup_size" android:layout_height="@dimen/cup_size" android:layout_margin="10.0dip" android:scaleType="fitCenter" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+    <TextView android:textSize="20.0sp" android:textColor="@color/grid_correct" android:id="@id/viewAll" android:padding="@dimen/padding_big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/view_all" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true" android:textAllCaps="true" />
+</RelativeLayout>

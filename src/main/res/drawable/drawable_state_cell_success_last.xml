@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@color/grid_correct" />
+            <stroke android:width="@dimen/cell_stroke_width" android:color="@color/grid_stroke" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/rightanswer" />
+</layer-list>

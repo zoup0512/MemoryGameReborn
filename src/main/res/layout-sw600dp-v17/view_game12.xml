@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <android.support.percent.PercentFrameLayout android:orientation="vertical" android:paddingTop="16.0dip" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <TextView android:textSize="55.0sp" android:textColor="@android:color/black" android:gravity="center" android:layout_gravity="center" android:id="@id/textEquals" android:background="@drawable/text_compare_background_equals" android:layout_width="@dimen/game_12_equals_side_length" android:layout_height="@dimen/game_12_equals_side_length" android:layout_marginBottom="8.0dip" android:text="=" />
+        <com.wenchao.cardstack.CardStack android:id="@id/container1" android:paddingLeft="24.0dip" android:paddingTop="24.0dip" android:paddingRight="24.0dip" android:clipChildren="false" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" android:paddingStart="24.0dip" android:paddingEnd="24.0dip" app:layout_marginBottomPercent="50.0%" />
+        <com.wenchao.cardstack.CardStack android:id="@id/container2" android:paddingLeft="24.0dip" android:paddingRight="24.0dip" android:paddingBottom="24.0dip" android:clipChildren="false" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" android:paddingStart="24.0dip" android:paddingEnd="24.0dip" app:layout_marginTopPercent="50.0%" />
+    </android.support.percent.PercentFrameLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <View android:id="@id/click1" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.4" />
+        <View android:id="@id/click2" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.15" />
+        <View android:id="@id/click3" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="0.4" />
+    </LinearLayout>
+</FrameLayout>

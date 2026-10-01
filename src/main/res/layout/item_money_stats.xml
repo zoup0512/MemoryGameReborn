@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="fill_parent" android:layout_height="50.0dip"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:id="@id/progress_bar" android:background="@drawable/progress_statistics" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_marginLeft="@dimen/padding_small" android:layout_marginTop="2.0dip" android:layout_marginRight="@dimen/padding_small" android:layout_marginBottom="2.0dip" android:layout_centerVertical="true" />
+    <LinearLayout android:orientation="horizontal" android:paddingLeft="@dimen/padding_big" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_centerVertical="true">
+        <TextView android:textSize="21.0sp" android:textColor="@android:color/white" android:layout_gravity="center_vertical" android:id="@id/title" android:layout_width="0.0dip" android:layout_height="wrap_content" android:text="Watch videos" android:layout_weight="0.55" />
+        <TextView android:textSize="21.0sp" android:textColor="@android:color/white" android:layout_gravity="center_vertical" android:id="@id/value" android:layout_width="0.0dip" android:layout_height="wrap_content" android:text="154" android:layout_weight="0.45" />
+    </LinearLayout>
+</RelativeLayout>

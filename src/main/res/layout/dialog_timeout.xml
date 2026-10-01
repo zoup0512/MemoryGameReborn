@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_gravity="center" android:background="@android:color/transparent" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="vertical" android:id="@id/dialog_content" android:paddingLeft="@dimen/padding_xsmall" android:paddingTop="58.0dip" android:paddingRight="@dimen/padding_xsmall" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <FrameLayout android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0">
+            <LinearLayout android:layout_gravity="center_vertical" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
+                <TextView android:textSize="@dimen/fail_dialog_text_title" android:textStyle="bold" android:textColor="@color/grid_correct" android:gravity="center_horizontal" android:layout_gravity="center_horizontal" android:id="@id/fail_dialog_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/dialog_timeout_title" style="@style/TextStyleFail" />
+                <TextView android:textSize="16.0sp" android:layout_gravity="center_horizontal" android:id="@id/fail_dialog_inner_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/padding_big" android:text="@string/try_another_game" style="@style/TextStyleFail" />
+                <FrameLayout android:layout_gravity="center_horizontal" android:orientation="vertical" android:id="@id/fail_dialog_game_suggestion_container" android:background="@drawable/drawable_state_cell_empty" android:padding="1.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/padding_small" android:layout_marginBottom="@dimen/padding_large">
+                    <ImageButton android:layout_gravity="center_horizontal" android:id="@id/fail_dialog_game_suggestion_image" android:background="@null" android:layout_width="@dimen/fail_dialog_game_suggestion_thumb_width" android:layout_height="@dimen/fail_dialog_game_suggestion_thumb_height" android:src="@drawable/th2" android:scaleType="centerInside" />
+                    <TextView android:textSize="16.0sp" android:layout_gravity="bottom|center" android:id="@id/fail_dialog_game_suggestion_game_name" android:paddingBottom="@dimen/padding_medium" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/TextStyleFail" />
+                </FrameLayout>
+                <TextView android:textSize="16.0sp" android:layout_gravity="center_horizontal" android:id="@id/fail_dialog_restart_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/restart_game" style="@style/TextStyleFail" />
+                <LinearLayout android:layout_gravity="center_horizontal" android:paddingLeft="@dimen/padding_small" android:paddingRight="@dimen/padding_small" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/padding_xsmall">
+                    <FrameLayout android:layout_width="0.0dip" android:layout_height="fill_parent" android:layout_weight="0.33">
+                        <ImageButton android:layout_gravity="center_horizontal" android:id="@id/button_dialog_fail_retry" android:background="@null" android:layout_width="60.0dip" android:layout_height="60.0dip" android:layout_marginBottom="20.0dip" android:scaleType="fitXY" android:adjustViewBounds="true" app:srcCompat="@drawable/button_video_selectable" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+        <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="center" android:layout_gravity="bottom|center" android:id="@id/mainMenu" android:background="@drawable/button_play" android:paddingLeft="36.0dip" android:paddingRight="36.0dip" android:layout_width="wrap_content" android:layout_height="@dimen/play_button_size" android:layout_marginBottom="16.0dip" android:text="@string/menu" />
+    </LinearLayout>
+</RelativeLayout>

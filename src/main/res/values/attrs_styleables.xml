@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reconstructed declare-styleable blocks.
+
+     Styleable groups are compile-time only data and never appear in
+     resources.arsc, so apktool could not decompile them. They are rebuilt
+     from the R.styleable.* references found in the decompiled Java sources.
+
+     SquareLoading reads its TypedArray by index, so its attribute order must
+     match the original: color, size, corner, divider, xCount, yCount.
+     The ViewPagerIndicator / CardStack blocks are accessed by named
+     constants, so they only need the same attribute set.
+-->
+<resources>
+    <declare-styleable name="SquareLoading">
+        <attr name="squareColor" />
+        <attr name="squareSize" />
+        <attr name="squareCorner" />
+        <attr name="dividerSize" />
+        <attr name="xCount" />
+        <attr name="yCount" />
+    </declare-styleable>
+
+    <declare-styleable name="CardStack">
+        <attr name="backgroundColor" />
+    </declare-styleable>
+
+    <declare-styleable name="AutofitTextView">
+        <attr name="minTextSize" />
+        <attr name="precision" />
+        <attr name="sizeToFit" />
+    </declare-styleable>
+
+    <declare-styleable name="CircleImageView">
+        <attr name="civ_border_width" />
+        <attr name="civ_border_color" />
+        <attr name="civ_border_overlay" />
+        <attr name="civ_circle_background_color" />
+        <attr name="civ_fill_color" />
+    </declare-styleable>
+
+    <declare-styleable name="CirclePageIndicator">
+        <attr name="centered" />
+        <attr name="fillColor" />
+        <attr name="pageColor" />
+        <attr name="radius" />
+        <attr name="snap" />
+        <attr name="strokeColor" />
+        <attr name="strokeWidth" />
+        <attr name="android:background" />
+        <attr name="android:orientation" />
+    </declare-styleable>
+
+    <declare-styleable name="LinePageIndicator">
+        <attr name="centered" />
+        <attr name="lineWidth" />
+        <attr name="gapWidth" />
+        <attr name="unselectedColor" />
+        <attr name="selectedColor" />
+        <attr name="strokeWidth" />
+        <attr name="android:background" />
+    </declare-styleable>
+
+    <declare-styleable name="TitlePageIndicator">
+        <attr name="titlePadding" />
+        <attr name="topPadding" />
+        <attr name="footerPadding" />
+        <attr name="footerLineHeight" />
+        <attr name="footerIndicatorStyle" />
+        <attr name="footerIndicatorHeight" />
+        <attr name="footerIndicatorUnderlinePadding" />
+        <attr name="footerColor" />
+        <attr name="selectedBold" />
+        <attr name="selectedColor" />
+        <attr name="clipPadding" />
+        <attr name="linePosition" />
+        <attr name="android:textSize" />
+        <attr name="android:textColor" />
+        <attr name="android:background" />
+    </declare-styleable>
+
+    <declare-styleable name="UnderlinePageIndicator">
+        <attr name="fades" />
+        <attr name="fadeDelay" />
+        <attr name="fadeLength" />
+        <attr name="selectedColor" />
+        <attr name="android:background" />
+    </declare-styleable>
+</resources>

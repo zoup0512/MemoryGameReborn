@@ -1,0 +1,9 @@
+allprojects {
+    task dumpCompileCp {
+        doLast {
+            def cp = configurations.getByName("debugCompileClasspath")
+            def files = cp.resolve().collect { it.absolutePath }
+            new File(rootDir, "tools/cp.txt").text = files.join(";")
+        }
+    }
+}

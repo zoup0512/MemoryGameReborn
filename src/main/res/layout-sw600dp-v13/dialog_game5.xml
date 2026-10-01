@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/root" android:background="@android:color/transparent" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/panel_pause" android:background="?selectableItemBackground" android:layout_width="@dimen/toolbar_height" android:layout_height="@dimen/toolbar_height" android:layout_alignParentLeft="true" android:layout_centerVertical="true" />
+    <FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <LinearLayout android:layout_gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
+            <TextView android:textSize="32.0sp" android:textColor="@color/grid_correct" android:gravity="center_horizontal" android:layout_gravity="center_horizontal" android:id="@id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/padding_big" android:text="@string/game5_dialog_text" />
+            <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <TextView android:textSize="@dimen/game_5_button_text_size" android:textColor="@android:color/black" android:gravity="center" android:id="@id/button_dialog_game5_cell_count_1" android:background="@drawable/button_count" android:layout_width="@dimen/count_button_size" android:layout_height="@dimen/count_button_size" android:layout_margin="@dimen/game_5_button_layout_margin" />
+                <TextView android:textSize="@dimen/game_5_button_text_size" android:textColor="@android:color/black" android:gravity="center" android:id="@id/button_dialog_game5_cell_count_2" android:background="@drawable/button_count" android:layout_width="@dimen/count_button_size" android:layout_height="@dimen/count_button_size" android:layout_margin="@dimen/game_5_button_layout_margin" />
+            </LinearLayout>
+            <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <TextView android:textSize="@dimen/game_5_button_text_size" android:textColor="@android:color/black" android:gravity="center" android:id="@id/button_dialog_game5_cell_count_3" android:background="@drawable/button_count" android:layout_width="@dimen/count_button_size" android:layout_height="@dimen/count_button_size" android:layout_margin="@dimen/game_5_button_layout_margin" />
+                <TextView android:textSize="@dimen/game_5_button_text_size" android:textColor="@android:color/black" android:gravity="center" android:id="@id/button_dialog_game5_cell_count_4" android:background="@drawable/button_count" android:layout_width="@dimen/count_button_size" android:layout_height="@dimen/count_button_size" android:layout_margin="@dimen/game_5_button_layout_margin" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

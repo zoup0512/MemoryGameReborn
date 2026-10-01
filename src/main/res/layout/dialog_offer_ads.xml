@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:background="#bb000000" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="vertical" android:id="@id/content" android:background="@drawable/background_dialog_vip_new" android:paddingBottom="44.0dip" android:layout_width="328.0dip" android:layout_height="wrap_content" android:layout_marginLeft="16.0dip" android:layout_marginTop="28.0dip" android:layout_marginRight="16.0dip" android:layout_marginBottom="28.0dip" android:layout_centerHorizontal="true" android:layout_centerVertical="true">
+        <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/removeads" android:scaleType="fitXY" android:adjustViewBounds="true" />
+            <TextView android:textSize="36.0sp" android:textColor="@android:color/white" android:gravity="center" android:layout_gravity="bottom|center" android:paddingLeft="8.0dip" android:paddingRight="8.0dip" android:paddingBottom="32.0dip" android:layout_width="fill_parent" android:layout_height="fill_parent" android:text="@string/remove_ads_dialog_title" fontPath="@string/font_roboto_medium" />
+        </FrameLayout>
+        <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="44.0dip" android:layout_marginTop="16.0dip">
+            <ImageView android:layout_gravity="center_vertical" android:layout_width="@dimen/offer_dialog_item_size" android:layout_height="@dimen/offer_dialog_item_size" android:src="@drawable/noads" />
+            <TextView android:textSize="17.0sp" android:textColor="@color/vip_text_color" android:gravity="center|left" android:layout_gravity="center_horizontal" android:paddingLeft="16.0dip" android:paddingRight="8.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/banner_remove_ads2" fontPath="@string/font_roboto_light" />
+        </LinearLayout>
+    </LinearLayout>
+    <ImageView android:id="@id/close" android:background="@drawable/close_btn_background_new" android:padding="4.0dip" android:layout_width="32.0dip" android:layout_height="32.0dip" android:layout_marginTop="-16.0dip" android:layout_marginRight="-16.0dip" android:tint="@color/vip_text_color" android:layout_alignTop="@id/content" android:layout_alignRight="@id/content" app:srcCompat="@drawable/ic_close" />
+    <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="center" android:layout_gravity="center_horizontal" android:id="@id/upgrade" android:background="@drawable/button_pro_new" android:paddingLeft="8.0dip" android:paddingRight="8.0dip" android:layout_width="wrap_content" android:layout_height="56.0dip" android:layout_marginLeft="24.0dip" android:layout_marginRight="24.0dip" android:layout_marginBottom="-28.0dip" android:minWidth="260.0dip" android:text="@string/remove_for2" android:layout_alignBottom="@id/content" android:layout_centerHorizontal="true" fontPath="@string/font_roboto_regular" />
+</RelativeLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/imageView3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="30.0dip" android:layout_alignParentTop="true" android:layout_centerHorizontal="true" app:srcCompat="@drawable/daily_workout" />
+    <Button android:id="@id/dialog_try_workout_cancel_button" android:paddingLeft="20.0dip" android:paddingRight="20.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dip" android:text="@string/try_workout_dialog_cancel_button_text" android:layout_alignBottom="@id/imageView3" android:layout_centerHorizontal="true" android:textAllCaps="false" style="@style/Widget.AppCompat.Button.Borderless" />
+    <Button android:textSize="18.0sp" android:textColor="@android:color/white" android:id="@id/dialog_try_workout_confirm_button" android:background="@color/workout_progress_filled" android:paddingLeft="20.0dip" android:paddingRight="20.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dip" android:text="@string/dialog_try_workout_confirm_button_text" android:layout_above="@id/dialog_try_workout_cancel_button" android:layout_centerHorizontal="true" android:textAllCaps="false" />
+</RelativeLayout>

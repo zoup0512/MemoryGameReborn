@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:icon="@drawable/ic_cup" android:id="@id/bottomBarCup" android:title="@string/sprint" />
+    <item android:icon="@drawable/ic_icon_daily_workout" android:id="@id/bottomBarWorkout" android:title="@string/workout" />
+    <item android:icon="@drawable/ic_challenge" android:id="@id/bottomBarChallenge" android:title="@string/challenge" />
+    <item android:icon="@drawable/ic_online" android:id="@id/bottomBarOnline" android:title="@string/tab_online" />
+    <item android:icon="@drawable/ic_menu" android:id="@id/bottomBarMenu" android:title="@string/menu" />
+</menu>

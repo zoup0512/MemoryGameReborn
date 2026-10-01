@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Offline restoration: no INTERNET, billing, push or location permissions.
+         The app runs entirely on local storage. -->
+    <application
+        android:name="com.cube.memorygames.MemoryApplicationModel"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/GdxTheme">
+
+        <provider
+            android:name="com.activeandroid.content.ContentProvider"
+            android:authorities="com.memory.brain.training.games"
+            android:exported="false" />
+
+        <meta-data
+            android:name="AA_DB_NAME"
+            android:value="memorygames.db" />
+        <meta-data
+            android:name="AA_DB_VERSION"
+            android:value="16" />
+
+        <activity
+            android:name="com.cube.memorygames.SplashActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait"
+            android:theme="@style/SplashTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.cube.memorygames.MainMenuActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.cube.memorygames.StartGameActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.cube.memorygames.TrophiesActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.cube.memorygames.games.Game1MemoryGridActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game2RotatingGridActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game3HexagonsActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game4WhoNewActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game5CountAllActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game6FollowThePathActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game7ImageVortexActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game8CatchThemActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game9FindThePictureActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game10OneAndOnlyActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game11CorrectlyActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game12MoreLessActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game13AllTheSameActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game14SortTheDigitsActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game15PaperPlanesActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game16LikePreviousActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game17_248Activity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game18PyramidsActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game19FindAllActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game20ColorsActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game21SymmetryActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game22MirrorsActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.games.Game23TableActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+
+        <!-- Local gameplay reminders (AlarmManager based, no network). -->
+        <receiver
+            android:name="com.cube.memorygames.NotificationBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.cube.memorygames.ACTION_CANCEL" />
+                <action android:name="com.cube.memorygames.ACTION_PLAY" />
+                <action android:name="com.cube.memorygames.ACTION_PLAY_REMINDER" />
+                <action android:name="com.cube.memorygames.ACTION_VIEW" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.cube.memorygames.reminder.ReminderBroadcastReceiver"
+            android:enabled="true" />
+
+        <receiver
+            android:name="com.cube.memorygames.reminder.DeviceBootReceiver"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

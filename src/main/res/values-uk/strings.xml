@@ -1,0 +1,364 @@
+<resources><string name="common_google_play_services_enable_button">Увімкнути</string>
+    <string name="common_google_play_services_enable_text">Додаток %1$s не працюватиме, якщо не ввімкнути сервіси Google Play.</string>
+    <string name="common_google_play_services_enable_title">Увімкнути сервіси Google Play</string>
+    <string name="common_google_play_services_install_button">Установити сервіси Google Play</string>
+    <string name="common_google_play_services_install_text_phone">Додаток %1$s не працюватиме без сервісів Google Play, яких немає на вашому телефоні.</string>
+    <string name="common_google_play_services_install_text_tablet">Додаток %1$s не працюватиме без сервісів Google Play, яких немає на вашому планшеті.</string>
+    <string name="common_google_play_services_install_title">Установити сервіси Google Play</string>
+    <string name="common_google_play_services_notification_ticker">Помилка сервісів Google Play</string>
+    <string name="common_google_play_services_unknown_issue">У додатка %1$s виникла проблема із сервісами Google Play. Якщо проблема не зникне, зверніться по допомогу до розробника.</string>
+    <string name="common_google_play_services_unsupported_text">Додаток %1$s працює завдяки сервісам Google Play, які не підтримуються на вашому пристрої. Зверніться по допомогу до виробника.</string>
+    <string name="common_google_play_services_unsupported_title">Сервіси Google Play</string>
+    <string name="common_google_play_services_update_button">Оновити</string>
+    <string name="common_google_play_services_update_text">Додаток %1$s не працюватиме, якщо не оновити сервіси Google Play.</string>
+    <string name="common_google_play_services_update_title">Оновіть сервіси Google Play</string>
+    <string name="common_google_play_services_updating_text">Додаток %1$s не працюватиме без сервісів Google Play, які зараз оновлюються.</string>
+    <string name="common_google_play_services_updating_title">Сервіси Google Play оновлюються</string>
+    <string name="common_google_play_services_wear_update_text">Потрібна нова версія сервісів Google Play. Вони невдовзі оновляться.</string>
+    <string name="common_open_on_phone">Відкрити на телефоні</string>
+    <string name="common_signin_button_text">Увійти</string>
+    <string name="common_signin_button_text_long">Увійти в облік. запис Google</string>
+    <string name="all_games">Всі ігри</string>
+    <string name="all_games_text">всі ігри</string>
+    <string name="already_shared">Дякуємо. Ви вже поширили інформацію про гру.</string>
+    <string name="app_name">"Тренування пам'яті"</string>
+    <string name="at_current_level_placeholder">на рівні %d</string>
+    <string name="average_level">Середній рівень</string>
+    <string name="back">Назад</string>
+    <string name="banner_remove_ads">● Видаляємо рекламу, всюди де тільки Ви її бачили. Цієї гидоти більше не буде!</string>
+    <string name="banner_remove_ads2">Видаляємо рекламу і Ви її більше ніколи не побачите!</string>
+    <string name="banner_text">"● Видаляємо рекламу, всюди де тільки Ви її бачили. Цієї гидоти більше не буде!
+
+● Перегравання рівня без перегляду рекламу!
+
+● Розблоковуємо всі ігри. Поточні і всі нові наступні ігри будуть розблоковані.
+
+● +1000 монет в якості приємного бонусу ;)
+
+● Ви бог для нас ;) від сьогодні і назавжди! :)"</string>
+    <string name="banner_text2_1">Видаляємо рекламу :)</string>
+    <string name="banner_text2_2">Розблоковуємо всі ігри</string>
+    <string name="banner_text2_3">+1000 монет</string>
+    <string name="bets">СТАВКИ</string>
+    <string name="brain_games">РОЗВИВАЮЧІ ІГРИ</string>
+    <string name="button_text_ok">Ок</string>
+    <string name="categoryAttention">УВАГА</string>
+    <string name="categoryFlexibility">ГНУЧКІСТЬ</string>
+    <string name="categoryImagination">ПРОСТОРОВА УЯВА</string>
+    <string name="categoryMemory">"ПАМ'ЯТЬ"</string>
+    <string name="categoryProblemSolving">ВИРІШЕННЯ ЗАДАЧ</string>
+    <string name="categorySpeed">ШВИДКІСТЬ</string>
+    <string name="challenge">Челлендж</string>
+    <string name="choose_answer">Виберіть правильну</string>
+    <string name="choose_photo">Вибрати Фото</string>
+    <string name="coins">монеток</string>
+    <string name="congratulations">Вітаємо!</string>
+    <string name="continueText">Продовжити</string>
+    <string name="current_level_placeholder">Поточний рівень %d</string>
+    <string name="dialog_fail">Ти програв:(</string>
+    <string name="dialog_feedback_title">Чи не бажаєте залишити нам відгук?</string>
+    <string name="dialog_leave_feedback_no">Ні, не зараз</string>
+    <string name="dialog_leave_feedback_yes">Так</string>
+    <string name="dialog_look_ranks">Залогінтеся, щоб переглянути ТОП гравців</string>
+    <string name="dialog_lose_bet">Ви втратите ставку, якщо вийдете. Ви впевнені?</string>
+    <string name="dialog_new_like_title">Вам подобається гра</string>
+    <string name="dialog_new_like_us_no">Ні, не дуже</string>
+    <string name="dialog_new_like_us_yes">Ок</string>
+    <string name="dialog_new_rate_title">Чи не бажаєте залишити нам відгук на Google Play?</string>
+    <string name="dialog_new_rate_title_2">Будь ласка, залиште нам відгук!</string>
+    <string name="dialog_new_rate_us_no">Ні, дякую</string>
+    <string name="dialog_new_rate_us_yes">Так, авжеж</string>
+    <string name="dialog_replay_options_1">Продовжити</string>
+    <string name="dialog_replay_options_2">гру</string>
+    <string name="dialog_timeout_title">Час вийшов:)</string>
+    <string name="dialog_try_workout_confirm_button_text">Перейти до Тренувань</string>
+    <string name="dialog_unlock_online_warning">У вас недостатньо монеток для Онлайн гри</string>
+    <string name="dialog_unlock_title">Бажаєте розблокувати гру?</string>
+    <string name="dialog_unlock_warning">У Вас недостатньо монет, щоб розблокувати гру</string>
+    <string name="dialog_win">Дуже добре!</string>
+    <string name="dialog_you_finished_game">Гра закінчена</string>
+    <string name="earnings">Доходи</string>
+    <string name="edit_profile">Редагувати Профайл</string>
+    <string name="exit">Вийти</string>
+    <string name="explore">По черзі</string>
+    <string name="facebook_login">Увійти</string>
+    <string name="facebook_share_messages">Тренування мозку - легко і просто, все в ігровій формі. Я дуже задоволений і рекомендую завантажити цей додаток:</string>
+    <string name="fail">Невірно</string>
+    <string name="fail_dialog_game_suggestion_text">"Ще одна цікава гра 
+ для Вас"</string>
+    <string name="fail_title">Ви не закінчили</string>
+    <string name="finish">Фініш</string>
+    <string name="game">Гра</string>
+    <string name="game20_color0">Жовтий</string>
+    <string name="game20_color1">Червоний</string>
+    <string name="game20_color2">Коричневий</string>
+    <string name="game20_color3">Зелений</string>
+    <string name="game20_color4">Синій</string>
+    <string name="game20_color5">Чорний</string>
+    <string name="game5_dialog_text">Скільки?</string>
+    <string name="game7_success_text">Правильно!</string>
+    <string name="game7_timer_prefix">Час:</string>
+    <string name="game_dexcription_banner">"- thousands of wallpapers
+- only HD and QHD images
+- new images every day"</string>
+    <string name="game_finished">Гру завершано</string>
+    <string name="game_name_1">"Мозаїка Пам'яті"</string>
+    <string name="game_name_10">Унікальний</string>
+    <string name="game_name_11">Правильно чи Ні?</string>
+    <string name="game_name_12">Більше, Менше</string>
+    <string name="game_name_13">Всі Однакові</string>
+    <string name="game_name_14">Впорядкуй Цифри</string>
+    <string name="game_name_15">Паперові Літачки</string>
+    <string name="game_name_16">Який попередній?</string>
+    <string name="game_name_17">248</string>
+    <string name="game_name_18">Пірамідки</string>
+    <string name="game_name_19">Знайди всіх</string>
+    <string name="game_name_2">Обертання</string>
+    <string name="game_name_20">Кольори</string>
+    <string name="game_name_21">Симетрія</string>
+    <string name="game_name_22">Лазер</string>
+    <string name="game_name_23">Таблиця Шульте</string>
+    <string name="game_name_3">Гексагони</string>
+    <string name="game_name_4">Який Новий?</string>
+    <string name="game_name_5">Порахуй Їх</string>
+    <string name="game_name_6">Йди за Ними</string>
+    <string name="game_name_7">Вихор іконок</string>
+    <string name="game_name_8">Піймай Їх</string>
+    <string name="game_name_9">Знайди Картинку</string>
+    <string name="game_name_banner">Wallpapers HD</string>
+    <string name="game_paused">Пауза</string>
+    <string name="game_statistic">Ігрова Статистика</string>
+    <string name="generating_game_list">Генеруємо ігри для Тренування…</string>
+    <string name="get_coins">Отримати монетки</string>
+    <string name="get_more_coins">Більше монеток</string>
+    <string name="get_pro">Отримати ПРО</string>
+    <string name="get_ready">Правила:</string>
+    <string name="get_unlimited_online">"Отримайте необмежений Онлайн
+ без ставок монеток всього лише за 1.5$"</string>
+    <string name="get_unlimited_online2">"Отримайте необмежений Онлайн
+ без ставок монеток всього лише за"</string>
+    <string name="help_games_in_workout_description">Кожень день дається 4 гри для тренувань</string>
+    <string name="help_games_in_workout_title">ІГРИ ДЛЯ ТРЕНУВАНЬ</string>
+    <string name="help_level_description">Показуй гарні результати, щоб підвищити свій рівень</string>
+    <string name="help_level_title">РІВЕНЬ</string>
+    <string name="help_smart_points_description">СО - унікальна система, яка вимірює твій рівень інтелекту</string>
+    <string name="help_smart_points_title">СМАРТ ОЧКИ</string>
+    <string name="help_workout_calendar_description">В календарі показані завершині тренування</string>
+    <string name="help_workout_calendar_title">КАЛЕНДАР ТРЕНУВАНЬ</string>
+    <string name="hint_nick_name">"Ім'я"</string>
+    <string name="home">Меню</string>
+    <string name="internet_warning">"Відсутнє з'єднання з інтернетом"</string>
+    <string name="iq_level_text">Рівень %s</string>
+    <string name="last_games">Останні Ігри</string>
+    <string name="level_number_248">Рівень %1$d (%2$d очок)</string>
+    <string name="level_number_prefix">Рівень</string>
+    <string name="level_ready">Готовий?</string>
+    <string name="loading">Завантаження…</string>
+    <string name="locked_warning">Гра заблокована</string>
+    <string name="login_title">Будь-ласка, введіть свій Nickname</string>
+    <string name="maximum_level">Максимальний рівень</string>
+    <string name="menu">Меню</string>
+    <string name="menuOnlineHistory">Історія</string>
+    <string name="menuOnlinePlay">Грати Онлайн</string>
+    <string name="menuOnlineTop">Онлайн Рейтинг</string>
+    <string name="message_type_1">Гравці чекають! Вперед до перемог!</string>
+    <string name="message_type_2">Тренуй свій мозок. Покажи відмінні результати</string>
+    <string name="message_type_3">Сьогодні чудовий день. Тренуй свій мозок</string>
+    <string name="message_type_4">Покажи на що ти здатний. Грай та перемагай!</string>
+    <string name="money_statistic">Статистика монет</string>
+    <string name="new_current_level_placeholder">рівень %d</string>
+    <string name="new_puzzle_game">"- нова гра головоломка 
+ від Pixing"</string>
+    <string name="next">Далі</string>
+    <string name="nextDuel">Наступна Гра</string>
+    <string name="next_level">Далі</string>
+    <string name="next_level_placeholder">Наступний рівень %d</string>
+    <string name="no_ads_message">Реклама відсутня. Спробуйте пізніше.</string>
+    <string name="no_internet_info">"Для гри Онлайн
+ необхідно мати підключення до Інтернету"</string>
+    <string name="no_internet_message">"Відсутнє з'єднання з інтернетом."</string>
+    <string name="no_internet_ooops">Ууупс…</string>
+    <string name="no_internet_settings">Налаштування</string>
+    <string name="not_enough_coins">Не вистачає монет? Отримай безкоштовно тут!</string>
+    <string name="ok">Так</string>
+    <string name="online_draw">Нічия!</string>
+    <string name="online_lose">Ви програли</string>
+    <string name="online_title_draws">Нічиї</string>
+    <string name="online_title_loses">Поразок</string>
+    <string name="online_title_ratio">Процент Перемог</string>
+    <string name="online_title_wins">Перемог</string>
+    <string name="online_top_title">TOP Онлайн</string>
+    <string name="online_tutorial_1">Вам необхідно мати &lt;b&gt;30 монеток&lt;/b&gt; для гри в Онлайн</string>
+    <string name="online_tutorial_2">Якщо ви виграли, ви отримуєте монетки</string>
+    <string name="online_tutorial_3">Якщо ви програли, ви втрачаєте монетки</string>
+    <string name="online_tutorial_4">Якщо ви виграли, ваш рейтинг росте</string>
+    <string name="online_tutorial_5">Якщо ви програли, ваш рейтинг падає</string>
+    <string name="online_tutorial_bets">Ставки</string>
+    <string name="online_tutorial_rating">Рейтинг Онлайн</string>
+    <string name="online_win">"Вітаємо!
+ Ви Виграли!"</string>
+    <string name="opponent_is_ready">"Ваш суперник
+ готовий"</string>
+    <string name="opponent_waiting">"Чекаємо на 
+ суперника"</string>
+    <string name="performance">Ваші досягнення</string>
+    <string name="play">Грати</string>
+    <string name="popup_top">Тут ви можете порівняти свій рейтинг з іншими</string>
+    <string name="pro_discount_upgrade_for">ОНОВИТИ за 1.5$</string>
+    <string name="pro_discount_upgrade_for2">ОНОВИТИ за</string>
+    <string name="pro_discount_version_title">Чудова новина! ПРО-версія зі знижкою 50%!</string>
+    <string name="pro_upgrade_for">ОНОВИТИ до ПРО 1.99$</string>
+    <string name="pro_upgrade_for2">ОНОВИТИ за</string>
+    <string name="pro_version">ПРО-версія</string>
+    <string name="pro_version_title">ПРО-версія! Без реклами!</string>
+    <string name="rank">Ваш рейтинг</string>
+    <string name="remove_ads">Видалити рекламу</string>
+    <string name="remove_ads_dialog_title">Втомилися від реклами? Відключіть її !</string>
+    <string name="remove_for">Видалити за 1$</string>
+    <string name="remove_for2">Видалити за</string>
+    <string name="replay">Переграти</string>
+    <string name="replay_from_this_level">Переграти цей рівень</string>
+    <string name="restart">Рестарт</string>
+    <string name="restart_game">Рестарт гри</string>
+    <string name="resume">Продовжити</string>
+    <string name="score">Результат</string>
+    <string name="searching_for_opponents">Пошук суперника...</string>
+    <string name="secret_game_button">Запросити</string>
+    <string name="secret_game_description">"● Запросіть друга
+
+● Коли він встановить і запустить гру- ви обидва отримаєте ексклюзивну супер Секретну гру!"</string>
+    <string name="secret_game_opened_txt">Ви відкрили Секретну гру</string>
+    <string name="secret_game_title">Бажаєте Секретну гру?</string>
+    <string name="settings">Налаштування акаунта</string>
+    <string name="skip">Пропустити</string>
+    <string name="smart">Смарт</string>
+    <string name="spent">Витрати</string>
+    <string name="sprint">Спринт</string>
+    <string name="stars_to_next_level">" до наступного рівня"</string>
+    <string name="start">Старт</string>
+    <string name="stats">СТАТИСТИКА</string>
+    <string name="tab_online">Онлайн</string>
+    <string name="take_photo">Зробити Фото</string>
+    <string name="tell_friends">Розказати друзям</string>
+    <string name="text_today">Сьогодні</string>
+    <string name="text_yesterday">Вчора</string>
+    <string name="textview_start_game_top">Як грати</string>
+    <string name="title_online_history">Історія Онлайн</string>
+    <string name="toast_game_not_accepted">Гра не була прийнята</string>
+    <string name="top_ranks_text">TOP гравців</string>
+    <string name="transfer_title">Конвертуємо дані в новий формат</string>
+    <string name="trophies_title">Кубки</string>
+    <string name="try_another_game">Спробуйте іншу гру:</string>
+    <string name="try_workout_dialog_cancel_button_text">Більше не показувати</string>
+    <string name="tutorial">Правила</string>
+    <string name="tutorial_game10_slide1">"На ігровому полі з'являються геометричні фігури"</string>
+    <string name="tutorial_game10_slide2">Знайдіть унікальну фігуру</string>
+    <string name="tutorial_game11_slide1">Порахуйте математичний вираз</string>
+    <string name="tutorial_game11_slide2">Порівняйте значення</string>
+    <string name="tutorial_game11_slide3">"Вкажіть вірно чи  не вірно."</string>
+    <string name="tutorial_game12_slide1">Порахуйте математичні вирази</string>
+    <string name="tutorial_game12_slide2">Порівняйте результати</string>
+    <string name="tutorial_game12_slide3">Виберіть більше значення</string>
+    <string name="tutorial_game13_slide1">"На ігровому полі з'являються геометричні фігури"</string>
+    <string name="tutorial_game13_slide2">Натисніть на елемент, щоб змінити його на інший</string>
+    <string name="tutorial_game13_slide3">Зробіть всі елементи однаковими</string>
+    <string name="tutorial_game14_slide1">"З'являються цифри"</string>
+    <string name="tutorial_game14_slide2">Знайди найменше значення</string>
+    <string name="tutorial_game14_slide3">Йди від найменшого до найбільшого</string>
+    <string name="tutorial_game15_slide1">"На ігровому полі з'являються літачки"</string>
+    <string name="tutorial_game15_slide2">Якщо колір літачків жовтий, то проведи пальцем в напрямку, на який вони вказують</string>
+    <string name="tutorial_game15_slide3">Якщо колір літачків зелений, то проведи пальцем в напрямку їхнього руху</string>
+    <string name="tutorial_game16_slide1">"На полі з'являється фігура. Запам'ятай її"</string>
+    <string name="tutorial_game16_slide2">"З'являється нова фігура"</string>
+    <string name="tutorial_game16_slide3">Вибери, чи вона така сама, чи ні</string>
+    <string name="tutorial_game17_slide1">Перед Вами ігрове поле</string>
+    <string name="tutorial_game17_slide2">Ви можете рухати стовбчики і рядки</string>
+    <string name="tutorial_game17_slide3">"З'єднайте максимальну кількість квадратів у лінію"</string>
+    <string name="tutorial_game18_slide1">Уважно розгляньте верхню піраміду</string>
+    <string name="tutorial_game18_slide2">Виберіть правильну проекцію</string>
+    <string name="tutorial_game19_slide1">Уважно розгляньте фігуру зверху</string>
+    <string name="tutorial_game19_slide2">Знайдіть аналогічні фігури на ігровому полі</string>
+    <string name="tutorial_game1_slide1">"Запам'ятайте розташування кольорових квадратів 
+ на ігровому полі"</string>
+    <string name="tutorial_game1_slide2">Ігрове поле зникає</string>
+    <string name="tutorial_game1_slide3">"Вкажіть розташування 
+ кольорових квадратів"</string>
+    <string name="tutorial_game20_slide1">Порівняйте назву кольора і колір фігури</string>
+    <string name="tutorial_game20_slide2">Вкажіть так або ні</string>
+    <string name="tutorial_game21_slide1">"З'являється ігрове поле, яке розділене на 2 частини"</string>
+    <string name="tutorial_game21_slide2">Розташуйте квадрати в правій частині поля симетрично до лівої частини</string>
+    <string name="tutorial_game22_slide1">"З'являється ігрове поле"</string>
+    <string name="tutorial_game22_slide2">Перетягни і розташуй дзеркала так, щоб Лазер дійшов від джерела до приймача</string>
+    <string name="tutorial_game23_slide1">"З'являється таблиця з цифрами"</string>
+    <string name="tutorial_game23_slide2">Знайди найменше значення</string>
+    <string name="tutorial_game23_slide3">Йди від найменшого до найбільшого значень</string>
+    <string name="tutorial_game2_slide1">"Запам'ятайте розташування кольорових квадратів 
+ на ігровому полі"</string>
+    <string name="tutorial_game2_slide2">"Ігрове поле 
+ зникає і обертається"</string>
+    <string name="tutorial_game2_slide3">"Вкажіть розташування 
+ кольорових квадратів"</string>
+    <string name="tutorial_game3_slide1">"Запам'ятайте розташування кольорових шестигранників 
+ на ігровому полі"</string>
+    <string name="tutorial_game3_slide2">Ігрове поле зникає</string>
+    <string name="tutorial_game3_slide3">"Вкажіть розташування 
+ кольорових шестигранників"</string>
+    <string name="tutorial_game4_slide1">"Запам'ятайте розташування кольорових квадратів 
+на ігровому полі"</string>
+    <string name="tutorial_game4_slide2">"На ігровому полі з'являється 
+новий кольоровий квадрат"</string>
+    <string name="tutorial_game4_slide3">"Вкажіть на новий 
+кольоровий квадрат"</string>
+    <string name="tutorial_game5_slide1">"Порахуйте іконки 
+на ігровому полі"</string>
+    <string name="tutorial_game5_slide2">"Оберіть правильну 
+відповідь"</string>
+    <string name="tutorial_game6_slide1">"Запам'ятайте черговість появи 
+кольорових кіл"</string>
+    <string name="tutorial_game6_slide2">Ігрове поле зникає</string>
+    <string name="tutorial_game6_slide3">"Вкажіть черговість появи 
+кольорових кіл"</string>
+    <string name="tutorial_game7_slide1">"Запам'ятайте всі іконки 
+на ігровому полі"</string>
+    <string name="tutorial_game7_slide2">"На ігрове поле 
+додається нова іконка"</string>
+    <string name="tutorial_game7_slide3">"Вкажіть на нову іконку. 
+Час 60 сек"</string>
+    <string name="tutorial_game8_slide1">"Запам'ятайте розташування кольорових квадратів 
+на ігровому полі"</string>
+    <string name="tutorial_game8_slide2">"Кольорові квадрати переміщаються 
+ по ігровому полю"</string>
+    <string name="tutorial_game8_slide3">Квадрати зупиняються</string>
+    <string name="tutorial_game8_slide4">"Вкажіть розташування 
+ кольорових квадратів"</string>
+    <string name="tutorial_game9_slide1">"Запам'ятайте всі іконки на ігровому полі."</string>
+    <string name="tutorial_game9_slide2">Над ігровим полем показується іконка.</string>
+    <string name="tutorial_game9_slide3">Вкажіть розташування іконки на ігровому полі.</string>
+    <string name="unlimited_upgrade_for">Придбати за 1.0$</string>
+    <string name="unlimited_upgrade_for2">Придбати за</string>
+    <string name="unlock_games">Розблокувати всі ігри</string>
+    <string name="unlock_text">Розблокувати</string>
+    <string name="upgrade_pro">ПРО-ВЕРСІЯ</string>
+    <string name="video_hint">Ви можете подивитися рекламу, щоб почати цей рівень заново</string>
+    <string name="video_limit_message">Дякуємо. Ви вичерпали ліміт переглядів реклами на день.</string>
+    <string name="view_all">ПЕРЕГЛЯНУТИ ВСІ КУБКИ</string>
+    <string name="view_video_ads">Переглянути рекламу</string>
+    <string name="wallpapers">Найкращі Шпалери</string>
+    <string name="want_online_without_coins">"Хочете Онлайн
+ без монеток?"</string>
+    <string name="want_save_your_coins">"Ви хочете зберегти 
+ свої монетки?"</string>
+    <string name="watch_ad">Подивитися рекламу</string>
+    <string name="won_bronze">Ви виграли бронзовий кубок!</string>
+    <string name="won_glass">Ви виграли кришталевий кубок!</string>
+    <string name="won_gold">Ви виграли золотий кубок!</string>
+    <string name="won_silver">Ви виграли срібний кубок!</string>
+    <string name="workout">Тренування</string>
+    <string name="workout_calendar_title">Календар тренувань</string>
+    <string name="workout_games_title">Ігри на сьогодні:</string>
+    <string name="workout_sp_title">Твої SP:</string>
+    <string name="workout_sp_to_next_level">%s до наступного рівня</string>
+    <string name="your_score">Ви набрали</string>
+    <string name="your_trophies">Кубки</string>
+    <string name="your_trophy">Твій Кубок</string>
+</resources>

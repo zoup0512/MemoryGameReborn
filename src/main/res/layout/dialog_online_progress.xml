@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@android:color/transparent" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" android:background="@drawable/button_pro_normal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="16.0dip" android:layout_marginTop="100.0dip" android:layout_marginRight="16.0dip">
+        <TextView android:textSize="20.0sp" android:textStyle="bold" android:textColor="@color/grid_correct" android:layout_gravity="center" android:id="@id/dialog_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dip" android:text="@string/game_finished" style="@style/TextStyleFail" />
+        <TextView android:textSize="20.0sp" android:textStyle="bold" android:textColor="@color/grid_correct" android:layout_gravity="center_horizontal" android:id="@id/your_score" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dip" android:text="@string/your_score" style="@style/TextStyleFail" />
+        <TextView android:textSize="16.0sp" android:textColor="@android:color/black" android:layout_gravity="bottom|center" android:id="@id/gameNumber" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="16.0dip" android:layout_marginTop="24.0dip" android:layout_marginRight="16.0dip" android:text="@string/new_current_level_placeholder" />
+        <com.cube.memorygames.ui.TimerView android:layout_gravity="center_horizontal" android:id="@id/timerView" android:layout_width="100.0dip" android:layout_height="100.0dip" android:layout_marginLeft="16.0dip" android:layout_marginTop="40.0dip" android:layout_marginRight="16.0dip" android:layout_marginBottom="40.0dip" />
+    </LinearLayout>
+</LinearLayout>
