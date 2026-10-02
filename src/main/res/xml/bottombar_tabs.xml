@@ -4,5 +4,6 @@
     <tab android:id="@id/bottomBarCup" android:icon="@drawable/ic_cup" android:title="@string/sprint" />
     <tab android:id="@id/bottomBarWorkout" android:icon="@drawable/ic_icon_daily_workout" android:title="@string/workout" />
     <tab android:id="@id/bottomBarChallenge" android:icon="@drawable/ic_challenge" android:title="@string/challenge" />
+    <tab android:id="@id/bottomBarOnline" android:icon="@drawable/ic_online" android:title="@string/tab_online" />
     <tab android:id="@id/bottomBarMenu" android:icon="@drawable/ic_menu" android:title="@string/menu" />
 </tabs>

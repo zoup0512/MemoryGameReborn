@@ -59,6 +59,11 @@ public class LocalDataManager {
     public static final String TYPE_START_ONLINE = "StartOnline";
     public static final String TYPE_USERNAME = "UserName";
     public static final String TYPE_WIN_ONLINE = "WinOnline";
+    // Online PK settlement ledger entries (mirrored from the server, PRD 3.9).
+    public static final String TYPE_LOSE_ONLINE = "LoseOnline";
+    public static final int ONLINE_ENTRY_FEE = 30;
+    public static final int ONLINE_WIN_COINS = 50;
+    public static final int ONLINE_DRAW_COINS = 15;
     public static final int WORKOUT_GAME_COUNT = 4;
     private List<ChallengeJsonGame> challengeJsonGames;
     private Integer currentLevelNumber;

@@ -183,6 +183,14 @@ Nickname"</string>
     <string name="ok">Yes</string>
     <string name="online_draw">Draw!</string>
     <string name="online_lose">You lost</string>
+    <string name="online_elo">ELO</string>
+    <string name="online_vs">VS</string>
+    <string name="online_round_word">Round</string>
+    <string name="online_again">Play again</string>
+    <string name="online_exit">Exit</string>
+    <string name="online_not_connected">Connect with Play Online to get your profile</string>
+    <string name="online_opponent_reconnecting">Opponent is reconnecting…</string>
+    <string name="online_error_connection">Connection error</string>
     <string name="online_title_draws">Draws</string>
     <string name="online_title_loses">Losses</string>
     <string name="online_title_ratio">Wins, %</string>

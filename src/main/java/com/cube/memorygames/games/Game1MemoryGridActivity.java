@@ -53,6 +53,8 @@ import com.cube.memorygames.api.local.model.LocalGameSession;
 import com.cube.memorygames.api.local.model.LocalGameStats;
 import com.cube.memorygames.api.local.model.LocalUser;
 import com.cube.memorygames.api.local.workout.LevelInfo;
+import com.cube.memorygames.api.online.OnlineHud;
+import com.cube.memorygames.api.online.OnlineSession;
 import com.cube.memorygames.logic.GameFlowState;
 import com.cube.memorygames.logic.GameFlowStateTimer;
 import com.cube.memorygames.logic.GameProgression1;
@@ -477,10 +479,18 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         this.challengeJsonGame = (ChallengeJsonGame) getIntent().getParcelableExtra(MainMenuActivity.EXTRA_CHALLENGE_GAME_INFO);
         this.isChallenge = getIntent().getBooleanExtra(StartGameActivity.EXTRA_CHALLENGE, false);
         this.isWorkout = getIntent().getBooleanExtra(StartGameActivity.EXTRA_WORKOUT, false);
+        // Online PK mode (see docs/online-pk-prd.md): the original online
+        // branches kept in this class are re-enabled by this extra; without
+        // it the single-player behaviour is bit-for-bit unchanged.
+        this.isOnlineGame = getIntent().getBooleanExtra(OnlineSession.EXTRA_ONLINE_GAME, false);
         this.gameSeed = System.currentTimeMillis();
+        if (this.isOnlineGame) {
+            this.gameSeed = getIntent().getLongExtra(OnlineSession.EXTRA_ONLINE_SEED, this.gameSeed);
+        }
         initRandom();
         if (this.isOnlineGame) {
             this.panelLives.setVisibility(4);
+            OnlineHud.attach(this);
         }
         if (!(this.isWorkout || this.isChallenge)) {
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -1130,6 +1140,9 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
             levelScore += level * 2;
         }
         this.onlineScore += levelScore;
+        if (this.isOnlineGame) {
+            OnlineSession.get().reportLevelWin(level, this.onlineScore);
+        }
     }
 
     protected void showWin() {
@@ -1391,6 +1404,15 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void openMainMenu() {
+        if (this.isOnlineGame) {
+            // Leaving an online round mid-play forfeits the match; the exit
+            // paths of every game funnel through here (backPressClickListener).
+            killOnlineTimer();
+            OnlineSession.get().resign();
+            SoundUtils.stopBackgroundSound();
+            finish();
+            return;
+        }
         SoundUtils.stopBackgroundSound();
         Intent intent = new Intent(this, MainMenuActivity.class);
         intent.setFlags(335544320);
@@ -1448,8 +1470,13 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void showOnlineReplayDialog() {
-        // online mode no longer exists; leave the game instead
-        openMainMenu();
+        // Online PK: the round timer ran out. Report the final score and
+        // return to OnlineMatchActivity, which shows the intermission board
+        // until the server broadcast round_end / match_end.
+        killOnlineTimer();
+        OnlineSession.get().onRoundFinished(this.onlineScore);
+        SoundUtils.stopBackgroundSound();
+        finish();
     }
 
     protected void showTimeout(boolean isTimeOut) {

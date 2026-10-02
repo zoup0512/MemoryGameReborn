@@ -35,6 +35,8 @@ import com.cube.memorygames.SharingDialog.StatisticListener;
 import com.cube.memorygames.api.local.LocalDataManager;
 import com.cube.memorygames.api.local.challenge.ChallengeJsonGame;
 import com.cube.memorygames.api.local.model.LocalUser;
+import com.cube.memorygames.api.online.OnlineLobbyAdapter;
+import com.cube.memorygames.api.online.OnlineSession;
 import com.cube.memorygames.model.GameInfo;
 import com.cube.memorygames.ui.AppRater;
 import com.cube.memorygames.ui.GridSpaceItemDecorator;
@@ -72,6 +74,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     public static final int RESULT_LOGIN = 1001;
     private static final int TAB_CHALLENGE = 2;
     private static final int TAB_MENU = 3;
+    private static final int TAB_ONLINE = 4;
     private static final int TAB_SPRINT = 0;
     private static final int TAB_WORKOUT = 1;
     private MemoryApplicationModel application;
@@ -88,6 +91,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     private LocalDataManager localDataManager;
     private BottomBar mBottomBar;
     private MenuAdapter menuAdapter;
+    private OnlineLobbyAdapter onlineAdapter;
     @BindView(R.id.panel_header)
     View panelHeader;
     @BindView(R.id.text_top_bar_rating)
@@ -186,6 +190,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         this.application = MemoryApplicationModel.getInstance();
         this.localDataManager = this.application.getLocalDataManager();
+        OnlineSession.get().init(getApplicationContext());
         setContentView((int) R.layout.activity_main_menu);
         ButterKnife.bind((Activity) this);
         if (getIntent().getBooleanExtra(EXTRA_CHECK_APP_RATE, false)) {
@@ -271,6 +276,18 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             MainMenuActivity.this.panelHeader.setVisibility(0);
                             MainMenuActivity.this.divider.setVisibility(0);
                             MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE, MemoryApplicationModel.ANALYTICS_EVENT_CHALLENGE_TAB_CLICKED);
+                        } else if (menuItemId == R.id.bottomBarOnline) {
+                            newTab = TAB_ONLINE;
+                            MainMenuActivity.this.configureList(true);
+                            if (MainMenuActivity.this.onlineAdapter == null) {
+                                MainMenuActivity.this.onlineAdapter = new OnlineLobbyAdapter(MainMenuActivity.this);
+                            }
+                            MainMenuActivity.this.recyclerView.setAdapter(MainMenuActivity.this.onlineAdapter);
+                            MainMenuActivity.this.recyclerView.setBackgroundColor(ContextCompat.getColor(MainMenuActivity.this, R.color.grid_stroke));
+                            MainMenuActivity.this.gridSpaceItemDecorator.setSpace(MainMenuActivity.this.getResources().getDimensionPixelSize(R.dimen.cell_stroke_width));
+                            MainMenuActivity.this.recyclerView.invalidateItemDecorations();
+                            MainMenuActivity.this.panelHeader.setVisibility(8);
+                            MainMenuActivity.this.divider.setVisibility(8);
                         } else if (menuItemId == R.id.bottomBarMenu) {
                             newTab = 3;
                             MainMenuActivity.this.configureList(true);
@@ -304,7 +321,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             }
         });
         int selectedTab = PreferenceManager.getDefaultSharedPreferences(this).getInt(PREF_LAST_TAB_POSITION, 0);
-        if (selectedTab > TAB_MENU) {
+        if (selectedTab > TAB_ONLINE) {
             selectedTab = TAB_SPRINT;
         }
         showBadge();
@@ -377,6 +394,10 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                 if (this.menuAdapter != null) {
                     this.menuAdapter.fillMenuItems();
                     this.menuAdapter.notifyDataSetChanged();
+                }
+            } else if (this.mBottomBar.getCurrentTabPosition() == TAB_ONLINE) {
+                if (this.onlineAdapter != null) {
+                    this.onlineAdapter.notifyDataSetChanged();
                 }
             } else if (this.mBottomBar.getCurrentTabPosition() == 1 && this.workoutAdapter != null) {
                 this.workoutAdapter.notifyDataSetChanged();

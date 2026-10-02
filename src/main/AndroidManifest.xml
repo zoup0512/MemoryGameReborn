@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Offline restoration: no INTERNET, billing, push or location permissions.
-         The app runs entirely on local storage. -->
+    <!-- Online PK mode (docs/online-pk-prd.md): WebSocket connection to the PK
+         server only. No billing, push or location permissions. Single-player
+         modes still work fully offline; the Online tab degrades gracefully. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name="com.cube.memorygames.MemoryApplicationModel"
         android:allowBackup="true"
@@ -40,6 +44,11 @@
 
         <activity
             android:name="com.cube.memorygames.StartGameActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.cube.memorygames.api.online.OnlineMatchActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:screenOrientation="portrait" />
 
         <activity

@@ -1,0 +1,152 @@
+package com.cube.memorygames.api.online;
+
+import android.os.Handler;
+import android.os.Looper;
+import android.support.annotation.Nullable;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+/**
+ * Thin wrapper around Java-WebSocket with a main-thread listener callback
+ * and a periodic app-level ping. Reconnection policy lives in
+ * {@link OnlineSession}; this class only owns a single connection attempt.
+ */
+public class OnlineClient {
+
+    public interface Listener {
+        void onConnected();
+
+        void onDisconnected(int code, String reason);
+
+        void onMessage(String json);
+    }
+
+    private static final long PING_INTERVAL_MS = 10000L;
+    private static final long CONNECT_TIMEOUT_MS = 10000L;
+
+    private final Listener listener;
+    private final Handler main = new Handler(Looper.getMainLooper());
+    private final AtomicBoolean closedByUser = new AtomicBoolean(false);
+    private volatile WebSocketClient ws;
+    private volatile boolean connected;
+    private final Runnable pingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            WebSocketClient client = ws;
+            if (client != null && connected && !closedByUser.get()) {
+                client.send("{\"v\":1,\"t\":\"ping\",\"d\":{\"ts\":" + System.currentTimeMillis() + "}}");
+                main.postDelayed(this, PING_INTERVAL_MS);
+            }
+        }
+    };
+
+    public OnlineClient(Listener listener) {
+        this.listener = listener;
+    }
+
+    public boolean isConnected() {
+        return connected && ws != null && !closedByUser.get();
+    }
+
+    public void connect(final String endpoint) {
+        closedByUser.set(false);
+        URI uri;
+        try {
+            uri = new URI(endpoint);
+        } catch (URISyntaxException e) {
+            main.post(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onDisconnected(-1, "bad endpoint");
+                }
+            });
+            return;
+        }
+        WebSocketClient client = new WebSocketClient(uri) {
+            @Override
+            public void onOpen(ServerHandshake handshake) {
+                connected = true;
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onConnected();
+                    }
+                });
+                main.postDelayed(pingRunnable, PING_INTERVAL_MS);
+            }
+
+            @Override
+            public void onMessage(String message) {
+                final String json = message;
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onMessage(json);
+                    }
+                });
+            }
+
+            @Override
+            public void onClose(final int code, final String reason, boolean remote) {
+                connected = false;
+                main.removeCallbacks(pingRunnable);
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onDisconnected(code, reason);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(final Exception ex) {
+                // onClose always follows onError on a failed connection.
+            }
+        };
+        if ("wss".equals(uri.getScheme())) {
+            try {
+                SSLSocketFactory factory = SSLContext.getDefault().getSocketFactory();
+                client.setSocketFactory(factory);
+            } catch (Exception ignored) {
+                // minSdk 21: TLS 1.2 is enabled by default; fall back to defaults.
+            }
+        }
+        this.ws = client;
+        client.connect();
+    }
+
+    public boolean send(String json) {
+        WebSocketClient client = ws;
+        if (client != null && connected && !closedByUser.get()) {
+            try {
+                client.send(json);
+                return true;
+            } catch (RuntimeException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public void close() {
+        closedByUser.set(true);
+        connected = false;
+        main.removeCallbacks(pingRunnable);
+        WebSocketClient client = ws;
+        if (client != null) {
+            try {
+                client.close();
+            } catch (RuntimeException ignored) {
+            }
+        }
+        ws = null;
+    }
+}
