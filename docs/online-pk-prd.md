@@ -365,6 +365,25 @@ coin_ledger(id, user_id, match_id, type, amount, created_at)              -- 对
 | **M2 社交与打磨** | 4 周 | F-11~F-13：战绩页、房间码、赛季；反作弊 v2（分布检测）；Bot 拟真调优 | 公开 beta |
 | **M3 扩展** | 4 周+ | F-14~F-16：排行榜、快捷语、异步战书；PK 池扩至二批游戏 | — |
 
+### 6.1 实现进度（2026-10-02，dev/online-PK 分支）
+
+M0 + M1 的代码实现已完成并通过构建/集成测试，与原计划的差异来自代码考古后的方案修正：
+
+- **判题方案修正（替代 M0-⑤）**：调研发现原版在线模式的完整分支仍保留在
+  `Game1MemoryGridActivity`（`isOnlineGame`、`gameSeed`、`updateOnlineScore()`、
+  每游戏自带在线计时器），且 6 个首发游戏全部继承该基类。因此放弃"出题逻辑剥离
+  QuestionGenerator"路线，改为**恢复原版在线分支 + 过关事件流上报**：客户端在
+  `updateOnlineScore()` 钩子上报过关，服务端用同一张分值表重算权威分，辅以关卡序列
+  校验与按游戏标定的作答间隔下限（首关免检）。R1 风险随之消除。
+- M0-④ 已由 D-1（minSdk 21）覆盖；M0-①②③ 在服务端集成测试中验证（双端全量对局）。
+- **M1 已交付**：客户端 `api.online` 包 + Online tab + 基类接通（`assembleDebug` 通过）；
+  服务端 `server/`（Spring Boot 3，`gradlew test` 通过，含双端全量对局/Bot 兜底/余额
+  拒绝三个集成测试）；docker-compose（app + Postgres，海外部署用）。
+- **M1 简化项**（见 server/README）：Redis 未引入（内存态单实例）；战绩历史未持久化；
+  断线重连为"重挂监听 + 当前轮补发"。
+- **待真机验证**：Online tab UI、6 游戏在线实况、弱网重连——需部署服务端到海外机器后
+  用 debug 构建联调（大厅长按标题改端点）。
+
 ---
 
 ## 7. 风险与待定项

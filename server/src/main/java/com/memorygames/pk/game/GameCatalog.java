@@ -57,12 +57,14 @@ public class GameCatalog {
         // gameId -> (duration, base, flat?, human floor, bot interval)
         // Durations mirror the client: Game1 80s base online timer, Game5/11
         // 60s, Game16/20 their own 30s timers, Game23 its 45s online variant.
-        add(new GameSpec("0", 80000, 10, false, 2400, 4000));  // Memory Grid
-        add(new GameSpec("4", 60000, 10, false, 3000, 5000));  // Count'em All
-        add(new GameSpec("10", 60000, 10, false, 1800, 3000)); // Correctly?
-        add(new GameSpec("15", 30000, 8, true, 1200, 2000));   // Like Previous?
-        add(new GameSpec("19", 30000, 8, true, 900, 1500));    // Colors
-        add(new GameSpec("22", 45000, 0, false, 600, 1000));   // Schultz Tables
+        // minLevelIntervalMs = anti-cheat floor below the fastest plausible
+        // human pace per game (e.g. Stroop answers ~0.7s are legitimate).
+        add(new GameSpec("0", 80000, 10, false, 1800, 4000));  // Memory Grid
+        add(new GameSpec("4", 60000, 10, false, 2500, 5000));  // Count'em All
+        add(new GameSpec("10", 60000, 10, false, 1000, 3000)); // Correctly?
+        add(new GameSpec("15", 30000, 8, true, 700, 2000));    // Like Previous?
+        add(new GameSpec("19", 30000, 8, true, 600, 1500));    // Colors
+        add(new GameSpec("22", 45000, 0, false, 400, 1000));   // Schultz Tables
     }
 
     private void add(GameSpec spec) {
@@ -76,6 +78,18 @@ public class GameCatalog {
     public long durationOf(GameSpec spec) {
         long override = this.properties.getRoundDurationOverrideMs();
         return override > 0 ? override : spec.durationMs;
+    }
+
+    /** Anti-cheat floor between level wins; overridable for accelerated tests. */
+    public long minLevelIntervalOf(GameSpec spec) {
+        long override = this.properties.getMinLevelIntervalOverrideMs();
+        return override > 0 ? override : spec.minLevelIntervalMs;
+    }
+
+    /** Bot pacing per level; overridable for accelerated tests. */
+    public long botLevelIntervalOf(GameSpec spec) {
+        long override = this.properties.getBotLevelIntervalOverrideMs();
+        return override > 0 ? override : spec.botLevelIntervalMs;
     }
 
     /**

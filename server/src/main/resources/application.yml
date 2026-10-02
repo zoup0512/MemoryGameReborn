@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: memorygames-pk
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:h2:mem:pk;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+
+server:
+  port: 8080
+
+pk:
+  round-duration-override-ms: 0
+  economy:
+    entry-fee: 30
+    win-coins: 50
+    draw-coins: 15
+  rating:
+    initial-elo: 1000
+    k-factor: 32
+  match:
+    rounds-per-match: 5
+    elo-bucket-step: 100
+    bucket-widen-steps: [1, 2, 4]
+  timing:
+    match-found-delay-ms: 3000
+    round-intermission-ms: 6000
+    round-grace-ms: 10000
+    bot-wait-ms: 15000
+    reconnect-window-ms: 90000
+
+logging:
+  level:
+    com.memorygames.pk: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://${PK_DB_HOST:postgres}:${PK_DB_PORT:5432}/${PK_DB_NAME:memorygames}
+    username: ${PK_DB_USER:pk}
+    password: ${PK_DB_PASSWORD:pk}
+  jpa:
+    hibernate:
+      ddl-auto: update

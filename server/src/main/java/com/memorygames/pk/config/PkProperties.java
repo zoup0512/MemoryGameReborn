@@ -16,6 +16,10 @@ public class PkProperties {
 
     /** When > 0, replaces every game's round duration (tests only). */
     private long roundDurationOverrideMs = 0;
+    /** When > 0, replaces the anti-cheat min interval between level wins (tests only). */
+    private long minLevelIntervalOverrideMs = 0;
+    /** When > 0, replaces the bot per-level interval (tests only). */
+    private long botLevelIntervalOverrideMs = 0;
 
     public static class Economy {
         private int entryFee = 30;
@@ -85,4 +89,8 @@ public class PkProperties {
     public Match getMatch() { return match; }
     public long getRoundDurationOverrideMs() { return roundDurationOverrideMs; }
     public void setRoundDurationOverrideMs(long v) { this.roundDurationOverrideMs = v; }
+    public long getMinLevelIntervalOverrideMs() { return minLevelIntervalOverrideMs; }
+    public void setMinLevelIntervalOverrideMs(long v) { this.minLevelIntervalOverrideMs = v; }
+    public long getBotLevelIntervalOverrideMs() { return botLevelIntervalOverrideMs; }
+    public void setBotLevelIntervalOverrideMs(long v) { this.botLevelIntervalOverrideMs = v; }
 }

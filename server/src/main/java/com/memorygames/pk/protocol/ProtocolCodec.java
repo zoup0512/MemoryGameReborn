@@ -1,6 +1,7 @@
 package com.memorygames.pk.protocol;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,12 +38,15 @@ public final class ProtocolCodec {
     public static final String T_PONG = "pong";
     public static final String T_ERROR = "error";
 
+    /** Match settlement results. */
+    public static final String RESULT_WIN = "W";
+    public static final String RESULT_LOSE = "L";
+    public static final String RESULT_DRAW = "D";
+
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .setVisibility(JsonAutoDetect.Field.ANY, JsonAutoDetect.Visibility.ANY)
-            .setVisibility(JsonAutoDetect.Getter.NONE, JsonAutoDetect.Visibility.NONE)
-            .setVisibility(JsonAutoDetect.IsGetter.NONE, JsonAutoDetect.Visibility.NONE)
-            .setVisibility(JsonAutoDetect.Setter.NONE, JsonAutoDetect.Visibility.NONE);
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
     private ProtocolCodec() {
     }
@@ -158,6 +162,11 @@ public final class ProtocolCodec {
     }
 
     public static String encode(String type, Object data) {
+        if (data == null || data.getClass() == Object.class) {
+            // Empty payloads (match_join, resign, ...) carry no fields; a bare
+            // java.lang.Object has nothing for Jackson to reflect on.
+            return "{\"v\":" + VERSION + ",\"t\":\"" + type + "\",\"d\":{}}";
+        }
         Envelope envelope = new Envelope();
         envelope.v = VERSION;
         envelope.t = type;
