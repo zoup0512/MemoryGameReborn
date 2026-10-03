@@ -1,8 +1,8 @@
 package com.cube.memorygames.api.online;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.graphics.Typeface;
+import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,8 +24,8 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
     private OnlineHud(Activity activity) {
         view = new TextView(activity);
         view.setId(View.generateViewId());
-        view.setTextColor(Color.parseColor("#1e88e5"));
-        view.setTextSize(13.0f);
+        view.setTextColor(ContextCompat.getColor(activity, R.color.grid_correct));
+        view.setTextSize(14.0f);
         view.setTypeface(Typeface.createFromAsset(activity.getAssets(), "Roboto-Light.ttf"), Typeface.BOLD);
         view.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
         view.setPadding(0, 0, activity.getResources().getDimensionPixelOffset(R.dimen.toolbar_padding), 0);

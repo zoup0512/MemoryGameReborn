@@ -2,6 +2,7 @@ package com.cube.memorygames.api.online;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.ContextCompat;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.app.AlertDialog;
@@ -11,19 +12,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.cube.memorygames.MainMenuActivity;
-import com.cube.memorygames.api.local.LocalDataManager;
 import com.cube.memorygames.MemoryApplicationModel;
+import com.cube.memorygames.api.local.LocalDataManager;
 import com.memory.brain.training.games.R;
 
 /**
  * RecyclerView adapter rendering the Online PK lobby inside the main menu's
- * Online tab: player card (nickname / ELO / rank / record), play button and
- * the original tutorial strings. Views are built in code (see
- * OnlineMatchActivity for the rationale).
+ * Online tab. Visuals follow the surviving original online resources:
+ * background tint, white cell card (drawable_state_cell_empty), the
+ * three-column stats rows of fragment_online_stats.xml, the crown rating
+ * badge of dialog_online_result.xml and the original play button
+ * (button_play_online).
  */
 public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.Adapter {
 
@@ -85,15 +89,16 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         LinearLayout root = new LinearLayout(this.context);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setPadding(dp(16), dp(24), dp(16), dp(8));
+        root.setBackgroundColor(ContextCompat.getColor(this.context, R.color.background));
+        root.setPadding(dp(16), dp(20), dp(16), dp(8));
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView title = new TextView(this.context);
         title.setText(R.string.tab_online);
         title.setTypeface(this.fontLight, Typeface.BOLD);
-        title.setTextSize(26.0f);
-        title.setTextColor(Color.parseColor("#0d47a1"));
+        title.setTextSize(30.0f);
+        title.setTextColor(ContextCompat.getColor(this.context, R.color.grid_correct));
         title.setGravity(Gravity.CENTER);
         title.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -105,37 +110,116 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         root.addView(title, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView profileLine = new TextView(this.context);
-        profileLine.setId(R.id.online_profile_line);
-        profileLine.setGravity(Gravity.CENTER);
-        profileLine.setTypeface(OnlineLobbyAdapter.this.fontLight);
-        profileLine.setTextSize(16.0f);
-        profileLine.setTextColor(Color.parseColor("#37474f"));
-        profileLine.setPadding(0, dp(12), 0, 0);
-        root.addView(profileLine, new LinearLayout.LayoutParams(
+        // White cell card with the profile rows (original dialog_online_result
+        // / fragment_online_stats visual language).
+        LinearLayout card = new LinearLayout(this.context);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setBackgroundResource(R.drawable.drawable_state_cell_empty);
+        int pad = dp(12);
+        card.setPadding(pad, pad, pad, pad);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.topMargin = dp(14);
+        root.addView(card, cardParams);
+
+        // Crown rating row: (+badge) elo rank-name — original result dialog style.
+        LinearLayout ratingRow = new LinearLayout(this.context);
+        ratingRow.setGravity(Gravity.CENTER_HORIZONTAL);
+        ImageView crown = new ImageView(this.context);
+        crown.setBackgroundResource(R.drawable.drawable_circle_online_rating);
+        crown.setImageResource(R.drawable.ic_crown_new);
+        crown.setColorFilter(Color.WHITE);
+        int pad4 = dp(4);
+        crown.setPadding(pad4, pad4, pad4, pad4);
+        LinearLayout.LayoutParams crownParams = new LinearLayout.LayoutParams(dp(26), dp(26));
+        crownParams.rightMargin = dp(10);
+        ratingRow.addView(crown, crownParams);
+
+        TextView elo = new TextView(this.context);
+        elo.setId(R.id.online_profile_elo);
+        elo.setTypeface(this.fontLight);
+        elo.setTextSize(20.0f);
+        elo.setTextColor(Color.BLACK);
+        ratingRow.addView(elo);
+
+        TextView rank = new TextView(this.context);
+        rank.setId(R.id.online_profile_rank);
+        rank.setTypeface(this.fontLight);
+        rank.setTextSize(16.0f);
+        rank.setTextColor(ContextCompat.getColor(this.context, R.color.onlineStatsColor));
+        LinearLayout.LayoutParams rankParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rankParams.leftMargin = dp(8);
+        ratingRow.addView(rank, rankParams);
+        card.addView(ratingRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // Nickname line.
+        TextView nickname = new TextView(this.context);
+        nickname.setId(R.id.online_profile_line);
+        nickname.setTypeface(this.fontLight);
+        nickname.setTextSize(16.0f);
+        nickname.setTextColor(Color.BLACK);
+        nickname.setGravity(Gravity.CENTER);
+        nickname.setPadding(0, dp(6), 0, 0);
+        card.addView(nickname, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // Three-column stats (wins | losses | draws) like fragment_online_stats.
+        LinearLayout stats = new LinearLayout(this.context);
+        stats.setPadding(0, dp(8), 0, 0);
+        card.addView(stats, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        addStatColumn(stats, R.id.online_stat_wins, R.string.online_title_wins);
+        addStatColumn(stats, R.id.online_stat_losses, R.string.online_title_loses);
+        addStatColumn(stats, R.id.online_stat_draws, R.string.online_title_draws);
 
         Button play = new Button(this.context);
         play.setId(R.id.online_play_button);
         play.setText(R.string.menuOnlinePlay);
-        play.setTypeface(this.fontLight, Typeface.BOLD);
-        play.setTextSize(18.0f);
+        play.setTypeface(this.fontLight);
+        play.setTextSize(20.0f);
         play.setTextColor(Color.WHITE);
-        play.setBackgroundResource(R.drawable.online_button_bg);
+        play.setBackgroundResource(R.drawable.button_play_online);
         play.setAllCaps(false);
+        play.setPadding(dp(48), 0, dp(48), 0);
         LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(42));
         playParams.topMargin = dp(20);
         root.addView(play, playParams);
 
         return root;
     }
 
+    private void addStatColumn(LinearLayout parent, int valueId, int labelRes) {
+        TextView value = new TextView(this.context);
+        value.setId(valueId);
+        value.setTypeface(this.fontLight);
+        value.setTextSize(18.0f);
+        value.setTextColor(ContextCompat.getColor(this.context, R.color.onlineStatsColor));
+        value.setGravity(Gravity.CENTER);
+        TextView label = new TextView(this.context);
+        label.setText(labelRes);
+        label.setTypeface(this.fontLight);
+        label.setTextSize(12.0f);
+        label.setTextColor(Color.parseColor("#8a000000"));
+        label.setGravity(Gravity.CENTER);
+        LinearLayout column = new LinearLayout(this.context);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.addView(value, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        column.addView(label, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        parent.addView(column, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+    }
+
     private View buildTutorialView(ViewGroup parent) {
         TextView item = new TextView(this.context);
         item.setTypeface(this.fontLight);
         item.setTextSize(15.0f);
-        item.setTextColor(Color.parseColor("#546e7a"));
+        item.setTextColor(Color.parseColor("#37474f"));
         item.setPadding(dp(24), dp(6), dp(24), dp(6));
         item.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -143,17 +227,35 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
     }
 
     private void bindProfile(View view) {
-        TextView profileLine = (TextView) view.findViewById(R.id.online_profile_line);
+        // Silent connect on first visit so the profile card fills in.
+        if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) {
+            OnlineSession.get().init(this.context);
+            OnlineSession.get().connect();
+        }
+        if (this.profile == null) {
+            setProfile(OnlineSession.get().getLastProfile());
+        }
+        TextView elo = (TextView) view.findViewById(R.id.online_profile_elo);
+        TextView rank = (TextView) view.findViewById(R.id.online_profile_rank);
+        TextView nickname = (TextView) view.findViewById(R.id.online_profile_line);
+        TextView wins = (TextView) view.findViewById(R.id.online_stat_wins);
+        TextView losses = (TextView) view.findViewById(R.id.online_stat_losses);
+        TextView draws = (TextView) view.findViewById(R.id.online_stat_draws);
         Button play = (Button) view.findViewById(R.id.online_play_button);
         if (this.profile != null) {
-            profileLine.setText(String.format(java.util.Locale.US, "%s · %s %d\n%s %d   %s %d / %d / %d",
-                    this.profile.nickname, this.context.getString(R.string.online_elo), this.profile.elo,
-                    rankName(this.profile.rank),
-                    this.profile.wins + this.profile.losses + this.profile.draws,
-                    this.context.getString(R.string.online_title_wins), this.profile.wins,
-                    this.profile.losses, this.profile.draws));
+            elo.setText(String.valueOf(this.profile.elo));
+            rank.setText(rankName(this.profile.rank));
+            nickname.setText(this.profile.nickname);
+            wins.setText(String.valueOf(this.profile.wins));
+            losses.setText(String.valueOf(this.profile.losses));
+            draws.setText(String.valueOf(this.profile.draws));
         } else {
-            profileLine.setText(R.string.online_not_connected);
+            elo.setText("");
+            rank.setText("");
+            nickname.setText(R.string.online_not_connected);
+            wins.setText("0");
+            losses.setText("0");
+            draws.setText("0");
         }
         play.setOnClickListener(new View.OnClickListener() {
             @Override

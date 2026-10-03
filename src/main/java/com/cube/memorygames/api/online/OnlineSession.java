@@ -87,6 +87,7 @@ public class OnlineSession {
     private ScoreListener scoreListener;
 
     private volatile int state = STATE_DISCONNECTED;
+    private volatile AuthOk lastProfile;
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
     private OnlineMessages.RoundDesc[] rounds;
@@ -139,6 +140,11 @@ public class OnlineSession {
 
     public String getMatchId() {
         return matchId;
+    }
+
+    /** Last authenticated profile snapshot for lobby display (null if never). */
+    public AuthOk getLastProfile() {
+        return lastProfile;
     }
 
     public OnlineMessages.OpponentInfo getOpponent() {
@@ -322,6 +328,7 @@ public class OnlineSession {
         if (OnlineMessages.T_AUTH_OK.equals(type)) {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
+                this.lastProfile = ok;
                 OnlineIdentity.saveToken(appContext, tokenOf(json), ok.userId);
                 OnlineIdentity.setNickname(appContext, ok.nickname);
                 setState(STATE_IDLE);
