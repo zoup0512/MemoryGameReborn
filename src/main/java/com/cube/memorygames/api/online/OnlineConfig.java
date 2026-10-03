@@ -12,8 +12,11 @@ import android.content.Context;
  */
 public final class OnlineConfig {
 
-    /** Production WebSocket endpoint (overseas deployment). */
+    /** Production WebSocket endpoint (oversee deployment). */
     public static final String DEFAULT_ENDPOINT = "wss://pk.memorygame.example.com/ws";
+
+    /** LAN test deployment (PRD 6.1 real-device integration testing). */
+    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.140:8090/ws";
 
     /** Local development endpoint used when a debug override is set. */
     private static final String PREFS = "online_config";
@@ -25,7 +28,14 @@ public final class OnlineConfig {
     public static String getEndpoint(Context context) {
         String override = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getString(KEY_ENDPOINT, null);
-        return override != null && override.length() > 0 ? override : DEFAULT_ENDPOINT;
+        if (override != null && override.length() > 0) {
+            return override;
+        }
+        // Debuggable builds (sideloaded test APKs) default to the LAN server;
+        // release builds go to production.
+        boolean debuggable = (context.getApplicationInfo().flags
+                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        return debuggable ? LAN_TEST_ENDPOINT : DEFAULT_ENDPOINT;
     }
 
     public static void setEndpoint(Context context, String endpoint) {
