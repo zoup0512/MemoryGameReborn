@@ -73,8 +73,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     private static final String PREF_TOP_BUBBLE_SHOWED = "topBubbleShowedPrefs";
     public static final int RESULT_LOGIN = 1001;
     private static final int TAB_CHALLENGE = 2;
-    private static final int TAB_MENU = 3;
-    private static final int TAB_ONLINE = 4;
+    private static final int TAB_ONLINE = 3;
+    private static final int TAB_MENU = 4;
     private static final int TAB_SPRINT = 0;
     private static final int TAB_WORKOUT = 1;
     private MemoryApplicationModel application;
@@ -289,7 +289,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             MainMenuActivity.this.panelHeader.setVisibility(8);
                             MainMenuActivity.this.divider.setVisibility(8);
                         } else if (menuItemId == R.id.bottomBarMenu) {
-                            newTab = 3;
+                            newTab = TAB_MENU;
                             MainMenuActivity.this.configureList(true);
                             if (MainMenuActivity.this.menuAdapter == null) {
                                 MainMenuActivity.this.menuAdapter = new MenuAdapter(MainMenuActivity.this);

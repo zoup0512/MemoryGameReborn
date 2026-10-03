@@ -277,6 +277,9 @@ public class OnlineSession {
 
     /** Called from Game1MemoryGridActivity.updateOnlineScore() in online mode. */
     public void reportLevelWin(int level, int totalScore) {
+        android.util.Log.d("OnlinePK", "reportLevelWin round=" + currentRound
+                + " level=" + level + " score=" + totalScore
+                + " matchId=" + (matchId == null ? "null" : matchId));
         if (matchId == null || currentRound < 0) {
             return;
         }

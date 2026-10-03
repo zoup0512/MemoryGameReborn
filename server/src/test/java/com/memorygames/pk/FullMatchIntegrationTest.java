@@ -114,8 +114,8 @@ class FullMatchIntegrationTest {
                     assertNotNull(frame, "Bob must see Alice's score");
                     oppScore = frame;
                 }
-                assertEquals(roundScoreA, oppScore.as(ProtocolCodec.OpponentScore.class).score,
-                        "server-recomputed score matches the client score table");
+                assertEquals(totalA, oppScore.as(ProtocolCodec.OpponentScore.class).score,
+                        "cumulative server-recomputed score matches the client score table");
 
                 ProtocolCodec.RoundComplete doneA = new ProtocolCodec.RoundComplete();
                 doneA.round = round;
@@ -131,7 +131,7 @@ class FullMatchIntegrationTest {
                 assertNotNull(endA, "round " + round + " must end for Alice");
                 assertNotNull(endB, "round " + round + " must end for Bob");
                 ProtocolCodec.RoundEnd reA = endA.as(ProtocolCodec.RoundEnd.class);
-                assertEquals(roundScoreA, reA.myScore);
+                assertEquals(totalA, reA.myScore, "round_end carries cumulative totals");
                 assertEquals(0, reA.oppScore);
             }
 

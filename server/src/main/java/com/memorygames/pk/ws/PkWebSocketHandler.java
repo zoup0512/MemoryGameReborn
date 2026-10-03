@@ -142,6 +142,8 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 if (room != null) {
                     ProtocolCodec.LevelWin msg = ProtocolCodec.convert(envelope.d, ProtocolCodec.LevelWin.class);
                     if (msg != null) {
+                        log.info("level_win user={} match={} round={} level={} score={}",
+                                userId, room.matchId, msg.round, msg.level, msg.score);
                         room.onLevelWin(userId, msg);
                     }
                 }

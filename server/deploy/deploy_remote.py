@@ -60,7 +60,7 @@ def main():
             sftp.close()
 
         print("==> stopping previous instance")
-        run(client, "pkill -f 'memorygames-pk\\|app.jar' ; sleep 1", timeout=20)
+        run(client, "pkill -9 -f 'java.*app\\.jar' ; sleep 2", timeout=20)
 
         print(f"==> starting PK server on 0.0.0.0:{PORT} (H2 file: {REMOTE_DIR}/data/pk)")
         # Double-detach: the subshell exits immediately so the SSH channel

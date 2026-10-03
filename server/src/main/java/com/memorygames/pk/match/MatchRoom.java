@@ -233,7 +233,7 @@ public class MatchRoom {
             seat.roundScores[this.currentRound - 1] += spec.levelScore(msg.level);
             ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
             score.round = this.currentRound;
-            score.score = seat.roundScores[this.currentRound - 1];
+            score.score = totalScore(index);
             sendTo(1 - index, ProtocolCodec.T_OPPONENT_SCORE, score);
         }
     }
@@ -264,14 +264,17 @@ public class MatchRoom {
             for (int i = 0; i < 2; i++) {
                 ProtocolCodec.RoundEnd end = new ProtocolCodec.RoundEnd();
                 end.round = this.currentRound;
-                end.myScore = this.seats[i].roundScores[this.currentRound - 1];
-                end.oppScore = this.seats[1 - i].roundScores[this.currentRound - 1];
+                // Cumulative match totals keep every score display (round
+                // intermission, in-game HUD) on one consistent semantics.
+                end.myScore = totalScore(i);
+                end.oppScore = totalScore(1 - i);
                 sendTo(i, ProtocolCodec.T_ROUND_END, end);
             }
             if (this.currentRound < this.rounds.size()) {
                 scheduleRoundStart(this.currentRound + 1, this.properties.getTiming().getRoundIntermissionMs());
             } else {
-                settle(0, false);
+                // Natural completion: decide by total score (-1), never by seat.
+                settle(-1, false);
             }
         }
     }
@@ -341,7 +344,7 @@ public class MatchRoom {
                 sendTo(index, ProtocolCodec.T_ROUND_START, start);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
                 score.round = this.currentRound;
-                score.score = this.seats[1 - index].roundScores[this.currentRound - 1];
+                score.score = totalScore(1 - index);
                 sendTo(index, ProtocolCodec.T_OPPONENT_SCORE, score);
             }
         }
@@ -465,7 +468,7 @@ public class MatchRoom {
                 this.seats[1].roundScores[this.currentRound - 1] += spec.levelScore(level);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
                 score.round = this.currentRound;
-                score.score = this.seats[1].roundScores[this.currentRound - 1];
+                score.score = totalScore(1);
                 sendTo(0, ProtocolCodec.T_OPPONENT_SCORE, score);
             }
         }

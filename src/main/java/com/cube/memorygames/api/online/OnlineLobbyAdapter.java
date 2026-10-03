@@ -73,7 +73,9 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                     R.string.online_tutorial_1, R.string.online_tutorial_2, R.string.online_tutorial_3,
                     R.string.online_tutorial_4, R.string.online_tutorial_5
             };
-            ((TextView) holder.itemView).setText(strings[position - 1]);
+            // tutorial_1 carries <b> markup; render it like the original app did.
+            ((TextView) holder.itemView).setText(
+                    android.text.Html.fromHtml(this.context.getString(strings[position - 1])));
         }
     }
 
@@ -156,6 +158,16 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // One-time welcome grant on first PK entry (PRD 3.9): must
+                // happen before the entry-fee gate or broke newcomers can
+                // never reach the match screen that used to grant it.
+                if (OnlineIdentity.consumeWelcomeGift(OnlineLobbyAdapter.this.context)) {
+                    try {
+                        MemoryApplicationModel.getInstance().getLocalDataManager()
+                                .addCoinsTransaction(LocalDataManager.TYPE_FIRST_START, 60);
+                    } catch (RuntimeException ignored) {
+                    }
+                }
                 int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
                         .getLocalUser().money;
                 if (coins < LocalDataManager.ONLINE_ENTRY_FEE) {

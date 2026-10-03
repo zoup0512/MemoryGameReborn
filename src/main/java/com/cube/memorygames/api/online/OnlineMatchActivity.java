@@ -175,7 +175,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     private void showSearchUi() {
         this.statusView.setText(R.string.searching_for_opponents);
-        this.detailView.setText(R.string.online_tutorial_1);
+        this.detailView.setText(android.text.Html.fromHtml(getString(R.string.online_tutorial_1)));
         this.scoreView.setText("");
         this.actionButton.setVisibility(View.VISIBLE);
         this.actionButton.setText(R.string.cancel);
@@ -295,6 +295,12 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_ROUND) {
+            // Skip the waiting board when the match already settled while the
+            // round activity was in front — showSettlementUi ran earlier and
+            // must not be overwritten (real-device race, 2026-10-03).
+            if (OnlineSession.get().getMatchId() == null) {
+                return;
+            }
             showWaitingUi();
         }
     }
