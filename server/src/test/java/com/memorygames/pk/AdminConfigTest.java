@@ -108,6 +108,10 @@ class AdminConfigTest {
                 assertEquals(45000, match.rounds[0].durationMs,
                         "round plan carries the hot-edited duration");
 
+                a.send(ProtocolCodec.T_MATCH_START, new Object());
+                b.send(ProtocolCodec.T_MATCH_START, new Object());
+                assertNotNull(a.await(ProtocolCodec.T_ROUND_START, 10000));
+
                 // Entry fee 7 charged from both 50-coin accounts.
                 a.send(ProtocolCodec.T_RESIGN, new Object());
                 TestWsClient.Frame endA = a.await(ProtocolCodec.T_MATCH_END, 15000);

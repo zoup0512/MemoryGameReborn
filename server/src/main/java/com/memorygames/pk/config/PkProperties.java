@@ -58,6 +58,8 @@ public class PkProperties {
         private long roundGraceMs = 10000;
         /** Queue wait before a bot opponent is substituted. */
         private long botWaitMs = 15000;
+        /** Window after match_found for both START presses before refund-cancel. */
+        private long acceptTimeoutMs = 30000;
         /** Disconnect window before a player is forfeited. */
         private long reconnectWindowMs = 90000;
 
@@ -65,6 +67,8 @@ public class PkProperties {
         public void setMatchFoundDelayMs(long v) { this.matchFoundDelayMs = v; }
         public long getRoundIntermissionMs() { return roundIntermissionMs; }
         public void setRoundIntermissionMs(long v) { this.roundIntermissionMs = v; }
+        public long getAcceptTimeoutMs() { return acceptTimeoutMs; }
+        public void setAcceptTimeoutMs(long v) { this.acceptTimeoutMs = v; }
         public long getRoundGraceMs() { return roundGraceMs; }
         public void setRoundGraceMs(long v) { this.roundGraceMs = v; }
         public long getBotWaitMs() { return botWaitMs; }

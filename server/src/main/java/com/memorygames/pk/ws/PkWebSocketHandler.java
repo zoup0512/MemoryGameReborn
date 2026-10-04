@@ -255,6 +255,27 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 reply(session, ProtocolCodec.T_HISTORY_RESPONSE, response);
                 return;
             }
+            case ProtocolCodec.T_MATCH_START:
+                if (room != null) {
+                    room.onMatchStart(userId);
+                }
+                return;
+            case ProtocolCodec.T_TOP_REQUEST: {
+                java.util.List<UserAccount> top = this.users.topByElo();
+                ProtocolCodec.TopResponse response = new ProtocolCodec.TopResponse();
+                response.entries = new ProtocolCodec.TopEntry[top.size()];
+                for (int i = 0; i < top.size(); i++) {
+                    UserAccount ranked = top.get(i);
+                    ProtocolCodec.TopEntry entry = new ProtocolCodec.TopEntry();
+                    entry.rank = i + 1;
+                    entry.nickname = ranked.nickname;
+                    entry.elo = ranked.elo;
+                    entry.online = this.manager.roomFor(ranked.id) != null;
+                    response.entries[i] = entry;
+                }
+                reply(session, ProtocolCodec.T_TOP_RESPONSE, response);
+                return;
+            }
             case ProtocolCodec.T_RESIGN:
                 if (room != null) {
                     room.onResign(userId);

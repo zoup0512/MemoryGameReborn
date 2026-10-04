@@ -16,7 +16,7 @@ public final class OnlineConfig {
     public static final String DEFAULT_ENDPOINT = "wss://pk.memorygame.example.com/ws";
 
     /** LAN test deployment (PRD 6.1 real-device integration testing). */
-    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.140:8090/ws";
+    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.176:8090/ws";
 
     /** Local development endpoint used when a debug override is set. */
     private static final String PREFS = "online_config";

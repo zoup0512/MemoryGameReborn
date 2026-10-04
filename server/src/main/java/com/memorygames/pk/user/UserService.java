@@ -131,6 +131,11 @@ public class UserService {
         this.repository.save(account);
     }
 
+    /** Top-20 leaderboard by ELO (TOP Online board). */
+    public java.util.List<UserAccount> topByElo() {
+        return this.repository.findTop20ByOrderByEloDesc();
+    }
+
     public int rankIndex(UserAccount account) {
         return this.rating.rankIndex(account.elo);
     }

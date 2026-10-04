@@ -123,6 +123,8 @@ class AdminP0Test {
             a.send(ProtocolCodec.T_MATCH_JOIN, new Object());
             b.send(ProtocolCodec.T_MATCH_JOIN, new Object());
             assertNotNull(a.await(ProtocolCodec.T_MATCH_FOUND, 10000));
+            a.send(ProtocolCodec.T_MATCH_START, new Object());
+            b.send(ProtocolCodec.T_MATCH_START, new Object());
             ProtocolCodec.MatchFound match =
                     a.await(ProtocolCodec.T_MATCH_FOUND, 1000) == null ? null : null;
             // find the live match id via admin list
@@ -255,6 +257,8 @@ class AdminP0Test {
             // after lift, queueing works again (bot fallback eventually pairs)
             a.send(ProtocolCodec.T_MATCH_JOIN, new Object());
             assertNotNull(a.await(ProtocolCodec.T_MATCH_FOUND, 20000));
+            a.send(ProtocolCodec.T_MATCH_START, new Object());
+            assertNotNull(a.await(ProtocolCodec.T_ROUND_START, 10000));
             a.send(ProtocolCodec.T_RESIGN, new Object());
             assertNotNull(a.await(ProtocolCodec.T_MATCH_END, 10000));
         } finally {

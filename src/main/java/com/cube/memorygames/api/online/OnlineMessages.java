@@ -25,6 +25,9 @@ public final class OnlineMessages {
     public static final String T_LEVEL_WIN = "level_win";
     public static final String T_ROUND_COMPLETE = "round_complete";
     public static final String T_RESIGN = "resign";
+    public static final String T_MATCH_START = "match_start";
+    public static final String T_TOP_REQUEST = "top_request";
+    public static final String T_TOP_RESPONSE = "top_response";
     public static final String T_ROOM_CREATE = "room_create";
     public static final String T_ROOM_JOIN = "room_join";
     public static final String T_ROOM_CANCEL = "room_cancel";
@@ -60,6 +63,10 @@ public final class OnlineMessages {
         public int elo;
         public int rank;
         public boolean isBot;
+        /** Season record for the pre-match statistics board. */
+        public int wins;
+        public int losses;
+        public int draws;
     }
 
     public static class Register {
@@ -171,6 +178,24 @@ public final class OnlineMessages {
         public int elo;
         public int coinDelta;
         public int balance;
+        /** Per-round scores feeding the results list board. */
+        public RoundScore[] rounds;
+    }
+
+    public static class RoundScore {
+        public int me;
+        public int opp;
+    }
+
+    public static class TopEntry {
+        public int rank;
+        public String nickname;
+        public int elo;
+        public boolean online;
+    }
+
+    public static class TopResponse {
+        public TopEntry[] entries;
     }
 
     public static class ErrorMsg {

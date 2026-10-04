@@ -144,9 +144,38 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         rank.setTextSize(16.0f);
         rank.setTextColor(ContextCompat.getColor(this.context, R.color.onlineStatsColor));
         rank.setGravity(Gravity.CENTER);
-        rank.setPadding(0, dp(2), 0, dp(8));
+        rank.setPadding(0, dp(2), 0, dp(4));
         root.addView(rank, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // The origin menu's three 180dip actions (item_online_menu.xml):
+        // PLAY / HISTORY / TOP; the season extras ride below them.
+        TextView play = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlinePlay);
+        play.setId(R.id.online_play_button);
+        LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
+                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
+        playParams.topMargin = dp(8);
+        root.addView(play, playParams);
+
+        TextView history = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineHistory);
+        history.setId(R.id.online_history_link);
+        LinearLayout.LayoutParams historyParams = new LinearLayout.LayoutParams(
+                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
+        historyParams.topMargin = dp(12);
+        root.addView(history, historyParams);
+
+        TextView top = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineTop);
+        LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
+                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
+        topParams.topMargin = dp(12);
+        root.addView(top, topParams);
+        top.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                OnlineLobbyAdapter.this.context.startActivity(new Intent(
+                        OnlineLobbyAdapter.this.context, OnlineTopActivity.class));
+            }
+        });
 
         // White cell card with the season stats — the result dialog's cell
         // carrying fragment_online_stats' three-column wins/losses/draws row.
@@ -177,22 +206,6 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         season.setPadding(0, dp(6), 0, 0);
         card.addView(season, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        // The original menu's 180dip green actions (item_online_menu.xml):
-        // PLAY and HISTORY as sibling buttons, margin padding_small apart.
-        TextView play = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlinePlay);
-        play.setId(R.id.online_play_button);
-        LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        playParams.topMargin = dp(12);
-        root.addView(play, playParams);
-
-        TextView history = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineHistory);
-        history.setId(R.id.online_history_link);
-        LinearLayout.LayoutParams historyParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        historyParams.topMargin = dp(12);
-        root.addView(history, historyParams);
 
         // Friend rooms (PRD F-12) below the ranked actions — no original
         // counterpart, so they reuse the green skin at half the width.
@@ -321,6 +334,10 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
 
             @Override
             public void onHistory(OnlineMessages.HistoryEntry[] entries) {
+            }
+
+            @Override
+            public void onTop(OnlineMessages.TopEntry[] entries) {
             }
 
             @Override

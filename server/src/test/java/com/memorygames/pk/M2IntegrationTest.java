@@ -76,12 +76,16 @@ class M2IntegrationTest {
 
             TestWsClient.Frame hostFound = host.await(ProtocolCodec.T_MATCH_FOUND, 10000);
             TestWsClient.Frame guestFound = guest.await(ProtocolCodec.T_MATCH_FOUND, 10000);
+            host.send(ProtocolCodec.T_MATCH_START, new Object());
+            guest.send(ProtocolCodec.T_MATCH_START, new Object());
             assertNotNull(hostFound, "host must be paired");
             assertNotNull(guestFound, "guest must be paired");
             assertEquals("FRIEND", hostFound.as(ProtocolCodec.MatchFound.class).mode);
             assertEquals("FRIEND", guestFound.as(ProtocolCodec.MatchFound.class).mode);
 
-            // Host resigns; friend ELO delta must be half of K=32's symmetric 16.
+            // Host resigns mid-duel (after the START gate opens round 1);
+            // friend ELO delta must be half of K=32's symmetric 16.
+            assertNotNull(host.await(ProtocolCodec.T_ROUND_START, 10000));
             host.send(ProtocolCodec.T_RESIGN, new Object());
             TestWsClient.Frame hostEnd = host.await(ProtocolCodec.T_MATCH_END, 10000);
             assertNotNull(hostEnd);
@@ -143,6 +147,8 @@ class M2IntegrationTest {
             opponent.send(ProtocolCodec.T_MATCH_JOIN, new Object());
             assertNotNull(cheater.await(ProtocolCodec.T_MATCH_FOUND, 10000));
             assertNotNull(opponent.await(ProtocolCodec.T_MATCH_FOUND, 10000));
+            cheater.send(ProtocolCodec.T_MATCH_START, new Object());
+            opponent.send(ProtocolCodec.T_MATCH_START, new Object());
             TestWsClient.Frame start = cheater.await(ProtocolCodec.T_ROUND_START, 10000);
             assertNotNull(start);
             int round = start.as(ProtocolCodec.RoundStart.class).round;
@@ -171,7 +177,9 @@ class M2IntegrationTest {
             // Second strike restricts the account to bot opponents.
             cheater.send(ProtocolCodec.T_MATCH_JOIN, new Object());
             TestWsClient.Frame botFound = cheater.await(ProtocolCodec.T_MATCH_FOUND, 20000);
+            cheater.send(ProtocolCodec.T_MATCH_START, new Object());
             assertNotNull(botFound, "restricted player still gets a (bot) match");
+            assertNotNull(cheater.await(ProtocolCodec.T_ROUND_START, 10000));
             assertTrue(botFound.as(ProtocolCodec.MatchFound.class).opponent.isBot,
                     "restricted accounts meet bots only");
             cheater.send(ProtocolCodec.T_RESIGN, new Object());

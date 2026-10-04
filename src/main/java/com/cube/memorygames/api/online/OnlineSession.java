@@ -71,6 +71,8 @@ public class OnlineSession {
 
         void onHistory(OnlineMessages.HistoryEntry[] entries);
 
+        void onTop(OnlineMessages.TopEntry[] entries);
+
         void onOpponentDisconnected();
 
         void onOpponentReconnected();
@@ -432,6 +434,16 @@ public class OnlineSession {
         send(OnlineMessages.T_HISTORY_REQUEST, new Object());
     }
 
+    /** Origin's manual START: releases round 1 once both seats pressed. */
+    public void sendMatchStart() {
+        send(OnlineMessages.T_MATCH_START, new Object());
+    }
+
+    /** TOP Online leaderboard (top 20 by ELO). */
+    public void requestTop() {
+        send(OnlineMessages.T_TOP_REQUEST, new Object());
+    }
+
     public void cancelMatchmaking() {
         if (state == STATE_QUEUE) {
             send(OnlineMessages.T_MATCH_CANCEL, new Object());
@@ -670,6 +682,18 @@ public class OnlineSession {
                         listener.onRoomCreated(created.code);
                     } catch (RuntimeException ignored) {
                     }
+                }
+            }
+            return;
+        }
+        if (OnlineMessages.T_TOP_RESPONSE.equals(type)) {
+            OnlineMessages.TopResponse response =
+                    OnlineMessages.payloadOf(json, OnlineMessages.TopResponse.class);
+            if (listener != null) {
+                try {
+                    listener.onTop(response != null ? response.entries
+                            : new OnlineMessages.TopEntry[0]);
+                } catch (RuntimeException ignored) {
                 }
             }
             return;

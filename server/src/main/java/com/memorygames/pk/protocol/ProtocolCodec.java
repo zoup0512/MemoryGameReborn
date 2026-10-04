@@ -27,6 +27,8 @@ public final class ProtocolCodec {
     public static final String T_ROOM_CREATE = "room_create";
     public static final String T_ROOM_JOIN = "room_join";
     public static final String T_ROOM_CANCEL = "room_cancel";
+    public static final String T_MATCH_START = "match_start";
+    public static final String T_TOP_REQUEST = "top_request";
     public static final String T_ROOM_CREATED = "room_created";
     public static final String T_HISTORY_REQUEST = "history_request";
     public static final String T_HISTORY_RESPONSE = "history_response";
@@ -41,6 +43,7 @@ public final class ProtocolCodec {
     public static final String T_MATCH_END = "match_end";
     public static final String T_OPPONENT_DISCONNECTED = "opponent_disconnected";
     public static final String T_OPPONENT_RECONNECTED = "opponent_reconnected";
+    public static final String T_TOP_RESPONSE = "top_response";
     public static final String T_PONG = "pong";
     public static final String T_ERROR = "error";
 
@@ -92,6 +95,10 @@ public final class ProtocolCodec {
         public int elo;
         public int rank;
         public boolean isBot;
+        /** Season record for the pre-match statistics board. */
+        public int wins;
+        public int losses;
+        public int draws;
     }
 
     public static class RoundDesc {
@@ -139,6 +146,24 @@ public final class ProtocolCodec {
         public int elo;
         public int coinDelta;
         public int balance;
+        /** Per-round scores feeding the results list board. */
+        public RoundScore[] rounds;
+    }
+
+    public static class RoundScore {
+        public int me;
+        public int opp;
+    }
+
+    public static class TopEntry {
+        public int rank;
+        public String nickname;
+        public int elo;
+        public boolean online;
+    }
+
+    public static class TopResponse {
+        public TopEntry[] entries;
     }
 
     public static class AuthOk {

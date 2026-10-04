@@ -347,6 +347,10 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
     }
 
     @Override
+    public void onTop(OnlineMessages.TopEntry[] entries) {
+    }
+
+    @Override
     public void onError(int code, String message) {
     }
 

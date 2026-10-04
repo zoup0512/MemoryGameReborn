@@ -49,6 +49,8 @@ public class MatchRoom {
         public final int[] roundScores;
         public boolean roundDone;
         public boolean disconnected;
+        /** Pre-start accept gate (origin's manual START button). */
+        public boolean accepted;
         /** Bot pacing cursor (bot brain only). */
         public int expectedLevel;
         /** Highest level this human actually reported (fails skip levels). */
@@ -106,6 +108,7 @@ public class MatchRoom {
     private long startedAt = System.currentTimeMillis();
     private final AtomicBoolean settledOnce = new AtomicBoolean(false);
     private ScheduledFuture<?> roundDeadlineTask;
+    private ScheduledFuture<?> acceptDeadlineTask;
     private final List<ScheduledFuture<?>> botTasks = new ArrayList<>();
 
     public MatchRoom(UserAccount userA, PlayerEndpoint endpointA,
@@ -153,7 +156,64 @@ public class MatchRoom {
             for (int i = 0; i < 2; i++) {
                 sendTo(i, ProtocolCodec.T_MATCH_FOUND, buildMatchFound(i));
             }
-            scheduleRoundStart(1, this.properties.getTiming().getMatchFoundDelayMs());
+            // Origin's flow gates the first round behind both players'
+            // START presses; a bot opponent presses instantly.
+            this.seats[1].accepted = this.seats[1].isBot;
+            if (this.seats[0].accepted && this.seats[1].accepted) {
+                scheduleRoundStart(1, this.properties.getTiming().getMatchFoundDelayMs());
+            } else {
+                this.acceptDeadlineTask = this.scheduler.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        cancelUnaccepted();
+                    }
+                }, this.properties.getTiming().getAcceptTimeoutMs(), TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    /**
+     * A player pressed START. The first round leaves once both seats have
+     * accepted; idempotent so a reconnecting client can press again safely.
+     */
+    public void onMatchStart(long userId) {
+        synchronized (this) {
+            int index = seatIndex(userId);
+            if (index < 0 || this.settledOnce.get() || this.currentRound > 0) {
+                return;
+            }
+            this.seats[index].accepted = true;
+            if (this.seats[0].accepted && this.seats[1].accepted) {
+                if (this.acceptDeadlineTask != null) {
+                    this.acceptDeadlineTask.cancel(false);
+                    this.acceptDeadlineTask = null;
+                }
+                scheduleRoundStart(1, this.properties.getTiming().getMatchFoundDelayMs());
+            }
+        }
+    }
+
+    /**
+     * Nobody pressed START in time: refund both entries and dissolve the
+     * match without touching W/L or rating (origin refunded and requeued).
+     */
+    private void cancelUnaccepted() {
+        synchronized (this) {
+            if (this.settledOnce.get() || this.currentRound > 0) {
+                return;
+            }
+            for (Seat seat : this.seats) {
+                if (seat.user != null) {
+                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
+                }
+            }
+            this.events.emit("MATCH_NOT_ACCEPTED", this.matchId, "");
+            for (int i = 0; i < 2; i++) {
+                sendTo(i, ProtocolCodec.T_MATCH_CANCELLED, new Object());
+            }
+            this.settledOnce.set(true);
+            log.info("match {} cancelled: start not accepted", this.matchId);
+            this.settlementCallback.onSettled(this);
         }
     }
 
@@ -182,6 +242,16 @@ public class MatchRoom {
         info.elo = seat.elo();
         info.rank = seat.user != null ? this.rating.rankIndex(seat.user.elo) : this.rating.rankIndex(this.botElo);
         info.isBot = seat.isBot;
+        if (seat.user != null) {
+            info.wins = seat.user.wins;
+            info.losses = seat.user.losses;
+            info.draws = seat.user.draws;
+        } else {
+            int base = Math.max(4, this.botElo / 40);
+            info.wins = base;
+            info.losses = Math.max(2, base * 2 / 3);
+            info.draws = base / 5;
+        }
         return info;
     }
 
@@ -414,6 +484,11 @@ public class MatchRoom {
             if (index < 0 || this.settledOnce.get()) {
                 return;
             }
+            if (this.currentRound == 0) {
+                // Leaving during the START gate costs nothing.
+                cancelUnaccepted();
+                return;
+            }
             settle(1 - index, true);
         }
     }
@@ -489,6 +564,9 @@ public class MatchRoom {
         if (this.roundDeadlineTask != null) {
             this.roundDeadlineTask.cancel(false);
         }
+        if (this.acceptDeadlineTask != null) {
+            this.acceptDeadlineTask.cancel(false);
+        }
         stopBotBrain();
         for (Seat seat : this.seats) {
             if (seat.forfeitTask != null) {
@@ -557,6 +635,13 @@ public class MatchRoom {
                 end.eloDelta = 0;
                 end.coinDelta = this.properties.getEconomy().getEntryFee();
                 end.balance = seat.user != null ? seat.user.balance : 0;
+            }
+            end.rounds = new ProtocolCodec.RoundScore[this.rounds.size()];
+            for (int r = 0; r < this.rounds.size(); r++) {
+                ProtocolCodec.RoundScore score = new ProtocolCodec.RoundScore();
+                score.me = this.seats[i].roundScores[r];
+                score.opp = this.seats[1 - i].roundScores[r];
+                end.rounds[r] = score;
             }
             payloads[i] = end;
         }

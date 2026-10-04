@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<UserAccount, Long> {
 
     List<UserAccount> findTop5ByOrderByBalanceDesc();
 
+    List<UserAccount> findTop20ByOrderByEloDesc();
+
     long countByRestrictedMatchesGreaterThan(int matches);
 
     long countByBannedUntilGreaterThan(long until);
