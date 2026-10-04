@@ -18,3 +18,4 @@ tools/*.png
 tools/*.xml
 tools/errors.txt
 tools/cp.txt
+server/deploy/pk-server.log
