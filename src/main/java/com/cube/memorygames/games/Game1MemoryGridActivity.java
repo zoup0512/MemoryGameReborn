@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+import com.cube.memorygames.api.online.OnlineDebug;
 
 public class Game1MemoryGridActivity extends AppCompatActivity implements StatisticListener, GridEventsListener, IabStatus {
     public static final int ADS_INTERVAL_SPRINT_FIRST = 2;
@@ -445,7 +446,8 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     protected void startOnlineLevelTimer() {
         if (this.isOnlineGame && isEnableLevelTimer()) {
             this.startedOnlineTime = System.currentTimeMillis();
-            this.levelOnlineTime = (long) (this.gameInfo.getOnlineLevelTime() * 1000);
+            this.levelOnlineTime = OnlineDebug.roundMs(this,
+                    (long) (this.gameInfo.getOnlineLevelTime() * 1000));
             this.progressBar.setVisibility(0);
             this.progressBar.setMax((int) (this.levelOnlineTime / 10));
             this.timerOnlineHandler.postDelayed(this.timerOnlineRunnable, 0);

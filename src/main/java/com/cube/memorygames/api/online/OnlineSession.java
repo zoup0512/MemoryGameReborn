@@ -568,6 +568,9 @@ public class OnlineSession {
 
     /** Mirrors the server-side entry fee (-30) into the local coin ledger. */
     private void chargeEntryFee() {
+        if (com.cube.memorygames.api.online.OnlineDebug.freeEconomy(this.appContext)) {
+            return; // debug free economy: no local mirroring, server books only
+        }
         try {
             MemoryApplicationModel.getInstance().getLocalDataManager().chargeForOnline();
         } catch (RuntimeException ignored) {
@@ -576,6 +579,9 @@ public class OnlineSession {
 
     /** Mirrors the server-side settlement payout into the local coin ledger. */
     private void applySettlement(MatchEnd end) {
+        if (com.cube.memorygames.api.online.OnlineDebug.freeEconomy(this.appContext)) {
+            return; // debug free economy: no local mirroring, server books only
+        }
         try {
             LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
             if (OnlineSession.RESULT_WIN.equals(end.result)) {

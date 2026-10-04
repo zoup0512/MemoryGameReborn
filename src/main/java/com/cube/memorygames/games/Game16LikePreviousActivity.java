@@ -159,7 +159,8 @@ public class Game16LikePreviousActivity extends Game1MemoryGridActivity {
             this.progressBar.setMax(res.facebook);
             this.startedTime = System.currentTimeMillis();
             if (this.progression.getLevelNumber() == 1) {
-                this.gameTime = 30000;
+                this.gameTime = this.isOnlineGame
+                        ? com.cube.memorygames.api.online.OnlineDebug.roundMs(this, 30000L) : 30000L;
             }
             this.timerHandler.postDelayed(this.timerRunnable, 0);
         }

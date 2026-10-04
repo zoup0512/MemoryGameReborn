@@ -282,14 +282,17 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                 // The 60-coin welcome grant is server-side (issued at guest
                 // registration) since 2026-10-04; a client-side grant desynced
                 // the server balance and match_join was rejected with 402.
-                int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
-                        .getLocalUser().money;
-                if (coins < LocalDataManager.ONLINE_ENTRY_FEE) {
-                    new AlertDialog.Builder(OnlineLobbyAdapter.this.context)
-                            .setMessage(R.string.dialog_unlock_online_warning)
-                            .setPositiveButton(R.string.ok, null)
-                            .show();
-                    return;
+                if (!com.cube.memorygames.api.online.OnlineDebug.freeEconomy(
+                        OnlineLobbyAdapter.this.context)) {
+                    int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
+                            .getLocalUser().money;
+                    if (coins < LocalDataManager.ONLINE_ENTRY_FEE) {
+                        new AlertDialog.Builder(OnlineLobbyAdapter.this.context)
+                                .setMessage(R.string.dialog_unlock_online_warning)
+                                .setPositiveButton(R.string.ok, null)
+                                .show();
+                        return;
+                    }
                 }
                 OnlineSession.get().init(OnlineLobbyAdapter.this.context);
                 OnlineLobbyAdapter.this.context.startActivity(new Intent(
