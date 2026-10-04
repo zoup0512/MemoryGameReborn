@@ -143,6 +143,10 @@ public final class ProtocolCodec {
 
     public static class AuthOk {
         public String token;
+        /** Runtime economy snapshot so clients gate/mirror with live values. */
+        public int entryFee;
+        public int winCoins;
+        public int drawCoins;
         public long userId;
         public String nickname;
         public int elo;

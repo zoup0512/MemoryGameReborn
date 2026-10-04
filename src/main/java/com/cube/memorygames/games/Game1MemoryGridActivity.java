@@ -446,7 +446,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     protected void startOnlineLevelTimer() {
         if (this.isOnlineGame && isEnableLevelTimer()) {
             this.startedOnlineTime = System.currentTimeMillis();
-            this.levelOnlineTime = OnlineDebug.roundMs(this,
+            this.levelOnlineTime = OnlineSession.get().roundDurationMs(this,
                     (long) (this.gameInfo.getOnlineLevelTime() * 1000));
             this.progressBar.setVisibility(0);
             this.progressBar.setMax((int) (this.levelOnlineTime / 10));

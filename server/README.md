@@ -25,6 +25,14 @@
 docker compose up -d   # app + postgres 16；环境变量 PK_DB_PASSWORD
 ```
 
+## 运行时配置（管理 API）
+
+端点 GET/PUT /api/admin/config（请求头 X-Admin-Token；docker-compose 经 PK_ADMIN_TOKEN 环境变量设置，
+不设置则端点禁用）。可热调：回合时长覆盖、入场费、胜/平金币、礼金、Bot 等待、回宽限/间歇、
+起局延迟等，免重启即时生效（数值有钳制，变更写审计日志）。客户端回合时长完全由服务端驱动
+（round_start.durationMs），auth_ok 下发经济参数——release 构建完全服从服务端配置，debug 构建
+免金币且可本地兜底时长。
+
 客户端默认连 `wss://pk.memorygame.example.com/ws`（`OnlineConfig`），debug 构建可在 Online
 大厅长按标题改为内网地址（如 `ws://192.168.x.x:8080/ws`）真机联调。
 

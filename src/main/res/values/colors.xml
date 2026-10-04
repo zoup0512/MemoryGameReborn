@@ -114,7 +114,11 @@
     <color name="memory_background_grid">#ffc7e8ff</color>
     <color name="money_progress">#ffcddc39</color>
     <color name="onlineAnimColor">#ffcdcdcd</color>
+    <color name="onlineHistoryLose">#ffc62828</color>
+    <color name="onlineHistoryWin">#ff2e7d32</color>
     <color name="onlineStatsColor">#ff384ab2</color>
+    <color name="onlineTextHint">#8a000000</color>
+    <color name="onlineTutorialText">#ff37474f</color>
     <color name="pressed">#eecccccc</color>
     <color name="problem_solving_background">#fffcfcfc</color>
     <color name="problem_solving_background_grid">#ffebeefb</color>

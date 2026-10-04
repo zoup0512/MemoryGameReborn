@@ -277,6 +277,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         ok.losses = account.losses;
         ok.draws = account.draws;
         ok.balance = account.balance;
+        ok.entryFee = this.properties.getEconomy().getEntryFee();
+        ok.winCoins = this.properties.getEconomy().getWinCoins();
+        ok.drawCoins = this.properties.getEconomy().getDrawCoins();
         try {
             SeasonService.Snapshot snapshot = this.seasons.snapshot();
             ok.seasonIndex = snapshot.index;

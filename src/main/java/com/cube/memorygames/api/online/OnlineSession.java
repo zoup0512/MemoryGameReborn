@@ -3,6 +3,7 @@ package com.cube.memorygames.api.online;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.api.local.LocalDataManager;
@@ -94,6 +95,14 @@ public class OnlineSession {
     private volatile AuthOk lastProfile;
     /** Notified on the main thread whenever a fresh profile arrives. */
     private volatile Runnable profileCallback;
+    /** Round duration delivered by the server (round_start/match_found). */
+    private volatile long serverRoundDurationMs;
+    /** Monotonic receive time of the last round_start (0 = no round). */
+    private volatile long roundStartedElapsed;
+    /** Live economy values from the last auth_ok (server runtime config). */
+    private volatile int serverEntryFee = LocalDataManager.ONLINE_ENTRY_FEE;
+    private volatile int serverWinCoins = LocalDataManager.ONLINE_WIN_COINS;
+    private volatile int serverDrawCoins = LocalDataManager.ONLINE_DRAW_COINS;
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
     private OnlineMessages.RoundDesc[] rounds;
@@ -154,6 +163,45 @@ public class OnlineSession {
         return lastProfile;
     }
 
+    /**
+     * Authoritative round duration for the running round: the server
+     * configures round length at runtime (admin API) and pushes it with
+     * round_start, so both sides always agree. Falls back to the debug pref
+     * / production defaults when no server value is known.
+     */
+    public long roundDurationMs(Context context, long defaultMs) {
+        if (serverRoundDurationMs > 0L) {
+            return serverRoundDurationMs;
+        }
+        return OnlineDebug.roundMs(context, defaultMs);
+    }
+
+    /**
+     * Estimated remaining time of the running round: the server pushes the
+     * round duration with round_start and expires the round on the same
+     * clock, so duration minus local elapsed time approximates what the
+     * opponent may still be playing. 0 when no round is running.
+     */
+    public long roundRemainingMs() {
+        long duration = serverRoundDurationMs;
+        if (duration <= 0L || roundStartedElapsed <= 0L) {
+            return 0L;
+        }
+        return Math.max(0L, duration - (SystemClock.elapsedRealtime() - roundStartedElapsed));
+    }
+
+    public int getServerEntryFee() {
+        return serverEntryFee;
+    }
+
+    public int getServerWinCoins() {
+        return serverWinCoins;
+    }
+
+    public int getServerDrawCoins() {
+        return serverDrawCoins;
+    }
+
     public void setProfileCallback(Runnable callback) {
         this.profileCallback = callback;
     }
@@ -211,6 +259,7 @@ public class OnlineSession {
     public synchronized void disconnect() {
         matchId = null;
         currentRound = -1;
+        roundStartedElapsed = 0L;
         main.removeCallbacks(reconnectRunnable);
         if (client != null) {
             client.close();
@@ -256,6 +305,7 @@ public class OnlineSession {
             // forfeited us after its own deadline.
             matchId = null;
             currentRound = -1;
+            roundStartedElapsed = 0L;
             disconnectedAt = 0L;
         }
         setState(STATE_DISCONNECTED);
@@ -373,6 +423,15 @@ public class OnlineSession {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
                 this.lastProfile = ok;
+                if (ok.entryFee > 0) {
+                    this.serverEntryFee = ok.entryFee;
+                }
+                if (ok.winCoins > 0) {
+                    this.serverWinCoins = ok.winCoins;
+                }
+                if (ok.drawCoins > 0) {
+                    this.serverDrawCoins = ok.drawCoins;
+                }
                 Runnable callback = this.profileCallback;
                 if (callback != null) {
                     try {
@@ -418,7 +477,11 @@ public class OnlineSession {
                 this.matchId = found.matchId;
                 this.opponent = found.opponent;
                 this.rounds = found.rounds;
+                if (found.rounds != null && found.rounds.length > 0) {
+                    this.serverRoundDurationMs = found.rounds[0].durationMs;
+                }
                 this.currentRound = -1;
+                this.roundStartedElapsed = 0L;
                 this.myScore = 0;
                 this.myCompletedScore = 0;
                 this.oppScore = 0;
@@ -449,6 +512,10 @@ public class OnlineSession {
             RoundStart start = OnlineMessages.payloadOf(json, RoundStart.class);
             if (start != null) {
                 this.currentRound = start.round;
+                this.roundStartedElapsed = SystemClock.elapsedRealtime();
+                if (start.durationMs > 0) {
+                    this.serverRoundDurationMs = start.durationMs;
+                }
                 this.roundReported = false;
                 if (listener != null) {
                     try {
@@ -499,6 +566,7 @@ public class OnlineSession {
                 applySettlement(end);
                 this.matchId = null;
                 this.currentRound = -1;
+                this.roundStartedElapsed = 0L;
                 this.disconnectedAt = 0L;
                 setState(STATE_IDLE);
                 if (listener != null) {
@@ -635,9 +703,9 @@ public class OnlineSession {
         try {
             LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
             if (OnlineSession.RESULT_WIN.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, LocalDataManager.ONLINE_WIN_COINS);
+                dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, this.serverWinCoins);
             } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, LocalDataManager.ONLINE_DRAW_COINS);
+                dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, this.serverDrawCoins);
             } else {
                 dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, 0);
             }

@@ -198,7 +198,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         season.setId(R.id.online_season_line);
         season.setTypeface(this.fontLight);
         season.setTextSize(13.0f);
-        season.setTextColor(Color.parseColor("#8a000000"));
+        season.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTextHint));
         season.setGravity(Gravity.CENTER);
         season.setPadding(0, dp(6), 0, 0);
         card.addView(season, new LinearLayout.LayoutParams(
@@ -274,7 +274,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         label.setText(labelRes);
         label.setTypeface(this.fontLight);
         label.setTextSize(12.0f);
-        label.setTextColor(Color.parseColor("#8a000000"));
+        label.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTextHint));
         label.setGravity(Gravity.CENTER);
         LinearLayout column = new LinearLayout(this.context);
         column.setOrientation(LinearLayout.VERTICAL);
@@ -290,7 +290,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         TextView item = new TextView(this.context);
         item.setTypeface(this.fontLight);
         item.setTextSize(15.0f);
-        item.setTextColor(Color.parseColor("#37474f"));
+        item.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTutorialText));
         item.setPadding(dp(24), dp(6), dp(24), dp(6));
         item.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -430,7 +430,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                         OnlineLobbyAdapter.this.context)) {
                     int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
                             .getLocalUser().money;
-                    if (coins < LocalDataManager.ONLINE_ENTRY_FEE) {
+                    if (coins < OnlineSession.get().getServerEntryFee()) {
                         new AlertDialog.Builder(OnlineLobbyAdapter.this.context)
                                 .setMessage(R.string.dialog_unlock_online_warning)
                                 .setPositiveButton(R.string.ok, null)

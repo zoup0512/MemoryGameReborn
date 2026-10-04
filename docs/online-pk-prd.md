@@ -402,6 +402,22 @@ M0 + M1 的代码实现已完成并通过构建/集成测试，与原计划的�
   触发额外 Bot 兜底局；客户端已埋调用栈日志待下次复现定位
 - **Redis 房间态**：继续推迟——单实例下无用户价值，重启判负模型已验证可用
 
+### 6.3 运行时配置化（2026-10-04）
+
+回合时长与金币经济等全部改为**服务端运行时可调**（免重启），并明确 debug/release 行为分界：
+
+- **服务端**：管理 REST（GET/PUT /api/admin/config，X-Admin-Token 守卫，空 token 即禁用/404 隐藏），
+  热改 PkProperties 单例——所有消费点（回合时长/入场费/胜负平金币/礼金/Bot 等待/回宽限/间歇）
+  每次读 getter 即时生效；数值钳制 + 审计日志。集成测试覆盖：热改后新对局的 round duration、
+  入场费扣减与 auth_ok 经济回显、无 token 拒绝。
+- **客户端回合时长改为服务端驱动**：round_start/match_found 携带 durationMs，4 个游戏的本地
+  计时器优先取服务端值（本地仅作离线兜底）——服务端改时长，双端下一回合立即一致。
+- **经济参数服务端下发**：auth_ok 携带 entryFee/winCoins/drawCoins；release 构建的大厅门槛与
+  结算镜像使用服务端值（服务端改奖金，客户端本地账同步正确）。
+- **debug/release 分界**：debug 构建=免金币（跳门槛、不镜像记账、长按标题可改端点）+ 可被
+  test_round_ms 本地兜底；release 构建=完全服从服务端配置。生产 docker-compose 通过
+  PK_ADMIN_TOKEN 环境变量启用管理 API，默认不开启。
+
 ---
 
 ## 7. 风险与待定项

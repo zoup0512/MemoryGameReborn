@@ -88,6 +88,10 @@ public final class OnlineMessages {
     }
 
     public static class AuthOk {
+        /** Live economy snapshot from the server's runtime config. */
+        public int entryFee;
+        public int winCoins;
+        public int drawCoins;
         public long userId;
         public String nickname;
         public int elo;

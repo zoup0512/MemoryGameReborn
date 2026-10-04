@@ -140,7 +140,7 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
             this.startedTime = System.currentTimeMillis();
             if (this.progression.getLevelNumber() == 1) {
                 if (this.isOnlineGame) {
-                    this.gameTime = com.cube.memorygames.api.online.OnlineDebug.roundMs(this, 45000L);
+                    this.gameTime = com.cube.memorygames.api.online.OnlineSession.get().roundDurationMs(this, 45000L);
                     this.progressBar.setMax((int) (this.gameTime / 10));
                 } else {
                     this.gameTime = 50000;

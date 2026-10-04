@@ -96,7 +96,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
         empty.setText(R.string.online_history_empty);
         empty.setTypeface(this.fontLight);
         empty.setTextSize(15.0f);
-        empty.setTextColor(Color.parseColor("#8a000000"));
+        empty.setTextColor(ContextCompat.getColor(this, R.color.onlineTextHint));
         empty.setGravity(Gravity.CENTER);
         empty.setPadding(0, dp(30), 0, 0);
         this.list.addView(empty, new LinearLayout.LayoutParams(
@@ -111,7 +111,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
             empty.setText(R.string.online_history_empty);
             empty.setTypeface(this.fontLight);
             empty.setTextSize(15.0f);
-            empty.setTextColor(Color.parseColor("#8a000000"));
+            empty.setTextColor(ContextCompat.getColor(this, R.color.onlineTextHint));
             empty.setGravity(Gravity.CENTER);
             empty.setPadding(0, dp(30), 0, 0);
             this.list.addView(empty, new LinearLayout.LayoutParams(
@@ -137,8 +137,9 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
             boolean win = OnlineSession.RESULT_WIN.equals(entry.result);
             boolean draw = OnlineSession.RESULT_DRAW.equals(entry.result);
             result.setText(win ? "W" : draw ? "D" : "L");
-            result.setTextColor(win ? Color.parseColor("#2e7d32")
-                    : draw ? Color.parseColor("#8a000000") : Color.parseColor("#c62828"));
+            result.setTextColor(win ? ContextCompat.getColor(this, R.color.onlineHistoryWin)
+                    : draw ? ContextCompat.getColor(this, R.color.onlineTextHint)
+                    : ContextCompat.getColor(this, R.color.onlineHistoryLose));
             result.setGravity(Gravity.CENTER);
             row.addView(result, new LinearLayout.LayoutParams(dp(36), ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -158,7 +159,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
             TextView when = new TextView(this);
             when.setTypeface(this.fontLight);
             when.setTextSize(12.0f);
-            when.setTextColor(Color.parseColor("#8a000000"));
+            when.setTextColor(ContextCompat.getColor(this, R.color.onlineTextHint));
             when.setText(format.format(new Date(entry.ts)));
             middle.addView(when, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));

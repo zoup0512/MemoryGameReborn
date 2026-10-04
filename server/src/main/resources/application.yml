@@ -14,6 +14,10 @@ server:
   port: 8080
 
 pk:
+  # Runtime admin API token for /api/admin/config (empty = endpoint disabled).
+  # Set via env PK_ADMIN_TOKEN in docker-compose for the overseas deployment.
+  admin-token: ${PK_ADMIN_TOKEN:}
+
   round-duration-override-ms: 0
   economy:
     entry-fee: 30
