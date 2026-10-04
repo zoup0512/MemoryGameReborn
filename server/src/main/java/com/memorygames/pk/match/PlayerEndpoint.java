@@ -15,28 +15,57 @@ public interface PlayerEndpoint {
     class WebSocket implements PlayerEndpoint {
 
         private final WebSocketSession session;
-        private final Object lock = new Object();
+        /**
+         * Sends must never run on the room/scheduler threads: a half-dead
+         * client socket blocks StandardWebSocketSession.sendMessage forever
+         * and one frozen client would wedge the whole match engine (found in
+         * the 2026-10-04 device test: two scheduler threads blocked on dead
+         * sockets froze every active room). Each session owns a single
+         * sender thread; blocked senders are abandoned on shutdown.
+         */
+        private final java.util.concurrent.ExecutorService sender =
+                java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                    Thread thread = new Thread(r, "pk-sender");
+                    thread.setDaemon(true);
+                    return thread;
+                });
 
         public WebSocket(WebSocketSession session) {
             this.session = session;
         }
 
         @Override
-        public void send(String json) {
-            synchronized (this.lock) {
-                try {
-                    if (this.session.isOpen()) {
-                        this.session.sendMessage(new TextMessage(json));
+        public void send(final String json) {
+            try {
+                this.sender.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (WebSocket.this.session.isOpen()) {
+                                WebSocket.this.session.sendMessage(new TextMessage(json));
+                            }
+                        } catch (IOException | IllegalStateException e) {
+                            // Force the disconnect path: a session that cannot
+                            // be written must be closed so the room forfeits it.
+                            try {
+                                WebSocket.this.session.close();
+                            } catch (IOException | RuntimeException ignored) {
+                            }
+                        }
                     }
-                } catch (IOException | IllegalStateException ignored) {
-                    // Closing sockets are handled via the disconnect path.
-                }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException ignored) {
+                // Session already shut down.
             }
         }
 
         @Override
         public boolean isOpen() {
             return this.session != null && this.session.isOpen();
+        }
+
+        public void shutdown() {
+            this.sender.shutdownNow();
         }
     }
 

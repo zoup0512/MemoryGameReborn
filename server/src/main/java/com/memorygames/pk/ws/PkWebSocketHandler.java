@@ -172,7 +172,10 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long userId = this.authenticated.remove(session.getId());
-        this.endpoints.remove(session.getId());
+        PlayerEndpoint.WebSocket endpoint = this.endpoints.remove(session.getId());
+        if (endpoint != null) {
+            endpoint.shutdown();
+        }
         if (userId == null) {
             return;
         }

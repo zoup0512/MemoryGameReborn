@@ -377,6 +377,13 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_MATCH_FOUND.equals(type)) {
+            // Accept a pairing only while we are actually searching; a frame
+            // arriving in any other state belongs to a stale server-side
+            // room and would hijack the session (seen in the 2026-10-04 test
+            // where a leftover queue entry bot-matched an idle lobby client).
+            if (this.state != STATE_QUEUE && this.matchId == null) {
+                return;
+            }
             MatchFound found = OnlineMessages.payloadOf(json, MatchFound.class);
             if (found != null) {
                 this.matchId = found.matchId;
