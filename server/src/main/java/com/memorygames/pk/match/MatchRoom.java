@@ -46,7 +46,10 @@ public class MatchRoom {
         public final int[] roundScores;
         public boolean roundDone;
         public boolean disconnected;
+        /** Bot pacing cursor (bot brain only). */
         public int expectedLevel;
+        /** Highest level this human actually reported (fails skip levels). */
+        public int lastReportedLevel;
         public long lastLevelAt;
         public int anomalies;
         public boolean frozen;
@@ -83,6 +86,7 @@ public class MatchRoom {
     private final SettlementCallback settlementCallback;
 
     private int currentRound = 0;
+    private long roundStartedAt;
     private final AtomicBoolean settledOnce = new AtomicBoolean(false);
     private ScheduledFuture<?> roundDeadlineTask;
     private final List<ScheduledFuture<?>> botTasks = new ArrayList<>();
@@ -173,9 +177,11 @@ public class MatchRoom {
             GameCatalog.ProtocolRound round = this.rounds.get(roundNumber - 1);
             GameCatalog.GameSpec spec = this.catalog.byId(round.gameId);
             long now = System.currentTimeMillis();
+            this.roundStartedAt = now;
             for (Seat seat : this.seats) {
                 seat.roundDone = false;
                 seat.expectedLevel = 1;
+                seat.lastReportedLevel = 0;
                 seat.lastLevelAt = now;
                 seat.anomalies = 0;
                 seat.frozen = false;
@@ -213,13 +219,20 @@ public class MatchRoom {
             }
             GameCatalog.GameSpec spec = this.catalog.byId(this.rounds.get(this.currentRound - 1).gameId);
             long now = System.currentTimeMillis();
-            boolean sequenceOk = msg.level == seat.expectedLevel;
+            // Wrong answers advance the level without scoring, so reported
+            // levels legitimately contain gaps (1,3,4,6,...). Require strictly
+            // increasing levels capped by what the elapsed time plausibly
+            // allows, instead of strict succession.
+            long floorMs = this.catalog.minLevelIntervalOf(spec);
+            long elapsed = now - this.roundStartedAt;
+            boolean sequenceOk = msg.level > seat.lastReportedLevel
+                    && msg.level <= (elapsed / floorMs) + 3;
             // The first answer of a round is not interval-checked: the server
             // cannot know when the client's challenge reveal ended, and fast
             // first answers are legitimate. Spam is still capped from the
             // second message on by the per-game human floor.
-            boolean intervalOk = seat.expectedLevel == 1
-                    || now - seat.lastLevelAt >= this.catalog.minLevelIntervalOf(spec);
+            boolean intervalOk = seat.lastReportedLevel == 0
+                    || now - seat.lastLevelAt >= floorMs;
             if (!sequenceOk || !intervalOk) {
                 seat.anomalies++;
                 if (seat.anomalies > MAX_ANOMALIES) {
@@ -229,7 +242,7 @@ public class MatchRoom {
                 }
                 return;
             }
-            seat.expectedLevel++;
+            seat.lastReportedLevel = msg.level;
             seat.lastLevelAt = now;
             seat.roundScores[this.currentRound - 1] += spec.levelScore(msg.level);
             ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
