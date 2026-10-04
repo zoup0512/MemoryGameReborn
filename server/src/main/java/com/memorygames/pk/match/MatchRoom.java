@@ -636,6 +636,11 @@ public class MatchRoom {
                 end.coinDelta = this.properties.getEconomy().getEntryFee();
                 end.balance = seat.user != null ? seat.user.balance : 0;
             }
+            if (seat.user != null) {
+                end.myWins = seat.user.wins;
+                end.myLosses = seat.user.losses;
+                end.myDraws = seat.user.draws;
+            }
             end.rounds = new ProtocolCodec.RoundScore[this.rounds.size()];
             for (int r = 0; r < this.rounds.size(); r++) {
                 ProtocolCodec.RoundScore score = new ProtocolCodec.RoundScore();

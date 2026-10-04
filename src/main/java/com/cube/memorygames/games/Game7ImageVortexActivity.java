@@ -362,7 +362,7 @@ public class Game7ImageVortexActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game7ImageVortexActivity.this.confirmBackPress();
+                Game7ImageVortexActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

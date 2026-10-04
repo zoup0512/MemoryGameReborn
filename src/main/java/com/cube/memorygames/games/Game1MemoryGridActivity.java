@@ -1433,8 +1433,10 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     public void onBackPressed() {
-        List<String> showDialogList = Arrays.asList(new String[]{AppEventsConstants.EVENT_PARAM_VALUE_NO, AppEventsConstants.EVENT_PARAM_VALUE_YES, "2", "4", "5", "7", "8"});
-        if (this.isOnlineGame && showDialogList.contains(this.gameInfo.getId())) {
+        // Every online game gets the resign warning: the whitelist variant
+        // silently exited whitelist-less games (e.g. Memory Grid) without
+        // the dialog and without resigning — the server kept the duel.
+        if (this.isOnlineGame) {
             showOnlineBackPressDialog();
         } else {
             confirmBackPress();
@@ -1461,7 +1463,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         });
         builder.setPositiveButton((int) R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game1MemoryGridActivity.this.confirmBackPress();
+                Game1MemoryGridActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

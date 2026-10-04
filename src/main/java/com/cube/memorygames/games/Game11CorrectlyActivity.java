@@ -104,7 +104,7 @@ public class Game11CorrectlyActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game11CorrectlyActivity.this.confirmBackPress();
+                Game11CorrectlyActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

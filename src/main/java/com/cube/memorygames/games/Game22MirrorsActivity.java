@@ -119,7 +119,7 @@ public class Game22MirrorsActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game22MirrorsActivity.this.confirmBackPress();
+                Game22MirrorsActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

@@ -277,6 +277,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
             case ProtocolCodec.T_RESIGN:
+                log.info("resign received user={} room={}", userId, room != null ? room.matchId : "none");
                 if (room != null) {
                     room.onResign(userId);
                 }

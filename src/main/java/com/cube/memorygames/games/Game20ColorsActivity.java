@@ -115,7 +115,7 @@ public class Game20ColorsActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game20ColorsActivity.this.confirmBackPress();
+                Game20ColorsActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

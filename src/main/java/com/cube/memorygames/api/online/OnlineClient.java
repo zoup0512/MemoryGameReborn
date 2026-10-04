@@ -37,11 +37,31 @@ public class OnlineClient {
     private final AtomicBoolean closedByUser = new AtomicBoolean(false);
     private volatile WebSocketClient ws;
     private volatile boolean connected;
+    /**
+     * Half-dead TCP (phone Wi-Fi handover is the usual suspect) keeps the
+     * receive path alive while silently eating everything we send — frames
+     * vanish without any exception, so only the server's pong (or its
+     * absence) can tell the connection is gone. A missed pong reports a
+     * disconnect and OnlineSession's reconnect picks the socket back up.
+     */
+    private volatile boolean awaitingPong;
     private final Runnable pingRunnable = new Runnable() {
         @Override
         public void run() {
             WebSocketClient client = ws;
             if (client != null && connected && !closedByUser.get()) {
+                if (OnlineClient.this.awaitingPong) {
+                    connected = false;
+                    OnlineClient.this.main.removeCallbacks(pingRunnable);
+                    OnlineClient.this.main.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onDisconnected(-1, "ping timeout");
+                        }
+                    });
+                    return;
+                }
+                OnlineClient.this.awaitingPong = true;
                 client.send("{\"v\":1,\"t\":\"ping\",\"d\":{\"ts\":" + System.currentTimeMillis() + "}}");
                 main.postDelayed(this, PING_INTERVAL_MS);
             }
@@ -85,6 +105,9 @@ public class OnlineClient {
 
             @Override
             public void onMessage(String message) {
+                if (message.contains("\"t\":\"pong\"")) {
+                    awaitingPong = false;
+                }
                 final String json = message;
                 main.post(new Runnable() {
                     @Override

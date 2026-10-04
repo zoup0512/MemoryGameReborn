@@ -116,7 +116,7 @@ public class Game19FindAllActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game19FindAllActivity.this.confirmBackPress();
+                Game19FindAllActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

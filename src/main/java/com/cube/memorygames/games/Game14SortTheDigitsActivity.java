@@ -112,7 +112,7 @@ public class Game14SortTheDigitsActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game14SortTheDigitsActivity.this.confirmBackPress();
+                Game14SortTheDigitsActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

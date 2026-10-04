@@ -178,6 +178,10 @@ public final class OnlineMessages {
         public int elo;
         public int coinDelta;
         public int balance;
+        /** Season record after settlement for instant profile refresh. */
+        public int myWins;
+        public int myLosses;
+        public int myDraws;
         /** Per-round scores feeding the results list board. */
         public RoundScore[] rounds;
     }

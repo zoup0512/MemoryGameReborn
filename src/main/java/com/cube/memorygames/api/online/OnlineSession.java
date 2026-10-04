@@ -45,6 +45,8 @@ public class OnlineSession {
     public static final String RESULT_LOSE = "L";
     public static final String RESULT_DRAW = "D";
 
+    private static final long RESIGN_RETRY_MS = 3000L;
+    private static final int RESIGN_RETRY_MAX = 6;
     private static final long RECONNECT_BASE_MS = 1000L;
     private static final long RECONNECT_MAX_MS = 15000L;
     private static final long RECONNECT_WINDOW_MS = 90000L;
@@ -95,6 +97,9 @@ public class OnlineSession {
 
     private volatile int state = STATE_DISCONNECTED;
     private volatile AuthOk lastProfile;
+    /** Set by match_end, gates the resign retry loop. */
+    private volatile boolean matchEndSeen;
+    private int resignRetries;
     /** Notified on the main thread whenever a fresh profile arrives. */
     private volatile Runnable profileCallback;
     /** Round duration delivered by the server (round_start/match_found). */
@@ -488,8 +493,32 @@ public class OnlineSession {
     /** Called when the player confirms leaving an online match (forfeit). */
     public void resign() {
         if (matchId != null) {
-            send(OnlineMessages.T_RESIGN, new Object());
+            this.resignRetries = RESIGN_RETRY_MAX;
+            sendResign();
         }
+    }
+
+    /**
+     * A resigned match must settle. A half-dead TCP connection swallows the
+     * frame without any signal (the 2026-10-04 two-device finding: the
+     * server kept the duel running while the player sat on the scoreboard),
+     * so the resign is re-sent until match_end confirms the settlement.
+     */
+    private void sendResign() {
+        OnlineClient c = client;
+        android.util.Log.d("OnlinePK", "sendResign matchId=" + matchId
+                + " connected=" + (c != null && c.isConnected())
+                + " retriesLeft=" + resignRetries);
+        send(OnlineMessages.T_RESIGN, new Object());
+        this.main.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (OnlineSession.this.matchId != null && !OnlineSession.this.matchEndSeen
+                        && OnlineSession.this.resignRetries-- > 0) {
+                    sendResign();
+                }
+            }
+        }, RESIGN_RETRY_MS);
     }
 
     // -------------------------------------------------------- dispatcher
@@ -658,6 +687,8 @@ public class OnlineSession {
             MatchEnd end = OnlineMessages.payloadOf(json, MatchEnd.class);
             if (end != null) {
                 applySettlement(end);
+                this.matchEndSeen = true;
+                refreshProfileRecord(end);
                 this.matchId = null;
                 this.currentRound = -1;
                 this.roundStartedElapsed = 0L;
@@ -767,6 +798,20 @@ public class OnlineSession {
                 listener.onOpponentDisconnected();
             } catch (RuntimeException ignored) {
             }
+        }
+    }
+
+    /** MatchEnd carries the fresh season record; fold it into the cached
+     * profile so the lobby's stats row reflects the settled match without
+     * waiting for the next auth_ok. */
+    private void refreshProfileRecord(MatchEnd end) {
+        AuthOk profile = this.lastProfile;
+        if (profile != null) {
+            profile.elo = end.elo;
+            profile.balance = end.balance;
+            profile.wins = end.myWins;
+            profile.losses = end.myLosses;
+            profile.draws = end.myDraws;
         }
     }
 

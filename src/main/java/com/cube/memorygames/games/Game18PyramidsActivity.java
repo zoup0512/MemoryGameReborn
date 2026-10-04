@@ -112,7 +112,7 @@ public class Game18PyramidsActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game18PyramidsActivity.this.confirmBackPress();
+                Game18PyramidsActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

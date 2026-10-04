@@ -117,7 +117,7 @@ public class Game13AllTheSameActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game13AllTheSameActivity.this.confirmBackPress();
+                Game13AllTheSameActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

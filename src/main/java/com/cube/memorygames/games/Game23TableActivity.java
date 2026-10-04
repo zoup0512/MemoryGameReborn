@@ -110,7 +110,7 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game23TableActivity.this.confirmBackPress();
+                Game23TableActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });

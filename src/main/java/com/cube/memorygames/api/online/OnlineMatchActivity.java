@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -776,6 +777,29 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.content.addView(board, params);
     }
 
+    /**
+     * Same as {@link #showBoard} but the board lives in a fill-viewport
+     * ScrollView: on tall/dense screens (fontScale > 1) the settlement card
+     * and the results list can outgrow the frame and their bottom action
+     * would be clipped out of the view tree — scrolling keeps it reachable.
+     */
+    private void showScrollableBoard(View board, int width) {
+        this.content.removeAllViews();
+        ScrollView scroller = new ScrollView(this);
+        scroller.setFillViewport(true);
+        FrameLayout inner = new FrameLayout(this);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        int margin = dp(16);
+        params.leftMargin = margin;
+        params.rightMargin = margin;
+        inner.addView(board, params);
+        scroller.addView(inner, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        this.content.addView(scroller, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
     private void showSearchUi() {
         fillMyHeaderSide();
         resetOpponentSide();
@@ -861,14 +885,14 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.ratingTotal.setText(String.valueOf(end.elo));
         this.myAvatar.rating.setText(String.valueOf(end.elo));
 
-        showBoard(this.card, dp(300), Gravity.CENTER);
+        showScrollableBoard(this.card, dp(300));
         // OK drops the result card onto the per-round results list, exactly
         // like the original dialog revealed the results screen underneath.
         this.okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showBoard(buildResultsBoard(end), ViewGroup.LayoutParams.MATCH_PARENT,
-                        Gravity.CENTER);
+                showScrollableBoard(buildResultsBoard(end),
+                        ViewGroup.LayoutParams.MATCH_PARENT);
             }
         });
         this.bottomBar.setVisibility(View.VISIBLE);

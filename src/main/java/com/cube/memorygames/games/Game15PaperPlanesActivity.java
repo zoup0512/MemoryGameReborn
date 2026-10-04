@@ -123,7 +123,7 @@ public class Game15PaperPlanesActivity extends Game1MemoryGridActivity {
         });
         builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                Game15PaperPlanesActivity.this.confirmBackPress();
+                Game15PaperPlanesActivity.this.openMainMenu();
                 dialog.dismiss();
             }
         });
