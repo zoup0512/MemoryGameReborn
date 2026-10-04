@@ -58,6 +58,7 @@ public class AdminConfigController {
         public Long roundGraceMs;
         public Long roundIntermissionMs;
         public Long matchFoundDelayMs;
+        public Integer roundsPerMatch;
     }
 
     @GetMapping("/config")
@@ -78,6 +79,7 @@ public class AdminConfigController {
         view.put("roundGraceMs", this.properties.getTiming().getRoundGraceMs());
         view.put("roundIntermissionMs", this.properties.getTiming().getRoundIntermissionMs());
         view.put("matchFoundDelayMs", this.properties.getTiming().getMatchFoundDelayMs());
+        view.put("roundsPerMatch", this.properties.getMatch().getRoundsPerMatch());
         return ResponseEntity.ok(view);
     }
 
@@ -143,6 +145,13 @@ public class AdminConfigController {
             long value = clamp(body.matchFoundDelayMs, 500L, 60_000L);
             this.properties.getTiming().setMatchFoundDelayMs(value);
             audit.append(" matchFoundDelayMs=").append(value);
+        }
+        if (body.roundsPerMatch != null) {
+            // Applies to matches created after the change only: round plans
+            // are fixed when a MatchRoom is constructed.
+            int value = (int) clamp(body.roundsPerMatch, 1L, 15L);
+            this.properties.getMatch().setRoundsPerMatch(value);
+            audit.append(" roundsPerMatch=").append(value);
         }
         log.info("{}", audit);
         this.audit.record("CONFIG_APPLIED", audit.toString(), AdminGuard.clientIp(request), "ok");

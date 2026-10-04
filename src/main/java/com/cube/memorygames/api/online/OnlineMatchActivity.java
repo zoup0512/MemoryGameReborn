@@ -33,6 +33,7 @@ import com.cube.memorygames.Games;
 import com.cube.memorygames.MainMenuActivity;
 import com.cube.memorygames.model.GameInfo;
 import com.cube.memorygames.ui.TimerView;
+import com.github.florent37.viewanimator.ViewAnimator;
 import com.memory.brain.training.games.R;
 
 import java.util.Locale;
@@ -55,6 +56,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private static final long COUNTDOWN_MS = 3000L;
     /** Mirrors the server's acceptTimeoutMs (START gate window). */
     private static final int ACCEPT_WINDOW_MS = 30000;
+    /** Origin START_TIMEOUT: the pre-round game list's countdown disc. */
+    private static final long GAME_LIST_TIMEOUT_MS = 5000L;
     /** Original search-header pulse cadence (HeaderFragment: 400ms steps). */
     private static final long PULSE_INTERVAL_MS = 400L;
     private static final long PULSE_STEP_MS = 200L;
@@ -75,6 +78,16 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private LinearLayout searchBoard;
     private LinearLayout matchBoard;
     private LinearLayout statsBoard;
+    /** Views faded in one-by-one on the stats board (origin's chain). */
+    private java.util.List<View> statsFadeViews;
+    private LinearLayout gameListBoard;
+    private TimerView gameListTimer;
+    // Intermission card between rounds (dialog_online_progress.xml).
+    private View intermissionBoard;
+    private TextView interTitle;
+    private TextView interGameNumber;
+    private TextView interScore;
+    private TimerView interTimer;
     private LinearLayout waitingCard;
     private LinearLayout card;
     // Search board.
@@ -399,6 +412,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         LinearLayout board = new LinearLayout(this);
         board.setOrientation(LinearLayout.VERTICAL);
 
+        java.util.List<View> fade = new java.util.ArrayList<View>();
         TextView statsTitle = new TextView(this);
         statsTitle.setTypeface(this.fontLight, Typeface.BOLD);
         statsTitle.setTextSize(20.0f);
@@ -408,6 +422,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         statsTitle.setPadding(0, dp(8), 0, dp(8));
         board.addView(statsTitle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        fade.add(statsTitle);
 
         AuthOk profile = OnlineSession.get().getLastProfile();
         OpponentInfo opponent = OnlineSession.get().getOpponent();
@@ -417,11 +432,11 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         int oppWins = opponent != null ? opponent.wins : 0;
         int oppLosses = opponent != null ? opponent.losses : 0;
         int oppDraws = opponent != null ? opponent.draws : 0;
-        addStatsRow(board, myWins, R.string.online_title_wins, oppWins);
-        addStatsRow(board, myLosses, R.string.online_title_loses, oppLosses);
-        addStatsRow(board, myDraws, R.string.online_title_draws, oppDraws);
-        addStatsRow(board, ratio(myWins, myWins + myLosses + myDraws),
-                R.string.online_title_ratio, ratio(oppWins, oppWins + oppLosses + oppDraws));
+        fade.add(addStatsRow(board, myWins, R.string.online_title_wins, oppWins));
+        fade.add(addStatsRow(board, myLosses, R.string.online_title_loses, oppLosses));
+        fade.add(addStatsRow(board, myDraws, R.string.online_title_draws, oppDraws));
+        fade.add(addStatsRow(board, ratio(myWins, myWins + myLosses + myDraws),
+                R.string.online_title_ratio, ratio(oppWins, oppWins + oppLosses + oppDraws)));
 
         TextView betsTitle = new TextView(this);
         betsTitle.setTypeface(this.fontLight, Typeface.BOLD);
@@ -432,6 +447,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         betsTitle.setPadding(0, dp(16), 0, dp(8));
         board.addView(betsTitle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        fade.add(betsTitle);
 
         LinearLayout betsRow = new LinearLayout(this);
         betsRow.setGravity(Gravity.CENTER);
@@ -440,11 +456,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         betsRow.addView(coinBadge(fee));
         board.addView(betsRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        fade.add(betsRow);
+        this.statsFadeViews = fade;
         return board;
     }
 
     /** One wins/losses/draws/ratio line: value / title / value columns. */
-    private void addStatsRow(LinearLayout parent, int mine, int titleRes, int theirs) {
+    private View addStatsRow(LinearLayout parent, int mine, int titleRes, int theirs) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.addView(statsCell(String.valueOf(mine)), new LinearLayout.LayoutParams(
@@ -457,6 +475,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.33f));
         parent.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return row;
     }
 
     private TextView statsCell(String text) {
@@ -726,6 +745,111 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         return score;
     }
 
+    /**
+     * The between-rounds intermission card: the original
+     * dialog_online_progress.xml inflated as a board - "Game finished",
+     * "Your Score: x", "Game n/total" and the 100dip countdown disc riding
+     * the rest of the round while the opponent may still be playing.
+     */
+    private void showIntermissionUi() {
+        if (this.intermissionBoard == null) {
+            this.intermissionBoard = getLayoutInflater().inflate(R.layout.dialog_online_progress, null);
+            this.interTitle = (TextView) this.intermissionBoard.findViewById(R.id.dialog_title);
+            this.interGameNumber = (TextView) this.intermissionBoard.findViewById(R.id.gameNumber);
+            this.interScore = (TextView) this.intermissionBoard.findViewById(R.id.your_score);
+            this.interTimer = (TimerView) this.intermissionBoard.findViewById(R.id.timerView);
+            Typeface regular = Typeface.createFromAsset(getAssets(), "Roboto-Regular.ttf");
+            this.interTitle.setTypeface(regular);
+            this.interGameNumber.setTypeface(this.fontLight);
+            this.interScore.setTypeface(regular);
+        }
+        this.interTitle.setText(R.string.game_finished);
+        OnlineMessages.RoundDesc[] rounds = OnlineSession.get().getRounds();
+        int total = rounds != null ? rounds.length : 0;
+        this.interGameNumber.setText(String.format(Locale.US, "%s %d/%d",
+                getString(R.string.game), Math.max(OnlineSession.get().getCurrentRound(), 1),
+                Math.max(total, 1)));
+        this.interScore.setText(String.format(Locale.US, "%s: %d",
+                getString(R.string.your_score), OnlineSession.get().getMyScore()));
+        showBoard(this.intermissionBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP);
+        long remaining = OnlineSession.get().roundRemainingMs();
+        if (remaining >= 1000L) {
+            this.interTimer.setVisibility(View.VISIBLE);
+            this.interTimer.showTimer((int) remaining, true);
+        } else {
+            this.interTimer.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * fragment_start_game.xml grammar: the pre-match game list - one row per
+     * round (name + icon) under a hairline divider, with the 100dip
+     * countdown disc origin showed before the first round launched.
+     */
+    private void showGameListUi(final RoundStart start, final GameInfo info) {
+        LinearLayout board = new LinearLayout(this);
+        board.setOrientation(LinearLayout.VERTICAL);
+
+        View divider = new View(this);
+        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.grid_stroke));
+        int pad = dp(10);
+        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        dividerParams.topMargin = pad;
+        dividerParams.bottomMargin = pad;
+        board.addView(divider, dividerParams);
+
+        OnlineMessages.RoundDesc[] rounds = OnlineSession.get().getRounds();
+        if (rounds != null) {
+            for (OnlineMessages.RoundDesc round : rounds) {
+                GameInfo roundInfo = Games.get().getGameBiId(round.gameId);
+                if (roundInfo == null) {
+                    continue;
+                }
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.VERTICAL);
+                TextView name = new TextView(this);
+                name.setTypeface(this.fontLight);
+                name.setTextSize(18.0f);
+                name.setTextColor(Color.BLACK);
+                name.setGravity(Gravity.CENTER);
+                name.setText(roundInfo.getGameNameRes());
+                row.addView(name, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                ImageView icon = new ImageView(this);
+                icon.setImageResource(roundInfo.getGameImageRes());
+                icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp(100));
+                iconParams.topMargin = dp(4);
+                iconParams.bottomMargin = dp(4);
+                row.addView(icon, iconParams);
+                board.addView(row, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+        }
+
+        this.gameListTimer = new TimerView(this);
+        LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(dp(100), dp(100));
+        timerParams.gravity = Gravity.CENTER_HORIZONTAL;
+        timerParams.topMargin = dp(10);
+        timerParams.bottomMargin = dp(10);
+        board.addView(this.gameListTimer, timerParams);
+        this.gameListBoard = board;
+
+        showBoard(board, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP);
+        this.gameListTimer.showTimer((int) GAME_LIST_TIMEOUT_MS, false);
+        this.roundLaunchScheduled = true;
+        this.handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (OnlineSession.get().getMatchId() != null) {
+                    startGameActivity(start, info);
+                }
+            }
+        }, GAME_LIST_TIMEOUT_MS);
+    }
+
     /** activity_play_online.xml's white bottom bar with one 180dip action. */
     private LinearLayout buildBottomBar() {
         LinearLayout bar = new LinearLayout(this);
@@ -828,6 +952,18 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         }
         this.statsBoard = buildStatsBoard();
         showBoard(this.statsBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
+        // Origin faded the stats rows in one-by-one (100ms per row).
+        if (this.statsFadeViews != null && !this.statsFadeViews.isEmpty()) {
+            for (View view : this.statsFadeViews) {
+                view.setAlpha(0.0f);
+            }
+            com.github.florent37.viewanimator.AnimationBuilder chain =
+                    ViewAnimator.animate(this.statsFadeViews.get(0)).fadeIn().duration(100);
+            for (int i = 1; i < this.statsFadeViews.size(); i++) {
+                chain = chain.thenAnimate(this.statsFadeViews.get(i)).fadeIn().duration(100);
+            }
+            chain.start();
+        }
         this.bottomBar.setVisibility(View.VISIBLE);
         this.bottomButton.setText(R.string.start);
         // Origin's START confirmation used the blue button_play_online skin.
@@ -851,25 +987,6 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         // Mirrors the server's accept window (acceptTimeoutMs).
         this.timerView.showTimer(ACCEPT_WINDOW_MS, true);
         this.bottomBar.setVisibility(View.GONE);
-    }
-
-    private void showWaitingUi() {
-        this.waitingLine.setVisibility(View.VISIBLE);
-        OnlineMessages.RoundDesc[] rounds = OnlineSession.get().getRounds();
-        int totalRounds = rounds != null ? rounds.length : 0;
-        this.waitingLine.setText(String.format(Locale.US, "%s %d/%d",
-                getString(R.string.online_round_word),
-                Math.max(OnlineSession.get().getCurrentRound(), 1), Math.max(totalRounds, 1)));
-        showBoard(this.waitingCard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
-        // Countdown disc with the estimated rest of the round — the original
-        // waiting board centred exactly this view (dialog_online_progress).
-        long remaining = OnlineSession.get().roundRemainingMs();
-        if (remaining >= 1000L) {
-            this.timerView.setVisibility(View.VISIBLE);
-            this.timerView.showTimer((int) remaining, true);
-        } else {
-            this.timerView.setVisibility(View.GONE);
-        }
     }
 
     private void showSettlementUi(final MatchEnd end) {
@@ -973,9 +1090,15 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                 getString(info.getGameNameRes())));
         this.scoreView.setText(String.format(Locale.US, "%d : %d",
                 OnlineSession.get().getMyScore(), OnlineSession.get().getOpponentScore()));
+        this.bottomBar.setVisibility(View.GONE);
+        if (start.round == 1) {
+            // Origin opened the match with the full game list and its
+            // countdown disc (START_TIMEOUT); later rounds use the 3-2-1.
+            showGameListUi(start, info);
+            return;
+        }
         this.statusView.setText("3");
         showBoard(this.matchBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
-        this.bottomBar.setVisibility(View.GONE);
         this.roundLaunchScheduled = true;
         this.handler.postDelayed(new Runnable() {
             @Override
@@ -998,7 +1121,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     private void startGameActivity(RoundStart start, GameInfo info) {
-        if (isFinishing()) {
+        if (isFinishing() || OnlineSession.get().getMatchId() == null) {
+            // The match settled/cancelled while a launch was pending.
             return;
         }
         this.roundLaunchScheduled = false;
@@ -1028,7 +1152,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             if (OnlineSession.get().getMatchId() == null) {
                 return;
             }
-            showWaitingUi();
+            showIntermissionUi();
         }
     }
 
@@ -1073,6 +1197,10 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     public void onRoundEnd(RoundEnd round) {
         this.scoreView.setText(String.format(Locale.US, "%d : %d", round.myScore, round.oppScore));
+        if (this.interScore != null) {
+            this.interScore.setText(String.format(Locale.US, "%s: %d",
+                    getString(R.string.your_score), round.myScore));
+        }
     }
 
     @Override
