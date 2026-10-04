@@ -69,6 +69,9 @@ public class OnlineSession {
 
         void onMatchEnd(MatchEnd end);
 
+        /** Both START presses are in (origin's "opponent is ready"). */
+        void onOpponentStart();
+
         void onRoomCreated(String code);
 
         void onHistory(OnlineMessages.HistoryEntry[] entries);
@@ -683,6 +686,15 @@ public class OnlineSession {
             }
             return;
         }
+        if (OnlineMessages.T_OPPONENT_START.equals(type)) {
+            if (listener != null) {
+                try {
+                    listener.onOpponentStart();
+                } catch (RuntimeException ignored) {
+                }
+            }
+            return;
+        }
         if (OnlineMessages.T_MATCH_END.equals(type)) {
             MatchEnd end = OnlineMessages.payloadOf(json, MatchEnd.class);
             if (end != null) {
@@ -759,7 +771,8 @@ public class OnlineSession {
         return OnlineMessages.T_ROUND_START.equals(type)
                 || OnlineMessages.T_OPPONENT_SCORE.equals(type)
                 || OnlineMessages.T_ROUND_END.equals(type)
-                || OnlineMessages.T_MATCH_END.equals(type);
+                || OnlineMessages.T_MATCH_END.equals(type)
+                || OnlineMessages.T_OPPONENT_START.equals(type);
     }
 
     private boolean ownedByCurrentMatch(String json) {

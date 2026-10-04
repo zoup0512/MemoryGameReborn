@@ -351,6 +351,10 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
     }
 
     @Override
+    public void onOpponentStart() {
+    }
+
+    @Override
     public void onError(int code, String message) {
     }
 

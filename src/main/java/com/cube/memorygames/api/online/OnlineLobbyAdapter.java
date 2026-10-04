@@ -321,6 +321,10 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
             }
 
             @Override
+            public void onOpponentStart() {
+            }
+
+            @Override
             public void onRoomCreated(final String code) {
                 OnlineLobbyAdapter.this.roomCreatedElapsed =
                         android.os.SystemClock.elapsedRealtime();

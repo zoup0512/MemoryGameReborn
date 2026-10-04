@@ -188,6 +188,13 @@ public class MatchRoom {
                     this.acceptDeadlineTask.cancel(false);
                     this.acceptDeadlineTask = null;
                 }
+                // Origin told both players "your opponent is ready" the
+                // moment the second START landed, before the games began.
+                for (int i = 0; i < 2; i++) {
+                    ProtocolCodec.OpponentStart ready = new ProtocolCodec.OpponentStart();
+                    ready.matchId = this.matchId;
+                    sendTo(i, ProtocolCodec.T_OPPONENT_START, ready);
+                }
                 scheduleRoundStart(1, this.properties.getTiming().getMatchFoundDelayMs());
             }
         }

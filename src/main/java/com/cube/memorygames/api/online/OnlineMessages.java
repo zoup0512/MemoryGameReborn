@@ -26,6 +26,7 @@ public final class OnlineMessages {
     public static final String T_ROUND_COMPLETE = "round_complete";
     public static final String T_RESIGN = "resign";
     public static final String T_MATCH_START = "match_start";
+    public static final String T_OPPONENT_START = "opponent_start";
     public static final String T_TOP_REQUEST = "top_request";
     public static final String T_TOP_RESPONSE = "top_response";
     public static final String T_ROOM_CREATE = "room_create";
@@ -184,6 +185,11 @@ public final class OnlineMessages {
         public int myDraws;
         /** Per-round scores feeding the results list board. */
         public RoundScore[] rounds;
+    }
+
+    /** Origin's UserConfirmedGameEvent: both START presses are in. */
+    public static class OpponentStart {
+        public String matchId;
     }
 
     public static class RoundScore {

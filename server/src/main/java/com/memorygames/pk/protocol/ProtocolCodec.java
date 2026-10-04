@@ -41,6 +41,7 @@ public final class ProtocolCodec {
     public static final String T_OPPONENT_SCORE = "opponent_score";
     public static final String T_ROUND_END = "round_end";
     public static final String T_MATCH_END = "match_end";
+    public static final String T_OPPONENT_START = "opponent_start";
     public static final String T_OPPONENT_DISCONNECTED = "opponent_disconnected";
     public static final String T_OPPONENT_RECONNECTED = "opponent_reconnected";
     public static final String T_TOP_RESPONSE = "top_response";
@@ -152,6 +153,11 @@ public final class ProtocolCodec {
         public int myDraws;
         /** Per-round scores feeding the results list board. */
         public RoundScore[] rounds;
+    }
+
+    /** Origin's UserConfirmedGameEvent: both START presses are in. */
+    public static class OpponentStart {
+        public String matchId;
     }
 
     public static class RoundScore {

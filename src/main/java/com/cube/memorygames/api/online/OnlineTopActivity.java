@@ -252,6 +252,10 @@ public class OnlineTopActivity extends AppCompatActivity implements OnlineSessio
     }
 
     @Override
+    public void onOpponentStart() {
+    }
+
+    @Override
     public void onError(int code, String message) {
     }
 

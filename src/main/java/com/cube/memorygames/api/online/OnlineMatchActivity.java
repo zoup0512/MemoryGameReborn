@@ -81,6 +81,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     /** Views faded in one-by-one on the stats board (origin's chain). */
     private java.util.List<View> statsFadeViews;
     private LinearLayout gameListBoard;
+    /** True while the accept-waiting card is up (label swap target). */
+    private boolean acceptWaiting;
     private TimerView gameListTimer;
     // Intermission card between rounds (dialog_online_progress.xml).
     private View intermissionBoard;
@@ -925,6 +927,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     private void showSearchUi() {
+        this.acceptWaiting = false;
         fillMyHeaderSide();
         resetOpponentSide();
         startPulse();
@@ -942,6 +945,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     private void showMatchUi() {
+        this.acceptWaiting = false;
         fillMyHeaderSide();
         fillOpponentSide(OnlineSession.get().getOpponent());
         stopPulse();
@@ -979,6 +983,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     /** Waiting for the opponent's START press (origin's accepted timer). */
     private void showAcceptWaitingUi() {
+        this.acceptWaiting = true;
         this.waitingTitle.setText(R.string.opponent_waiting);
         this.waitingLine.setText("");
         this.waitingLine.setVisibility(View.GONE);
@@ -990,6 +995,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     private void showSettlementUi(final MatchEnd end) {
+        this.acceptWaiting = false;
         refreshCoins();
         boolean win = OnlineSession.RESULT_WIN.equals(end.result);
         boolean draw = OnlineSession.RESULT_DRAW.equals(end.result);
@@ -1077,6 +1083,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     // ---------------------------------------------------------- round launch
 
     private void launchRound(final RoundStart start) {
+        this.acceptWaiting = false;
         GameInfo info = Games.get().getGameBiId(start.gameId);
         if (info == null) {
             Toast.makeText(this, R.string.online_error_connection, Toast.LENGTH_SHORT).show();
@@ -1221,6 +1228,15 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onTop(OnlineMessages.TopEntry[] entries) {
+    }
+
+    @Override
+    public void onOpponentStart() {
+        // Origin's confirmed state: the waiting card's label flips to
+        // "your opponent is ready" the moment the second START lands.
+        if (this.acceptWaiting) {
+            this.waitingTitle.setText(R.string.opponent_is_ready);
+        }
     }
 
     @Override

@@ -70,6 +70,9 @@ class FullMatchIntegrationTest {
             TestWsClient.Frame foundB = b.await(ProtocolCodec.T_MATCH_FOUND, 10000);
             a.send(ProtocolCodec.T_MATCH_START, new Object());
             b.send(ProtocolCodec.T_MATCH_START, new Object());
+            assertNotNull(a.await(ProtocolCodec.T_OPPONENT_START, 5000),
+                    "both STARTs must flip the players to the ready state");
+            assertNotNull(b.await(ProtocolCodec.T_OPPONENT_START, 5000));
             assertNotNull(foundA, "Alice must be matched");
             assertNotNull(foundB, "Bob must be matched");
             ProtocolCodec.MatchFound matchA = foundA.as(ProtocolCodec.MatchFound.class);
@@ -174,6 +177,8 @@ class FullMatchIntegrationTest {
             ProtocolCodec.MatchFound match = found.as(ProtocolCodec.MatchFound.class);
             assertTrue(match.opponent.isBot, "opponent must be a bot");
             a.send(ProtocolCodec.T_MATCH_START, new Object());
+            assertNotNull(a.await(ProtocolCodec.T_OPPONENT_START, 5000),
+                    "bot's instant accept flips the ready state too");
 
             // The bot scores during the rounds.
             TestWsClient.Frame start = a.await(ProtocolCodec.T_ROUND_START, 10000);
