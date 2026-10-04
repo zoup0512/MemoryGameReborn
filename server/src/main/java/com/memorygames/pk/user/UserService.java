@@ -41,7 +41,10 @@ public class UserService {
             account.wins = 0;
             account.losses = 0;
             account.draws = 0;
-            account.balance = balance;
+            // Server-authoritative welcome grant on first registration; the
+            // client no longer gifts itself coins (its grant could never
+            // reach this balance and match_join would 402).
+            account.balance = Math.min(balance + this.properties.getEconomy().getWelcomeCoins(), MAX_BALANCE);
             account.createdAt = System.currentTimeMillis();
         }
         account.nickname = nickname;

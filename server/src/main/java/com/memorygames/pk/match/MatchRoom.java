@@ -182,6 +182,7 @@ public class MatchRoom {
             }
             for (int i = 0; i < 2; i++) {
                 ProtocolCodec.RoundStart start = new ProtocolCodec.RoundStart();
+                start.matchId = this.matchId;
                 start.round = roundNumber;
                 start.gameId = round.gameId;
                 start.durationMs = round.durationMs;
@@ -232,6 +233,7 @@ public class MatchRoom {
             seat.lastLevelAt = now;
             seat.roundScores[this.currentRound - 1] += spec.levelScore(msg.level);
             ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
+            score.matchId = this.matchId;
             score.round = this.currentRound;
             score.score = totalScore(index);
             sendTo(1 - index, ProtocolCodec.T_OPPONENT_SCORE, score);
@@ -263,6 +265,7 @@ public class MatchRoom {
             stopBotBrain();
             for (int i = 0; i < 2; i++) {
                 ProtocolCodec.RoundEnd end = new ProtocolCodec.RoundEnd();
+                end.matchId = this.matchId;
                 end.round = this.currentRound;
                 // Cumulative match totals keep every score display (round
                 // intermission, in-game HUD) on one consistent semantics.
@@ -337,12 +340,14 @@ public class MatchRoom {
             if (this.currentRound > 0) {
                 GameCatalog.ProtocolRound round = this.rounds.get(this.currentRound - 1);
                 ProtocolCodec.RoundStart start = new ProtocolCodec.RoundStart();
+                start.matchId = this.matchId;
                 start.round = this.currentRound;
                 start.gameId = round.gameId;
                 start.durationMs = round.durationMs;
                 start.serverNow = System.currentTimeMillis();
                 sendTo(index, ProtocolCodec.T_ROUND_START, start);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
+                score.matchId = this.matchId;
                 score.round = this.currentRound;
                 score.score = totalScore(1 - index);
                 sendTo(index, ProtocolCodec.T_OPPONENT_SCORE, score);
@@ -393,6 +398,7 @@ public class MatchRoom {
             boolean draw = ProtocolCodec.RESULT_DRAW.equals(result);
             Seat seat = this.seats[i];
             ProtocolCodec.MatchEnd end = new ProtocolCodec.MatchEnd();
+            end.matchId = this.matchId;
             end.result = result;
             end.myScore = i == 0 ? total0 : total1;
             end.oppScore = i == 0 ? total1 : total0;
@@ -467,6 +473,7 @@ public class MatchRoom {
                 GameCatalog.GameSpec spec = this.catalog.byId(this.rounds.get(this.currentRound - 1).gameId);
                 this.seats[1].roundScores[this.currentRound - 1] += spec.levelScore(level);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
+                score.matchId = this.matchId;
                 score.round = this.currentRound;
                 score.score = totalScore(1);
                 sendTo(0, ProtocolCodec.T_OPPONENT_SCORE, score);

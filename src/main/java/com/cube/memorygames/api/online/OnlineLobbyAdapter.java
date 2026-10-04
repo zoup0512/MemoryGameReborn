@@ -36,11 +36,29 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
 
     private final Context context;
     private final Typeface fontLight;
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private OnlineMessages.AuthOk profile;
 
     public OnlineLobbyAdapter(Context context) {
         this.context = context;
         this.fontLight = Typeface.createFromAsset(context.getAssets(), "Roboto-Light.ttf");
+        OnlineSession.get().setProfileCallback(new Runnable() {
+            @Override
+            public void run() {
+                if (OnlineLobbyAdapter.this.profile == null) {
+                    // Post out of the current frame: notifyDataSetChanged during
+                    // a RecyclerView layout/scroll pass is fatal.
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (OnlineLobbyAdapter.this.profile == null) {
+                                OnlineLobbyAdapter.this.setProfile(OnlineSession.get().getLastProfile());
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     public void setProfile(OnlineMessages.AuthOk profile) {
@@ -232,9 +250,10 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
             OnlineSession.get().init(this.context);
             OnlineSession.get().connect();
         }
-        if (this.profile == null) {
-            setProfile(OnlineSession.get().getLastProfile());
-        }
+        // Bind directly from whichever profile we already hold — calling
+        // notifyDataSetChanged() here (mid-bind) throws IllegalStateException.
+        OnlineMessages.AuthOk p = this.profile != null
+                ? this.profile : OnlineSession.get().getLastProfile();
         TextView elo = (TextView) view.findViewById(R.id.online_profile_elo);
         TextView rank = (TextView) view.findViewById(R.id.online_profile_rank);
         TextView nickname = (TextView) view.findViewById(R.id.online_profile_line);
@@ -242,13 +261,13 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         TextView losses = (TextView) view.findViewById(R.id.online_stat_losses);
         TextView draws = (TextView) view.findViewById(R.id.online_stat_draws);
         Button play = (Button) view.findViewById(R.id.online_play_button);
-        if (this.profile != null) {
-            elo.setText(String.valueOf(this.profile.elo));
-            rank.setText(rankName(this.profile.rank));
-            nickname.setText(this.profile.nickname);
-            wins.setText(String.valueOf(this.profile.wins));
-            losses.setText(String.valueOf(this.profile.losses));
-            draws.setText(String.valueOf(this.profile.draws));
+        if (p != null) {
+            elo.setText(String.valueOf(p.elo));
+            rank.setText(rankName(p.rank));
+            nickname.setText(p.nickname);
+            wins.setText(String.valueOf(p.wins));
+            losses.setText(String.valueOf(p.losses));
+            draws.setText(String.valueOf(p.draws));
         } else {
             elo.setText("");
             rank.setText("");
@@ -260,16 +279,9 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // One-time welcome grant on first PK entry (PRD 3.9): must
-                // happen before the entry-fee gate or broke newcomers can
-                // never reach the match screen that used to grant it.
-                if (OnlineIdentity.consumeWelcomeGift(OnlineLobbyAdapter.this.context)) {
-                    try {
-                        MemoryApplicationModel.getInstance().getLocalDataManager()
-                                .addCoinsTransaction(LocalDataManager.TYPE_FIRST_START, 60);
-                    } catch (RuntimeException ignored) {
-                    }
-                }
+                // The 60-coin welcome grant is server-side (issued at guest
+                // registration) since 2026-10-04; a client-side grant desynced
+                // the server balance and match_join was rejected with 402.
                 int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
                         .getLocalUser().money;
                 if (coins < LocalDataManager.ONLINE_ENTRY_FEE) {

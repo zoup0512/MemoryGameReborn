@@ -25,6 +25,7 @@ public class PkProperties {
         private int entryFee = 30;
         private int winCoins = 50;
         private int drawCoins = 15;
+        private int welcomeCoins = 60;
 
         public int getEntryFee() { return entryFee; }
         public void setEntryFee(int entryFee) { this.entryFee = entryFee; }
@@ -32,6 +33,8 @@ public class PkProperties {
         public void setWinCoins(int winCoins) { this.winCoins = winCoins; }
         public int getDrawCoins() { return drawCoins; }
         public void setDrawCoins(int drawCoins) { this.drawCoins = drawCoins; }
+        public int getWelcomeCoins() { return welcomeCoins; }
+        public void setWelcomeCoins(int welcomeCoins) { this.welcomeCoins = welcomeCoins; }
     }
 
     public static class Rating {

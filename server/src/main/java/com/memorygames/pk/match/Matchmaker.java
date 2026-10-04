@@ -59,6 +59,12 @@ public class Matchmaker {
         if (user.balance < this.properties.getEconomy().getEntryFee()) {
             return false;
         }
+        // A user already seated in a live match must never (re)queue: their
+        // frames would fork a second, orphan match pushing events into the
+        // same socket (observed in the 2026-10-04 device test).
+        if (this.manager.roomFor(user.id) != null) {
+            return true; // already playing; treat as accepted no-op
+        }
         synchronized (this.lock) {
             for (Entry entry : this.queue) {
                 if (entry.user.id.equals(user.id)) {
@@ -128,6 +134,11 @@ public class Matchmaker {
             this.manager.createRoom(pair[0].user, pair[0].endpoint, pair[1].user, pair[1].endpoint, null);
         }
         for (Entry alone : botFallbacks) {
+            if (this.manager.roomFor(alone.user.id) != null) {
+                // User reached a live match through another path while the
+                // stale entry waited out the bot timer — drop the entry.
+                continue;
+            }
             String botName = BOT_NAMES[this.random.nextInt(BOT_NAMES.length)];
             log.info("bot fallback for user {} after {}ms wait", alone.user.id,
                     System.currentTimeMillis() - alone.enqueuedAt);

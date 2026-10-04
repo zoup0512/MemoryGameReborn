@@ -105,6 +105,7 @@ public final class OnlineMessages {
     }
 
     public static class RoundStart {
+        public String matchId;
         public int round;
         public String gameId;
         public int durationMs;
@@ -112,11 +113,13 @@ public final class OnlineMessages {
     }
 
     public static class OpponentScore {
+        public String matchId;
         public int round;
         public int score;
     }
 
     public static class RoundEnd {
+        public String matchId;
         public int round;
         public int myScore;
         public int oppScore;
@@ -124,6 +127,7 @@ public final class OnlineMessages {
 
     /** result: "W" win, "L" loss, "D" draw. */
     public static class MatchEnd {
+        public String matchId;
         public String result;
         public int myScore;
         public int oppScore;

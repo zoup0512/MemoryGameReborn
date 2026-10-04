@@ -13,6 +13,8 @@ pk:
     entry-fee: 30
     win-coins: 50
     draw-coins: 15
+    # Tests assert exact settlement balances; disable the welcome grant here.
+    welcome-coins: 0
   timing:
     match-found-delay-ms: 300
     round-intermission-ms: 300

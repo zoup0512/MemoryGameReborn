@@ -88,11 +88,14 @@ public class OnlineSession {
 
     private volatile int state = STATE_DISCONNECTED;
     private volatile AuthOk lastProfile;
+    /** Notified on the main thread whenever a fresh profile arrives. */
+    private volatile Runnable profileCallback;
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
     private OnlineMessages.RoundDesc[] rounds;
     private volatile int currentRound = -1;
     private int myScore;
+    private int myCompletedScore;
     private int oppScore;
     private boolean roundReported;
     private long disconnectedAt;
@@ -145,6 +148,10 @@ public class OnlineSession {
     /** Last authenticated profile snapshot for lobby display (null if never). */
     public AuthOk getLastProfile() {
         return lastProfile;
+    }
+
+    public void setProfileCallback(Runnable callback) {
+        this.profileCallback = callback;
     }
 
     public OnlineMessages.OpponentInfo getOpponent() {
@@ -289,6 +296,8 @@ public class OnlineSession {
         if (matchId == null || currentRound < 0) {
             return;
         }
+        // Live HUD value: completed rounds total plus the running round score.
+        this.myScore = this.myCompletedScore + totalScore;
         LevelWin msg = new LevelWin();
         msg.round = currentRound;
         msg.level = level;
@@ -325,10 +334,23 @@ public class OnlineSession {
         if (type == null) {
             return;
         }
+        // Match-scoped frames carry the owning matchId; anything addressed to
+        // a match we are not in (e.g. an orphan room from a server-side
+        // double-queue) must be dropped before it corrupts our state.
+        if (isMatchScoped(type) && !ownedByCurrentMatch(json)) {
+            return;
+        }
         if (OnlineMessages.T_AUTH_OK.equals(type)) {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
                 this.lastProfile = ok;
+                Runnable callback = this.profileCallback;
+                if (callback != null) {
+                    try {
+                        callback.run();
+                    } catch (RuntimeException ignored) {
+                    }
+                }
                 OnlineIdentity.saveToken(appContext, tokenOf(json), ok.userId);
                 OnlineIdentity.setNickname(appContext, ok.nickname);
                 setState(STATE_IDLE);
@@ -362,6 +384,7 @@ public class OnlineSession {
                 this.rounds = found.rounds;
                 this.currentRound = -1;
                 this.myScore = 0;
+                this.myCompletedScore = 0;
                 this.oppScore = 0;
                 this.roundReported = false;
                 this.disconnectedAt = 0L;
@@ -424,6 +447,7 @@ public class OnlineSession {
             if (end != null) {
                 this.myScore = end.myScore;
                 this.oppScore = end.oppScore;
+                this.myCompletedScore = end.myScore;
                 if (listener != null) {
                     try {
                         listener.onRoundEnd(end);
@@ -462,6 +486,31 @@ public class OnlineSession {
                 }
             }
             return;
+        }
+    }
+
+    private static boolean isMatchScoped(String type) {
+        return OnlineMessages.T_ROUND_START.equals(type)
+                || OnlineMessages.T_OPPONENT_SCORE.equals(type)
+                || OnlineMessages.T_ROUND_END.equals(type)
+                || OnlineMessages.T_MATCH_END.equals(type);
+    }
+
+    private boolean ownedByCurrentMatch(String json) {
+        try {
+            com.google.gson.JsonObject root =
+                    new com.google.gson.JsonParser().parse(json).getAsJsonObject();
+            if (!root.has("d") || !root.get("d").isJsonObject()) {
+                return true; // malformed: let the existing handlers ignore it
+            }
+            com.google.gson.JsonObject d = root.get("d").getAsJsonObject();
+            if (!d.has("matchId") || d.get("matchId").isJsonNull()) {
+                return true; // legacy server frame without tagging
+            }
+            String frameMatch = d.get("matchId").getAsString();
+            return frameMatch.equals(this.matchId);
+        } catch (RuntimeException e) {
+            return true;
         }
     }
 
