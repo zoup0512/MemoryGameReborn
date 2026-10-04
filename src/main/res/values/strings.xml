@@ -191,6 +191,14 @@ Nickname"</string>
     <string name="online_not_connected">Connect with Play Online to get your profile</string>
     <string name="online_opponent_reconnecting">Opponent is reconnecting…</string>
     <string name="online_error_connection">Connection error</string>
+    <string name="online_create_room">Create room</string>
+    <string name="online_join_room">Join room</string>
+    <string name="online_room_code_prefix">Room code:</string>
+    <string name="online_room_waiting">Waiting for your friend…</string>
+    <string name="online_enter_code">Enter 4-digit room code</string>
+    <string name="online_season_line">Season %1$d · %2$dd left</string>
+    <string name="online_history_empty">No matches yet — go play one!</string>
+    <string name="online_friend_tag">friend</string>
     <string name="online_title_draws">Draws</string>
     <string name="online_title_loses">Losses</string>
     <string name="online_title_ratio">Wins, %</string>

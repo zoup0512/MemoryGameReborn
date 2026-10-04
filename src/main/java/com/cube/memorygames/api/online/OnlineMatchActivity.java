@@ -441,6 +441,14 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     @Override
+    public void onRoomCreated(String code) {
+    }
+
+    @Override
+    public void onHistory(OnlineMessages.HistoryEntry[] entries) {
+    }
+
+    @Override
     public void onOpponentDisconnected() {
         Toast.makeText(this, R.string.online_opponent_reconnecting, Toast.LENGTH_SHORT).show();
     }

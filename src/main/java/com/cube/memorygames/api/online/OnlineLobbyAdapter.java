@@ -16,9 +16,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.cube.memorygames.MainMenuActivity;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.api.local.LocalDataManager;
+import com.cube.memorygames.api.online.OnlineMessages;
 import com.memory.brain.training.games.R;
 
 /**
@@ -38,6 +38,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
     private final Typeface fontLight;
     private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private OnlineMessages.AuthOk profile;
+    private android.app.Dialog waitingDialog;
 
     public OnlineLobbyAdapter(Context context) {
         this.context = context;
@@ -193,6 +194,16 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         addStatColumn(stats, R.id.online_stat_losses, R.string.online_title_loses);
         addStatColumn(stats, R.id.online_stat_draws, R.string.online_title_draws);
 
+        TextView season = new TextView(this.context);
+        season.setId(R.id.online_season_line);
+        season.setTypeface(this.fontLight);
+        season.setTextSize(13.0f);
+        season.setTextColor(Color.parseColor("#8a000000"));
+        season.setGravity(Gravity.CENTER);
+        season.setPadding(0, dp(6), 0, 0);
+        card.addView(season, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         Button play = new Button(this.context);
         play.setId(R.id.online_play_button);
         play.setText(R.string.menuOnlinePlay);
@@ -207,7 +218,49 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         playParams.topMargin = dp(20);
         root.addView(play, playParams);
 
+        // Friend rooms (PRD F-12) beside ranked play.
+        LinearLayout friendRow = new LinearLayout(this.context);
+        friendRow.setOrientation(LinearLayout.HORIZONTAL);
+        friendRow.setGravity(Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rowParams.topMargin = dp(10);
+        root.addView(friendRow, rowParams);
+
+        Button createRoom = smallButton(R.string.online_create_room);
+        createRoom.setId(R.id.online_create_room);
+        LinearLayout.LayoutParams createParams = new LinearLayout.LayoutParams(0, dp(38), 1.0f);
+        createParams.rightMargin = dp(4);
+        friendRow.addView(createRoom, createParams);
+        Button joinRoom = smallButton(R.string.online_join_room);
+        joinRoom.setId(R.id.online_join_room);
+        LinearLayout.LayoutParams joinParams = new LinearLayout.LayoutParams(0, dp(38), 1.0f);
+        joinParams.leftMargin = dp(4);
+        friendRow.addView(joinRoom, joinParams);
+
+        TextView history = new TextView(this.context);
+        history.setId(R.id.online_history_link);
+        history.setText(R.string.menuOnlineHistory);
+        history.setTypeface(this.fontLight, Typeface.BOLD);
+        history.setTextSize(15.0f);
+        history.setTextColor(ContextCompat.getColor(this.context, R.color.grid_correct));
+        history.setGravity(Gravity.CENTER);
+        history.setPadding(0, dp(14), 0, dp(8));
+        root.addView(history, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         return root;
+    }
+
+    private Button smallButton(int textRes) {
+        Button button = new Button(this.context);
+        button.setText(textRes);
+        button.setTypeface(this.fontLight, Typeface.BOLD);
+        button.setTextSize(14.0f);
+        button.setTextColor(Color.WHITE);
+        button.setBackgroundResource(R.drawable.button_play_online);
+        button.setAllCaps(false);
+        return button;
     }
 
     private void addStatColumn(LinearLayout parent, int valueId, int labelRes) {
@@ -250,6 +303,89 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
             OnlineSession.get().init(this.context);
             OnlineSession.get().connect();
         }
+        // The lobby temporarily listens so friend-room pairings can launch
+        // the match screen straight from the dialogs.
+        OnlineSession.get().setMatchListener(new OnlineSession.MatchListener() {
+            @Override
+            public void onStateChanged(int state) {
+            }
+
+            @Override
+            public void onAuthOk(OnlineMessages.AuthOk profile) {
+            }
+
+            @Override
+            public void onMatchFound(OnlineMessages.MatchFound match) {
+                dismissWaiting();
+                OnlineLobbyAdapter.this.context.startActivity(
+                        new Intent(OnlineLobbyAdapter.this.context, OnlineMatchActivity.class));
+            }
+
+            @Override
+            public void onMatchCancelled() {
+            }
+
+            @Override
+            public void onRoundStart(OnlineMessages.RoundStart round) {
+            }
+
+            @Override
+            public void onOpponentScore(OnlineMessages.OpponentScore score) {
+            }
+
+            @Override
+            public void onRoundEnd(OnlineMessages.RoundEnd round) {
+            }
+
+            @Override
+            public void onMatchEnd(OnlineMessages.MatchEnd end) {
+            }
+
+            @Override
+            public void onRoomCreated(final String code) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showWaitingForFriend(code);
+                    }
+                });
+            }
+
+            @Override
+            public void onHistory(OnlineMessages.HistoryEntry[] entries) {
+            }
+
+            @Override
+            public void onOpponentDisconnected() {
+            }
+
+            @Override
+            public void onOpponentReconnected() {
+            }
+
+            @Override
+            public void onError(int code, String message) {
+            }
+        });
+        view.<Button>findViewById(R.id.online_create_room).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                OnlineSession.get().createFriendRoom();
+            }
+        });
+        view.<Button>findViewById(R.id.online_join_room).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showJoinDialog();
+            }
+        });
+        view.findViewById(R.id.online_history_link).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                OnlineLobbyAdapter.this.context.startActivity(
+                        new Intent(OnlineLobbyAdapter.this.context, OnlineHistoryActivity.class));
+            }
+        });
         // Bind directly from whichever profile we already hold — calling
         // notifyDataSetChanged() here (mid-bind) throws IllegalStateException.
         OnlineMessages.AuthOk p = this.profile != null
@@ -260,7 +396,15 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         TextView wins = (TextView) view.findViewById(R.id.online_stat_wins);
         TextView losses = (TextView) view.findViewById(R.id.online_stat_losses);
         TextView draws = (TextView) view.findViewById(R.id.online_stat_draws);
+        TextView seasonLine = (TextView) view.findViewById(R.id.online_season_line);
         Button play = (Button) view.findViewById(R.id.online_play_button);
+        if (p != null) {
+            long daysLeft = Math.max(0L, (p.seasonEndsAt - System.currentTimeMillis()) / 86400000L);
+            seasonLine.setText(String.format(java.util.Locale.US,
+                    this.context.getString(R.string.online_season_line), p.seasonIndex, daysLeft));
+        } else {
+            seasonLine.setText("");
+        }
         if (p != null) {
             elo.setText(String.valueOf(p.elo));
             rank.setText(rankName(p.rank));
@@ -319,6 +463,61 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                     public void onClick(android.content.DialogInterface dialog, int which) {
                         OnlineConfig.setEndpoint(OnlineLobbyAdapter.this.context,
                                 input.getText().toString().trim());
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Host's "waiting for a friend" board showing the 4-digit code. */
+    private void showWaitingForFriend(String code) {
+        if (this.waitingDialog != null && this.waitingDialog.isShowing()) {
+            return;
+        }
+        TextView text = new TextView(this.context);
+        text.setTypeface(this.fontLight);
+        text.setTextSize(20.0f);
+        text.setGravity(Gravity.CENTER);
+        int pad = dp(20);
+        text.setPadding(pad, pad, pad, pad);
+        text.setText(this.context.getString(R.string.online_room_code_prefix) + " " + code
+                + "\n" + this.context.getString(R.string.online_room_waiting));
+        this.waitingDialog = new AlertDialog.Builder(this.context)
+                .setView(text)
+                .setCancelable(false)
+                .setPositiveButton(R.string.cancel, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        OnlineSession.get().cancelFriendRoom();
+                        dialog.dismiss();
+                    }
+                })
+                .show();
+    }
+
+    private void dismissWaiting() {
+        if (this.waitingDialog != null && this.waitingDialog.isShowing()) {
+            this.waitingDialog.dismiss();
+        }
+        this.waitingDialog = null;
+    }
+
+    private void showJoinDialog() {
+        final android.widget.EditText input = new android.widget.EditText(this.context);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)});
+        int pad = dp(16);
+        input.setPadding(pad, pad, pad, pad);
+        new AlertDialog.Builder(this.context)
+                .setTitle(R.string.online_enter_code)
+                .setView(input)
+                .setPositiveButton(R.string.ok, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        String code = input.getText().toString().trim();
+                        if (code.length() == 4) {
+                            OnlineSession.get().joinFriendRoom(code);
+                        }
                     }
                 })
                 .setNegativeButton(R.string.cancel, null)

@@ -81,6 +81,13 @@ public class UserService {
         this.repository.save(account);
     }
 
+    /** Persists anti-cheat flag changes without touching match counters. */
+    @Transactional
+    public void saveFlags(UserAccount account) {
+        account.updatedAt = System.currentTimeMillis();
+        this.repository.save(account);
+    }
+
     public int rankIndex(UserAccount account) {
         return this.rating.rankIndex(account.elo);
     }

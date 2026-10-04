@@ -13,6 +13,8 @@ public class PkProperties {
     private final Rating rating = new Rating();
     private final Timing timing = new Timing();
     private final Match match = new Match();
+    private final Season season = new Season();
+    private final AntiCheat antiCheat = new AntiCheat();
 
     /** When > 0, replaces every game's round duration (tests only). */
     private long roundDurationOverrideMs = 0;
@@ -71,6 +73,33 @@ public class PkProperties {
         public void setReconnectWindowMs(long v) { this.reconnectWindowMs = v; }
     }
 
+    public static class Season {
+        /** Season length in ms (30 days; tests use milliseconds). */
+        private long durationMs = 30L * 86400000L;
+
+        public long getDurationMs() { return durationMs; }
+        public void setDurationMs(long v) { this.durationMs = v; }
+    }
+
+    public static class AntiCheat {
+        /** Answers needed before distribution checks apply. */
+        private int minAnswersForCheck = 10;
+        /** suspicion++ when avg interval < floor * this factor. */
+        private double speedFactor = 0.7d;
+        /** Bot-only matches after this many suspicion strikes. */
+        private int suspicionThreshold = 2;
+        private int restrictionMatches = 5;
+
+        public int getMinAnswersForCheck() { return minAnswersForCheck; }
+        public void setMinAnswersForCheck(int v) { this.minAnswersForCheck = v; }
+        public double getSpeedFactor() { return speedFactor; }
+        public void setSpeedFactor(double v) { this.speedFactor = v; }
+        public int getSuspicionThreshold() { return suspicionThreshold; }
+        public void setSuspicionThreshold(int v) { this.suspicionThreshold = v; }
+        public int getRestrictionMatches() { return restrictionMatches; }
+        public void setRestrictionMatches(int v) { this.restrictionMatches = v; }
+    }
+
     public static class Match {
         private int roundsPerMatch = 5;
         /** ELO bucket widths for matchmaking ([0,w,2w,...]). */
@@ -90,6 +119,8 @@ public class PkProperties {
     public Rating getRating() { return rating; }
     public Timing getTiming() { return timing; }
     public Match getMatch() { return match; }
+    public Season getSeason() { return season; }
+    public AntiCheat getAntiCheat() { return antiCheat; }
     public long getRoundDurationOverrideMs() { return roundDurationOverrideMs; }
     public void setRoundDurationOverrideMs(long v) { this.roundDurationOverrideMs = v; }
     public long getMinLevelIntervalOverrideMs() { return minLevelIntervalOverrideMs; }

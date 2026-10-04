@@ -4,6 +4,7 @@ import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,26 @@ public class Matchmaker {
 
     private final List<Entry> queue = new ArrayList<>();
     private final Object lock = new Object();
+
+    /** Friend rooms awaiting a guest (PRD F-12). */
+    private static final long FRIEND_ROOM_TTL_MS = 10 * 60 * 1000L;
+
+    private static class FriendRoom {
+
+        final String code;
+        final UserAccount host;
+        final PlayerEndpoint hostEndpoint;
+        final long createdAt = System.currentTimeMillis();
+
+        FriendRoom(String code, UserAccount host, PlayerEndpoint hostEndpoint) {
+            this.code = code;
+            this.host = host;
+            this.hostEndpoint = hostEndpoint;
+        }
+    }
+
+    private final List<FriendRoom> friendRooms = new ArrayList<>();
+    private final java.util.Random codeRandom = new java.util.Random();
 
     private final MatchManager manager;
     private final UserService users;
@@ -93,6 +114,64 @@ public class Matchmaker {
         return false;
     }
 
+    /** Creates a friend room; returns its 4-digit code (PRD F-12). */
+    public String createFriendRoom(UserAccount host, PlayerEndpoint endpoint) {
+        String code;
+        synchronized (this.lock) {
+            dropExpiredFriendRooms();
+            // also drop any previous room hosted by this user
+            this.friendRooms.removeIf(r -> r.host.id.equals(host.id));
+            do {
+                code = String.format("%04d", this.codeRandom.nextInt(10000));
+            } while (roomCodeTaken(code));
+            this.friendRooms.add(new FriendRoom(code, host, endpoint));
+        }
+        return code;
+    }
+
+    /** Guest joins by code; true when the pairing was launched. */
+    public boolean joinFriendRoom(String code, UserAccount guest, PlayerEndpoint endpoint) {
+        FriendRoom room = null;
+        synchronized (this.lock) {
+            dropExpiredFriendRooms();
+            for (FriendRoom candidate : this.friendRooms) {
+                if (candidate.code.equals(code)) {
+                    room = candidate;
+                    break;
+                }
+            }
+            if (room != null) {
+                this.friendRooms.remove(room);
+            }
+        }
+        if (room == null) {
+            return false;
+        }
+        this.manager.createRoom(room.host, room.hostEndpoint, guest, endpoint, null, true);
+        return true;
+    }
+
+    /** Host cancelled the room (or disconnected). */
+    public void cancelFriendRoom(long hostUserId) {
+        synchronized (this.lock) {
+            this.friendRooms.removeIf(r -> r.host.id == hostUserId);
+        }
+    }
+
+    private boolean roomCodeTaken(String code) {
+        for (FriendRoom room : this.friendRooms) {
+            if (room.code.equals(code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void dropExpiredFriendRooms() {
+        long now = System.currentTimeMillis();
+        this.friendRooms.removeIf(r -> now - r.createdAt >= FRIEND_ROOM_TTL_MS);
+    }
+
     /** Periodic scan; also triggered opportunistically after each enqueue. */
     public void scan() {
         List<Entry[]> pairsToStart = new ArrayList<>();
@@ -108,7 +187,7 @@ public class Matchmaker {
                 if (a == null) {
                     continue;
                 }
-                if (now - a.enqueuedAt >= botWait) {
+                if (now - a.enqueuedAt >= botWait || a.user.restrictedMatches > 0) {
                     botFallbacks.add(a);
                     this.queue.set(i, null);
                     continue;

@@ -2,11 +2,14 @@ package com.memorygames.pk.ws;
 
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.config.PkProperties;
+import com.memorygames.pk.match.MatchRecord;
+import com.memorygames.pk.match.MatchRecordRepository;
 import com.memorygames.pk.match.MatchRoom;
 import com.memorygames.pk.match.Matchmaker;
 import com.memorygames.pk.match.MatchManager;
 import com.memorygames.pk.match.PlayerEndpoint;
 import com.memorygames.pk.rating.Rating;
+import com.memorygames.pk.season.SeasonService;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
 import org.slf4j.Logger;
@@ -35,6 +38,8 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final MatchManager manager;
     private final Rating rating;
     private final PkProperties properties;
+    private final MatchRecordRepository records;
+    private final SeasonService seasons;
 
     /** ws session id -> authenticated user id. */
     private final Map<String, Long> authenticated = new ConcurrentHashMap<>();
@@ -50,12 +55,15 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     }
 
     public PkWebSocketHandler(UserService users, Matchmaker matchmaker, MatchManager manager,
-                              Rating rating, PkProperties properties) {
+                              Rating rating, PkProperties properties,
+                              MatchRecordRepository records, SeasonService seasons) {
         this.users = users;
         this.matchmaker = matchmaker;
         this.manager = manager;
         this.rating = rating;
         this.properties = properties;
+        this.records = records;
+        this.seasons = seasons;
     }
 
     @Override
@@ -156,6 +164,54 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
                 return;
+            case ProtocolCodec.T_ROOM_CREATE: {
+                if (room != null) {
+                    reply(session, ProtocolCodec.T_ERROR, error(409, "already in a match"));
+                    return;
+                }
+                String code = this.matchmaker.createFriendRoom(account, endpoint(session));
+                ProtocolCodec.RoomCreated created = new ProtocolCodec.RoomCreated();
+                created.code = code;
+                reply(session, ProtocolCodec.T_ROOM_CREATED, created);
+                return;
+            }
+            case ProtocolCodec.T_ROOM_JOIN: {
+                if (room != null) {
+                    reply(session, ProtocolCodec.T_ERROR, error(409, "already in a match"));
+                    return;
+                }
+                ProtocolCodec.RoomJoin join = ProtocolCodec.convert(envelope.d, ProtocolCodec.RoomJoin.class);
+                boolean joined = join != null && join.code != null
+                        && this.matchmaker.joinFriendRoom(join.code.trim(), account, endpoint(session));
+                if (!joined) {
+                    reply(session, ProtocolCodec.T_ERROR, error(404, "room not found"));
+                }
+                return;
+            }
+            case ProtocolCodec.T_ROOM_CANCEL:
+                this.matchmaker.cancelFriendRoom(userId);
+                return;
+            case ProtocolCodec.T_HISTORY_REQUEST: {
+                java.util.List<MatchRecord> recent = this.records.findRecentForUser(userId,
+                        org.springframework.data.domain.PageRequest.of(0, 20));
+                ProtocolCodec.HistoryResponse response = new ProtocolCodec.HistoryResponse();
+                response.matches = new ProtocolCodec.HistoryEntry[recent.size()];
+                for (int i = 0; i < recent.size(); i++) {
+                    MatchRecord record = recent.get(i);
+                    boolean asA = record.playerA == userId;
+                    ProtocolCodec.HistoryEntry entry = new ProtocolCodec.HistoryEntry();
+                    entry.ts = record.settledAt;
+                    entry.opponent = asA ? record.nicknameB : record.nicknameA;
+                    entry.mode = record.mode;
+                    entry.result = asA ? record.resultA : mirrorResult(record.resultA);
+                    entry.myScore = asA ? record.scoreA : record.scoreB;
+                    entry.oppScore = asA ? record.scoreB : record.scoreA;
+                    entry.vsBot = record.botOpponent && !asA;
+                    response.matches[i] = entry;
+                }
+                reply(session, ProtocolCodec.T_HISTORY_RESPONSE, response);
+                return;
+            }
             case ProtocolCodec.T_RESIGN:
                 if (room != null) {
                     room.onResign(userId);
@@ -181,6 +237,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         }
         this.sessionByUser.remove(userId, session.getId());
         this.matchmaker.cancel(userId);
+        this.matchmaker.cancelFriendRoom(userId);
         MatchRoom room = this.manager.roomFor(userId);
         if (room != null) {
             room.onDisconnect(userId);
@@ -220,7 +277,25 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         ok.losses = account.losses;
         ok.draws = account.draws;
         ok.balance = account.balance;
+        try {
+            SeasonService.Snapshot snapshot = this.seasons.snapshot();
+            ok.seasonIndex = snapshot.index;
+            ok.seasonEndsAt = snapshot.endAt;
+        } catch (RuntimeException ignored) {
+            ok.seasonIndex = 1;
+            ok.seasonEndsAt = System.currentTimeMillis() + 30L * 86400000L;
+        }
         return ok;
+    }
+
+    private static String mirrorResult(String resultA) {
+        if (ProtocolCodec.RESULT_WIN.equals(resultA)) {
+            return ProtocolCodec.RESULT_LOSE;
+        }
+        if (ProtocolCodec.RESULT_LOSE.equals(resultA)) {
+            return ProtocolCodec.RESULT_WIN;
+        }
+        return ProtocolCodec.RESULT_DRAW;
     }
 
     private static ProtocolCodec.ErrorMsg error(int code, String message) {

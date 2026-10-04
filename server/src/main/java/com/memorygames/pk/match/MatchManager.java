@@ -3,6 +3,7 @@ package com.memorygames.pk.match;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.game.GameCatalog;
 import com.memorygames.pk.rating.Rating;
+import com.memorygames.pk.season.SeasonService;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
 import jakarta.annotation.PreDestroy;
@@ -34,12 +35,17 @@ public class MatchManager {
     private final Rating rating;
     private final PkProperties properties;
     private final ScheduledThreadPoolExecutor scheduler;
+    private final MatchRecordRepository records;
+    private final SeasonService seasons;
 
-    public MatchManager(GameCatalog catalog, UserService users, Rating rating, PkProperties properties) {
+    public MatchManager(GameCatalog catalog, UserService users, Rating rating,
+                        PkProperties properties, MatchRecordRepository records, SeasonService seasons) {
         this.catalog = catalog;
         this.users = users;
         this.rating = rating;
         this.properties = properties;
+        this.records = records;
+        this.seasons = seasons;
         this.scheduler = new ScheduledThreadPoolExecutor(2, r -> {
             Thread thread = new Thread(r, "pk-room");
             thread.setDaemon(true);
@@ -66,9 +72,15 @@ public class MatchManager {
     public MatchRoom createRoom(UserAccount userA, PlayerEndpoint endpointA,
                                 UserAccount userB, PlayerEndpoint endpointB,
                                 String botNickname) {
-        MatchRoom room = new MatchRoom(userA, endpointA, userB, endpointB, botNickname,
+        return createRoom(userA, endpointA, userB, endpointB, botNickname, false);
+    }
+
+    public MatchRoom createRoom(UserAccount userA, PlayerEndpoint endpointA,
+                                UserAccount userB, PlayerEndpoint endpointB,
+                                String botNickname, boolean friendMode) {
+        MatchRoom room = new MatchRoom(userA, endpointA, userB, endpointB, botNickname, friendMode,
                 this.catalog, this.users, this.rating, this.properties, this.scheduler,
-                settled -> onSettled(settled));
+                settled -> onSettled(settled), this.records, this.seasons);
         this.rooms.put(room.matchId, room);
         if (userA != null) {
             this.roomByUser.put(userA.id, room.matchId);

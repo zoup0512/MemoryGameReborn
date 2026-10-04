@@ -66,6 +66,10 @@ public class OnlineSession {
 
         void onMatchEnd(MatchEnd end);
 
+        void onRoomCreated(String code);
+
+        void onHistory(OnlineMessages.HistoryEntry[] entries);
+
         void onOpponentDisconnected();
 
         void onOpponentReconnected();
@@ -260,6 +264,11 @@ public class OnlineSession {
     // ------------------------------------------------------- matchmaking
 
     public void startMatchmaking() {
+        // Stack trace kept deliberately: an intermittent phantom match_join
+        // (queue entry appearing around match-exit moments) is still open;
+        // the next occurrence will identify the call site. Debug tag only.
+        android.util.Log.d("OnlinePK", "startMatchmaking from state=" + state,
+                new IllegalStateException("trace"));
         if (state == STATE_IDLE || state == STATE_QUEUE) {
             if (state == STATE_QUEUE) {
                 return;
@@ -277,6 +286,26 @@ public class OnlineSession {
                 }
             }, 4000L);
         }
+    }
+
+    /** Friend rooms (PRD F-12). */
+    public void createFriendRoom() {
+        send(OnlineMessages.T_ROOM_CREATE, new Object());
+    }
+
+    public void joinFriendRoom(String code) {
+        OnlineMessages.RoomJoin join = new OnlineMessages.RoomJoin();
+        join.code = code;
+        send(OnlineMessages.T_ROOM_JOIN, join);
+    }
+
+    public void cancelFriendRoom() {
+        send(OnlineMessages.T_ROOM_CANCEL, new Object());
+    }
+
+    /** Match history (PRD F-11); response arrives via MatchListener.onHistory. */
+    public void requestHistory() {
+        send(OnlineMessages.T_HISTORY_REQUEST, new Object());
     }
 
     public void cancelMatchmaking() {
@@ -477,6 +506,27 @@ public class OnlineSession {
                         listener.onMatchEnd(end);
                     } catch (RuntimeException ignored) {
                     }
+                }
+            }
+            return;
+        }
+        if (OnlineMessages.T_ROOM_CREATED.equals(type)) {
+            OnlineMessages.RoomCreated created = OnlineMessages.payloadOf(json, OnlineMessages.RoomCreated.class);
+            if (created != null && listener != null) {
+                try {
+                    listener.onRoomCreated(created.code);
+                } catch (RuntimeException ignored) {
+                }
+            }
+            return;
+        }
+        if (OnlineMessages.T_HISTORY_RESPONSE.equals(type)) {
+            OnlineMessages.HistoryResponse response =
+                    OnlineMessages.payloadOf(json, OnlineMessages.HistoryResponse.class);
+            if (listener != null) {
+                try {
+                    listener.onHistory(response != null ? response.matches : new OnlineMessages.HistoryEntry[0]);
+                } catch (RuntimeException ignored) {
                 }
             }
             return;

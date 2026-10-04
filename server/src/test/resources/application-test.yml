@@ -6,6 +6,15 @@ spring:
       ddl-auto: create-drop
 
 pk:
+  season:
+    duration-ms: 3600000
+  anti-cheat:
+    min-answers-for-check: 5
+    # Production uses 0.7; the integration test's fixed cadence can only
+    # demonstrate the mechanism at a looser factor.
+    speed-factor: 0.9
+    suspicion-threshold: 2
+    restriction-matches: 2
   round-duration-override-ms: 2000
   min-level-interval-override-ms: 200
   bot-level-interval-override-ms: 300

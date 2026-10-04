@@ -488,6 +488,11 @@
     <item type="id" name="online_stat_losses" />
     <item type="id" name="online_stat_draws" />
     <item type="id" name="online_play_button" />
+    <item type="id" name="online_create_room" />
+    <item type="id" name="online_join_room" />
+    <item type="id" name="online_history_link" />
+    <item type="id" name="online_season_line" />
+    <item type="id" name="online_history_empty" />
     <item type="id" name="bb_bottom_bar_appearance_id" />
     <item type="id" name="bb_bottom_bar_color_id" />
 </resources>

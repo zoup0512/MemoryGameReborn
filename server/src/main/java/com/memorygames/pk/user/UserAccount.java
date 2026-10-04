@@ -45,4 +45,12 @@ public class UserAccount {
 
     @Column(nullable = false)
     public long updatedAt;
+
+    /** Anti-cheat strikes (PRD 4.5 v2). */
+    @Column(nullable = false)
+    public int suspicion;
+
+    /** Remaining bot-only matches while restricted. */
+    @Column(nullable = false)
+    public int restrictedMatches;
 }

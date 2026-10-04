@@ -4,6 +4,7 @@ import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.game.GameCatalog;
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.rating.Rating;
+import com.memorygames.pk.season.SeasonService;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
 import org.slf4j.Logger;
@@ -71,7 +72,11 @@ public class MatchRoom {
         }
     }
 
+    public static final String MODE_RANKED = "RANKED";
+    public static final String MODE_FRIEND = "FRIEND";
+
     public final String matchId;
+    public final boolean friendMode;
     private final Seat[] seats = new Seat[2];
     private final List<GameCatalog.ProtocolRound> rounds;
     private final long matchSeed;
@@ -84,20 +89,31 @@ public class MatchRoom {
     private final PkProperties properties;
     private final ScheduledThreadPoolExecutor scheduler;
     private final SettlementCallback settlementCallback;
+    private final MatchRecordRepository records;
+    private final SeasonService seasons;
+    /** Bot rubber-banding accuracy (PRD M2 bot tuning). */
+    private double botAccuracy;
 
     private int currentRound = 0;
     private long roundStartedAt;
+    private long startedAt = System.currentTimeMillis();
     private final AtomicBoolean settledOnce = new AtomicBoolean(false);
     private ScheduledFuture<?> roundDeadlineTask;
     private final List<ScheduledFuture<?>> botTasks = new ArrayList<>();
 
     public MatchRoom(UserAccount userA, PlayerEndpoint endpointA,
                      UserAccount userB, PlayerEndpoint endpointB,
-                     String botNickname, GameCatalog catalog, UserService users,
+                     String botNickname, boolean friendMode,
+                     GameCatalog catalog, UserService users,
                      Rating rating, PkProperties properties,
                      ScheduledThreadPoolExecutor scheduler,
-                     SettlementCallback settlementCallback) {
+                     SettlementCallback settlementCallback,
+                     MatchRecordRepository records, SeasonService seasons) {
         this.matchId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        this.friendMode = friendMode;
+        this.records = records;
+        this.seasons = seasons;
+        this.botAccuracy = -1.0d; // lazily initialized at the first round
         this.matchSeed = new Random().nextLong();
         this.rounds = catalog.planRounds(this.matchSeed, properties.getMatch().getRoundsPerMatch());
         this.botNickname = botNickname;
@@ -133,6 +149,7 @@ public class MatchRoom {
     private ProtocolCodec.MatchFound buildMatchFound(int viewerIndex) {
         ProtocolCodec.MatchFound found = new ProtocolCodec.MatchFound();
         found.matchId = this.matchId;
+        found.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
         found.opponent = opponentInfo(1 - viewerIndex);
         found.rounds = new ProtocolCodec.RoundDesc[this.rounds.size()];
         for (int i = 0; i < this.rounds.size(); i++) {
@@ -178,6 +195,7 @@ public class MatchRoom {
             GameCatalog.GameSpec spec = this.catalog.byId(round.gameId);
             long now = System.currentTimeMillis();
             this.roundStartedAt = now;
+            this.botAccuracy = -1.0d;
             for (Seat seat : this.seats) {
                 seat.roundDone = false;
                 seat.expectedLevel = 1;
@@ -403,6 +421,10 @@ public class MatchRoom {
         double score0 = ProtocolCodec.RESULT_WIN.equals(result0) ? 1.0
                 : ProtocolCodec.RESULT_DRAW.equals(result0) ? 0.5 : 0.0;
         int delta0 = this.rating.delta(elo0Pre, elo1Pre, score0);
+        // Friend rooms move half rating (PRD 3.11), rounded to stay zero-sum.
+        if (this.friendMode) {
+            delta0 = delta0 / 2;
+        }
         int delta1 = -delta0;
         ProtocolCodec.MatchEnd[] payloads = new ProtocolCodec.MatchEnd[2];
         for (int i = 0; i < 2; i++) {
@@ -431,12 +453,91 @@ public class MatchRoom {
             }
             payloads[i] = end;
         }
+        // Persist everything BEFORE the (async) match_end frames reach the
+        // clients: a client that reacts to match_end by reading history or
+        // having the test inspect suspicion must observe committed state.
+        persistRecord(total0, total1, result0, payloads[0].eloDelta);
+        evaluateAntiCheat();
+        if (this.seasons != null) {
+            try {
+                this.seasons.activeSeason(); // cheap rollover check on every settle
+            } catch (RuntimeException e) {
+                log.warn("season check failed: {}", e.getMessage());
+            }
+        }
         for (int i = 0; i < 2; i++) {
             sendTo(i, ProtocolCodec.T_MATCH_END, payloads[i]);
         }
-        log.info("match {} settled: forfeit={} scores {}/{}",
-                this.matchId, forfeit, total0, total1);
+        log.info("match {} settled: mode={} forfeit={} scores {}/{}",
+                this.matchId, this.friendMode ? MODE_FRIEND : MODE_RANKED, forfeit, total0, total1);
         this.settlementCallback.onSettled(this);
+    }
+
+    private void persistRecord(int total0, int total1, String result0, int eloDeltaA) {
+        if (this.records == null) {
+            return;
+        }
+        try {
+            MatchRecord record = new MatchRecord();
+            record.matchId = this.matchId;
+            record.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
+            record.playerA = this.seats[0].user != null ? this.seats[0].user.id : -1L;
+            record.nicknameA = this.seats[0].nickname();
+            record.resultA = result0;
+            record.scoreA = total0;
+            record.playerB = this.seats[1].user != null ? this.seats[1].user.id : -1L;
+            record.nicknameB = this.seats[1].nickname();
+            record.scoreB = total1;
+            record.eloDeltaA = eloDeltaA;
+            record.createdAt = this.startedAt;
+            record.settledAt = System.currentTimeMillis();
+            record.botOpponent = this.seats[1].isBot;
+            this.records.save(record);
+        } catch (RuntimeException e) {
+            log.warn("match record persist failed: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Anti-cheat v2 (PRD 4.5): per-seat post-match distribution check. A
+     * human answering faster than floor*speedFactor across the round is a
+     * bot/automation signature; strikes accumulate and eventually restrict
+     * the account to bot opponents only.
+     */
+    private void evaluateAntiCheat() {
+        long elapsed = System.currentTimeMillis() - this.roundStartedAt;
+        for (Seat seat : this.seats) {
+            if (seat.user == null || seat.isBot) {
+                continue;
+            }
+            long floor = 0;
+            for (GameCatalog.ProtocolRound round : this.rounds) {
+                GameCatalog.GameSpec spec = this.catalog.byId(round.gameId);
+                floor = Math.max(floor, this.catalog.minLevelIntervalOf(spec));
+            }
+            if (floor <= 0 || elapsed <= 0) {
+                continue;
+            }
+            int answers = seat.lastReportedLevel;
+            if (answers < this.properties.getAntiCheat().getMinAnswersForCheck()) {
+                continue;
+            }
+            double avgInterval = (double) elapsed / answers;
+            if (seat.user.restrictedMatches > 0) {
+                seat.user.restrictedMatches--;
+                this.users.saveFlags(seat.user);
+            }
+            if (avgInterval < floor * this.properties.getAntiCheat().getSpeedFactor()) {
+                seat.user.suspicion++;
+                if (seat.user.suspicion >= this.properties.getAntiCheat().getSuspicionThreshold()) {
+                    seat.user.restrictedMatches = this.properties.getAntiCheat().getRestrictionMatches();
+                    seat.user.suspicion = 0;
+                    log.warn("user {} restricted to bot matches for {} games (answer-rate anomaly)",
+                            seat.user.id, seat.user.restrictedMatches);
+                }
+                this.users.saveFlags(seat.user);
+            }
+        }
     }
 
     private static String mirror(String result) {
@@ -480,6 +581,19 @@ public class MatchRoom {
             if (this.settledOnce.get() || this.seats[1].expectedLevel != level) {
                 return;
             }
+            // Rubber-banding (M2 bot tuning): drift accuracy to keep the
+            // human's match engaging instead of running away on either side.
+            if (this.botAccuracy < 0) {
+                this.botAccuracy = accuracy;
+            } else {
+                int gap = totalScore(0) - totalScore(1);
+                if (gap > 60) {
+                    this.botAccuracy = Math.min(0.95, this.botAccuracy + 0.02);
+                } else if (gap < -60) {
+                    this.botAccuracy = Math.max(0.45, this.botAccuracy - 0.02);
+                }
+            }
+            accuracy = this.botAccuracy;
             this.seats[1].expectedLevel = level + 1;
             boolean won = random.nextDouble() < accuracy;
             if (won) {

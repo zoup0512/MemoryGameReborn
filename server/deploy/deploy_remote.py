@@ -60,7 +60,10 @@ def main():
             sftp.close()
 
         print("==> stopping previous instance")
-        run(client, "pkill -9 -f 'java.*app\\.jar' ; sleep 2", timeout=20)
+        # SIGTERM first so the Spring shutdown hook closes H2 cleanly;
+        # kill -9 loses unflushed commits (registrations lost on the LAN
+        # box once). Escalate only if the process survives.
+        run(client, "pkill -f 'java.*app\\.jar'; sleep 5; pkill -9 -f 'java.*app\\.jar'; sleep 1", timeout=30)
 
         print(f"==> starting PK server on 0.0.0.0:{PORT} (H2 file: {REMOTE_DIR}/data/pk)")
         # Double-detach: the subshell exits immediately so the SSH channel

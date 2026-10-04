@@ -24,6 +24,12 @@ public final class ProtocolCodec {
     public static final String T_LEVEL_WIN = "level_win";
     public static final String T_ROUND_COMPLETE = "round_complete";
     public static final String T_RESIGN = "resign";
+    public static final String T_ROOM_CREATE = "room_create";
+    public static final String T_ROOM_JOIN = "room_join";
+    public static final String T_ROOM_CANCEL = "room_cancel";
+    public static final String T_ROOM_CREATED = "room_created";
+    public static final String T_HISTORY_REQUEST = "history_request";
+    public static final String T_HISTORY_RESPONSE = "history_response";
     public static final String T_PING = "ping";
 
     public static final String T_AUTH_OK = "auth_ok";
@@ -96,6 +102,8 @@ public final class ProtocolCodec {
 
     public static class MatchFound {
         public String matchId;
+        /** RANKED (random matchmaking) or FRIEND (room code). */
+        public String mode;
         public OpponentInfo opponent;
         public RoundDesc[] rounds;
     }
@@ -143,6 +151,30 @@ public final class ProtocolCodec {
         public int losses;
         public int draws;
         public int balance;
+        public int seasonIndex;
+        public long seasonEndsAt;
+    }
+
+    public static class RoomJoin {
+        public String code;
+    }
+
+    public static class RoomCreated {
+        public String code;
+    }
+
+    public static class HistoryEntry {
+        public long ts;
+        public String opponent;
+        public String mode;
+        public String result;
+        public int myScore;
+        public int oppScore;
+        public boolean vsBot;
+    }
+
+    public static class HistoryResponse {
+        public HistoryEntry[] matches;
     }
 
     public static class ErrorMsg {
