@@ -208,6 +208,17 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             displayTopHint();
         }
         setupBottomBar(savedInstanceState);
+        // Deep link straight into the Online tab (e.g. from a match
+        // notification or an "enter online" intent). Posted because the
+        // BottomBar only resolves tab ids once attached to the window.
+        if (getIntent().getBooleanExtra(EXTRA_ONLINE, false)) {
+            this.mBottomBar.post(new Runnable() {
+                @Override
+                public void run() {
+                    MainMenuActivity.this.mBottomBar.selectTabWithId(R.id.bottomBarOnline);
+                }
+            });
+        }
         updateStatistics();
         this.isSetupFinished = false;
         suggestWorkout();

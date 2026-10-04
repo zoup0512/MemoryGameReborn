@@ -99,6 +99,14 @@ public class OnlineSession {
     private volatile long serverRoundDurationMs;
     /** Monotonic receive time of the last round_start (0 = no round). */
     private volatile long roundStartedElapsed;
+    /**
+     * True while a friend-room pairing is pending (host is waiting with a
+     * code, or a join code has been sent). Participants sit in STATE_IDLE —
+     * never STATE_QUEUE — so match_found must be accepted for them too.
+     */
+    private volatile boolean friendRoomPending;
+    /** Fired when a room command gets no server answer in time (zombie socket). */
+    private Runnable pendingRoomAck;
     /** Live economy values from the last auth_ok (server runtime config). */
     private volatile int serverEntryFee = LocalDataManager.ONLINE_ENTRY_FEE;
     private volatile int serverWinCoins = LocalDataManager.ONLINE_WIN_COINS;
@@ -148,6 +156,11 @@ public class OnlineSession {
 
     public void setMatchListener(MatchListener l) {
         this.listener = l;
+    }
+
+    /** Currently registered match listener (null-safe lifecycle checks). */
+    public MatchListener getMatchListener() {
+        return listener;
     }
 
     public void setScoreListener(ScoreListener l) {
@@ -260,6 +273,8 @@ public class OnlineSession {
         matchId = null;
         currentRound = -1;
         roundStartedElapsed = 0L;
+        friendRoomPending = false;
+        cancelRoomAck();
         main.removeCallbacks(reconnectRunnable);
         if (client != null) {
             client.close();
@@ -340,17 +355,76 @@ public class OnlineSession {
 
     /** Friend rooms (PRD F-12). */
     public void createFriendRoom() {
-        send(OnlineMessages.T_ROOM_CREATE, new Object());
+        sendRoomCommand(OnlineMessages.T_ROOM_CREATE, new Object());
     }
 
     public void joinFriendRoom(String code) {
         OnlineMessages.RoomJoin join = new OnlineMessages.RoomJoin();
         join.code = code;
-        send(OnlineMessages.T_ROOM_JOIN, join);
+        friendRoomPending = true;
+        sendRoomCommand(OnlineMessages.T_ROOM_JOIN, join);
     }
 
     public void cancelFriendRoom() {
-        send(OnlineMessages.T_ROOM_CANCEL, new Object());
+        friendRoomPending = false;
+        sendRoomCommand(OnlineMessages.T_ROOM_CANCEL, new Object());
+    }
+
+    /**
+     * Room commands come from the lobby, where the socket may have gone
+     * stale after an earlier match. A zombie TCP connection can pass
+     * isConnected() while send() silently buffers (observed on device
+     * 2026-10-04: creates/joins vanished without any feedback), so every
+     * acked command also arms a response timeout that surfaces an error.
+     */
+    private void sendRoomCommand(final String type, final Object data) {
+        cancelRoomAck();
+        OnlineClient c = this.client;
+        if (c != null && c.isConnected()) {
+            send(type, data);
+            scheduleRoomAck(type);
+            return;
+        }
+        connect();
+        main.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                OnlineClient retry = OnlineSession.this.client;
+                if (retry != null && retry.isConnected()) {
+                    send(type, data);
+                    scheduleRoomAck(type);
+                } else {
+                    notifyError(-1, "connection lost");
+                }
+            }
+        }, 2500L);
+    }
+
+    /** room_cancel is fire-and-forget; the server never acks it. */
+    private void scheduleRoomAck(String type) {
+        if (OnlineMessages.T_ROOM_CANCEL.equals(type)) {
+            return;
+        }
+        cancelRoomAck();
+        this.pendingRoomAck = new Runnable() {
+            @Override
+            public void run() {
+                OnlineSession.this.pendingRoomAck = null;
+                if (!OnlineSession.this.friendRoomPending
+                        && OnlineSession.this.matchId == null
+                        && OnlineSession.this.state != STATE_MATCH) {
+                    notifyError(-1, "no response");
+                }
+            }
+        };
+        main.postDelayed(this.pendingRoomAck, 3000L);
+    }
+
+    private void cancelRoomAck() {
+        if (this.pendingRoomAck != null) {
+            main.removeCallbacks(this.pendingRoomAck);
+            this.pendingRoomAck = null;
+        }
     }
 
     /** Match history (PRD F-11); response arrives via MatchListener.onHistory. */
@@ -461,19 +535,26 @@ public class OnlineSession {
                 authorize();
                 return;
             }
+            // A rejected room command (404/409) ends the pending pairing;
+            // leaving the flag set would wrongly admit a stale match_found.
+            this.friendRoomPending = false;
+            cancelRoomAck();
             notifyError(code, message);
             return;
         }
         if (OnlineMessages.T_MATCH_FOUND.equals(type)) {
-            // Accept a pairing only while we are actually searching; a frame
-            // arriving in any other state belongs to a stale server-side
-            // room and would hijack the session (seen in the 2026-10-04 test
-            // where a leftover queue entry bot-matched an idle lobby client).
-            if (this.state != STATE_QUEUE && this.matchId == null) {
+            // Accept a pairing only while we are actually searching (or a
+            // friend-room pairing is pending); a frame arriving in any other
+            // state belongs to a stale server-side room and would hijack the
+            // session (seen in the 2026-10-04 test where a leftover queue
+            // entry bot-matched an idle lobby client).
+            if (this.state != STATE_QUEUE && this.matchId == null && !this.friendRoomPending) {
                 return;
             }
             MatchFound found = OnlineMessages.payloadOf(json, MatchFound.class);
             if (found != null) {
+                this.friendRoomPending = false;
+                cancelRoomAck();
                 this.matchId = found.matchId;
                 this.opponent = found.opponent;
                 this.rounds = found.rounds;
@@ -499,6 +580,7 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_MATCH_CANCELLED.equals(type)) {
+            this.friendRoomPending = false;
             setState(STATE_IDLE);
             if (listener != null) {
                 try {
@@ -580,10 +662,14 @@ public class OnlineSession {
         }
         if (OnlineMessages.T_ROOM_CREATED.equals(type)) {
             OnlineMessages.RoomCreated created = OnlineMessages.payloadOf(json, OnlineMessages.RoomCreated.class);
-            if (created != null && listener != null) {
-                try {
-                    listener.onRoomCreated(created.code);
-                } catch (RuntimeException ignored) {
+            if (created != null) {
+                this.friendRoomPending = true;
+                cancelRoomAck();
+                if (listener != null) {
+                    try {
+                        listener.onRoomCreated(created.code);
+                    } catch (RuntimeException ignored) {
+                    }
                 }
             }
             return;

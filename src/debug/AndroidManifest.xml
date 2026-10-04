@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-only: let adb am start reach the Online screens directly for
+     device verification (release builds keep the non-exported defaults). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity
+            android:name="com.cube.memorygames.MainMenuActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+        <activity
+            android:name="com.cube.memorygames.api.online.OnlineHistoryActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+        <activity
+            android:name="com.cube.memorygames.api.online.OnlineMatchActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+    </application>
+</manifest>
