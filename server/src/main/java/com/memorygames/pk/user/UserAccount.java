@@ -53,4 +53,12 @@ public class UserAccount {
     /** Remaining bot-only matches while restricted. */
     @Column(nullable = false)
     public int restrictedMatches;
+
+    /** Epoch ms until which auth is refused; 0 = not banned. */
+    @Column(nullable = false)
+    public long bannedUntil;
+
+    /** Soft-deleted accounts keep match history but refuse auth. */
+    @Column(nullable = false)
+    public boolean deleted;
 }

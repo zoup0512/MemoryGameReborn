@@ -33,6 +33,15 @@ docker compose up -d   # app + postgres 16；环境变量 PK_DB_PASSWORD
 （round_start.durationMs），auth_ok 下发经济参数——release 构建完全服从服务端配置，debug 构建
 免金币且可本地兜底时长。
 
+### 管理端点（P0 已实现）
+
+除下述配置 API 外：`/api/admin/dashboard`（全量状态快照）、`/api/admin/matches`
+（列表/详情/强制结算/作废退款）、`/api/admin/users`（搜索/调币/调 ELO/限制/封禁/删除）、
+`/api/admin/events`（业务事件流，match_join 带会话 id）、`/api/admin/audit`（变更审计）、
+`/api/admin/maintenance`（维护模式，拒绝新对局 503）、`/api/admin/loglevel`（运行时日志级别）。
+统一 X-Admin-Token 守卫 + 每 IP 限流（pk.admin-rate-limit，默认 60/min）。详见
+`docs/online-pk-admin-design.md`。
+
 客户端默认连 `wss://pk.memorygame.example.com/ws`（`OnlineConfig`），debug 构建可在 Online
 大厅长按标题改为内网地址（如 `ws://192.168.x.x:8080/ws`）真机联调。
 

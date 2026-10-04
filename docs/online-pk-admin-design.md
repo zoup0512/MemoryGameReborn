@@ -2,7 +2,7 @@
 
 | 项目 | 内容 |
 |---|---|
-| 版本 | v1.0（设计稿，待评审） |
+| 版本 | v1.1（P0 已实现并部署 LAN 验证；P1/P2 待排期） |
 | 日期 | 2026-10-04 |
 | 关联 | `docs/online-pk-prd.md` §4/§6.3（现有运行时配置 API）、`server/README.md` |
 | 现有基线 | `AdminConfigController`（token 守卫的热改配置，已上线） |
@@ -190,7 +190,22 @@ data/runtime-config.json（可选持久化配置）
 | `AdminConfigController` | 增 history/preset/persist（见 4.4） |
 | 新增 | `AdminAuditService`、`EventRing`、其余 4 个 Controller、`AdminAudit` 实体、logback 内存 appender |
 
-## 9. 风险与开放问题
+## 9. P0 实现记录（2026-10-04，已上线 LAN）
+
+P0 范围全部落地（16 个集成测试绿）：
+- 仪表盘 `/api/admin/dashboard`（版本/jarMd5/在线数/队列/活跃对局快照/经济/赛季/反作弊计数/进程内计数器/事件尾）
+- 对局 `/api/admin/matches`（列表/详情含时间线/`settle?refund`/`terminate` 作废——退入场费、零 ELO、不计胜负）
+- 用户 `/api/admin/users`（搜索/详情+近 20 局/调币/调 ELO/限制/封禁解封/删除）
+- 运维 `/api/admin/events|audit|maintenance|loglevel`
+- 审计表 `PK_ADMIN_AUDIT`（全部变更落库）；EventRing 1000 条（**match_join 带会话 id**——幽灵排队排查就绪）
+- 统一守卫：token + 每 IP 限流（`pk.admin-rate-limit`，默认 60/min，超限 429）
+- UserAccount 新增 `banned_until`/`deleted`；维护模式拒绝新 match_join（503+文案）
+
+**运维注记**：H2 `ddl-auto:update` 对已有表加 NOT NULL 列会失败且不回填——升级含新列的版本时
+必须重置数据目录或手工 `ALTER ... SET DEFAULT`；本次 LAN 部署即因旧库 + 孤儿 java 进程
+（reparent 到 init 后躲过 pkill 模式）排查了一轮，清理需 `pgrep` 后按 PID kill -9。
+
+## 10. 风险与开放问题
 
 1. **幽灵 match_join 尚未定位**——EventRing 的会话级事件是 P0 最高优先级的动机；若 P0 期间定位并修复，事件流仍长期保留为排障基建。
 2. H2 单文件下管理查询与对局写库并发——管理查询全部走只读快照/索引查询，避免锁竞争（赛季缓存教训）。

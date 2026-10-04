@@ -2,7 +2,10 @@ package com.memorygames.pk.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.memorygames.pk.admin.AdminAuditService;
+import com.memorygames.pk.admin.AdminGuard;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,12 +35,14 @@ public class AdminConfigController {
     private static final long MAX_ROUND_MS = 600_000L;
 
     private final PkProperties properties;
-    private final String adminToken;
+    private final AdminGuard guard;
+    private final AdminAuditService audit;
 
-    public AdminConfigController(PkProperties properties,
-                                 @Value("${pk.admin-token:}") String adminToken) {
+    public AdminConfigController(PkProperties properties, AdminGuard guard,
+                                 @Lazy AdminAuditService audit) {
         this.properties = properties;
-        this.adminToken = adminToken == null ? "" : adminToken.trim();
+        this.guard = guard;
+        this.audit = audit;
     }
 
     public static class ConfigBody {
@@ -56,9 +61,10 @@ public class AdminConfigController {
     }
 
     @GetMapping("/config")
-    public ResponseEntity<?> get(@RequestHeader(value = "X-Admin-Token", required = false) String token) {
-        if (!authorized(token)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public ResponseEntity<?> get(HttpServletRequest request) {
+        ResponseEntity<String> denied = this.guard.deny(request);
+        if (denied != null) {
+            return denied;
         }
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("roundDurationOverrideMs", this.properties.getRoundDurationOverrideMs());
@@ -76,11 +82,12 @@ public class AdminConfigController {
     }
 
     @PutMapping("/config")
-    public ResponseEntity<?> put(@RequestHeader(value = "X-Admin-Token", required = false) String token,
-                                 @RequestBody ConfigBody body) {
-        if (!authorized(token)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public ResponseEntity<?> put(HttpServletRequest request, @RequestBody ConfigBody body) {
+        ResponseEntity<String> denied = this.guard.deny(request);
+        if (denied != null) {
+            return denied;
         }
+        this.audit.record("CONFIG_PUT", body.toString(), AdminGuard.clientIp(request), "ok");
         StringBuilder audit = new StringBuilder("runtime config change:");
         if (body.roundDurationOverrideMs != null) {
             long value = clamp(body.roundDurationOverrideMs, MIN_ROUND_MS, MAX_ROUND_MS);
@@ -138,11 +145,8 @@ public class AdminConfigController {
             audit.append(" matchFoundDelayMs=").append(value);
         }
         log.info("{}", audit);
-        return get(token);
-    }
-
-    private boolean authorized(String token) {
-        return !this.adminToken.isEmpty() && this.adminToken.equals(token);
+        this.audit.record("CONFIG_APPLIED", audit.toString(), AdminGuard.clientIp(request), "ok");
+        return get(request);
     }
 
     private static long clamp(long value, long min, long max) {

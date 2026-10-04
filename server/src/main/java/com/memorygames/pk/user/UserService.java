@@ -81,6 +81,49 @@ public class UserService {
         this.repository.save(account);
     }
 
+    /** Admin balance grant/charge; never negative, capped as registrations. */
+    @Transactional
+    public UserAccount adjustBalance(UserAccount account, int delta) {
+        account.balance = Math.max(0, Math.min(account.balance + delta, MAX_BALANCE));
+        account.updatedAt = System.currentTimeMillis();
+        return this.repository.save(account);
+    }
+
+    /** Admin ELO override. */
+    @Transactional
+    public UserAccount setElo(UserAccount account, int elo) {
+        account.elo = Math.max(100, elo);
+        account.updatedAt = System.currentTimeMillis();
+        return this.repository.save(account);
+    }
+
+    /** Bot-only restriction; 0 lifts it. */
+    @Transactional
+    public UserAccount setRestriction(UserAccount account, int matches) {
+        account.restrictedMatches = Math.max(0, matches);
+        account.suspicion = 0;
+        account.updatedAt = System.currentTimeMillis();
+        return this.repository.save(account);
+    }
+
+    /** Ban for a number of hours; 0 unbans. */
+    @Transactional
+    public UserAccount setBan(UserAccount account, int hours) {
+        account.bannedUntil = hours <= 0 ? 0L : System.currentTimeMillis() + hours * 3600000L;
+        account.updatedAt = System.currentTimeMillis();
+        return this.repository.save(account);
+    }
+
+    /** GDPR-style deletion: refuse auth, anonymize, keep match history. */
+    @Transactional
+    public UserAccount markDeleted(UserAccount account) {
+        account.deleted = true;
+        account.token = "";
+        account.nickname = "deleted-" + account.id;
+        account.updatedAt = System.currentTimeMillis();
+        return this.repository.save(account);
+    }
+
     /** Persists anti-cheat flag changes without touching match counters. */
     @Transactional
     public void saveFlags(UserAccount account) {

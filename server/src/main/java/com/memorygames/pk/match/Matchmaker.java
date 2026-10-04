@@ -1,5 +1,7 @@
 package com.memorygames.pk.match;
 
+import com.memorygames.pk.admin.AdminMetrics;
+import com.memorygames.pk.admin.EventRing;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.user.UserAccount;
@@ -67,12 +69,30 @@ public class Matchmaker {
     private final MatchManager manager;
     private final UserService users;
     private final PkProperties properties;
+    private final AdminMetrics metrics;
+    private final EventRing events;
     private final Random random = new Random();
 
-    public Matchmaker(MatchManager manager, UserService users, PkProperties properties) {
+    public Matchmaker(MatchManager manager, UserService users, PkProperties properties,
+                      AdminMetrics metrics, EventRing events) {
         this.manager = manager;
         this.users = users;
         this.properties = properties;
+        this.metrics = metrics;
+        this.events = events;
+    }
+
+    /** Live queue view for the admin dashboard. */
+    public java.util.List<String> queueSnapshot() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        long now = System.currentTimeMillis();
+        synchronized (this.lock) {
+            for (Entry entry : this.queue) {
+                out.add(String.format("user=%d(%s) waiting=%dms",
+                        entry.user.id, entry.user.nickname, now - entry.enqueuedAt));
+            }
+        }
+        return out;
     }
 
     /** Called by the WS gateway on match_join. */
@@ -94,6 +114,7 @@ public class Matchmaker {
             }
             this.queue.add(new Entry(user, endpoint));
         }
+        this.metrics.queueJoins.incrementAndGet();
         scan();
         return true;
     }
@@ -210,9 +231,19 @@ public class Matchmaker {
             this.queue.removeIf(e -> e == null);
         }
         for (Entry[] pair : pairsToStart) {
+            long wait = System.currentTimeMillis() - pair[0].enqueuedAt;
+            this.metrics.pairings.incrementAndGet();
+            this.metrics.queueWaitTotalMs.addAndGet(wait);
+            this.events.emit("PAIRED", null, "a=" + pair[0].user.id + " b=" + pair[1].user.id
+                    + " waited=" + wait + "ms");
             this.manager.createRoom(pair[0].user, pair[0].endpoint, pair[1].user, pair[1].endpoint, null);
         }
         for (Entry alone : botFallbacks) {
+            long wait = System.currentTimeMillis() - alone.enqueuedAt;
+            this.metrics.botFallbacks.incrementAndGet();
+            this.metrics.queueWaitTotalMs.addAndGet(wait);
+            this.events.emit("BOT_FALLBACK", null,
+                    "user=" + alone.user.id + " waited=" + wait + "ms");
             if (this.manager.roomFor(alone.user.id) != null) {
                 // User reached a live match through another path while the
                 // stale entry waited out the bot timer — drop the entry.

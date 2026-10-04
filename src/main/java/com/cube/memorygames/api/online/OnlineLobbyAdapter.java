@@ -39,6 +39,8 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
     private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private OnlineMessages.AuthOk profile;
     private android.app.Dialog waitingDialog;
+    /** Monotonic clock reading of the last friend-room creation (TTL display). */
+    private long roomCreatedElapsed;
 
     public OnlineLobbyAdapter(Context context) {
         this.context = context;
@@ -343,6 +345,8 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
 
             @Override
             public void onRoomCreated(final String code) {
+                OnlineLobbyAdapter.this.roomCreatedElapsed =
+                        android.os.SystemClock.elapsedRealtime();
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -431,10 +435,7 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                     int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
                             .getLocalUser().money;
                     if (coins < OnlineSession.get().getServerEntryFee()) {
-                        new AlertDialog.Builder(OnlineLobbyAdapter.this.context)
-                                .setMessage(R.string.dialog_unlock_online_warning)
-                                .setPositiveButton(R.string.ok, null)
-                                .show();
+                        OnlineDialogs.showNotEnoughCoins(OnlineLobbyAdapter.this.context);
                         return;
                     }
                 }
@@ -474,25 +475,13 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
         if (this.waitingDialog != null && this.waitingDialog.isShowing()) {
             return;
         }
-        TextView text = new TextView(this.context);
-        text.setTypeface(this.fontLight);
-        text.setTextSize(20.0f);
-        text.setGravity(Gravity.CENTER);
-        int pad = dp(20);
-        text.setPadding(pad, pad, pad, pad);
-        text.setText(this.context.getString(R.string.online_room_code_prefix) + " " + code
-                + "\n" + this.context.getString(R.string.online_room_waiting));
-        this.waitingDialog = new AlertDialog.Builder(this.context)
-                .setView(text)
-                .setCancelable(false)
-                .setPositiveButton(R.string.cancel, new android.content.DialogInterface.OnClickListener() {
+        this.waitingDialog = OnlineDialogs.showFriendRoomWaiting(this.context, code,
+                this.roomCreatedElapsed, new View.OnClickListener() {
                     @Override
-                    public void onClick(android.content.DialogInterface dialog, int which) {
+                    public void onClick(View v) {
                         OnlineSession.get().cancelFriendRoom();
-                        dialog.dismiss();
                     }
-                })
-                .show();
+                });
     }
 
     private void dismissWaiting() {
@@ -503,25 +492,12 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
     }
 
     private void showJoinDialog() {
-        final android.widget.EditText input = new android.widget.EditText(this.context);
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)});
-        int pad = dp(16);
-        input.setPadding(pad, pad, pad, pad);
-        new AlertDialog.Builder(this.context)
-                .setTitle(R.string.online_enter_code)
-                .setView(input)
-                .setPositiveButton(R.string.ok, new android.content.DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(android.content.DialogInterface dialog, int which) {
-                        String code = input.getText().toString().trim();
-                        if (code.length() == 4) {
-                            OnlineSession.get().joinFriendRoom(code);
-                        }
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+        OnlineDialogs.showJoinRoomCode(this.context, new OnlineDialogs.CodeListener() {
+            @Override
+            public void onCode(String code) {
+                OnlineSession.get().joinFriendRoom(code);
+            }
+        });
     }
 
     private String rankName(int rank) {

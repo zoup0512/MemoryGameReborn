@@ -1,5 +1,8 @@
 package com.memorygames.pk.ws;
 
+import com.memorygames.pk.admin.AdminState;
+import com.memorygames.pk.admin.EventRing;
+import com.memorygames.pk.admin.SessionStats;
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.match.MatchRecord;
@@ -40,6 +43,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final PkProperties properties;
     private final MatchRecordRepository records;
     private final SeasonService seasons;
+    private final AdminState adminState;
+    private final EventRing events;
+    private final SessionStats stats;
 
     /** ws session id -> authenticated user id. */
     private final Map<String, Long> authenticated = new ConcurrentHashMap<>();
@@ -56,7 +62,8 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     public PkWebSocketHandler(UserService users, Matchmaker matchmaker, MatchManager manager,
                               Rating rating, PkProperties properties,
-                              MatchRecordRepository records, SeasonService seasons) {
+                              MatchRecordRepository records, SeasonService seasons,
+                              AdminState adminState, EventRing events, SessionStats stats) {
         this.users = users;
         this.matchmaker = matchmaker;
         this.manager = manager;
@@ -64,10 +71,14 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         this.properties = properties;
         this.records = records;
         this.seasons = seasons;
+        this.adminState = adminState;
+        this.events = events;
+        this.stats = stats;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
+        this.stats.connected();
         log.debug("ws connected: {}", session.getId());
     }
 
@@ -93,6 +104,17 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     return;
                 }
                 UserAccount account = this.users.register(register.uuid, register.nickname, register.balance);
+                if (account.deleted) {
+                    reply(session, ProtocolCodec.T_ERROR, error(403, "account deleted"));
+                    return;
+                }
+                if (account.bannedUntil > System.currentTimeMillis()) {
+                    reply(session, ProtocolCodec.T_ERROR, error(403, "account banned"));
+                    return;
+                }
+                this.events.emit("AUTH_OK", null,
+                        "user=" + account.id + " session=" + session.getId() + " register");
+                this.stats.authed();
                 bindSession(session, account);
                 reply(session, ProtocolCodec.T_AUTH_OK, authOk(account));
                 return;
@@ -108,8 +130,20 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     reply(session, ProtocolCodec.T_ERROR, error(401, "unknown token"));
                     return;
                 }
-                bindSession(session, account.get());
-                reply(session, ProtocolCodec.T_AUTH_OK, authOk(account.get()));
+                UserAccount accountGet = account.get();
+                if (accountGet.deleted) {
+                    reply(session, ProtocolCodec.T_ERROR, error(403, "account deleted"));
+                    return;
+                }
+                if (accountGet.bannedUntil > System.currentTimeMillis()) {
+                    reply(session, ProtocolCodec.T_ERROR, error(403, "account banned"));
+                    return;
+                }
+                this.events.emit("AUTH_OK", null,
+                        "user=" + accountGet.id + " session=" + session.getId());
+                this.stats.authed();
+                bindSession(session, accountGet);
+                reply(session, ProtocolCodec.T_AUTH_OK, authOk(accountGet));
                 // Re-attach to a live match after a reconnect (PRD 4.6).
                 MatchRoom room = this.manager.roomFor(account.get().id);
                 if (room != null) {
@@ -132,6 +166,15 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         MatchRoom room = this.manager.roomFor(userId);
         switch (envelope.t) {
             case ProtocolCodec.T_MATCH_JOIN: {
+                // session id on this event is the key trace for diagnosing
+                // the intermittent phantom match_join (admin design 4.8).
+                this.events.emit("MATCH_JOIN", null,
+                        "user=" + userId + " session=" + session.getId());
+                if (this.adminState.isMaintenance()) {
+                    reply(session, ProtocolCodec.T_ERROR, error(503,
+                            this.adminState.getMaintenanceMessage()));
+                    return;
+                }
                 if (room != null) {
                     reply(session, ProtocolCodec.T_ERROR, error(409, "already in a match"));
                     return;
@@ -228,6 +271,10 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long userId = this.authenticated.remove(session.getId());
+        this.stats.disconnected();
+        if (userId != null) {
+            this.stats.deauthed();
+        }
         PlayerEndpoint.WebSocket endpoint = this.endpoints.remove(session.getId());
         if (endpoint != null) {
             endpoint.shutdown();

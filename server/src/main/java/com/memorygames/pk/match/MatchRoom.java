@@ -1,5 +1,7 @@
 package com.memorygames.pk.match;
 
+import com.memorygames.pk.admin.AdminMetrics;
+import com.memorygames.pk.admin.EventRing;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.game.GameCatalog;
 import com.memorygames.pk.protocol.ProtocolCodec;
@@ -91,11 +93,16 @@ public class MatchRoom {
     private final SettlementCallback settlementCallback;
     private final MatchRecordRepository records;
     private final SeasonService seasons;
+    private final EventRing events;
+    private final AdminMetrics metrics;
+    /** Set by adminTerminate(): zero ELO/coins, refund entry, no W/L count. */
+    private boolean adminVoided;
     /** Bot rubber-banding accuracy (PRD M2 bot tuning). */
     private double botAccuracy;
 
     private int currentRound = 0;
     private long roundStartedAt;
+    private long roundDeadlineAt;
     private long startedAt = System.currentTimeMillis();
     private final AtomicBoolean settledOnce = new AtomicBoolean(false);
     private ScheduledFuture<?> roundDeadlineTask;
@@ -108,11 +115,14 @@ public class MatchRoom {
                      Rating rating, PkProperties properties,
                      ScheduledThreadPoolExecutor scheduler,
                      SettlementCallback settlementCallback,
-                     MatchRecordRepository records, SeasonService seasons) {
+                     MatchRecordRepository records, SeasonService seasons,
+                     EventRing events, AdminMetrics metrics) {
         this.matchId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         this.friendMode = friendMode;
         this.records = records;
         this.seasons = seasons;
+        this.events = events;
+        this.metrics = metrics;
         this.botAccuracy = -1.0d; // lazily initialized at the first round
         this.matchSeed = new Random().nextLong();
         this.rounds = catalog.planRounds(this.matchSeed, properties.getMatch().getRoundsPerMatch());
@@ -139,6 +149,7 @@ public class MatchRoom {
             if (this.seats[1].user != null) {
                 this.users.chargeEntryFee(this.seats[1].user, this.properties.getEconomy().getEntryFee());
             }
+            this.metrics.matchesStarted.incrementAndGet();
             for (int i = 0; i < 2; i++) {
                 sendTo(i, ProtocolCodec.T_MATCH_FOUND, buildMatchFound(i));
             }
@@ -216,6 +227,10 @@ public class MatchRoom {
             if (this.seats[1].isBot) {
                 startBotBrain(spec, round.durationMs);
             }
+            this.roundDeadlineAt = now + round.durationMs
+                    + this.properties.getTiming().getRoundGraceMs();
+            this.events.emit("ROUND_START", this.matchId,
+                    "round=" + roundNumber + " game=" + round.gameId + " dur=" + round.durationMs);
             this.roundDeadlineTask = this.scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
@@ -253,6 +268,10 @@ public class MatchRoom {
                     || now - seat.lastLevelAt >= floorMs;
             if (!sequenceOk || !intervalOk) {
                 seat.anomalies++;
+                this.metrics.anomalies.incrementAndGet();
+                this.events.emit("LEVEL_WIN_REJECTED", this.matchId,
+                        "user=" + userId + " level=" + msg.level
+                                + (sequenceOk ? " interval" : " sequence"));
                 if (seat.anomalies > MAX_ANOMALIES) {
                     seat.frozen = true;
                     log.warn("match {} user {}: score stream frozen after {} anomalies",
@@ -262,6 +281,7 @@ public class MatchRoom {
             }
             seat.lastReportedLevel = msg.level;
             seat.lastLevelAt = now;
+            this.metrics.levelWins.incrementAndGet();
             seat.roundScores[this.currentRound - 1] += spec.levelScore(msg.level);
             ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
             score.matchId = this.matchId;
@@ -311,6 +331,79 @@ public class MatchRoom {
                 settle(-1, false);
             }
         }
+    }
+
+    // ------------------------------------------------------- admin surface
+
+    /** Read-only view for the admin dashboard / match list. */
+    public static class Snapshot {
+
+        public String matchId;
+        public String mode;
+        public int round;
+        public int totalRounds;
+        public long roundEndsInMs;
+        public SeatView[] seats = new SeatView[2];
+
+        public static class SeatView {
+
+            public long userId;
+            public String nickname;
+            public boolean bot;
+            public boolean disconnected;
+            public int roundScore;
+            public int totalScore;
+        }
+    }
+
+    public synchronized Snapshot adminSnapshot() {
+        Snapshot snapshot = new Snapshot();
+        snapshot.matchId = this.matchId;
+        snapshot.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
+        snapshot.round = this.currentRound;
+        snapshot.totalRounds = this.rounds.size();
+        snapshot.roundEndsInMs = this.currentRound > 0
+                ? Math.max(0L, this.roundDeadlineAt - System.currentTimeMillis()) : 0L;
+        for (int i = 0; i < 2; i++) {
+            Seat seat = this.seats[i];
+            Snapshot.SeatView view = new Snapshot.SeatView();
+            view.userId = seat.user != null ? seat.user.id : -1L;
+            view.nickname = seat.nickname();
+            view.bot = seat.isBot;
+            view.disconnected = seat.disconnected;
+            view.roundScore = this.currentRound > 0 ? seat.roundScores[this.currentRound - 1] : 0;
+            view.totalScore = totalScore(i);
+            snapshot.seats[i] = view;
+        }
+        return snapshot;
+    }
+
+    /** Admin force-settle by score; optionally refunds the entry fee. */
+    public synchronized boolean adminSettle(boolean refund) {
+        if (this.settledOnce.get()) {
+            return false;
+        }
+        if (refund) {
+            for (Seat seat : this.seats) {
+                if (seat.user != null) {
+                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
+                }
+            }
+        }
+        this.events.emit("ADMIN_SETTLE", this.matchId, "refund=" + refund);
+        settle(-1, false);
+        return true;
+    }
+
+    /** Admin void: no ELO/coins/W-L, entry fee refunded to both seats. */
+    public synchronized boolean adminTerminate() {
+        if (this.settledOnce.get()) {
+            return false;
+        }
+        this.adminVoided = true;
+        this.events.emit("ADMIN_TERMINATE", this.matchId, "");
+        settle(-1, true);
+        return true;
     }
 
     // ------------------------------------------------------------ controls
@@ -425,6 +518,15 @@ public class MatchRoom {
         if (this.friendMode) {
             delta0 = delta0 / 2;
         }
+        if (this.adminVoided) {
+            // Admin terminate: refund the entry fee, move no rating.
+            delta0 = 0;
+            for (Seat seat : this.seats) {
+                if (seat.user != null) {
+                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
+                }
+            }
+        }
         int delta1 = -delta0;
         ProtocolCodec.MatchEnd[] payloads = new ProtocolCodec.MatchEnd[2];
         for (int i = 0; i < 2; i++) {
@@ -440,7 +542,7 @@ public class MatchRoom {
             int coinDelta = win ? this.properties.getEconomy().getWinCoins()
                     : draw ? this.properties.getEconomy().getDrawCoins() : 0;
             end.coinDelta = coinDelta;
-            if (seat.user != null) {
+            if (seat.user != null && !this.adminVoided) {
                 int eloDelta = i == 0 ? delta0 : delta1;
                 this.users.applySettlement(seat.user, eloDelta, coinDelta, win, draw);
                 end.eloDelta = eloDelta;
@@ -450,6 +552,11 @@ public class MatchRoom {
                 end.eloDelta = 0;
                 end.elo = this.botElo;
                 end.balance = 0;
+            }
+            if (this.adminVoided) {
+                end.eloDelta = 0;
+                end.coinDelta = this.properties.getEconomy().getEntryFee();
+                end.balance = seat.user != null ? seat.user.balance : 0;
             }
             payloads[i] = end;
         }
@@ -468,8 +575,14 @@ public class MatchRoom {
         for (int i = 0; i < 2; i++) {
             sendTo(i, ProtocolCodec.T_MATCH_END, payloads[i]);
         }
-        log.info("match {} settled: mode={} forfeit={} scores {}/{}",
-                this.matchId, this.friendMode ? MODE_FRIEND : MODE_RANKED, forfeit, total0, total1);
+        log.info("match {} settled: mode={} forfeit={} voided={} scores {}/{}",
+                this.matchId, this.friendMode ? MODE_FRIEND : MODE_RANKED, forfeit,
+                this.adminVoided, total0, total1);
+        this.metrics.matchesSettled.incrementAndGet();
+        this.events.emit("SETTLED", this.matchId,
+                "mode=" + (this.friendMode ? MODE_FRIEND : MODE_RANKED)
+                        + " forfeit=" + forfeit + " voided=" + this.adminVoided
+                        + " scores=" + total0 + "/" + total1);
         this.settlementCallback.onSettled(this);
     }
 
@@ -529,6 +642,10 @@ public class MatchRoom {
             }
             if (avgInterval < floor * this.properties.getAntiCheat().getSpeedFactor()) {
                 seat.user.suspicion++;
+                this.metrics.anticheastStrikes.incrementAndGet();
+                this.events.emit("ANTICHEAT_STRIKE", this.matchId,
+                        "user=" + seat.user.id + " avg=" + (int) avgInterval + " floor=" + floor
+                                + " suspicion=" + seat.user.suspicion);
                 if (seat.user.suspicion >= this.properties.getAntiCheat().getSuspicionThreshold()) {
                     seat.user.restrictedMatches = this.properties.getAntiCheat().getRestrictionMatches();
                     seat.user.suspicion = 0;

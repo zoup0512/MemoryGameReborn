@@ -1,5 +1,7 @@
 package com.memorygames.pk.match;
 
+import com.memorygames.pk.admin.AdminMetrics;
+import com.memorygames.pk.admin.EventRing;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.game.GameCatalog;
 import com.memorygames.pk.rating.Rating;
@@ -37,15 +39,20 @@ public class MatchManager {
     private final ScheduledThreadPoolExecutor scheduler;
     private final MatchRecordRepository records;
     private final SeasonService seasons;
+    private final EventRing events;
+    private final AdminMetrics metrics;
 
     public MatchManager(GameCatalog catalog, UserService users, Rating rating,
-                        PkProperties properties, MatchRecordRepository records, SeasonService seasons) {
+                        PkProperties properties, MatchRecordRepository records, SeasonService seasons,
+                        EventRing events, AdminMetrics metrics) {
         this.catalog = catalog;
         this.users = users;
         this.rating = rating;
         this.properties = properties;
         this.records = records;
         this.seasons = seasons;
+        this.events = events;
+        this.metrics = metrics;
         this.scheduler = new ScheduledThreadPoolExecutor(2, r -> {
             Thread thread = new Thread(r, "pk-room");
             thread.setDaemon(true);
@@ -80,7 +87,7 @@ public class MatchManager {
                                 String botNickname, boolean friendMode) {
         MatchRoom room = new MatchRoom(userA, endpointA, userB, endpointB, botNickname, friendMode,
                 this.catalog, this.users, this.rating, this.properties, this.scheduler,
-                settled -> onSettled(settled), this.records, this.seasons);
+                settled -> onSettled(settled), this.records, this.seasons, this.events, this.metrics);
         this.rooms.put(room.matchId, room);
         if (userA != null) {
             this.roomByUser.put(userA.id, room.matchId);
@@ -109,6 +116,24 @@ public class MatchManager {
 
     public int activeRooms() {
         return this.rooms.size();
+    }
+
+    /** Live match snapshots for the admin surface (newest first). */
+    public java.util.List<MatchRoom.Snapshot> activeSnapshots() {
+        java.util.List<MatchRoom.Snapshot> out = new java.util.ArrayList<>(this.rooms.size());
+        for (MatchRoom room : this.rooms.values()) {
+            out.add(room.adminSnapshot());
+        }
+        out.sort((a, b) -> Long.compare(b.roundEndsInMs, a.roundEndsInMs));
+        return out;
+    }
+
+    public MatchRoom roomById(String matchId) {
+        return this.rooms.get(matchId);
+    }
+
+    public EventRing events() {
+        return this.events;
     }
 
     @PreDestroy
