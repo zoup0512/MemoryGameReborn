@@ -102,6 +102,8 @@ public class OnlineSession {
     private volatile AuthOk lastProfile;
     /** Set by match_end, gates the resign retry loop. */
     private volatile boolean matchEndSeen;
+    /** Queued when the socket died mid-matchmaking; rejoins after auth. */
+    private volatile boolean pendingQueueRejoin;
     private int resignRetries;
     /** Notified on the main thread whenever a fresh profile arrives. */
     private volatile Runnable profileCallback;
@@ -135,7 +137,8 @@ public class OnlineSession {
     private final Runnable reconnectRunnable = new Runnable() {
         @Override
         public void run() {
-            if (state == STATE_DISCONNECTED && matchId != null) {
+            if (state == STATE_DISCONNECTED
+                    && (matchId != null || pendingQueueRejoin)) {
                 connect();
             }
         }
@@ -317,8 +320,14 @@ public class OnlineSession {
 
     private void handleDisconnected(int code, String reason) {
         client = null;
-        if (matchId != null) {
-            // Reconnect window while a match is running (PRD 4.6).
+        if (matchId != null || state == STATE_QUEUE) {
+            // Reconnect window while a match is running (PRD 4.6) — and
+            // while queued: a half-dead socket during matchmaking used to
+            // strand the player on "Searching" with no self-recovery.
+            if (state == STATE_QUEUE && disconnectedAt == 0L) {
+                // Rejoin the queue after the fresh socket authorizes.
+                this.pendingQueueRejoin = true;
+            }
             if (disconnectedAt == 0L) {
                 disconnectedAt = System.currentTimeMillis();
                 reconnectAttempt = 0;
@@ -547,6 +556,12 @@ public class OnlineSession {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
                 this.lastProfile = ok;
+                if (this.pendingQueueRejoin && this.matchId == null) {
+                    this.pendingQueueRejoin = false;
+                    this.state = STATE_IDLE;
+                    startMatchmaking();
+                    return;
+                }
                 if (ok.entryFee > 0) {
                     this.serverEntryFee = ok.entryFee;
                 }
