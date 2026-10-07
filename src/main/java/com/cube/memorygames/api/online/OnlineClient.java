@@ -105,6 +105,11 @@ public class OnlineClient {
 
             @Override
             public void onMessage(String message) {
+                // Ping/pong chatter is noise; everything else is worth a line
+                // when diagnosing dropped frames on flaky links.
+                if (!message.contains("\"t\":\"pong\"")) {
+                    android.util.Log.d("OnlinePK", "ws frame: " + message);
+                }
                 if (message.contains("\"t\":\"pong\"")) {
                     awaitingPong = false;
                 }

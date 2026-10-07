@@ -616,6 +616,7 @@ public class OnlineSession {
             if (this.state != STATE_QUEUE && this.matchId == null && !this.friendRoomPending) {
                 return;
             }
+            android.util.Log.d("OnlinePK", "match_found handling, state=" + state);
             MatchFound found = OnlineMessages.payloadOf(json, MatchFound.class);
             if (found != null) {
                 this.friendRoomPending = false;

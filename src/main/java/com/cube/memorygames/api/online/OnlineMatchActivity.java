@@ -189,6 +189,12 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     @Override
+    public void finish() {
+        android.util.Log.d("OnlinePK", "finish() called", new IllegalStateException("trace"));
+        super.finish();
+    }
+
+    @Override
     public void onBackPressed() {
         OnlineSession session = OnlineSession.get();
         if (session.isInMatch()) {
