@@ -53,6 +53,13 @@
         <activity
             android:name="com.cube.memorygames.api.online.OnlineTopActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.activity.OnlineTutorialActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="com.cube.memorygames.activity.OnlineGameTutorialActivity"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name="com.cube.memorygames.api.online.OnlineMatchActivity"

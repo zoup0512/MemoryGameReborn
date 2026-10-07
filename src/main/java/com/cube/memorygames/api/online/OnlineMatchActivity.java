@@ -53,6 +53,10 @@ import java.util.Locale;
 public class OnlineMatchActivity extends AppCompatActivity implements OnlineSession.MatchListener {
 
     private static final int REQUEST_ROUND = 1001;
+    private static final int REQUEST_TUTORIAL = 1002;
+    /** Origin TUTORIAL_COUNT: per-game pre-round tutorials show twice. */
+    private static final int TUTORIAL_COUNT = 2;
+    private static final String PREF_TUTORIAL_SHOW = "OnlineTutorialShow";
     private static final long COUNTDOWN_MS = 3000L;
     /** Mirrors the server's acceptTimeoutMs (START gate window). */
     private static final int ACCEPT_WINDOW_MS = 30000;
@@ -83,6 +87,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private LinearLayout gameListBoard;
     /** True while the accept-waiting card is up (label swap target). */
     private boolean acceptWaiting;
+    private RoundStart pendingTutorialStart;
+    private GameInfo pendingTutorialInfo;
     private TimerView gameListTimer;
     // Intermission card between rounds (dialog_online_progress.xml).
     private View intermissionBoard;
@@ -1098,6 +1104,20 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.scoreView.setText(String.format(Locale.US, "%d : %d",
                 OnlineSession.get().getMyScore(), OnlineSession.get().getOpponentScore()));
         this.bottomBar.setVisibility(View.GONE);
+        if (needsRoundTutorial(info)) {
+            // Origin ran the game's how-to slideshow before its first online
+            // appearances. Restricted to bot and friend duels here: ranked
+            // rounds are timed from the server's round_start, so a slideshow
+            // would eat the player's own clock against a human opponent.
+            this.pendingTutorialStart = start;
+            this.pendingTutorialInfo = info;
+            this.roundLaunchScheduled = true;
+            Intent tutorial = new Intent(this,
+                    com.cube.memorygames.activity.OnlineGameTutorialActivity.class);
+            tutorial.putExtra(MainMenuActivity.EXTRA_GAME_INFO, info);
+            startActivityForResult(tutorial, REQUEST_TUTORIAL);
+            return;
+        }
         if (start.round == 1) {
             // Origin opened the match with the full game list and its
             // countdown disc (START_TIMEOUT); later rounds use the 3-2-1.
@@ -1127,6 +1147,22 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         }, COUNTDOWN_MS / 3);
     }
 
+    /**
+     * The origin pre-round tutorial gate: first {@link #TUTORIAL_COUNT}
+     * online appearances per game, and only when no human opponent's clock
+     * runs against us (bot fallback and friend rooms).
+     */
+    private boolean needsRoundTutorial(GameInfo info) {
+        boolean botOrFriend = OnlineSession.get().isFriendMode()
+                || (OnlineSession.get().getOpponent() != null
+                        && OnlineSession.get().getOpponent().isBot);
+        if (!botOrFriend) {
+            return false;
+        }
+        return android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt(PREF_TUTORIAL_SHOW + info.getId(), 0) < TUTORIAL_COUNT;
+    }
+
     private void startGameActivity(RoundStart start, GameInfo info) {
         if (isFinishing() || OnlineSession.get().getMatchId() == null) {
             // The match settled/cancelled while a launch was pending.
@@ -1152,6 +1188,21 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_TUTORIAL) {
+            if (this.pendingTutorialStart != null && this.pendingTutorialInfo != null) {
+                android.content.SharedPreferences prefs =
+                        android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+                prefs.edit().putInt(PREF_TUTORIAL_SHOW + this.pendingTutorialInfo.getId(),
+                        prefs.getInt(PREF_TUTORIAL_SHOW + this.pendingTutorialInfo.getId(), 0) + 1)
+                        .apply();
+                RoundStart start = this.pendingTutorialStart;
+                GameInfo info = this.pendingTutorialInfo;
+                this.pendingTutorialStart = null;
+                this.pendingTutorialInfo = null;
+                startGameActivity(start, info);
+            }
+            return;
+        }
         if (requestCode == REQUEST_ROUND) {
             // Skip the waiting board when the match already settled while the
             // round activity was in front — showSettlementUi ran earlier and

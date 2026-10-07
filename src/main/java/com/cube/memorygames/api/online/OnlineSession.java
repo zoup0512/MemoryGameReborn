@@ -123,6 +123,7 @@ public class OnlineSession {
     private volatile int serverDrawCoins = LocalDataManager.ONLINE_DRAW_COINS;
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
+    private boolean friendMode;
     private OnlineMessages.RoundDesc[] rounds;
     private volatile int currentRound = -1;
     private int myScore;
@@ -227,6 +228,11 @@ public class OnlineSession {
 
     public void setProfileCallback(Runnable callback) {
         this.profileCallback = callback;
+    }
+
+    /** True while the running match is a friend-room duel. */
+    public boolean isFriendMode() {
+        return this.friendMode;
     }
 
     public OnlineMessages.OpponentInfo getOpponent() {
@@ -601,6 +607,7 @@ public class OnlineSession {
                 cancelRoomAck();
                 this.matchId = found.matchId;
                 this.opponent = found.opponent;
+                this.friendMode = "FRIEND".equals(found.mode);
                 this.rounds = found.rounds;
                 if (found.rounds != null && found.rounds.length > 0) {
                     this.serverRoundDurationMs = found.rounds[0].durationMs;
@@ -702,6 +709,7 @@ public class OnlineSession {
                 this.matchEndSeen = true;
                 refreshProfileRecord(end);
                 this.matchId = null;
+                this.friendMode = false;
                 this.currentRound = -1;
                 this.roundStartedElapsed = 0L;
                 this.disconnectedAt = 0L;

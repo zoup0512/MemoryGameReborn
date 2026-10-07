@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:id="@+id/center" android:visibility="invisible" android:layout_width="1.0dip" android:layout_height="1.0dip" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+    <TextView android:textSize="22.0sp" android:textColor="@android:color/black" android:gravity="center" android:id="@+id/text" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="32.0dip" android:layout_marginTop="32.0dip" android:layout_marginRight="32.0dip" android:text="@string/online_tutorial_2" android:layout_below="@+id/center" android:layout_centerHorizontal="true" />
+    <ImageView android:id="@+id/image" android:layout_width="90.0dip" android:layout_height="90.0dip" android:layout_marginTop="32.0dip" android:src="@drawable/ic_coin" android:layout_above="@+id/center" android:layout_centerHorizontal="true" />
+    <TextView android:textSize="36.0sp" android:textStyle="bold" android:textColor="@android:color/white" android:gravity="center" android:layout_width="90.0dip" android:layout_height="90.0dip" android:layout_marginTop="32.0dip" android:text="30" android:layout_above="@+id/center" android:layout_centerHorizontal="true" />
+</RelativeLayout>

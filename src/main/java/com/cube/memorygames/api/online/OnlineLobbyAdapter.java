@@ -437,6 +437,17 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                         return;
                     }
                 }
+                // First visit per install: the original 5-page online
+                // rules tutorial (coins and rating stakes) runs before the
+                // first matchmaking attempt.
+                if (!android.preference.PreferenceManager.getDefaultSharedPreferences(
+                        OnlineLobbyAdapter.this.context)
+                        .getBoolean(com.cube.memorygames.activity.OnlineTutorialActivity.PREF_ONLINE_SHOWED, false)) {
+                    OnlineLobbyAdapter.this.context.startActivity(new Intent(
+                            OnlineLobbyAdapter.this.context,
+                            com.cube.memorygames.activity.OnlineTutorialActivity.class));
+                    return;
+                }
                 OnlineSession.get().init(OnlineLobbyAdapter.this.context);
                 OnlineLobbyAdapter.this.context.startActivity(new Intent(
                         OnlineLobbyAdapter.this.context, OnlineMatchActivity.class));
