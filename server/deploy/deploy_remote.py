@@ -51,13 +51,23 @@ def main():
             print("!! Java 17+ not found on remote; install it first (apt/yum openjdk-17-jre)")
             sys.exit(2)
 
-        print("==> uploading jar (49 MB) ...")
+        import hashlib
+        local_md5 = hashlib.md5(open(JAR_LOCAL, "rb").read()).hexdigest()
+        print(f"==> uploading jar (49 MB, local md5 {local_md5[:12]}...) ...")
         sftp = client.open_sftp()
         try:
             run(client, f"mkdir -p {REMOTE_DIR}")
             sftp.put(JAR_LOCAL, f"{REMOTE_DIR}/app.jar")
         finally:
             sftp.close()
+        # The NAS has already been burned by "upload finished != upload
+        # correct": verify the remote md5 matches before going further.
+        code, remote_md5, _ = run(client, f"md5sum {REMOTE_DIR}/app.jar | cut -d' ' -f1")
+        remote_md5 = remote_md5.strip()
+        if remote_md5 != local_md5:
+            print(f"!! md5 mismatch: remote={remote_md5} local={local_md5}")
+            sys.exit(4)
+        print("[md5] verified")
 
         print("==> stopping previous instance")
         # SIGTERM first so the Spring shutdown hook closes H2 cleanly;
@@ -69,8 +79,12 @@ def main():
         # Double-detach: the subshell exits immediately so the SSH channel
         # gets EOF even though java keeps running (a plain "cmd &" holds the
         # channel's fds open and times out paramiko).
+        # The admin API is hidden (404) unless PK_ADMIN_TOKEN is provided to
+        # this script; on a publicly exposed box use a strong random token.
+        token = os.environ.get("PK_ADMIN_TOKEN", "")
+        token_prefix = f"PK_ADMIN_TOKEN='{token}' " if token else ""
         start = (
-            f"cd {REMOTE_DIR} && (nohup java -Xms128m -Xmx512m"
+            f"cd {REMOTE_DIR} && ({token_prefix}nohup java -Xms128m -Xmx512m"
             f" -Dserver.address=0.0.0.0 -Dserver.port={PORT}"
             " -Dspring.datasource.url='jdbc:h2:file:./data/pk;DB_CLOSE_DELAY=-1'"
             " -jar app.jar > pk-server.log 2>&1 < /dev/null &) && echo launched"

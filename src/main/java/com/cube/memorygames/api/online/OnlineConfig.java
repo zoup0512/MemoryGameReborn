@@ -12,11 +12,17 @@ import android.content.Context;
  */
 public final class OnlineConfig {
 
-    /** Production WebSocket endpoint (oversee deployment). */
-    public static final String DEFAULT_ENDPOINT = "wss://pk.memorygame.example.com/ws";
+    /**
+     * Production WebSocket endpoint: the public domain mapped to the NAS
+     * PK server (router forwards www.52razor.site:8090 -> 192.168.110.140:8090).
+     */
+    public static final String DEFAULT_ENDPOINT = "ws://www.52razor.site:8090/ws";
 
-    /** LAN test deployment (PRD 6.1 real-device integration testing). */
-    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.176:8090/ws";
+    /**
+     * LAN test deployment (PRD 6.1 real-device integration testing): the
+     * NAS's fixed LAN address, so debug builds survive the PC's roaming IP.
+     */
+    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.140:8090/ws";
 
     /** Local development endpoint used when a debug override is set. */
     private static final String PREFS = "online_config";
