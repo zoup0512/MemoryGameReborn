@@ -189,6 +189,27 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             case ProtocolCodec.T_MATCH_CANCEL:
                 this.matchmaker.cancel(userId);
                 return;
+            case ProtocolCodec.T_BOT_MATCH_REQUEST: {
+                // Explicit play-vs-bot duel (docs/bot-battle-prd.md): no queue,
+                // the room leaves immediately with mode=PRACTICE.
+                this.events.emit("BOT_MATCH_REQUEST", null,
+                        "user=" + userId + " session=" + session.getId());
+                if (this.adminState.isMaintenance()) {
+                    reply(session, ProtocolCodec.T_ERROR, error(503,
+                            this.adminState.getMaintenanceMessage()));
+                    return;
+                }
+                if (room != null) {
+                    reply(session, ProtocolCodec.T_ERROR, error(409, "already in a match"));
+                    return;
+                }
+                ProtocolCodec.BotMatchRequest request =
+                        ProtocolCodec.convert(envelope.d, ProtocolCodec.BotMatchRequest.class);
+                PkProperties.BotDifficulty difficulty = this.properties.practiceDifficulty(
+                        request != null ? request.difficulty : null);
+                this.manager.createPracticeRoom(account, endpoint(session), difficulty);
+                return;
+            }
             case ProtocolCodec.T_LEVEL_WIN:
                 if (room != null) {
                     ProtocolCodec.LevelWin msg = ProtocolCodec.convert(envelope.d, ProtocolCodec.LevelWin.class);
@@ -249,7 +270,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     entry.result = asA ? record.resultA : mirrorResult(record.resultA);
                     entry.myScore = asA ? record.scoreA : record.scoreB;
                     entry.oppScore = asA ? record.scoreB : record.scoreA;
-                    entry.vsBot = record.botOpponent && !asA;
+                    // The bot always sits in seat B, so the viewer's bot tag
+                    // applies exactly when the viewer is seat A.
+                    entry.vsBot = record.botOpponent && asA;
                     response.matches[i] = entry;
                 }
                 reply(session, ProtocolCodec.T_HISTORY_RESPONSE, response);

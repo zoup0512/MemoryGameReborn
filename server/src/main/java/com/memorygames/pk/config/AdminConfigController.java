@@ -59,6 +59,19 @@ public class AdminConfigController {
         public Long roundIntermissionMs;
         public Long matchFoundDelayMs;
         public Integer roundsPerMatch;
+        /** Practice (play-vs-bot): daily paid-win cap. */
+        public Integer practiceDailyRewardCap;
+        /** Patches one practice difficulty tier identified by id. */
+        public PracticeDifficultyPatch practiceDifficulty;
+    }
+
+    public static class PracticeDifficultyPatch {
+
+        public String id;
+        public Integer elo;
+        public Double accuracy;
+        public Double pace;
+        public Integer winCoins;
     }
 
     @GetMapping("/config")
@@ -80,6 +93,20 @@ public class AdminConfigController {
         view.put("roundIntermissionMs", this.properties.getTiming().getRoundIntermissionMs());
         view.put("matchFoundDelayMs", this.properties.getTiming().getMatchFoundDelayMs());
         view.put("roundsPerMatch", this.properties.getMatch().getRoundsPerMatch());
+        Map<String, Object> practice = new LinkedHashMap<>();
+        practice.put("dailyRewardCap", this.properties.getPractice().getDailyRewardCap());
+        java.util.List<Map<String, Object>> tiers = new java.util.ArrayList<>();
+        for (PkProperties.BotDifficulty tier : this.properties.getPractice().getDifficulties()) {
+            Map<String, Object> tierView = new LinkedHashMap<>();
+            tierView.put("id", tier.getId());
+            tierView.put("elo", tier.getElo());
+            tierView.put("accuracy", tier.getAccuracy());
+            tierView.put("pace", tier.getPace());
+            tierView.put("winCoins", tier.getWinCoins());
+            tiers.add(tierView);
+        }
+        practice.put("difficulties", tiers);
+        view.put("practice", practice);
         return ResponseEntity.ok(view);
     }
 
@@ -153,12 +180,44 @@ public class AdminConfigController {
             this.properties.getMatch().setRoundsPerMatch(value);
             audit.append(" roundsPerMatch=").append(value);
         }
+        if (body.practiceDailyRewardCap != null) {
+            int value = (int) clamp(body.practiceDailyRewardCap, 0L, 100L);
+            this.properties.getPractice().setDailyRewardCap(value);
+            audit.append(" practiceDailyRewardCap=").append(value);
+        }
+        if (body.practiceDifficulty != null && body.practiceDifficulty.id != null) {
+            PkProperties.BotDifficulty tier =
+                    this.properties.practiceDifficulty(body.practiceDifficulty.id);
+            boolean matched = tier.getId() != null
+                    && tier.getId().equalsIgnoreCase(body.practiceDifficulty.id);
+            if (matched) {
+                if (body.practiceDifficulty.elo != null) {
+                    tier.setElo((int) clamp(body.practiceDifficulty.elo, 0L, 3000L));
+                }
+                if (body.practiceDifficulty.accuracy != null) {
+                    tier.setAccuracy(clamp(body.practiceDifficulty.accuracy, 0.1d, 0.99d));
+                }
+                if (body.practiceDifficulty.pace != null) {
+                    tier.setPace(clamp(body.practiceDifficulty.pace, 0.2d, 5.0d));
+                }
+                if (body.practiceDifficulty.winCoins != null) {
+                    tier.setWinCoins((int) clamp(body.practiceDifficulty.winCoins, 0L, 1000L));
+                }
+                audit.append(" practiceDifficulty=").append(tier.getId());
+            } else {
+                audit.append(" practiceDifficulty=unknown:").append(body.practiceDifficulty.id);
+            }
+        }
         log.info("{}", audit);
         this.audit.record("CONFIG_APPLIED", audit.toString(), AdminGuard.clientIp(request), "ok");
         return get(request);
     }
 
     private static long clamp(long value, long min, long max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
 }

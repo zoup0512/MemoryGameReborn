@@ -20,6 +20,7 @@ public final class ProtocolCodec {
     public static final String T_AUTH = "auth";
     public static final String T_RESUME = "resume";
     public static final String T_MATCH_JOIN = "match_join";
+    public static final String T_BOT_MATCH_REQUEST = "bot_match_request";
     public static final String T_MATCH_CANCEL = "match_cancel";
     public static final String T_LEVEL_WIN = "level_win";
     public static final String T_ROUND_COMPLETE = "round_complete";
@@ -47,6 +48,12 @@ public final class ProtocolCodec {
     public static final String T_TOP_RESPONSE = "top_response";
     public static final String T_PONG = "pong";
     public static final String T_ERROR = "error";
+
+    /** Match modes (MatchFound.mode / MatchRecord.mode). */
+    public static final String MODE_RANKED = "RANKED";
+    public static final String MODE_FRIEND = "FRIEND";
+    /** Explicit play-vs-bot practice duel: no entry fee, no ELO, capped coins. */
+    public static final String MODE_PRACTICE = "PRACTICE";
 
     /** Match settlement results. */
     public static final String RESULT_WIN = "W";
@@ -90,6 +97,11 @@ public final class ProtocolCodec {
         public int score;
     }
 
+    /** BotMatchRequest: the client picks a difficulty tier by id. */
+    public static class BotMatchRequest {
+        public String difficulty;
+    }
+
     public static class OpponentInfo {
         public long userId;
         public String nickname;
@@ -110,7 +122,7 @@ public final class ProtocolCodec {
 
     public static class MatchFound {
         public String matchId;
-        /** RANKED (random matchmaking) or FRIEND (room code). */
+        /** RANKED (random matchmaking), FRIEND (room code) or PRACTICE (vs bot). */
         public String mode;
         public OpponentInfo opponent;
         public RoundDesc[] rounds;

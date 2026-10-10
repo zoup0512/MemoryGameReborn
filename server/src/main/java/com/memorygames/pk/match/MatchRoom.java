@@ -76,16 +76,21 @@ public class MatchRoom {
         }
     }
 
-    public static final String MODE_RANKED = "RANKED";
-    public static final String MODE_FRIEND = "FRIEND";
+    public static final String MODE_RANKED = ProtocolCodec.MODE_RANKED;
+    public static final String MODE_FRIEND = ProtocolCodec.MODE_FRIEND;
+    public static final String MODE_PRACTICE = ProtocolCodec.MODE_PRACTICE;
 
     public final String matchId;
-    public final boolean friendMode;
+    /** RANKED, FRIEND or PRACTICE (docs/bot-battle-prd.md). */
+    public final String mode;
     private final Seat[] seats = new Seat[2];
     private final List<GameCatalog.ProtocolRound> rounds;
     private final long matchSeed;
     private final String botNickname;
     private final int botElo;
+    /** Practice bots hold a fixed tier accuracy; ranked fallback bots derive it from the ELO. */
+    private final Double botFixedAccuracy;
+    private final double botPaceMultiplier;
 
     private final GameCatalog catalog;
     private final UserService users;
@@ -113,7 +118,8 @@ public class MatchRoom {
 
     public MatchRoom(UserAccount userA, PlayerEndpoint endpointA,
                      UserAccount userB, PlayerEndpoint endpointB,
-                     String botNickname, boolean friendMode,
+                     String botNickname, String mode, int botElo,
+                     Double botFixedAccuracy, double botPaceMultiplier,
                      GameCatalog catalog, UserService users,
                      Rating rating, PkProperties properties,
                      ScheduledThreadPoolExecutor scheduler,
@@ -121,7 +127,7 @@ public class MatchRoom {
                      MatchRecordRepository records, SeasonService seasons,
                      EventRing events, AdminMetrics metrics) {
         this.matchId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        this.friendMode = friendMode;
+        this.mode = mode;
         this.records = records;
         this.seasons = seasons;
         this.events = events;
@@ -130,7 +136,9 @@ public class MatchRoom {
         this.matchSeed = new Random().nextLong();
         this.rounds = catalog.planRounds(this.matchSeed, properties.getMatch().getRoundsPerMatch());
         this.botNickname = botNickname;
-        this.botElo = userA.elo;
+        this.botElo = botElo;
+        this.botFixedAccuracy = botFixedAccuracy;
+        this.botPaceMultiplier = botPaceMultiplier;
         this.catalog = catalog;
         this.users = users;
         this.rating = rating;
@@ -148,9 +156,13 @@ public class MatchRoom {
             if (this.settledOnce.get()) {
                 return;
             }
-            this.users.chargeEntryFee(this.seats[0].user, this.properties.getEconomy().getEntryFee());
-            if (this.seats[1].user != null) {
-                this.users.chargeEntryFee(this.seats[1].user, this.properties.getEconomy().getEntryFee());
+            // Practice duels are free (docs/bot-battle-prd.md): no entry fee
+            // on either seat, bot or human.
+            if (!isPracticeMode()) {
+                this.users.chargeEntryFee(this.seats[0].user, this.properties.getEconomy().getEntryFee());
+                if (this.seats[1].user != null) {
+                    this.users.chargeEntryFee(this.seats[1].user, this.properties.getEconomy().getEntryFee());
+                }
             }
             this.metrics.matchesStarted.incrementAndGet();
             for (int i = 0; i < 2; i++) {
@@ -210,7 +222,9 @@ public class MatchRoom {
                 return;
             }
             for (Seat seat : this.seats) {
-                if (seat.user != null) {
+                // Practice duels charged no entry fee, so there is nothing to
+                // refund (refunding would mint coins out of thin air).
+                if (seat.user != null && !isPracticeMode()) {
                     this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
                 }
             }
@@ -227,7 +241,7 @@ public class MatchRoom {
     private ProtocolCodec.MatchFound buildMatchFound(int viewerIndex) {
         ProtocolCodec.MatchFound found = new ProtocolCodec.MatchFound();
         found.matchId = this.matchId;
-        found.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
+        found.mode = this.mode;
         found.opponent = opponentInfo(1 - viewerIndex);
         found.rounds = new ProtocolCodec.RoundDesc[this.rounds.size()];
         for (int i = 0; i < this.rounds.size(); i++) {
@@ -436,7 +450,7 @@ public class MatchRoom {
     public synchronized Snapshot adminSnapshot() {
         Snapshot snapshot = new Snapshot();
         snapshot.matchId = this.matchId;
-        snapshot.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
+        snapshot.mode = this.mode;
         snapshot.round = this.currentRound;
         snapshot.totalRounds = this.rounds.size();
         snapshot.roundEndsInMs = this.currentRound > 0
@@ -460,7 +474,8 @@ public class MatchRoom {
         if (this.settledOnce.get()) {
             return false;
         }
-        if (refund) {
+        if (refund && !isPracticeMode()) {
+            // A practice match never charged the fee; refunding it would mint.
             for (Seat seat : this.seats) {
                 if (seat.user != null) {
                     this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
@@ -600,14 +615,17 @@ public class MatchRoom {
                 : ProtocolCodec.RESULT_DRAW.equals(result0) ? 0.5 : 0.0;
         int delta0 = this.rating.delta(elo0Pre, elo1Pre, score0);
         // Friend rooms move half rating (PRD 3.11), rounded to stay zero-sum.
-        if (this.friendMode) {
+        // Practice duels never move rating at all (docs/bot-battle-prd.md).
+        if (isPracticeMode()) {
+            delta0 = 0;
+        } else if (isFriendMode()) {
             delta0 = delta0 / 2;
         }
         if (this.adminVoided) {
             // Admin terminate: refund the entry fee, move no rating.
             delta0 = 0;
             for (Seat seat : this.seats) {
-                if (seat.user != null) {
+                if (seat.user != null && !isPracticeMode()) {
                     this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
                 }
             }
@@ -624,8 +642,20 @@ public class MatchRoom {
             end.result = result;
             end.myScore = i == 0 ? total0 : total1;
             end.oppScore = i == 0 ? total1 : total0;
-            int coinDelta = win ? this.properties.getEconomy().getWinCoins()
-                    : draw ? this.properties.getEconomy().getDrawCoins() : 0;
+            int coinDelta;
+            if (isPracticeMode()) {
+                // Practice economy (docs/bot-battle-prd.md): tier payout for a
+                // win (draws pay half), the loser walks away with nothing, and
+                // the daily cap zeroes later wins without ending the match.
+                // Only the human seat is paid; the bot's payload discards it.
+                coinDelta = seat.user != null
+                        ? (win ? this.practiceWinCoins(seat)
+                                : draw ? this.practiceWinCoins(seat) / 2 : 0)
+                        : 0;
+            } else {
+                coinDelta = win ? this.properties.getEconomy().getWinCoins()
+                        : draw ? this.properties.getEconomy().getDrawCoins() : 0;
+            }
             end.coinDelta = coinDelta;
             if (seat.user != null && !this.adminVoided) {
                 int eloDelta = i == 0 ? delta0 : delta1;
@@ -673,11 +703,11 @@ public class MatchRoom {
             sendTo(i, ProtocolCodec.T_MATCH_END, payloads[i]);
         }
         log.info("match {} settled: mode={} forfeit={} voided={} scores {}/{}",
-                this.matchId, this.friendMode ? MODE_FRIEND : MODE_RANKED, forfeit,
+                this.matchId, this.mode, forfeit,
                 this.adminVoided, total0, total1);
         this.metrics.matchesSettled.incrementAndGet();
         this.events.emit("SETTLED", this.matchId,
-                "mode=" + (this.friendMode ? MODE_FRIEND : MODE_RANKED)
+                "mode=" + this.mode
                         + " forfeit=" + forfeit + " voided=" + this.adminVoided
                         + " scores=" + total0 + "/" + total1);
         this.settlementCallback.onSettled(this);
@@ -690,7 +720,7 @@ public class MatchRoom {
         try {
             MatchRecord record = new MatchRecord();
             record.matchId = this.matchId;
-            record.mode = this.friendMode ? MODE_FRIEND : MODE_RANKED;
+            record.mode = this.mode;
             record.playerA = this.seats[0].user != null ? this.seats[0].user.id : -1L;
             record.nicknameA = this.seats[0].nickname();
             record.resultA = result0;
@@ -777,7 +807,8 @@ public class MatchRoom {
     private void startBotBrain(GameCatalog.GameSpec spec, long durationMs) {
         final Random random = new Random(this.matchSeed ^ (this.currentRound * 31L));
         final double accuracy = botAccuracy();
-        long interval = Math.max(200L, (long) (this.catalog.botLevelIntervalOf(spec) * (0.8 + random.nextDouble() * 0.4)));
+        long interval = Math.max(200L, (long) (this.catalog.botLevelIntervalOf(spec)
+                * this.botPaceMultiplier * (0.8 + random.nextDouble() * 0.4)));
         int ticks = (int) (durationMs / interval) + 1;
         for (int tick = 1; tick <= ticks; tick++) {
             final int level = tick;
@@ -823,8 +854,42 @@ public class MatchRoom {
     }
 
     private double botAccuracy() {
+        if (this.botFixedAccuracy != null) {
+            return this.botFixedAccuracy;
+        }
         int elo = this.seats[0].user != null ? this.seats[0].user.elo : this.botElo;
         return Math.max(0.55, Math.min(0.92, 0.55 + (elo - 1000) * 0.0004));
+    }
+
+    public boolean isFriendMode() {
+        return MODE_FRIEND.equals(this.mode);
+    }
+
+    public boolean isPracticeMode() {
+        return MODE_PRACTICE.equals(this.mode);
+    }
+
+    /**
+     * Practice payout for the human seat: the tier's win coins while today's
+     * settled wins stay below the cap, zero afterwards (docs/bot-battle-prd.md
+     * section 6). The cap counts wins already persisted, so it gates without
+     * ever blocking the match itself.
+     */
+    private int practiceWinCoins(Seat seat) {
+        int winCoins = 0;
+        for (PkProperties.BotDifficulty tier : this.properties.getPractice().getDifficulties()) {
+            if (tier.getElo() == this.botElo) {
+                winCoins = tier.getWinCoins();
+                break;
+            }
+        }
+        if (winCoins <= 0 || this.records == null) {
+            return 0;
+        }
+        long dayStart = java.time.LocalDate.now()
+                .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long winsToday = this.records.countPracticeWinsSince(seat.user.id, dayStart);
+        return winsToday < this.properties.getPractice().getDailyRewardCap() ? winCoins : 0;
     }
 
     private void stopBotBrain() {

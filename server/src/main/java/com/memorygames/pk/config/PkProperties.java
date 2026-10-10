@@ -2,6 +2,9 @@ package com.memorygames.pk.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Tunable PK parameters. Production values follow docs/online-pk-prd.md;
  * the integration test overrides them with accelerated timings.
@@ -15,6 +18,7 @@ public class PkProperties {
     private final Match match = new Match();
     private final Season season = new Season();
     private final AntiCheat antiCheat = new AntiCheat();
+    private final Practice practice = new Practice();
 
     /** When > 0, replaces every game's round duration (tests only). */
     private long roundDurationOverrideMs = 0;
@@ -119,12 +123,89 @@ public class PkProperties {
         public void setBucketWidenSteps(int[] v) { this.bucketWidenSteps = v; }
     }
 
+    /**
+     * Practice (play-vs-bot) tuning (docs/bot-battle-prd.md): the five
+     * difficulty tiers and the daily paid-win cap. All read on every use,
+     * so admin config puts apply without a restart.
+     */
+    public static class Practice {
+
+        /** Paid practice wins per calendar day; later wins still settle, with 0 coins. */
+        private int dailyRewardCap = 5;
+        /** Difficulty tiers, bronze first; lookups fall back to the first entry. */
+        private List<BotDifficulty> difficulties = new ArrayList<>();
+
+        public Practice() {
+            this.difficulties.add(new BotDifficulty("BRONZE", 800, 0.60d, 1.5d, 8));
+            this.difficulties.add(new BotDifficulty("SILVER", 1000, 0.68d, 1.25d, 10));
+            this.difficulties.add(new BotDifficulty("GOLD", 1250, 0.78d, 1.0d, 14));
+            this.difficulties.add(new BotDifficulty("DIAMOND", 1500, 0.86d, 0.85d, 20));
+            this.difficulties.add(new BotDifficulty("MASTER", 1800, 0.92d, 0.72d, 30));
+        }
+
+        public int getDailyRewardCap() { return dailyRewardCap; }
+        public void setDailyRewardCap(int v) { this.dailyRewardCap = v; }
+        public List<BotDifficulty> getDifficulties() { return difficulties; }
+        public void setDifficulties(List<BotDifficulty> v) { this.difficulties = v; }
+    }
+
+    /** One practice bot tier (docs/bot-battle-prd.md section 4). */
+    public static class BotDifficulty {
+
+        private String id;
+        /** Bot rating; drives the VS header badge and the stats-board W/L/D derivation. */
+        private int elo;
+        /** Base hit rate per answered level (rubber-banding drifts around it). */
+        private double accuracy;
+        /** Multiplier over GameCatalog.botLevelIntervalMs. */
+        private double pace;
+        /** Coins for a won practice match (draws pay half). */
+        private int winCoins;
+
+        public BotDifficulty() {
+        }
+
+        public BotDifficulty(String id, int elo, double accuracy, double pace, int winCoins) {
+            this.id = id;
+            this.elo = elo;
+            this.accuracy = accuracy;
+            this.pace = pace;
+            this.winCoins = winCoins;
+        }
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public int getElo() { return elo; }
+        public void setElo(int elo) { this.elo = elo; }
+        public double getAccuracy() { return accuracy; }
+        public void setAccuracy(double accuracy) { this.accuracy = accuracy; }
+        public double getPace() { return pace; }
+        public void setPace(double pace) { this.pace = pace; }
+        public int getWinCoins() { return winCoins; }
+        public void setWinCoins(int winCoins) { this.winCoins = winCoins; }
+    }
+
     public Economy getEconomy() { return economy; }
     public Rating getRating() { return rating; }
     public Timing getTiming() { return timing; }
     public Match getMatch() { return match; }
     public Season getSeason() { return season; }
     public AntiCheat getAntiCheat() { return antiCheat; }
+    public Practice getPractice() { return practice; }
+
+    /** Difficulty lookup by id (case-insensitive); unknown ids fall back to the first tier. */
+    public BotDifficulty practiceDifficulty(String id) {
+        List<BotDifficulty> tiers = this.practice.getDifficulties();
+        if (tiers.isEmpty()) {
+            return new BotDifficulty("GOLD", 1250, 0.78d, 1.0d, 14);
+        }
+        for (BotDifficulty tier : tiers) {
+            if (tier.getId() != null && tier.getId().equalsIgnoreCase(id)) {
+                return tier;
+            }
+        }
+        return tiers.get(0);
+    }
     public long getRoundDurationOverrideMs() { return roundDurationOverrideMs; }
     public void setRoundDurationOverrideMs(long v) { this.roundDurationOverrideMs = v; }
     public long getMinLevelIntervalOverrideMs() { return minLevelIntervalOverrideMs; }

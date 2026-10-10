@@ -85,9 +85,35 @@ public class MatchManager {
     public MatchRoom createRoom(UserAccount userA, PlayerEndpoint endpointA,
                                 UserAccount userB, PlayerEndpoint endpointB,
                                 String botNickname, boolean friendMode) {
-        MatchRoom room = new MatchRoom(userA, endpointA, userB, endpointB, botNickname, friendMode,
+        // Ranked fallback bots shadow their human opponent's rating; friend
+        // rooms always seat two humans, so the bot elo never applies there.
+        int botElo = userB == null && userA != null ? userA.elo : 1000;
+        MatchRoom room = new MatchRoom(userA, endpointA, userB, endpointB, botNickname,
+                friendMode ? MatchRoom.MODE_FRIEND : MatchRoom.MODE_RANKED, botElo,
+                null, 1.0d,
                 this.catalog, this.users, this.rating, this.properties, this.scheduler,
                 settled -> onSettled(settled), this.records, this.seasons, this.events, this.metrics);
+        return register(room, userA, userB);
+    }
+
+    /**
+     * Explicit play-vs-bot duel (docs/bot-battle-prd.md): the human is seat 0,
+     * the difficulty tier defines the bot's rating, accuracy and pacing. No
+     * queueing — the match_found frame leaves immediately.
+     */
+    public MatchRoom createPracticeRoom(UserAccount user, PlayerEndpoint endpoint,
+                                        PkProperties.BotDifficulty difficulty) {
+        MatchRoom room = new MatchRoom(user, endpoint, null, null,
+                difficulty.getId() == null ? "Practice Bot"
+                        : difficulty.getId().charAt(0) + difficulty.getId().substring(1).toLowerCase(java.util.Locale.US) + " Bot",
+                MatchRoom.MODE_PRACTICE, difficulty.getElo(),
+                difficulty.getAccuracy(), difficulty.getPace(),
+                this.catalog, this.users, this.rating, this.properties, this.scheduler,
+                settled -> onSettled(settled), this.records, this.seasons, this.events, this.metrics);
+        return register(room, user, null);
+    }
+
+    private MatchRoom register(MatchRoom room, UserAccount userA, UserAccount userB) {
         this.rooms.put(room.matchId, room);
         if (userA != null) {
             this.roomByUser.put(userA.id, room.matchId);
