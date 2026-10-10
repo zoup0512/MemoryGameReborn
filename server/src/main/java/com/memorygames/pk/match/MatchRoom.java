@@ -115,6 +115,13 @@ public class MatchRoom {
     private ScheduledFuture<?> roundDeadlineTask;
     private ScheduledFuture<?> acceptDeadlineTask;
     private final List<ScheduledFuture<?>> botTasks = new ArrayList<>();
+    /**
+     * Bot v2 brain (docs/bot-battle-prd.md section 5): exactly one answer is
+     * in flight at a time; bumping the epoch invalidates a stale one.
+     */
+    private long botEpoch;
+    private int botMistakesLeft;
+    private Random botRandom;
 
     public MatchRoom(UserAccount userA, PlayerEndpoint endpointA,
                      UserAccount userB, PlayerEndpoint endpointB,
@@ -805,44 +812,82 @@ public class MatchRoom {
     // ------------------------------------------------------------------ bot
 
     private void startBotBrain(GameCatalog.GameSpec spec, long durationMs) {
-        final Random random = new Random(this.matchSeed ^ (this.currentRound * 31L));
-        final double accuracy = botAccuracy();
-        long interval = Math.max(200L, (long) (this.catalog.botLevelIntervalOf(spec)
-                * this.botPaceMultiplier * (0.8 + random.nextDouble() * 0.4)));
-        int ticks = (int) (durationMs / interval) + 1;
-        for (int tick = 1; tick <= ticks; tick++) {
-            final int level = tick;
-            this.botTasks.add(this.scheduler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    botTick(level, accuracy, random);
-                }
-            }, tick * interval, TimeUnit.MILLISECONDS));
-        }
+        this.botEpoch++;
+        this.botRandom = new Random(this.matchSeed ^ (this.currentRound * 31L));
+        this.botMistakesLeft = 0;
+        this.seats[1].expectedLevel = 1;
+        scheduleBotAnswer(spec, durationMs);
     }
 
-    private void botTick(int level, double accuracy, Random random) {
+    /**
+     * Schedules the bot's next answer: a truncated-normal draw around the
+     * game's nominal pace (σ=0.25μ clamped to [0.7μ, 1.6μ], replacing the
+     * old uniform jitter over a fixed cadence), slowed ×1.3 for the first
+     * two answers (reading the question) and ×1.1 in the round's second
+     * half (fatigue).
+     */
+    private void scheduleBotAnswer(GameCatalog.GameSpec spec, long roundDurationMs) {
+        final long epoch = this.botEpoch;
+        double mu = this.catalog.botLevelIntervalOf(spec) * this.botPaceMultiplier;
+        if (this.seats[1].expectedLevel <= 2) {
+            mu *= 1.3d;
+        }
+        long elapsed = System.currentTimeMillis() - this.roundStartedAt;
+        if (elapsed > roundDurationMs / 2) {
+            mu *= 1.1d;
+        }
+        long delay = truncatedNormal(mu, mu * 0.25d, (long) (0.7d * mu), (long) (1.6d * mu));
+        this.botTasks.add(this.scheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                botTick(epoch, spec, roundDurationMs);
+            }
+        }, delay, TimeUnit.MILLISECONDS));
+    }
+
+    /** Box-Muller normal draw around mu, clamped to [min, max]. */
+    private long truncatedNormal(double mu, double sigma, long min, long max) {
+        double u1 = Math.max(1e-9d, this.botRandom.nextDouble());
+        double u2 = this.botRandom.nextDouble();
+        double normal = Math.sqrt(-2.0d * Math.log(u1)) * Math.cos(2.0d * Math.PI * u2);
+        return (long) Math.max(min, Math.min(max, mu + sigma * normal));
+    }
+
+    private void botTick(long epoch, GameCatalog.GameSpec spec, long roundDurationMs) {
         synchronized (this) {
-            if (this.settledOnce.get() || this.seats[1].expectedLevel != level) {
+            if (this.settledOnce.get() || epoch != this.botEpoch) {
                 return;
             }
             // Rubber-banding (M2 bot tuning): drift accuracy to keep the
-            // human's match engaging instead of running away on either side.
+            // human's match engaging, clamped around this bot's own base
+            // (practice tiers) instead of the old absolute floor.
             if (this.botAccuracy < 0) {
-                this.botAccuracy = accuracy;
+                this.botAccuracy = botAccuracy();
             } else {
                 int gap = totalScore(0) - totalScore(1);
                 if (gap > 60) {
-                    this.botAccuracy = Math.min(0.95, this.botAccuracy + 0.02);
+                    this.botAccuracy = Math.min(botAccuracyCeiling(), this.botAccuracy + 0.02);
                 } else if (gap < -60) {
-                    this.botAccuracy = Math.max(0.45, this.botAccuracy - 0.02);
+                    this.botAccuracy = Math.max(botAccuracyFloor(), this.botAccuracy - 0.02);
                 }
             }
-            accuracy = this.botAccuracy;
+            double accuracy = this.botAccuracy;
+            // Quick-perception games run slightly above the tier baseline.
+            if ("15".equals(spec.gameId) || "19".equals(spec.gameId)) {
+                accuracy = Math.min(0.98d, accuracy + 0.05);
+            }
+            // Mistake clusters: occasionally the bot sticks for an answer or
+            // two, the way a human visibly stalls mid-round.
+            if (this.botMistakesLeft > 0) {
+                this.botMistakesLeft--;
+                accuracy *= 0.3d;
+            } else if (this.botRandom.nextDouble() < 0.08d) {
+                this.botMistakesLeft = this.botRandom.nextBoolean() ? 1 : 2;
+                accuracy *= 0.3d;
+            }
+            int level = this.seats[1].expectedLevel;
             this.seats[1].expectedLevel = level + 1;
-            boolean won = random.nextDouble() < accuracy;
-            if (won) {
-                GameCatalog.GameSpec spec = this.catalog.byId(this.rounds.get(this.currentRound - 1).gameId);
+            if (this.botRandom.nextDouble() < accuracy) {
                 this.seats[1].roundScores[this.currentRound - 1] += spec.levelScore(level);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
                 score.matchId = this.matchId;
@@ -850,7 +895,22 @@ public class MatchRoom {
                 score.score = totalScore(1);
                 sendTo(0, ProtocolCodec.T_OPPONENT_SCORE, score);
             }
+            // Chain the next answer while the round can still fit one.
+            long elapsed = System.currentTimeMillis() - this.roundStartedAt;
+            if (elapsed < roundDurationMs) {
+                scheduleBotAnswer(spec, roundDurationMs);
+            }
         }
+    }
+
+    private double botAccuracyFloor() {
+        return this.botFixedAccuracy != null
+                ? Math.max(0.05d, this.botFixedAccuracy - 0.10d) : 0.45d;
+    }
+
+    private double botAccuracyCeiling() {
+        return this.botFixedAccuracy != null
+                ? Math.min(0.98d, this.botFixedAccuracy + 0.05d) : 0.95d;
     }
 
     private double botAccuracy() {
@@ -893,6 +953,7 @@ public class MatchRoom {
     }
 
     private void stopBotBrain() {
+        this.botEpoch++;
         for (ScheduledFuture<?> task : this.botTasks) {
             task.cancel(false);
         }
