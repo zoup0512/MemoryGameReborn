@@ -270,6 +270,8 @@ public class MatchRoom {
         info.elo = seat.elo();
         info.rank = seat.user != null ? this.rating.rankIndex(seat.user.elo) : this.rating.rankIndex(this.botElo);
         info.isBot = seat.isBot;
+        // Practice bots carry their difficulty tier id for the client badge.
+        info.tier = seat.isBot && isPracticeMode() ? this.practiceTierId() : null;
         if (seat.user != null) {
             info.wins = seat.user.wins;
             info.losses = seat.user.losses;
@@ -666,14 +668,16 @@ public class MatchRoom {
             end.coinDelta = coinDelta;
             if (seat.user != null && !this.adminVoided) {
                 int eloDelta = i == 0 ? delta0 : delta1;
-                this.users.applySettlement(seat.user, eloDelta, coinDelta, win, draw);
+                this.users.applySettlement(seat.user, eloDelta, coinDelta, win, draw, isPracticeMode());
                 end.eloDelta = eloDelta;
                 end.elo = seat.user.elo;
                 end.balance = seat.user.balance;
+                end.practiceStreak = seat.user.practiceStreak != null ? seat.user.practiceStreak : 0;
             } else {
                 end.eloDelta = 0;
                 end.elo = this.botElo;
                 end.balance = 0;
+                end.practiceStreak = 0;
             }
             if (this.adminVoided) {
                 end.eloDelta = 0;
@@ -906,6 +910,19 @@ public class MatchRoom {
     private double botAccuracyFloor() {
         return this.botFixedAccuracy != null
                 ? Math.max(0.05d, this.botFixedAccuracy - 0.10d) : 0.45d;
+    }
+
+    /** The practice tier id whose elo matches this bot's rating (null outside practice). */
+    private String practiceTierId() {
+        if (!isPracticeMode()) {
+            return null;
+        }
+        for (PkProperties.BotDifficulty tier : this.properties.getPractice().getDifficulties()) {
+            if (tier.getElo() == this.botElo) {
+                return tier.getId();
+            }
+        }
+        return null;
     }
 
     private double botAccuracyCeiling() {

@@ -380,6 +380,20 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             ok.seasonIndex = 1;
             ok.seasonEndsAt = System.currentTimeMillis() + 30L * 86400000L;
         }
+        // Practice (vs-bot) extras: streak for the picker card, and the live
+        // tier table so its rows mirror the admin's hot config.
+        ok.practiceStreak = account.practiceStreak != null ? account.practiceStreak : 0;
+        java.util.List<PkProperties.BotDifficulty> tiers =
+                this.properties.getPractice().getDifficulties();
+        ok.practiceTiers = new ProtocolCodec.PracticeTier[tiers.size()];
+        for (int i = 0; i < tiers.size(); i++) {
+            PkProperties.BotDifficulty tier = tiers.get(i);
+            ProtocolCodec.PracticeTier view = new ProtocolCodec.PracticeTier();
+            view.id = tier.getId();
+            view.elo = tier.getElo();
+            view.winCoins = tier.getWinCoins();
+            ok.practiceTiers[i] = view;
+        }
         return ok;
     }
 

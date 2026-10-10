@@ -187,7 +187,8 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
         row.setLayoutParams(rowParams);
 
         String opponentName = entry.opponent
-                + (entry.vsBot ? " (bot)"
+                + (OnlineSession.MODE_PRACTICE.equals(entry.mode) ? "  ·  " + getString(R.string.online_practice_tag)
+                : entry.vsBot ? " (bot)"
                         : ("FRIEND".equals(entry.mode) ? "  ·  " + getString(R.string.online_friend_tag) : ""));
         row.addView(playerHalf(myName, entry.myScore, win && !draw, false),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.5f));

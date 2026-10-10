@@ -67,7 +67,7 @@ public class UserService {
 
     @Transactional
     public void applySettlement(UserAccount account, int eloDelta, int coinDelta,
-                                boolean win, boolean draw) {
+                                boolean win, boolean draw, boolean practice) {
         account.elo = Math.max(100, account.elo + eloDelta);
         account.balance = Math.max(0, Math.min(account.balance + coinDelta, MAX_BALANCE));
         if (win) {
@@ -76,6 +76,12 @@ public class UserService {
             account.draws++;
         } else {
             account.losses++;
+        }
+        if (practice) {
+            // The practice streak counts consecutive vs-bot wins only; ranked
+            // and friend results leave it untouched.
+            int streak = account.practiceStreak != null ? account.practiceStreak : 0;
+            account.practiceStreak = win ? streak + 1 : 0;
         }
         account.updatedAt = System.currentTimeMillis();
         this.repository.save(account);

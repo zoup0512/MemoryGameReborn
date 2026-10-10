@@ -61,4 +61,7 @@ public class UserAccount {
     /** Soft-deleted accounts keep match history but refuse auth. */
     @Column(nullable = false)
     public boolean deleted;
+
+    /** Consecutive practice (vs-bot) wins; nullable for pre-P2 rows. */
+    public Integer practiceStreak;
 }

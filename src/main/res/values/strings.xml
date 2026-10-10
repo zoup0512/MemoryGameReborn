@@ -183,6 +183,7 @@ Nickname"</string>
     <string name="not_enough_coins">Not enough coins? Get more here!</string>
     <string name="ok">Yes</string>
     <string name="online_bot_pick">Choose your opponent</string>
+    <string name="online_bot_streak">Win streak: %d</string>
     <string name="online_draw">Draw!</string>
     <string name="online_lose">You lost</string>
     <string name="online_elo">ELO</string>
@@ -202,6 +203,7 @@ Nickname"</string>
     <string name="online_season_line">Season %1$d · %2$dd left</string>
     <string name="online_history_empty">No matches yet — go play one!</string>
     <string name="online_friend_tag">friend</string>
+    <string name="online_practice_tag">practice</string>
     <string name="online_title_draws">Draws</string>
     <string name="online_title_loses">Losses</string>
     <string name="online_title_ratio">Wins, %</string>

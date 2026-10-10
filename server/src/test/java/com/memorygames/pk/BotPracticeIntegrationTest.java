@@ -134,6 +134,49 @@ class BotPracticeIntegrationTest {
             assertEquals(0, paid.eloDelta, "practice duels never move ELO");
             assertEquals(8, paid.coinDelta, "the bronze tier payout applies");
             assertEquals(108, paid.balance, "100 + 8 tier coins, no entry fee");
+            // The cap-zeroed win above still counted as a win, so the paid
+            // win is this account's second practice streak link.
+            assertEquals(2, paid.practiceStreak, "the cap-excluded win counted too");
+
+            // A third win extends the streak.
+            ProtocolCodec.MatchEnd second = playPracticeMatch(a, 800, "Bronze Bot");
+            assertEquals(3, second.practiceStreak, "the streak extends across wins");
+        } finally {
+            a.close();
+        }
+    }
+
+    @Test
+    @Timeout(value = 120, unit = TimeUnit.SECONDS)
+    void practiceStreakResetsOnLossAndTiersFlowOnAuth() throws Exception {
+        TestWsClient a = newClient();
+        try {
+            ProtocolCodec.AuthOk profile = register(a, "Streaker");
+            assertNotNull(profile.practiceTiers, "auth_ok must carry the tier table");
+            assertEquals(5, profile.practiceTiers.length, "five tiers are shipped");
+            assertEquals("BRONZE", profile.practiceTiers[0].id);
+            assertEquals(800, profile.practiceTiers[0].elo);
+            assertEquals(0, profile.practiceStreak);
+
+            // Two practice wins build a streak...
+            ProtocolCodec.MatchEnd first = playPracticeMatch(a, 800, "Bronze Bot");
+            assertEquals(1, first.practiceStreak);
+            ProtocolCodec.MatchEnd second = playPracticeMatch(a, 800, "Bronze Bot");
+            assertEquals(2, second.practiceStreak);
+
+            // ...an idle loss (never answering) resets it.
+            ProtocolCodec.BotMatchRequest request = new ProtocolCodec.BotMatchRequest();
+            request.difficulty = "MASTER";
+            a.send(ProtocolCodec.T_BOT_MATCH_REQUEST, request);
+            assertNotNull(a.await(ProtocolCodec.T_MATCH_FOUND, 10000));
+            a.send(ProtocolCodec.T_MATCH_START, new Object());
+            assertNotNull(a.await(ProtocolCodec.T_OPPONENT_START, 5000));
+            TestWsClient.Frame loss = a.await(ProtocolCodec.T_MATCH_END, 90000);
+            assertNotNull(loss, "the idle match must settle via round deadlines");
+            assertEquals(ProtocolCodec.RESULT_LOSE, loss.as(ProtocolCodec.MatchEnd.class).result,
+                    "an idle human loses to the master bot");
+            assertEquals(0, loss.as(ProtocolCodec.MatchEnd.class).practiceStreak,
+                    "a loss resets the practice streak");
         } finally {
             a.close();
         }

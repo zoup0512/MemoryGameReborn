@@ -86,8 +86,11 @@
 
 ## 6. 反刷分治理
 
-- 每日奖励局数上限 `practiceDailyRewardCap`（默认 5，热配）：settle 时统计当日该用户 PRACTICE 胜局数（MatchRecord 查询），超限 `coinDelta=0`，对局照常。
-- 平局奖励 `practiceDrawCoins`（= 胜局一半）。
+- 每日奖励局数上限 `practiceDailyRewardCap`（默认 5，热配）：settle 时统计当日该用户 PRACTICE 胜局数（MatchRecord 查询），超限 `coinDelta=0`，对局照常。（✅ 已随 P0 落地）
+- 平局奖励 = 胜局金币的一半。（✅ 已随 P0 落地）
+- **限制局经济语义（P2 拍板）**：反作弊限制局（restrictedMatches）**保持排位语义**（扣入场费、动 ELO），不并入 PRACTICE 经济——限制是惩罚，若改走零 ELO + 有奖金币路线等于给作弊者送无风险刷币渠道。
+- **人机连胜 streak（P2）**：`UserAccount.practiceStreak`（可空列，老行视为 0）只随 PRACTICE 结果增减（胜 +1、非胜清零；排位/好友局不动它）；经 auth_ok 与 match_end 下发，难度卡显示「Win streak: N」（≥2 时）。
+- **难度卡数值同步（P2）**：auth_ok 携带 `practiceTiers[]`（id/elo/winCoins），客户端卡片区实时镜像 admin 热配；档位行带段位彩点徽章（bronze/silver/gold/diamond/master）。
 
 ## 7. 客户端改动
 

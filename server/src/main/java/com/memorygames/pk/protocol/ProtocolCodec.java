@@ -108,6 +108,8 @@ public final class ProtocolCodec {
         public int elo;
         public int rank;
         public boolean isBot;
+        /** Practice bots only: the difficulty tier id (e.g. "BRONZE"). */
+        public String tier;
         /** Season record for the pre-match statistics board. */
         public int wins;
         public int losses;
@@ -159,6 +161,8 @@ public final class ProtocolCodec {
         public int elo;
         public int coinDelta;
         public int balance;
+        /** Practice only: consecutive vs-bot wins after this settlement. */
+        public int practiceStreak;
         /** Season record after settlement for instant profile refresh. */
         public int myWins;
         public int myLosses;
@@ -204,6 +208,17 @@ public final class ProtocolCodec {
         public int balance;
         public int seasonIndex;
         public long seasonEndsAt;
+        /** Consecutive practice (vs-bot) wins, for the difficulty card. */
+        public int practiceStreak;
+        /** Live difficulty tiers so the card mirrors admin hot config. */
+        public PracticeTier[] practiceTiers;
+    }
+
+    /** One practice difficulty tier as seen by the client's picker card. */
+    public static class PracticeTier {
+        public String id;
+        public int elo;
+        public int winCoins;
     }
 
     public static class RoomJoin {

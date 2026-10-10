@@ -134,6 +134,8 @@ public class OnlineSession {
     private volatile int serverEntryFee = LocalDataManager.ONLINE_ENTRY_FEE;
     private volatile int serverWinCoins = LocalDataManager.ONLINE_WIN_COINS;
     private volatile int serverDrawCoins = LocalDataManager.ONLINE_DRAW_COINS;
+    /** Practice win streak from the last auth_ok / match_end. */
+    private volatile int practiceStreak;
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
     private boolean friendMode;
@@ -240,6 +242,17 @@ public class OnlineSession {
 
     public int getServerDrawCoins() {
         return serverDrawCoins;
+    }
+
+    /** Consecutive practice (vs-bot) wins, from auth_ok / match_end. */
+    public int getPracticeStreak() {
+        return practiceStreak;
+    }
+
+    /** Server's live difficulty tier table (null until the first auth_ok). */
+    public OnlineMessages.PracticeTier[] getPracticeTiers() {
+        AuthOk profile = this.lastProfile;
+        return profile != null ? profile.practiceTiers : null;
     }
 
     public void setProfileCallback(Runnable callback) {
@@ -602,6 +615,7 @@ public class OnlineSession {
                 if (ok.drawCoins > 0) {
                     this.serverDrawCoins = ok.drawCoins;
                 }
+                this.practiceStreak = ok.practiceStreak;
                 Runnable callback = this.profileCallback;
                 if (callback != null) {
                     try {
@@ -888,7 +902,9 @@ public class OnlineSession {
             profile.wins = end.myWins;
             profile.losses = end.myLosses;
             profile.draws = end.myDraws;
+            profile.practiceStreak = end.practiceStreak;
         }
+        this.practiceStreak = end.practiceStreak;
     }
 
     private void notifyError(int code, String message) {

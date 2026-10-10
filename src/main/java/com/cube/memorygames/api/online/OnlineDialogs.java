@@ -202,9 +202,11 @@ public final class OnlineDialogs {
 
     /**
      * Practice difficulty picker (docs/bot-battle-prd.md section 4): one
-     * tappable row per tier (name left, ELO and win coins right) above the
-     * green cancel, in the friend-room dialogs' card grammar. The display
-     * values mirror the server's default PkProperties tier table.
+     * tappable row per tier — tier-colored badge dot, name, and the live
+     * ELO/win values from the server's auth_ok tier table (static defaults
+     * only until the first auth_ok arrives) — above the green cancel. The
+     * current practice win streak rides under the title when it is at least
+     * two.
      */
     public static void showBotDifficulty(final Context context, final DifficultyListener listener) {
         final Dialog dialog = baseDialog(context);
@@ -221,25 +223,60 @@ public final class OnlineDialogs {
         card.addView(title, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        String[][] tiers = {
-                {"BRONZE", "Bronze", "800", "8"},
-                {"SILVER", "Silver", "1000", "10"},
-                {"GOLD", "Gold", "1250", "14"},
-                {"DIAMOND", "Diamond", "1500", "20"},
-                {"MASTER", "Master", "1800", "30"},
+        OnlineMessages.PracticeTier[] tiers = OnlineSession.get().getPracticeTiers();
+        String[][] fallback = {
+                {"BRONZE", "800", "8"},
+                {"SILVER", "1000", "10"},
+                {"GOLD", "1250", "14"},
+                {"DIAMOND", "1500", "20"},
+                {"MASTER", "1800", "30"},
         };
+        if (tiers == null || tiers.length == 0) {
+            tiers = new OnlineMessages.PracticeTier[fallback.length];
+            for (int i = 0; i < fallback.length; i++) {
+                OnlineMessages.PracticeTier tier = new OnlineMessages.PracticeTier();
+                tier.id = fallback[i][0];
+                tier.elo = Integer.parseInt(fallback[i][1]);
+                tier.winCoins = Integer.parseInt(fallback[i][2]);
+                tiers[i] = tier;
+            }
+        }
+
+        int streak = OnlineSession.get().getPracticeStreak();
+        if (streak >= 2) {
+            TextView streakView = new TextView(context);
+            streakView.setTypeface(fontLight);
+            streakView.setTextSize(14.0f);
+            streakView.setTextColor(ContextCompat.getColor(context, R.color.grid_correct));
+            streakView.setGravity(Gravity.CENTER);
+            streakView.setText(String.format(java.util.Locale.US,
+                    context.getString(R.string.online_bot_streak), streak));
+            streakView.setPadding(0, 0, 0, dp(context, 4));
+            card.addView(streakView, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+
         for (int i = 0; i < tiers.length; i++) {
-            final String id = tiers[i][0];
+            final OnlineMessages.PracticeTier tier = tiers[i];
             LinearLayout row = new LinearLayout(context);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(context, 24), dp(context, 12), dp(context, 24), dp(context, 12));
 
+            View dot = new View(context);
+            android.graphics.drawable.GradientDrawable badge =
+                    new android.graphics.drawable.GradientDrawable();
+            badge.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            badge.setColor(tierColor(tier.id));
+            dot.setBackground(badge);
+            row.addView(dot, new LinearLayout.LayoutParams(dp(context, 14), dp(context, 14)));
+
             TextView name = new TextView(context);
             name.setTypeface(fontLight, Typeface.BOLD);
             name.setTextSize(18.0f);
             name.setTextColor(Color.BLACK);
-            name.setText(tiers[i][1]);
+            name.setPadding(dp(context, 12), 0, 0, 0);
+            name.setText(tierDisplayName(tier.id));
             row.addView(name, new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
@@ -248,7 +285,7 @@ public final class OnlineDialogs {
             info.setTextSize(14.0f);
             info.setTextColor(ContextCompat.getColor(context, R.color.onlineTextHint));
             info.setGravity(Gravity.RIGHT);
-            info.setText(tiers[i][2] + " ELO · win +" + tiers[i][3]);
+            info.setText(tier.elo + " ELO · win +" + tier.winCoins);
             row.addView(info, new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
@@ -257,7 +294,7 @@ public final class OnlineDialogs {
                 public void onClick(View v) {
                     dialog.dismiss();
                     if (listener != null) {
-                        listener.onDifficulty(id);
+                        listener.onDifficulty(tier.id);
                     }
                 }
             });
@@ -289,6 +326,34 @@ public final class OnlineDialogs {
         dialog.setContentView(overlay(context, card));
         dialog.setCancelable(true);
         dialog.show();
+    }
+
+    /** Tier badge colors (bronze/silver/gold/diamond/master). */
+    private static int tierColor(String id) {
+        if ("BRONZE".equalsIgnoreCase(id)) {
+            return 0xFFCD7F32;
+        }
+        if ("SILVER".equalsIgnoreCase(id)) {
+            return 0xFFBEC2C6;
+        }
+        if ("GOLD".equalsIgnoreCase(id)) {
+            return 0xFFE6B800;
+        }
+        if ("DIAMOND".equalsIgnoreCase(id)) {
+            return 0xFF6EC6E6;
+        }
+        if ("MASTER".equalsIgnoreCase(id)) {
+            return 0xFF8E24AA;
+        }
+        return 0xFF9E9E9E;
+    }
+
+    /** "BRONZE" -> "Bronze"; falls back to the raw id. */
+    private static String tierDisplayName(String id) {
+        if (id == null || id.isEmpty()) {
+            return "?";
+        }
+        return id.charAt(0) + id.substring(1).toLowerCase(java.util.Locale.US);
     }
 
     // ------------------------------------------------------------- helpers
