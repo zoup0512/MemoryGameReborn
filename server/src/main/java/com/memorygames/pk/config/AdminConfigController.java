@@ -63,6 +63,8 @@ public class AdminConfigController {
         public Integer practiceDailyRewardCap;
         /** Patches one practice difficulty tier identified by id. */
         public PracticeDifficultyPatch practiceDifficulty;
+        /** Disconnect window before a player is forfeited. */
+        public Long reconnectWindowMs;
     }
 
     public static class PracticeDifficultyPatch {
@@ -93,6 +95,7 @@ public class AdminConfigController {
         view.put("roundIntermissionMs", this.properties.getTiming().getRoundIntermissionMs());
         view.put("matchFoundDelayMs", this.properties.getTiming().getMatchFoundDelayMs());
         view.put("roundsPerMatch", this.properties.getMatch().getRoundsPerMatch());
+        view.put("reconnectWindowMs", this.properties.getTiming().getReconnectWindowMs());
         Map<String, Object> practice = new LinkedHashMap<>();
         practice.put("dailyRewardCap", this.properties.getPractice().getDailyRewardCap());
         java.util.List<Map<String, Object>> tiers = new java.util.ArrayList<>();
@@ -184,6 +187,11 @@ public class AdminConfigController {
             int value = (int) clamp(body.practiceDailyRewardCap, 0L, 100L);
             this.properties.getPractice().setDailyRewardCap(value);
             audit.append(" practiceDailyRewardCap=").append(value);
+        }
+        if (body.reconnectWindowMs != null) {
+            long value = clamp(body.reconnectWindowMs, 5_000L, 600_000L);
+            this.properties.getTiming().setReconnectWindowMs(value);
+            audit.append(" reconnectWindowMs=").append(value);
         }
         if (body.practiceDifficulty != null && body.practiceDifficulty.id != null) {
             PkProperties.BotDifficulty tier =
