@@ -21,6 +21,7 @@ public final class OnlineMessages {
     public static final String T_AUTH = "auth";
     public static final String T_RESUME = "resume";
     public static final String T_MATCH_JOIN = "match_join";
+    public static final String T_BOT_MATCH_REQUEST = "bot_match_request";
     public static final String T_MATCH_CANCEL = "match_cancel";
     public static final String T_LEVEL_WIN = "level_win";
     public static final String T_ROUND_COMPLETE = "round_complete";
@@ -116,6 +117,11 @@ public final class OnlineMessages {
         public String code;
     }
 
+    /** BotMatchRequest: the difficulty tier id picked in the lobby card. */
+    public static class BotMatchRequest {
+        public String difficulty;
+    }
+
     public static class RoomCreated {
         public String code;
     }
@@ -142,7 +148,7 @@ public final class OnlineMessages {
 
     public static class MatchFound {
         public String matchId;
-        /** RANKED or FRIEND. */
+        /** RANKED, FRIEND or PRACTICE (play vs bot). */
         public String mode;
         public OpponentInfo opponent;
         public RoundDesc[] rounds;

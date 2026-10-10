@@ -488,6 +488,7 @@
     <item type="id" name="online_stat_losses" />
     <item type="id" name="online_stat_draws" />
     <item type="id" name="online_play_button" />
+    <item type="id" name="online_play_bot_button" />
     <item type="id" name="online_create_room" />
     <item type="id" name="online_join_room" />
     <item type="id" name="online_history_link" />

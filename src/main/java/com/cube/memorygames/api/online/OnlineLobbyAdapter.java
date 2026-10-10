@@ -149,13 +149,21 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         // The origin menu's three 180dip actions (item_online_menu.xml):
-        // PLAY / HISTORY / TOP; the season extras ride below them.
+        // PLAY / HISTORY / TOP, plus the new practice entry
+        // (docs/bot-battle-prd.md) in the same green skin.
         TextView play = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlinePlay);
         play.setId(R.id.online_play_button);
         LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
                 dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
         playParams.topMargin = dp(8);
         root.addView(play, playParams);
+
+        TextView playBot = OnlineUi.menuButton(this.context, this.fontLight, R.string.menu_online_play_bot);
+        playBot.setId(R.id.online_play_bot_button);
+        LinearLayout.LayoutParams playBotParams = new LinearLayout.LayoutParams(
+                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
+        playBotParams.topMargin = dp(12);
+        root.addView(playBot, playBotParams);
 
         TextView history = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineHistory);
         history.setId(R.id.online_history_link);
@@ -386,6 +394,21 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
             public void onClick(View v) {
                 OnlineLobbyAdapter.this.context.startActivity(
                         new Intent(OnlineLobbyAdapter.this.context, OnlineHistoryActivity.class));
+            }
+        });
+        // Practice entry: no entry fee, no ELO — neither the coins gate nor
+        // the ranked-stakes tutorial applies (docs/bot-battle-prd.md).
+        view.findViewById(R.id.online_play_bot_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                OnlineSession.get().init(OnlineLobbyAdapter.this.context);
+                OnlineDialogs.showBotDifficulty(OnlineLobbyAdapter.this.context,
+                        new OnlineDialogs.DifficultyListener() {
+                            @Override
+                            public void onDifficulty(String id) {
+                                OnlineSession.get().sendBotMatchRequest(id);
+                            }
+                        });
             }
         });
         // Bind directly from whichever profile we already hold — calling

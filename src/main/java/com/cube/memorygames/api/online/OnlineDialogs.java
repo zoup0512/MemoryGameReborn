@@ -41,6 +41,11 @@ public final class OnlineDialogs {
         void onCode(String code);
     }
 
+    /** Practice difficulty pick (docs/bot-battle-prd.md). */
+    public interface DifficultyListener {
+        void onDifficulty(String id);
+    }
+
     private OnlineDialogs() {
     }
 
@@ -189,6 +194,97 @@ public final class OnlineDialogs {
         row.addView(cancel, cancelParams);
         card.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        dialog.setContentView(overlay(context, card));
+        dialog.setCancelable(true);
+        dialog.show();
+    }
+
+    /**
+     * Practice difficulty picker (docs/bot-battle-prd.md section 4): one
+     * tappable row per tier (name left, ELO and win coins right) above the
+     * green cancel, in the friend-room dialogs' card grammar. The display
+     * values mirror the server's default PkProperties tier table.
+     */
+    public static void showBotDifficulty(final Context context, final DifficultyListener listener) {
+        final Dialog dialog = baseDialog(context);
+        final Typeface fontLight = font(context);
+
+        LinearLayout card = card(context, fontLight);
+        TextView title = new TextView(context);
+        title.setTypeface(fontLight, Typeface.BOLD);
+        title.setTextSize(20.0f);
+        title.setTextColor(Color.BLACK);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(dp(context, 20), dp(context, 20), dp(context, 20), dp(context, 8));
+        title.setText(R.string.online_bot_pick);
+        card.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        String[][] tiers = {
+                {"BRONZE", "Bronze", "800", "8"},
+                {"SILVER", "Silver", "1000", "10"},
+                {"GOLD", "Gold", "1250", "14"},
+                {"DIAMOND", "Diamond", "1500", "20"},
+                {"MASTER", "Master", "1800", "30"},
+        };
+        for (int i = 0; i < tiers.length; i++) {
+            final String id = tiers[i][0];
+            LinearLayout row = new LinearLayout(context);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(context, 24), dp(context, 12), dp(context, 24), dp(context, 12));
+
+            TextView name = new TextView(context);
+            name.setTypeface(fontLight, Typeface.BOLD);
+            name.setTextSize(18.0f);
+            name.setTextColor(Color.BLACK);
+            name.setText(tiers[i][1]);
+            row.addView(name, new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+            TextView info = new TextView(context);
+            info.setTypeface(fontLight);
+            info.setTextSize(14.0f);
+            info.setTextColor(ContextCompat.getColor(context, R.color.onlineTextHint));
+            info.setGravity(Gravity.RIGHT);
+            info.setText(tiers[i][2] + " ELO · win +" + tiers[i][3]);
+            row.addView(info, new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+            row.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    if (listener != null) {
+                        listener.onDifficulty(id);
+                    }
+                }
+            });
+            card.addView(row, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            if (i < tiers.length - 1) {
+                View divider = new View(context);
+                divider.setBackgroundColor(ContextCompat.getColor(context, R.color.grid_stroke));
+                card.addView(divider, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, 1));
+            }
+        }
+
+        TextView cancel = playButton(context, fontLight, R.string.cancel);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        LinearLayout.LayoutParams cancelParams = new LinearLayout.LayoutParams(
+                dp(context, 160), dp(context, 42));
+        cancelParams.gravity = Gravity.CENTER_HORIZONTAL;
+        cancelParams.topMargin = dp(context, 20);
+        cancelParams.bottomMargin = dp(context, 20);
+        card.addView(cancel, cancelParams);
 
         dialog.setContentView(overlay(context, card));
         dialog.setCancelable(true);

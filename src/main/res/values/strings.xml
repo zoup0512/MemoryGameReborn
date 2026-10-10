@@ -158,6 +158,7 @@ You won't see any of it again!"</string>
 Nickname"</string>
     <string name="maximum_level">Maximum level</string>
     <string name="menu">Menu</string>
+    <string name="menu_online_play_bot">Play vs Bot</string>
     <string name="menuOnlineHistory">History</string>
     <string name="menuOnlinePlay">Play Online</string>
     <string name="menuOnlineTop">Online Ranks</string>
@@ -181,6 +182,7 @@ Nickname"</string>
     <string name="no_internet_settings">Settings</string>
     <string name="not_enough_coins">Not enough coins? Get more here!</string>
     <string name="ok">Yes</string>
+    <string name="online_bot_pick">Choose your opponent</string>
     <string name="online_draw">Draw!</string>
     <string name="online_lose">You lost</string>
     <string name="online_elo">ELO</string>
@@ -190,6 +192,7 @@ Nickname"</string>
     <string name="online_exit">Exit</string>
     <string name="online_not_connected">Connect with Play Online to get your profile</string>
     <string name="online_opponent_reconnecting">Opponent is reconnecting…</string>
+    <string name="online_quit_practice">Leave the practice match? The bot takes the win.</string>
     <string name="online_error_connection">Connection error</string>
     <string name="online_create_room">Create room</string>
     <string name="online_join_room">Join room</string>

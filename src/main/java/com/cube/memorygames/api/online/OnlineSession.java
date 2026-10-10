@@ -45,6 +45,11 @@ public class OnlineSession {
     public static final String RESULT_LOSE = "L";
     public static final String RESULT_DRAW = "D";
 
+    /** Match modes (MatchFound.mode). */
+    public static final String MODE_RANKED = "RANKED";
+    public static final String MODE_FRIEND = "FRIEND";
+    public static final String MODE_PRACTICE = "PRACTICE";
+
     private static final long RESIGN_RETRY_MS = 3000L;
     private static final int RESIGN_RETRY_MAX = 6;
     private static final long RECONNECT_BASE_MS = 1000L;
@@ -117,6 +122,12 @@ public class OnlineSession {
      * never STATE_QUEUE — so match_found must be accepted for them too.
      */
     private volatile boolean friendRoomPending;
+    /**
+     * True while an explicit practice (play-vs-bot) request is in flight —
+     * same shape as friendRoomPending: the pairing leaves immediately, the
+     * client never enters STATE_QUEUE, so match_found must be admitted.
+     */
+    private volatile boolean practicePending;
     /** Fired when a room command gets no server answer in time (zombie socket). */
     private Runnable pendingRoomAck;
     /** Live economy values from the last auth_ok (server runtime config). */
@@ -126,6 +137,8 @@ public class OnlineSession {
     private String matchId;
     private OnlineMessages.OpponentInfo opponent;
     private boolean friendMode;
+    /** True while the running match is an explicit practice duel (vs bot). */
+    private volatile boolean practiceMode;
     private OnlineMessages.RoundDesc[] rounds;
     private volatile int currentRound = -1;
     private int myScore;
@@ -238,6 +251,11 @@ public class OnlineSession {
         return this.friendMode;
     }
 
+    /** True while the running match is an explicit practice duel (vs bot). */
+    public boolean isPracticeMode() {
+        return this.practiceMode;
+    }
+
     public OnlineMessages.OpponentInfo getOpponent() {
         return opponent;
     }
@@ -293,6 +311,7 @@ public class OnlineSession {
         currentRound = -1;
         roundStartedElapsed = 0L;
         friendRoomPending = false;
+        practicePending = false;
         cancelRoomAck();
         main.removeCallbacks(reconnectRunnable);
         if (client != null) {
@@ -381,6 +400,18 @@ public class OnlineSession {
     /** Friend rooms (PRD F-12). */
     public void createFriendRoom() {
         sendRoomCommand(OnlineMessages.T_ROOM_CREATE, new Object());
+    }
+
+    /**
+     * Explicit practice duel (docs/bot-battle-prd.md): the server pairs us
+     * with a difficulty-tier bot instantly; match_found arrives with
+     * mode=PRACTICE on the same socket.
+     */
+    public void sendBotMatchRequest(String difficulty) {
+        OnlineMessages.BotMatchRequest request = new OnlineMessages.BotMatchRequest();
+        request.difficulty = difficulty;
+        practicePending = true;
+        sendRoomCommand(OnlineMessages.T_BOT_MATCH_REQUEST, request);
     }
 
     public void joinFriendRoom(String code) {
@@ -603,27 +634,32 @@ public class OnlineSession {
             // A rejected room command (404/409) ends the pending pairing;
             // leaving the flag set would wrongly admit a stale match_found.
             this.friendRoomPending = false;
+            this.practicePending = false;
             cancelRoomAck();
             notifyError(code, message);
             return;
         }
         if (OnlineMessages.T_MATCH_FOUND.equals(type)) {
-            // Accept a pairing only while we are actually searching (or a
-            // friend-room pairing is pending); a frame arriving in any other
-            // state belongs to a stale server-side room and would hijack the
-            // session (seen in the 2026-10-04 test where a leftover queue
-            // entry bot-matched an idle lobby client).
-            if (this.state != STATE_QUEUE && this.matchId == null && !this.friendRoomPending) {
+            // Accept a pairing only while we are actually searching, a
+            // friend-room pairing is pending, or a practice request is in
+            // flight; a frame arriving in any other state belongs to a stale
+            // server-side room and would hijack the session (seen in the
+            // 2026-10-04 test where a leftover queue entry bot-matched an
+            // idle lobby client).
+            if (this.state != STATE_QUEUE && this.matchId == null
+                    && !this.friendRoomPending && !this.practicePending) {
                 return;
             }
             android.util.Log.d("OnlinePK", "match_found handling, state=" + state);
             MatchFound found = OnlineMessages.payloadOf(json, MatchFound.class);
             if (found != null) {
                 this.friendRoomPending = false;
+                this.practicePending = false;
                 cancelRoomAck();
                 this.matchId = found.matchId;
                 this.opponent = found.opponent;
-                this.friendMode = "FRIEND".equals(found.mode);
+                this.friendMode = OnlineSession.MODE_FRIEND.equals(found.mode);
+                this.practiceMode = OnlineSession.MODE_PRACTICE.equals(found.mode);
                 this.rounds = found.rounds;
                 if (found.rounds != null && found.rounds.length > 0) {
                     this.serverRoundDurationMs = found.rounds[0].durationMs;
@@ -635,7 +671,9 @@ public class OnlineSession {
                 this.oppScore = 0;
                 this.roundReported = false;
                 this.disconnectedAt = 0L;
-                chargeEntryFee();
+                if (!this.practiceMode) {
+                    chargeEntryFee();
+                }
                 setState(STATE_MATCH);
                 if (listener != null) {
                     try {
@@ -726,6 +764,7 @@ public class OnlineSession {
                 refreshProfileRecord(end);
                 this.matchId = null;
                 this.friendMode = false;
+                this.practiceMode = false;
                 this.currentRound = -1;
                 this.roundStartedElapsed = 0L;
                 this.disconnectedAt = 0L;
@@ -894,6 +933,19 @@ public class OnlineSession {
         }
         try {
             LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
+            if (isPracticeMode()) {
+                // Practice duels charge no entry fee; the payout is whatever
+                // the server booked (tier coins, 0 beyond the daily cap or
+                // on a loss) — mirror that value verbatim.
+                if (OnlineSession.RESULT_WIN.equals(end.result)) {
+                    dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, end.coinDelta);
+                } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {
+                    dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, end.coinDelta);
+                } else {
+                    dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, 0);
+                }
+                return;
+            }
             if (OnlineSession.RESULT_WIN.equals(end.result)) {
                 dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, this.serverWinCoins);
             } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {

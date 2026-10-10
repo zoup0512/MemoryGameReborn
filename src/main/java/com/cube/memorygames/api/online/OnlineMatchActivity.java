@@ -199,7 +199,10 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         OnlineSession session = OnlineSession.get();
         if (session.isInMatch()) {
             new AlertDialog.Builder(this)
-                    .setMessage(R.string.dialog_lose_bet)
+                    .setMessage(session.isPracticeMode()
+                            // Practice has no bet to lose; keep the forfeit warning honest.
+                            ? R.string.online_quit_practice
+                            : R.string.dialog_lose_bet)
                     .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -465,7 +468,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
         LinearLayout betsRow = new LinearLayout(this);
         betsRow.setGravity(Gravity.CENTER);
-        int fee = OnlineSession.get().getServerEntryFee();
+        // Practice duels are free: showing the ranked entry fee would imply
+        // a stake the match never charges.
+        int fee = OnlineSession.get().isPracticeMode() ? 0 : OnlineSession.get().getServerEntryFee();
         betsRow.addView(coinBadge(fee));
         betsRow.addView(coinBadge(fee));
         board.addView(betsRow, new LinearLayout.LayoutParams(
