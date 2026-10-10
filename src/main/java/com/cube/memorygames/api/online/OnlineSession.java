@@ -152,8 +152,10 @@ public class OnlineSession {
     private final Runnable reconnectRunnable = new Runnable() {
         @Override
         public void run() {
-            if (state == STATE_DISCONNECTED
-                    && (matchId != null || pendingQueueRejoin)) {
+            // The reconnect window schedules us; anything left alive when the
+            // window expires stops being rescheduled, so reconnect whenever
+            // we are still down.
+            if (state == STATE_DISCONNECTED) {
                 connect();
             }
         }
@@ -352,34 +354,38 @@ public class OnlineSession {
 
     private void handleDisconnected(int code, String reason) {
         client = null;
-        if (matchId != null || state == STATE_QUEUE) {
-            // Reconnect window while a match is running (PRD 4.6) — and
-            // while queued: a half-dead socket during matchmaking used to
-            // strand the player on "Searching" with no self-recovery.
-            if (state == STATE_QUEUE && disconnectedAt == 0L) {
+        boolean inMatchFlow = matchId != null || state == STATE_QUEUE
+                || friendRoomPending || practicePending;
+        // Every drop enters the same reconnect window (PRD 4.6). An idle
+        // lobby socket used to stay dead until the user tapped something —
+        // the "lobby nickname empty until restart" bug — because only
+        // in-match and queued states reconnected.
+        if (disconnectedAt == 0L) {
+            disconnectedAt = System.currentTimeMillis();
+            reconnectAttempt = 0;
+            if (state == STATE_QUEUE) {
                 // Rejoin the queue after the fresh socket authorizes.
                 this.pendingQueueRejoin = true;
             }
-            if (disconnectedAt == 0L) {
-                disconnectedAt = System.currentTimeMillis();
-                reconnectAttempt = 0;
+            if (inMatchFlow) {
                 notifyOpponentDisconnected();
             }
-            long elapsed = System.currentTimeMillis() - disconnectedAt;
-            if (elapsed < RECONNECT_WINDOW_MS) {
-                long delay = Math.min(RECONNECT_BASE_MS << Math.min(reconnectAttempt, 4), RECONNECT_MAX_MS);
-                reconnectAttempt++;
-                setState(STATE_DISCONNECTED);
-                main.postDelayed(reconnectRunnable, delay);
-                return;
-            }
-            // Window expired: drop the match locally; server will have
-            // forfeited us after its own deadline.
-            matchId = null;
-            currentRound = -1;
-            roundStartedElapsed = 0L;
-            disconnectedAt = 0L;
         }
+        long elapsed = System.currentTimeMillis() - disconnectedAt;
+        if (elapsed < RECONNECT_WINDOW_MS) {
+            long delay = Math.min(RECONNECT_BASE_MS << Math.min(reconnectAttempt, 4), RECONNECT_MAX_MS);
+            reconnectAttempt++;
+            setState(STATE_DISCONNECTED);
+            main.postDelayed(reconnectRunnable, delay);
+            return;
+        }
+        // Window expired: drop the match locally (the server will have
+        // forfeited us after its own deadline) and stop retrying — the next
+        // user action reopens a connection.
+        matchId = null;
+        currentRound = -1;
+        roundStartedElapsed = 0L;
+        disconnectedAt = 0L;
         setState(STATE_DISCONNECTED);
     }
 
@@ -600,6 +606,10 @@ public class OnlineSession {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
                 this.lastProfile = ok;
+                // The connection is healthy again; restart the reconnect
+                // window clock for any future drop.
+                this.disconnectedAt = 0L;
+                this.reconnectAttempt = 0;
                 if (this.pendingQueueRejoin && this.matchId == null) {
                     this.pendingQueueRejoin = false;
                     this.state = STATE_IDLE;
