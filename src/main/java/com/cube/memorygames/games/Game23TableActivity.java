@@ -127,14 +127,27 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
         if (this.elements == null) {
             this.elements = generateElements();
         }
-        Game23Grid game23Grid = new Game23Grid(this);
+        final Game23Grid game23Grid = new Game23Grid(this);
         game23Grid.setElements(this.elements, this.progression.getLevelNumber());
         game23Grid.setGridEventsListener(this);
         game23Grid.hideChallengeCells();
-        LayoutParams params = new LayoutParams(-1, -1);
-        params.addRule(13, -1);
-        this.gridContainer.addView(game23Grid, 0, params);
         this.grid = game23Grid;
+        // Pin the grid to the container's measured size. MATCH_PARENT plus
+        // CENTER_IN_PARENT let this canvas view lay out taller than the
+        // visible area on 18:9 screens, pushing the last rows under the
+        // navigation bar (device finding 2026-10-11).
+        this.gridContainer.post(new Runnable() {
+            public void run() {
+                if (Game23TableActivity.this.grid != game23Grid || game23Grid.getParent() != null) {
+                    return;
+                }
+                int w = Game23TableActivity.this.gridContainer.getWidth();
+                int h = Game23TableActivity.this.gridContainer.getHeight();
+                LayoutParams params = new LayoutParams(w > 0 ? w : -1, h > 0 ? h : -1);
+                params.addRule(13, -1);
+                Game23TableActivity.this.gridContainer.addView(game23Grid, 0, params);
+            }
+        });
         if (this.startedTime <= 0) {
             this.progressBar.setVisibility(0);
             this.startedTime = System.currentTimeMillis();

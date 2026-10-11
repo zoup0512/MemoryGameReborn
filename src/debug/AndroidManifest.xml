@@ -20,5 +20,8 @@
             android:name="com.cube.memorygames.api.online.OnlineTopActivity"
             android:exported="true"
             tools:replace="android:exported" />
+        <activity
+            android:name="com.cube.memorygames.DebugSchulteActivity"
+            android:exported="true" />
     </application>
 </manifest>

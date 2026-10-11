@@ -177,7 +177,7 @@ public class Game23Grid extends View implements GameGrid {
             Pair<Integer, Integer> position = (Pair) this.positions.get(i);
             ElementGame14 elementGame14 = (ElementGame14) this.elements.get(i);
             float left = (((((float) getWidth()) - ((6.0f * cellSize) + (7.0f * cellMargin))) / 2.0f) + cellMargin) + (((float) ((Integer) position.first).intValue()) * (cellSize + cellMargin));
-            float top = (((((float) getHeight()) - ((CloseButton.STROKE_WIDTH * cellSize) + (9.0f * cellMargin))) / 2.0f) + cellMargin) + (((float) ((Integer) position.second).intValue()) * (cellSize + cellMargin));
+            float top = (((((float) getHeight()) - ((8.0f * cellSize) + (9.0f * cellMargin))) / 2.0f) + cellMargin) + (((float) ((Integer) position.second).intValue()) * (cellSize + cellMargin));
             float right = left + cellSize;
             float bottom = top + cellSize;
             if (event.getX() > left && event.getX() < right && event.getY() > top && event.getY() < bottom) {
@@ -204,7 +204,7 @@ public class Game23Grid extends View implements GameGrid {
             float cellSize = Math.min(((float) getWidth()) / 6.35f, ((float) getHeight()) / 8.45f);
             this.numberPaint.setTextSize(cellSize / 2.0f);
             float cellMargin = cellSize * DIVIDER_COEFFICIENT;
-            float bottomPosition = (((float) getHeight()) - ((CloseButton.STROKE_WIDTH * cellSize) + (9.0f * cellMargin))) / 2.0f;
+            float bottomPosition = (((float) getHeight()) - ((8.0f * cellSize) + (9.0f * cellMargin))) / 2.0f;
             float leftPosition = (((float) getWidth()) - ((6.0f * cellSize) + (7.0f * cellMargin))) / 2.0f;
             int loseColor = ContextCompat.getColor(getContext(), R.color.grid_unclicked);
             for (int i = 0; i < this.elements.size(); i++) {
