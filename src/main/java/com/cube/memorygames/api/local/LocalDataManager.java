@@ -80,6 +80,13 @@ public class LocalDataManager {
             this.localUser.save();
             addCoinsTransaction(TYPE_FIRST_START, 60);
         }
+        // Debug builds flip the original unlock-all flag so every game in
+        // the Sprint list is playable without the unlock purchase.
+        if (com.memory.brain.training.games.BuildConfig.DEBUG && !this.localUser.gamesUnlocked) {
+            this.localUser.gamesUnlocked = true;
+            this.localUser.updatedAt = new Date();
+            this.localUser.save();
+        }
     }
 
     public void addGameSession(Context context, LocalGameSession localGameSession) {

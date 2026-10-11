@@ -5,6 +5,10 @@ plugins {
 android {
     namespace 'com.memory.brain.training.games'
     compileSdk 36
+    // AGP 8 defaults this off; debug-only test hooks read BuildConfig.DEBUG.
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId 'com.memory.brain.training.games'
