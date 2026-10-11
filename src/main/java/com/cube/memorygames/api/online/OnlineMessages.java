@@ -40,6 +40,8 @@ public final class OnlineMessages {
 
     /** Server -> client message types. */
     public static final String T_AUTH_OK = "auth_ok";
+    /** Immediate receipt for a match_join (search watchdog uses it). */
+    public static final String T_MATCH_QUEUED = "match_queued";
     public static final String T_MATCH_FOUND = "match_found";
     public static final String T_MATCH_CANCELLED = "match_cancelled";
     public static final String T_ROUND_START = "round_start";

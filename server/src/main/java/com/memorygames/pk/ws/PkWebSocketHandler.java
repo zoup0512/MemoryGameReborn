@@ -183,7 +183,11 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 if (!accepted) {
                     reply(session, ProtocolCodec.T_ERROR, error(402,
                             "not enough coins (need " + this.properties.getEconomy().getEntryFee() + ")"));
+                    return;
                 }
+                // Immediate receipt: the client's search watchdog treats a
+                // join without this frame as lost to a zombie socket.
+                reply(session, ProtocolCodec.T_MATCH_QUEUED, new Object());
                 return;
             }
             case ProtocolCodec.T_MATCH_CANCEL:

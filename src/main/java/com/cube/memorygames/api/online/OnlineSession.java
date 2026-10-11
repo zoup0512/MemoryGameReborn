@@ -391,6 +391,9 @@ public class OnlineSession {
 
     // ------------------------------------------------------- matchmaking
 
+    /** Watchdog: fired when the match_join got no match_queued receipt. */
+    private Runnable queuedWatchdog;
+
     public void startMatchmaking() {
         // Stack trace kept deliberately: an intermittent phantom match_join
         // (queue entry appearing around match-exit moments) is still open;
@@ -403,6 +406,7 @@ public class OnlineSession {
             }
             setState(STATE_QUEUE);
             send(OnlineMessages.T_MATCH_JOIN, new Object());
+            armQueuedWatchdog();
         } else if (state == STATE_DISCONNECTED || state == STATE_CONNECTING || state == STATE_AUTHORIZING) {
             connect();
             main.postDelayed(new Runnable() {
@@ -413,6 +417,43 @@ public class OnlineSession {
                     }
                 }
             }, 4000L);
+        }
+    }
+
+    /**
+     * A zombie TCP connection passes isConnected() and swallows the join
+     * silently (pong traffic fine, sends buffered) — the search board then
+     * sits there forever because the server never sees the queue entry. The
+     * server answers every join with an immediate match_queued receipt; if
+     * it doesn't land in 5s, cut the socket: the P3 reconnect loop rebuilds
+     * the connection and auth_ok re-joins the queue automatically.
+     */
+    private void armQueuedWatchdog() {
+        cancelQueuedWatchdog();
+        this.queuedWatchdog = new Runnable() {
+            @Override
+            public void run() {
+                OnlineSession.this.queuedWatchdog = null;
+                if (OnlineSession.this.state != STATE_QUEUE || OnlineSession.this.matchId != null) {
+                    return;
+                }
+                android.util.Log.d("OnlinePK", "join unacknowledged — zombie socket, reconnecting");
+                OnlineSession.this.pendingQueueRejoin = true;
+                OnlineClient dead = OnlineSession.this.client;
+                OnlineSession.this.client = null;
+                if (dead != null) {
+                    dead.close();
+                }
+                handleDisconnected(-1, "join unacknowledged");
+            }
+        };
+        this.main.postDelayed(this.queuedWatchdog, 5000L);
+    }
+
+    private void cancelQueuedWatchdog() {
+        if (this.queuedWatchdog != null) {
+            this.main.removeCallbacks(this.queuedWatchdog);
+            this.queuedWatchdog = null;
         }
     }
 
@@ -486,8 +527,10 @@ public class OnlineSession {
             public void run() {
                 OnlineSession.this.pendingRoomAck = null;
                 if (!OnlineSession.this.friendRoomPending
+                        && !OnlineSession.this.practicePending
                         && OnlineSession.this.matchId == null
-                        && OnlineSession.this.state != STATE_MATCH) {
+                        && OnlineSession.this.state != STATE_MATCH
+                        && OnlineSession.this.state != STATE_QUEUE) {
                     notifyError(-1, "no response");
                 }
             }
@@ -660,7 +703,14 @@ public class OnlineSession {
             this.friendRoomPending = false;
             this.practicePending = false;
             cancelRoomAck();
+            cancelQueuedWatchdog();
             notifyError(code, message);
+            return;
+        }
+        if (OnlineMessages.T_MATCH_QUEUED.equals(type)) {
+            // The join landed; the search can now legitimately wait for a
+            // human opponent or the bot fallback.
+            cancelQueuedWatchdog();
             return;
         }
         if (OnlineMessages.T_MATCH_FOUND.equals(type)) {
@@ -710,6 +760,8 @@ public class OnlineSession {
         }
         if (OnlineMessages.T_MATCH_CANCELLED.equals(type)) {
             this.friendRoomPending = false;
+            this.practicePending = false;
+            cancelQueuedWatchdog();
             setState(STATE_IDLE);
             if (listener != null) {
                 try {
