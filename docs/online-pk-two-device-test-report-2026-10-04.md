@@ -50,6 +50,6 @@
 
 ## 复现环境
 
-- 服务端:`cd server/deploy && PK_ADMIN_TOKEN=lan-test-token java -Dserver.port=8090 -jar memorygames-pk-server-0.1.0.jar`
+- 服务端:`cd server_memory-game-reborn/deploy && PK_ADMIN_TOKEN=lan-test-token java -Dserver.port=8090 -jar memorygames-pk-server-0.1.0.jar`
 - 客户端:debug 包默认端点 `ws://192.168.110.176:8090/ws`(IP 变更需同步 `OnlineConfig.LAN_TEST_ENDPOINT`)
 - 测试热配:`PUT /api/admin/config {"roundDurationOverrideMs":20000,"roundIntermissionMs":3000,"roundGraceMs":8000}`

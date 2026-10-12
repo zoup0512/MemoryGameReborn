@@ -2,7 +2,7 @@
 
 **范围**：弹窗对齐后的 Online 模块全量回归——大厅、历史、Bot 局、好友房（含错误路径与弃赛）、金币门槛、结算。
 **结论**：**16 项通过 / 1 项失败（bug#6 弃赛未生效）**；测试过程中发现并修复 2 个客户端架构 bug（3a/3b），全部修复项已在终版构建上回归通过。
-**产物**：截图与 uiautomator dump 存于 `tools/pk-test-1004/`（`r2-*` 为本轮，`cdy/bkl-0*` 为上一轮）。
+**产物**：截图与 uiautomator dump 存于 `android_memory-game-reborn/tools/pk-test-1004/`（`r2-*` 为本轮，`cdy/bkl-0*` 为上一轮）。
 
 ## 1. 环境与配置
 

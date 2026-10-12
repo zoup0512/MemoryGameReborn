@@ -1,5 +1,5 @@
 # Overseas single-box deployment for the online PK server (PRD decision D-2).
-# Usage: cd server && ../gradlew bootJar && docker compose up -d
+# Usage: cd server_memory-game-reborn && ./gradlew bootJar && docker compose up -d
 services:
   postgres:
     image: postgres:16-alpine

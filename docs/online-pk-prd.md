@@ -377,9 +377,9 @@ M0 + M1 的代码实现已完成并通过构建/集成测试，与原计划的�
   校验与按游戏标定的作答间隔下限（首关免检）。R1 风险随之消除。
 - M0-④ 已由 D-1（minSdk 21）覆盖；M0-①②③ 在服务端集成测试中验证（双端全量对局）。
 - **M1 已交付**：客户端 `api.online` 包 + Online tab + 基类接通（`assembleDebug` 通过）；
-  服务端 `server/`（Spring Boot 3，`gradlew test` 通过，含双端全量对局/Bot 兜底/余额
+  服务端 `server_memory-game-reborn/`（Spring Boot 3，`gradlew test` 通过，含双端全量对局/Bot 兜底/余额
   拒绝三个集成测试）；docker-compose（app + Postgres，海外部署用）。
-- **M1 简化项**（见 server/README）：Redis 未引入（内存态单实例）；战绩历史未持久化；
+- **M1 简化项**（见 server_memory-game-reborn/README）：Redis 未引入（内存态单实例）；战绩历史未持久化；
   断线重连为"重挂监听 + 当前轮补发"。
 - **待真机验证**：Online tab UI、6 游戏在线实况、弱网重连——需部署服务端到海外机器后
   用 debug 构建联调（大厅长按标题改端点）。

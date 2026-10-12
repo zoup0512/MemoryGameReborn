@@ -13,9 +13,9 @@ Thumbs.db
 .DS_Store
 
 # 还原过程产物（脚本保留，中间产物不入库）
-tools/aars/
-tools/*.png
-tools/*.xml
-tools/errors.txt
-tools/cp.txt
-server/deploy/pk-server.log
+android_memory-game-reborn/tools/aars/
+android_memory-game-reborn/tools/*.png
+android_memory-game-reborn/tools/*.xml
+android_memory-game-reborn/tools/errors.txt
+android_memory-game-reborn/tools/cp.txt
+server_memory-game-reborn/deploy/pk-server.log

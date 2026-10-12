@@ -4,7 +4,7 @@
 |---|---|
 | 版本 | v1.1（P0 已实现并部署 LAN 验证；P1/P2 待排期） |
 | 日期 | 2026-10-04 |
-| 关联 | `docs/online-pk-prd.md` §4/§6.3（现有运行时配置 API）、`server/README.md` |
+| 关联 | `docs/online-pk-prd.md` §4/§6.3（现有运行时配置 API）、`server_memory-game-reborn/README.md` |
 | 现有基线 | `AdminConfigController`（token 守卫的热改配置，已上线） |
 
 ---

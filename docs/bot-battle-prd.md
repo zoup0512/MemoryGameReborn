@@ -102,8 +102,8 @@
 
 ## 8. 测试计划
 
-- **集成**（`gradlew -p server test`，新增 `BotPracticeIntegrationTest`）：`bot_match_request` → 断言 `match_found` 的 mode/isBot/elo → 打完 5 轮 → 断言零 ELO、金币=难度奖励、`MatchRecord.mode=PRACTICE`、超每日上限胜局金币为 0。
-- **真机**：入口→难度卡→秒配→完整局→结算 +0 ELO 行（`tools/waitui.py` 轮询法）。
+- **集成**（`cd server_memory-game-reborn && ./gradlew test`，新增 `BotPracticeIntegrationTest`）：`bot_match_request` → 断言 `match_found` 的 mode/isBot/elo → 打完 5 轮 → 断言零 ELO、金币=难度奖励、`MatchRecord.mode=PRACTICE`、超每日上限胜局金币为 0。
+- **真机**：入口→难度卡→秒配→完整局→结算 +0 ELO 行（`android_memory-game-reborn/tools/waitui.py` 轮询法）。
 - **压测**：`pk_load.py` botmatch 场景直接复用。
 
 ## 9. 分期
