@@ -27,6 +27,7 @@ import sys
 import threading
 import time
 import traceback
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -34,21 +35,33 @@ import websocket
 
 import ui
 
-# Phone-visible labels (strings.xml) used as UI assertions.
-LBL_SEARCH = "Searching for opponents"
-LBL_START = "Start"
-LBL_WAITING = "Waiting for"
-LBL_READY = "Your opponent is"
-LBL_LOST = "You lost"
-LBL_DRAW = "Draw"
-LBL_RESIGN_DIALOG = "lose your bet"
-LBL_RESIGN_YES = "YES"
-LBL_CREATE_ROOM = "Create room"
-LBL_PLAY_ONLINE = "Play Online"
-LBL_LOBBY = "Play vs Bot"
+# Phone-visible labels (strings.xml) used as UI assertions. Each label is a
+# tuple of alternatives: the app follows the device locale, so the suite
+# matches the English or the Chinese wording (zh-Hans test device).
+LBL_SEARCH = ("Searching for opponents", "正在寻找对手")
+LBL_START = ("Start", "开始")
+LBL_WAITING = ("Waiting for", "正在等待")
+LBL_READY = ("Your opponent is", "你的对手")
+LBL_LOST = ("You lost", "你输了")
+LBL_DRAW = ("Draw", "平局")
+LBL_RESIGN_DIALOG = ("lose your bet", "失去押注")
+LBL_RESIGN_YES = ("YES", "好")
+LBL_CREATE_ROOM = ("Create room", "创建房间")
+LBL_PLAY_ONLINE = ("Play Online", "在线对战")
+LBL_LOBBY = ("Play vs Bot", "对战机器人")
+
+# Installed debug applicationId (guest identity lives in its shared_prefs).
+PKG = "com.memory.brain.training.games"
 
 RESULTS = []
 probe_uid = None
+
+
+def phone_nickname():
+    """The phone's persisted guest nickname, read from its shared_prefs."""
+    xml = ui.sh("shell", "run-as", PKG, "cat", "shared_prefs/online_identity.xml")
+    match = re.search(r'name="nickname">([^<]+)<', xml)
+    return match.group(1) if match else None
 
 
 def check(name, ok, detail=""):
@@ -89,6 +102,36 @@ def set_config(url, token, patch):
                                  method="PUT")
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read().decode())
+
+
+def room_code_from_dump(xml):
+    """Extract the 4-digit room code from the waiting card.
+
+    The card renders the digits with spacing ("0  4  8  3") and exposes the
+    raw code as the node's content description, so a plain \\d{4} text match
+    would pick up unrelated numbers (e.g. the lobby ELO behind the dialog)."""
+    match = re.search(r'content-desc="(\d{4})"', xml)
+    if match:
+        return match.group(1)
+    for m in re.finditer(r'text="((?:\d\s+){3}\d)"', xml):
+        digits = re.sub(r'\s+', '', m.group(1))
+        if len(digits) == 4:
+            return digits
+    return None
+
+
+def admin_user_id(url, token, nickname):
+    """Resolve a user id by exact nickname via the admin user search."""
+    req = urllib.request.Request(
+        http_base(url).rstrip("/") + "/api/admin/users?q=" + urllib.parse.quote(nickname),
+        headers={"X-Admin-Token": token})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode())
+    rows = data.get("users") or []
+    for row in rows:
+        if row.get("nickname") == nickname:
+            return row.get("id")
+    return None
 
 
 def wait_for_settled(url, token, needle, timeout=20.0):
@@ -320,9 +363,12 @@ def s2_resign_mirror(url, token, probe):
 def s3_friend_draw(url, token, probe):
     print("S3: friend room by code -> idle draw")
     probe.flush()
-    # Align ratings so the friend-halved draw rounds to exactly zero.
+    # Align ratings so the friend-halved draw rounds to exactly zero. The
+    # phone's id is resolved from its persisted nickname (it is not
+    # necessarily account #1 on a reused server database).
     base = http_base(url).rstrip("/")
-    for uid in (1, probe_uid):
+    align_ids = [uid for uid in (admin_user_id(url, token, phone_nickname()), probe_uid) if uid]
+    for uid in align_ids:
         req = urllib.request.Request(
             base + f"/api/admin/users/{uid}/elo",
             data=json.dumps({"set": 1000}).encode(),
@@ -336,9 +382,8 @@ def s3_friend_draw(url, token, probe):
     tap_text(LBL_CREATE_ROOM)
     code = None
     for _ in range(8):
-        match = re.search(r'text="(\d{4})"', ui.dump())
-        if match:
-            code = match.group(1)
+        code = room_code_from_dump(ui.dump())
+        if code:
             break
         time.sleep(1)
     if not check("S3 phone shows a 4-digit room code", code is not None):
@@ -347,9 +392,11 @@ def s3_friend_draw(url, token, probe):
     found = probe.await_("match_found", 15)
     if not check("S3 probe joined, mode FRIEND", found and found.get("mode") == "FRIEND"):
         return
+    seen_nick = found.get("opponent", {}).get("nickname")
+    expected_nick = phone_nickname()
     check("S3 probe sees the phone as opponent",
-          found.get("opponent", {}).get("nickname") == "Player1673",
-          found.get("opponent", {}).get("nickname"))
+          expected_nick is not None and seen_nick == expected_nick,
+          f"{seen_nick} vs {expected_nick}")
     tap_text(LBL_START)
     probe.send("match_start")
     check("S3 round starts", probe.await_("round_start", 20) is not None)

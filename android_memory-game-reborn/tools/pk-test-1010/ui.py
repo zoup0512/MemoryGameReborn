@@ -6,12 +6,14 @@ Usage:
   python ui.py tap <text>           -> tap first node containing text
   python ui.py wait <text> [sec]    -> poll until text appears, print coords
 """
+import os
 import re
 import subprocess
 import sys
 import time
 
-ADB = r"C:/MyProgram/Sdk/platform-tools/adb.exe"
+# Portable: honour $ADB, else whatever adb is on PATH.
+ADB = os.environ.get("ADB", "adb")
 
 
 def sh(*args):
@@ -27,12 +29,28 @@ def dump():
 
 
 def find(xml, text):
-    for m in re.finditer(
-            r'<node[^>]*?text="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml):
-        if text.lower() in m.group(1).lower():
-            x = (int(m.group(2)) + int(m.group(4))) // 2
-            y = (int(m.group(3)) + int(m.group(5))) // 2
-            return x, y, m.group(1)
+    """Return (x, y, node text) for the first node containing a needle.
+
+    `text` may be a single string or a tuple of alternatives (the app is
+    localized, so callers pass both the English and Chinese labels).
+    An exact (case-insensitive) text match wins over a substring match:
+    button labels must not lose to hint sentences that merely contain the
+    same words (e.g. the zh start button "开始" vs the hint "…即可开始。")."""
+    nodes = [(m.group(1),
+              (int(m.group(2)) + int(m.group(4))) // 2,
+              (int(m.group(3)) + int(m.group(5))) // 2)
+             for m in re.finditer(
+                 r'<node[^>]*?text="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml)]
+    needles = (text,) if isinstance(text, str) else tuple(text)
+    for needle in needles:
+        for node_text, x, y in nodes:
+            if node_text.strip().lower() == needle.strip().lower():
+                return x, y, node_text
+    for needle in needles:
+        low = needle.lower()
+        for node_text, x, y in nodes:
+            if low in node_text.lower():
+                return x, y, node_text
     return None
 
 
