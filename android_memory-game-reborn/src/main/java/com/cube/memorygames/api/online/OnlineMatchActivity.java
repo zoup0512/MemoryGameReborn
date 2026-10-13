@@ -1072,6 +1072,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      */
     private void showScrollableBoard(View board, int width) {
         this.content.removeAllViews();
+        // Cached boards (e.g. the intermission card) keep their old wrapper
+        // as parent after removeAllViews; re-adding them without detaching
+        // first throws "The specified child already has a parent" (crashed
+        // on the round-2 hand-off in the 2026-10-13 cloud regression).
+        if (board.getParent() instanceof ViewGroup) {
+            ((ViewGroup) board.getParent()).removeView(board);
+        }
         ScrollView scroller = new ScrollView(this);
         scroller.setFillViewport(true);
         FrameLayout inner = new FrameLayout(this);
