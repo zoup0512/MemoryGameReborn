@@ -128,7 +128,7 @@
     <string name="login_title">请输入你的\n昵称</string>
     <string name="maximum_level">最高等级</string>
     <string name="menu">菜单</string>
-    <string name="menu_online_play_bot">对战机器人</string>
+    <string name="menu_online_play_bot">人机对战</string>
     <string name="menuOnlineHistory">历史</string>
     <string name="menuOnlinePlay">在线对战</string>
     <string name="menuOnlineTop">在线排行</string>
