@@ -186,14 +186,22 @@ public class LocalDataManager {
     }
 
     public void chargeForOnline() {
-        if (!getLocalUser().unlimitedOnline) {
-            addCoinsTransaction(TYPE_START_ONLINE, -30);
+        chargeForOnline(ONLINE_ENTRY_FEE);
+    }
+
+    public void chargeForOnline(int entryFee) {
+        if (!getLocalUser().unlimitedOnline && entryFee > 0) {
+            addCoinsTransaction(TYPE_START_ONLINE, -entryFee);
         }
     }
 
     public void refundForOnline() {
-        if (!getLocalUser().unlimitedOnline) {
-            addCoinsTransaction(TYPE_START_ONLINE, 30);
+        refundForOnline(ONLINE_ENTRY_FEE);
+    }
+
+    public void refundForOnline(int entryFee) {
+        if (!getLocalUser().unlimitedOnline && entryFee > 0) {
+            addCoinsTransaction(TYPE_START_ONLINE, entryFee);
         }
     }
 
@@ -465,7 +473,7 @@ public class LocalDataManager {
         if (levelNumber > 10) {
             return null;
         }
-        return context.getString(R.string.level_number_prefix) + " " + (levelNumber + 1);
+        return context.getString(R.string.level_number_format, levelNumber + 1);
     }
 
     public String getNextChallengeLevelName(Context context) {
@@ -473,7 +481,7 @@ public class LocalDataManager {
         if (levelNumber >= 10) {
             return null;
         }
-        return context.getString(R.string.level_number_prefix) + " " + (levelNumber + 2);
+        return context.getString(R.string.level_number_format, levelNumber + 2);
     }
 
     public void prevChallengeLevelNumber(Context context) {

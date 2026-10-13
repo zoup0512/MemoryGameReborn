@@ -1,18 +1,15 @@
 package com.cube.memorygames.api.online;
 
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -23,38 +20,55 @@ import com.memory.brain.training.games.R;
 import java.util.Calendar;
 import java.util.Locale;
 
-/**
- * Online match history styled as the original activity_online_history.xml:
- * the white top bar (back arrow tinted grid_correct, 18sp title) over a
- * 1dip divider, then the item_online_history.xml rows — a date header when
- * the day changes, and each match as two mirrored halves with the 60dip
- * avatars (green ring on the winner, grey otherwise), 12sp names, 24sp
- * scores and the 28dip crown badge on the winning side.
- */
+/** Recent online matches grouped by day. */
 public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSession.MatchListener {
 
     private static final String DATE_FORMAT = "EEEE, dd.MM.yy";
+    private static final long RESPONSE_TIMEOUT_MS = 10000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable responseTimeout = new Runnable() {
+        @Override
+        public void run() {
+            if (waitingForResponse) {
+                showError();
+            }
+        }
+    };
+    private final Runnable readinessPoll = new Runnable() {
+        @Override
+        public void run() {
+            if (!waitingForResponse || requested) {
+                return;
+            }
+            if (OnlineSession.get().getState() == OnlineSession.STATE_IDLE) {
+                requestHistory();
+            } else {
+                handler.postDelayed(this, 500L);
+            }
+        }
+    };
     private LinearLayout list;
-    private Typeface fontLight;
+    private ScrollView scroller;
+    private OnlineStateView stateView;
     private boolean requested;
+    private boolean waitingForResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         OnlineSession.get().init(getApplicationContext());
-        this.fontLight = Typeface.createFromAsset(getAssets(), "Roboto-Light.ttf");
         setContentView(buildView());
         OnlineSession.get().setMatchListener(this);
+        this.waitingForResponse = true;
+        showLoading();
         requestWhenReady();
     }
 
     @Override
     protected void onDestroy() {
         this.handler.removeCallbacksAndMessages(null);
-        // Same owner check as OnlineMatchActivity: the lobby's onResume
-        // re-registration must survive this destroy.
+        // The lobby may already have reclaimed listener ownership in onResume.
         if (OnlineSession.get().getMatchListener() == this) {
             OnlineSession.get().setMatchListener(null);
         }
@@ -62,224 +76,264 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
     }
 
     private void requestWhenReady() {
+        this.requested = false;
+        this.waitingForResponse = true;
+        showLoading();
+        this.handler.removeCallbacks(this.readinessPoll);
+        this.handler.removeCallbacks(this.responseTimeout);
+        this.handler.postDelayed(this.responseTimeout, RESPONSE_TIMEOUT_MS);
         if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) {
             OnlineSession.get().connect();
         }
-        this.handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                int state = OnlineSession.get().getState();
-                if (state == OnlineSession.STATE_IDLE) {
-                    OnlineSession.get().requestHistory();
-                    requested = true;
-                } else if (!requested) {
-                    handler.postDelayed(this, 1000L);
-                }
-            }
-        }, 800L);
+        this.handler.post(this.readinessPoll);
+    }
+
+    private void requestHistory() {
+        if (OnlineSession.get().getState() != OnlineSession.STATE_IDLE) {
+            return;
+        }
+        this.requested = true;
+        OnlineSession.get().requestHistory();
     }
 
     private View buildView() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.WHITE);
+        root.setBackgroundColor(OnlineUi.color(this, R.color.online_page));
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // activity_online_history.xml's white header: back arrow in
-        // grid_correct over the 18sp title.
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setBackgroundColor(Color.WHITE);
+        OnlineUi.ToolbarBlock toolbar = OnlineUi.toolbar(this, R.string.title_online_history,
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        finish();
+                    }
+                });
+        root.addView(toolbar.view, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                OnlineUi.dim(this, R.dimen.online_toolbar_height)));
+        root.addView(OnlineUi.divider(this), new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
 
-        ImageView back = new ImageView(this);
-        back.setImageResource(R.drawable.ic_arrow_back_white);
-        back.setColorFilter(ContextCompat.getColor(this, R.color.grid_correct));
-        back.setPadding(dp(8), dp(8), dp(8), dp(8));
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        LinearLayout.LayoutParams backParams = new LinearLayout.LayoutParams(dp(45), dp(45));
-        backParams.leftMargin = dp(8);
-        backParams.rightMargin = dp(8);
-        header.addView(back, backParams);
-
-        TextView title = new TextView(this);
-        title.setText(R.string.title_online_history);
-        title.setTypeface(this.fontLight);
-        title.setTextSize(18.0f);
-        title.setTextColor(ContextCompat.getColor(this, R.color.grid_correct));
-        title.setGravity(Gravity.CENTER_VERTICAL);
-        header.addView(title, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        root.addView(header, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(45)));
-
-        View divider = new View(this);
-        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.grid_stroke));
-        root.addView(divider, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 1));
-
-        ScrollView scroller = new ScrollView(this);
-        this.list = new LinearLayout(this);
-        this.list.setOrientation(LinearLayout.VERTICAL);
-        scroller.addView(this.list, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        root.addView(scroller, new LinearLayout.LayoutParams(
+        FrameLayout body = new FrameLayout(this);
+        root.addView(body, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
+
+        this.scroller = new ScrollView(this);
+        this.scroller.setFillViewport(true);
+        this.scroller.setClipToPadding(false);
+        FrameLayout listWrapper = new FrameLayout(this);
+        this.list = OnlineUi.page(this);
+        int contentWidth = Math.min(getResources().getDisplayMetrics().widthPixels,
+                OnlineUi.dim(this, R.dimen.online_content_max_width));
+        FrameLayout.LayoutParams listParams = new FrameLayout.LayoutParams(
+                contentWidth, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        listWrapper.addView(this.list, listParams);
+        this.scroller.addView(listWrapper, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        body.addView(this.scroller, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        this.stateView = new OnlineStateView(this);
+        body.addView(this.stateView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return root;
     }
 
+    private void showLoading() {
+        if (this.scroller != null) {
+            this.scroller.setVisibility(View.GONE);
+        }
+        if (this.stateView != null) {
+            this.stateView.showLoading(R.string.online_history_loading);
+        }
+    }
+
+    private void showError() {
+        this.handler.removeCallbacks(this.readinessPoll);
+        this.handler.removeCallbacks(this.responseTimeout);
+        this.waitingForResponse = false;
+        this.scroller.setVisibility(View.GONE);
+        this.stateView.showError(R.string.online_history_error, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestWhenReady();
+            }
+        });
+    }
+
     private void render(HistoryEntry[] entries) {
+        this.handler.removeCallbacks(this.readinessPoll);
+        this.handler.removeCallbacks(this.responseTimeout);
+        this.waitingForResponse = false;
         this.list.removeAllViews();
         if (entries == null || entries.length == 0) {
-            TextView empty = new TextView(this);
-            empty.setText(R.string.online_history_empty);
-            empty.setTypeface(this.fontLight);
-            empty.setTextSize(15.0f);
-            empty.setTextColor(ContextCompat.getColor(this, R.color.onlineTextHint));
-            empty.setGravity(Gravity.CENTER);
-            empty.setPadding(0, dp(30), 0, 0);
-            this.list.addView(empty, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            this.scroller.setVisibility(View.GONE);
+            this.stateView.showEmpty(R.string.online_history_empty, 0);
             return;
         }
+
+        this.stateView.hideState();
+        this.scroller.setAlpha(0.0f);
+        this.scroller.setVisibility(View.VISIBLE);
+        this.scroller.animate().alpha(1.0f).setDuration(220L).start();
         String myName = myName();
         long lastDay = Long.MIN_VALUE;
         Calendar calendar = Calendar.getInstance();
         for (HistoryEntry entry : entries) {
+            if (entry == null) {
+                continue;
+            }
             calendar.setTimeInMillis(entry.ts);
             long day = calendar.get(Calendar.YEAR) * 1000L + calendar.get(Calendar.DAY_OF_YEAR);
             if (day != lastDay) {
                 this.list.addView(dateHeader(entry.ts));
                 lastDay = day;
             }
-            this.list.addView(matchRow(entry, myName));
+            this.list.addView(matchCard(entry, myName), OnlineUi.cardParams(this));
+        }
+
+        if (this.list.getChildCount() == 0) {
+            this.scroller.setVisibility(View.GONE);
+            this.stateView.showEmpty(R.string.online_history_empty, 0);
+        } else {
+            this.scroller.scrollTo(0, 0);
         }
     }
 
     private TextView dateHeader(long ts) {
-        TextView header = new TextView(this);
-        header.setTypeface(this.fontLight);
-        header.setTextSize(15.0f);
-        header.setTextColor(Color.BLACK);
-        header.setGravity(Gravity.CENTER);
-        header.setPadding(0, dp(16), 0, dp(16));
-        header.setText(DateUtils.getTodayYesterdayOrFormattedDateString(this, ts, DATE_FORMAT));
+        TextView header = OnlineUi.text(this,
+                DateUtils.getTodayYesterdayOrFormattedDateString(this, ts, DATE_FORMAT),
+                14.0f, R.color.online_text_secondary, OnlineUi.medium(this));
+        header.setAllCaps(true);
+        header.setLetterSpacing(0.08f);
+        header.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(4), dp(18), dp(4), dp(2));
         return header;
     }
 
-    /** One item_online_history.xml row: my half left, opponent's right. */
-    private View matchRow(HistoryEntry entry, String myName) {
+    private View matchCard(HistoryEntry entry, String myName) {
         boolean win = OnlineSession.RESULT_WIN.equals(entry.result);
         boolean draw = OnlineSession.RESULT_DRAW.equals(entry.result);
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        int margin = dp(16);
-        int half = dp(8);
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rowParams.setMargins(margin, half, margin, half);
-        row.setLayoutParams(rowParams);
 
-        String opponentName = entry.opponent
-                + (OnlineSession.MODE_PRACTICE.equals(entry.mode) ? "  ·  " + getString(R.string.online_practice_tag)
-                : entry.vsBot ? " (bot)"
-                        : ("FRIEND".equals(entry.mode) ? "  ·  " + getString(R.string.online_friend_tag) : ""));
-        row.addView(playerHalf(myName, entry.myScore, win && !draw, false),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.5f));
-        row.addView(new View(this), new LinearLayout.LayoutParams(dp(5), 1));
-        row.addView(playerHalf(opponentName, entry.oppScore, !win && !draw, true),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.5f));
-        return row;
+        LinearLayout card = OnlineUi.card(this);
+        LinearLayout statusRow = new LinearLayout(this);
+        statusRow.setOrientation(LinearLayout.HORIZONTAL);
+        statusRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView outcome = outcomeChip(entry.result);
+        statusRow.addView(outcome, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, OnlineUi.dim(this, R.dimen.online_chip_height)));
+
+        TextView mode = OnlineUi.chip(this, modeLabel(entry));
+        LinearLayout.LayoutParams modeParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, OnlineUi.dim(this, R.dimen.online_chip_height));
+        modeParams.leftMargin = dp(8);
+        statusRow.addView(mode, modeParams);
+        statusRow.addView(new View(this), new LinearLayout.LayoutParams(0, dp(1), 1.0f));
+        card.addView(statusRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout players = new LinearLayout(this);
+        players.setOrientation(LinearLayout.HORIZONTAL);
+        players.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams playersParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        playersParams.topMargin = dp(14);
+        card.addView(players, playersParams);
+
+        players.addView(playerColumn(safeName(myName), entry.myScore, win && !draw, false),
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        TextView versus = OnlineUi.text(this, getString(R.string.online_vs), 12.0f,
+                R.color.online_text_secondary, OnlineUi.medium(this));
+        versus.setGravity(Gravity.CENTER);
+        versus.setAllCaps(true);
+        versus.setLetterSpacing(0.08f);
+        LinearLayout.LayoutParams versusParams = new LinearLayout.LayoutParams(
+                dp(42), ViewGroup.LayoutParams.WRAP_CONTENT);
+        versusParams.leftMargin = dp(4);
+        versusParams.rightMargin = dp(4);
+        players.addView(versus, versusParams);
+
+        players.addView(playerColumn(safeName(entry.opponent), entry.oppScore, !win && !draw, true),
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        return card;
     }
 
-    /**
-     * One side of the history row. item_online_history.xml: a 60dip avatar
-     * whose ring turns green on the winner, the 12sp name beside it, the 24sp
-     * score under the name and — winners only — the 28dip crown badge.
-     */
-    private RelativeLayout playerHalf(String name, int score, boolean winner, boolean mirrored) {
-        RelativeLayout half = new RelativeLayout(this);
-
-        ImageView avatar = new ImageView(this);
-        avatar.setId(View.generateViewId());
-        avatar.setImageResource(R.drawable.ic_user_placeholder);
-        avatar.setBackgroundResource(winner ? R.drawable.drawable_circle_green
-                : R.drawable.drawable_circle_grey);
-        avatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        int ring = dp(1);
-        avatar.setPadding(ring, ring, ring, ring);
-        RelativeLayout.LayoutParams avatarParams = new RelativeLayout.LayoutParams(dp(60), dp(60));
-        if (mirrored) {
-            avatarParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        }
-        half.addView(avatar, avatarParams);
-
-        TextView nameView = new TextView(this);
-        nameView.setId(View.generateViewId());
-        nameView.setTypeface(this.fontLight);
-        nameView.setTextSize(12.0f);
-        nameView.setTextColor(Color.BLACK);
-        nameView.setMaxLines(1);
-        nameView.setText(name);
-        RelativeLayout.LayoutParams nameParams = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        nameParams.topMargin = dp(4);
-        if (mirrored) {
-            nameParams.addRule(RelativeLayout.LEFT_OF, avatar.getId());
-            nameParams.rightMargin = dp(8);
+    private TextView outcomeChip(String result) {
+        int colorRes;
+        int backgroundRes;
+        CharSequence label;
+        if (OnlineSession.RESULT_WIN.equals(result)) {
+            colorRes = R.color.online_success;
+            backgroundRes = R.color.online_success_soft;
+            label = getString(R.string.online_outcome_win);
+        } else if (OnlineSession.RESULT_DRAW.equals(result)) {
+            colorRes = R.color.online_warning;
+            backgroundRes = R.color.online_warning_soft;
+            label = getString(R.string.online_outcome_draw);
         } else {
-            nameParams.addRule(RelativeLayout.RIGHT_OF, avatar.getId());
-            nameParams.leftMargin = dp(8);
+            colorRes = R.color.online_danger;
+            backgroundRes = R.color.online_danger_soft;
+            label = getString(R.string.online_outcome_loss);
         }
-        half.addView(nameView, nameParams);
 
-        TextView scoreView = new TextView(this);
-        scoreView.setTypeface(this.fontLight);
-        scoreView.setTextSize(24.0f);
-        scoreView.setTextColor(ContextCompat.getColor(this, R.color.onlineStatsColor));
-        scoreView.setText(String.format(Locale.US, "%d", score));
-        RelativeLayout.LayoutParams scoreParams = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        scoreParams.topMargin = dp(8);
-        if (mirrored) {
-            scoreParams.addRule(RelativeLayout.LEFT_OF, avatar.getId());
-            scoreParams.addRule(RelativeLayout.BELOW, nameView.getId());
-            scoreParams.rightMargin = dp(8);
-        } else {
-            scoreParams.addRule(RelativeLayout.RIGHT_OF, avatar.getId());
-            scoreParams.addRule(RelativeLayout.BELOW, nameView.getId());
-            scoreParams.leftMargin = dp(8);
-        }
-        half.addView(scoreView, scoreParams);
+        TextView chip = OnlineUi.text(this, label, 12.0f, colorRes, OnlineUi.medium(this));
+        chip.setGravity(Gravity.CENTER);
+        chip.setSingleLine(true);
+        chip.setEllipsize(TextUtils.TruncateAt.END);
+        chip.setBackground(OnlineUi.roundedBackground(this, backgroundRes, 50));
+        chip.setMinHeight(OnlineUi.dim(this, R.dimen.online_chip_height));
+        chip.setPadding(dp(12), 0, dp(12), 0);
+        return chip;
+    }
 
-        if (winner) {
-            ImageView badge = new ImageView(this);
-            badge.setImageResource(R.drawable.ic_crown_new);
-            badge.setColorFilter(Color.WHITE);
-            badge.setBackgroundResource(R.drawable.drawable_circle_online_rating);
-            int pad5 = dp(5);
-            badge.setPadding(pad5, pad5, pad5, pad5);
-            badge.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            RelativeLayout.LayoutParams badgeParams = new RelativeLayout.LayoutParams(dp(28), dp(28));
-            badgeParams.topMargin = dp(10);
-            if (mirrored) {
-                badgeParams.addRule(RelativeLayout.LEFT_OF, scoreView.getId());
-                badgeParams.addRule(RelativeLayout.BELOW, nameView.getId());
-                badgeParams.rightMargin = dp(8);
-            } else {
-                badgeParams.addRule(RelativeLayout.RIGHT_OF, scoreView.getId());
-                badgeParams.addRule(RelativeLayout.BELOW, nameView.getId());
-                badgeParams.leftMargin = dp(8);
-            }
-            half.addView(badge, badgeParams);
+    private View playerColumn(String name, int score, boolean winner, boolean mirrored) {
+        LinearLayout column = new LinearLayout(this);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setGravity(mirrored ? Gravity.END : Gravity.START);
+
+        TextView nameView = OnlineUi.text(this, name, 15.0f,
+                R.color.online_text_primary, winner ? OnlineUi.medium(this) : OnlineUi.regular(this));
+        nameView.setGravity((mirrored ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL);
+        nameView.setMaxLines(2);
+        nameView.setEllipsize(TextUtils.TruncateAt.END);
+        nameView.setMinHeight(dp(40));
+        column.addView(nameView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView scoreView = OnlineUi.text(this, String.format(Locale.getDefault(), "%d", score),
+                28.0f, winner ? R.color.online_primary : R.color.online_text_primary,
+                OnlineUi.bold(this));
+        scoreView.setGravity(mirrored ? Gravity.END : Gravity.START);
+        LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scoreParams.topMargin = dp(2);
+        column.addView(scoreView, scoreParams);
+        return column;
+    }
+
+    private CharSequence modeLabel(HistoryEntry entry) {
+        if (entry.vsBot && OnlineSession.MODE_PRACTICE.equals(entry.mode)) {
+            return getString(R.string.online_mode_practice_bot);
         }
-        return half;
+        if (entry.vsBot) {
+            return getString(R.string.online_mode_bot);
+        }
+        if (OnlineSession.MODE_PRACTICE.equals(entry.mode)) {
+            return getString(R.string.online_mode_practice);
+        }
+        if (OnlineSession.MODE_FRIEND.equals(entry.mode)) {
+            return getString(R.string.online_mode_friend);
+        }
+        return getString(R.string.online_mode_ranked);
+    }
+
+    private String safeName(String name) {
+        return TextUtils.isEmpty(name) ? "—" : name.trim();
     }
 
     private String myName() {
@@ -301,9 +355,10 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
 
     @Override
     public void onStateChanged(int state) {
-        if (state == OnlineSession.STATE_IDLE && !this.requested) {
-            OnlineSession.get().requestHistory();
-            this.requested = true;
+        if (state == OnlineSession.STATE_IDLE && this.waitingForResponse && !this.requested) {
+            requestHistory();
+        } else if (state == OnlineSession.STATE_DISCONNECTED && this.waitingForResponse) {
+            showError();
         }
     }
 
@@ -316,7 +371,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
     }
 
     @Override
-    public void onMatchCancelled() {
+    public void onMatchCancelled(boolean acceptedMatch, String mode) {
     }
 
     @Override
@@ -357,9 +412,17 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
 
     @Override
     public void onError(int code, String message) {
+        if (this.waitingForResponse) {
+            this.handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    showError();
+                }
+            });
+        }
     }
 
     private int dp(int value) {
-        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+        return OnlineUi.dp(this, value);
     }
 }

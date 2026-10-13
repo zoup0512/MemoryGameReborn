@@ -1528,7 +1528,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         if (this.isChallenge) {
             this.levelNumber.setText(Html.fromHtml("<b>" + String.valueOf(this.userScore) + " </b> / " + getMinPassScore() + "</b>"));
         } else {
-            this.levelNumber.setText(getString(R.string.level_number_prefix) + " " + this.progression.getLevelNumber());
+            this.levelNumber.setText(getString(R.string.level_number_format, this.progression.getLevelNumber()));
         }
     }
 

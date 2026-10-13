@@ -1,6 +1,8 @@
 spring:
   datasource:
     url: jdbc:h2:mem:pk-test;DB_CLOSE_DELAY=-1
+  flyway:
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -22,11 +24,15 @@ pk:
     entry-fee: 30
     win-coins: 50
     draw-coins: 15
-    # Tests assert exact settlement balances; disable the welcome grant here.
-    welcome-coins: 0
+    # Register no longer imports a client-claimed balance; the welcome
+    # grant is the only funding source, so tests assert against it.
+    welcome-coins: 100
   timing:
     match-found-delay-ms: 300
     round-intermission-ms: 300
     round-grace-ms: 1500
+    # Generous scoring tolerance keeps the 7-wins-per-round practice cadence
+    # safe on slow CI while still closing before round-grace ends the round.
+    score-accept-grace-ms: 1000
     bot-wait-ms: 1500
     reconnect-window-ms: 3000

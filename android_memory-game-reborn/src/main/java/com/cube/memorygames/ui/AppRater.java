@@ -65,10 +65,10 @@ public class AppRater {
                 AppRater.editor.putBoolean("dontshowagain", true);
                 AppRater.editor.commit();
             }
-            String uriText = "mailto:apps@pixign.com?subject=" + Uri.encode(this.context.getResources().getString(R.string.app_name) + " Feedback");
+            String uriText = "mailto:apps@pixign.com?subject=" + Uri.encode(this.context.getString(R.string.feedback_subject_format, this.context.getString(R.string.app_name)));
             Intent intent = new Intent("android.intent.action.SENDTO");
             intent.setData(Uri.parse(uriText));
-            this.context.startActivity(Intent.createChooser(intent, "Send Feedback"));
+            this.context.startActivity(Intent.createChooser(intent, this.context.getString(R.string.send_feedback)));
         }
     }
 

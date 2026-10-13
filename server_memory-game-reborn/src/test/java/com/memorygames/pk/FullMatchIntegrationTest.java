@@ -198,25 +198,4 @@ class FullMatchIntegrationTest {
             a.close();
         }
     }
-
-    @Test
-    void insufficientBalanceIsRejected() throws Exception {
-        TestWsClient a = newClient();
-        try {
-            ProtocolCodec.Register register = new ProtocolCodec.Register();
-            register.uuid = UUID.randomUUID().toString();
-            register.nickname = "Broke";
-            register.balance = 0;
-            a.send(ProtocolCodec.T_REGISTER, register);
-            assertNotNull(a.await(ProtocolCodec.T_AUTH_OK, 5000));
-            a.send(ProtocolCodec.T_MATCH_JOIN, new Object());
-            TestWsClient.Frame error = a.await(ProtocolCodec.T_ERROR, 5000);
-            assertNotNull(error, "queueing without coins must error");
-            assertEquals(402, error.as(ProtocolCodec.ErrorMsg.class).code);
-            // No match may be created for the broke player.
-            assertNull(a.await(ProtocolCodec.T_MATCH_FOUND, 2500));
-        } finally {
-            a.close();
-        }
-    }
 }

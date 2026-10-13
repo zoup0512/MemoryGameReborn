@@ -5,8 +5,6 @@ import com.memorygames.pk.admin.EventRing;
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.user.UserAccount;
-import com.memorygames.pk.user.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -20,6 +18,10 @@ import java.util.Random;
  * Matchmaking queue with ELO bucketing and bot fallback (PRD 3.4): pairs
  * within +-bucket while young, widens the bucket while waiting, and
  * substitutes a bot after {@code botWaitMs}.
+ *
+ * Every entry path funnels through {@link PlayerLifecycle}: a user is
+ * QUEUED, FRIEND_WAITING, MATCHING or IN_MATCH — never two of them — so a
+ * stale queue entry can no longer fork a second, orphan match (P1-2).
  */
 @Component
 public class Matchmaker {
@@ -29,6 +31,16 @@ public class Matchmaker {
             "QuickMind", "Brainy Owl", "FastFingers", "SharpEye", "CleverFox",
             "NeuroNinja", "PuzzlePanda", "ThinkTank", "SmartShark", "LogicLion"
     };
+
+    /** Gateway-visible outcomes of match_join. */
+    public enum EnqueueResult {
+        QUEUED, ALREADY_QUEUED, BUSY, INSUFFICIENT_COINS
+    }
+
+    /** Gateway-visible outcomes of room_join. */
+    public enum JoinResult {
+        LAUNCHED, NO_SUCH_ROOM, BUSY
+    }
 
     /** A queued player together with its delivery endpoint. */
     private static class Entry {
@@ -67,16 +79,16 @@ public class Matchmaker {
     private final java.util.Random codeRandom = new java.util.Random();
 
     private final MatchManager manager;
-    private final UserService users;
+    private final PlayerLifecycle lifecycle;
     private final PkProperties properties;
     private final AdminMetrics metrics;
     private final EventRing events;
     private final Random random = new Random();
 
-    public Matchmaker(MatchManager manager, UserService users, PkProperties properties,
+    public Matchmaker(MatchManager manager, PlayerLifecycle lifecycle, PkProperties properties,
                       AdminMetrics metrics, EventRing events) {
         this.manager = manager;
-        this.users = users;
+        this.lifecycle = lifecycle;
         this.properties = properties;
         this.metrics = metrics;
         this.events = events;
@@ -96,27 +108,25 @@ public class Matchmaker {
     }
 
     /** Called by the WS gateway on match_join. */
-    public boolean enqueue(UserAccount user, PlayerEndpoint endpoint) {
+    public EnqueueResult enqueue(UserAccount user, PlayerEndpoint endpoint) {
         if (user.balance < this.properties.getEconomy().getEntryFee()) {
-            return false;
-        }
-        // A user already seated in a live match must never (re)queue: their
-        // frames would fork a second, orphan match pushing events into the
-        // same socket (observed in the 2026-10-04 device test).
-        if (this.manager.roomFor(user.id) != null) {
-            return true; // already playing; treat as accepted no-op
+            return EnqueueResult.INSUFFICIENT_COINS;
         }
         synchronized (this.lock) {
-            for (Entry entry : this.queue) {
-                if (entry.user.id.equals(user.id)) {
-                    return true; // already queued
-                }
+            String state = this.lifecycle.stateOf(user.id);
+            if (PlayerLifecycle.QUEUED.equals(state)) {
+                return EnqueueResult.ALREADY_QUEUED; // idempotent re-join
+            }
+            if (!this.lifecycle.claim(user.id, PlayerLifecycle.QUEUED)) {
+                // In another match, hosting/joining a friend room, or mid
+                // room creation: the queue must never fork a second match.
+                return EnqueueResult.BUSY;
             }
             this.queue.add(new Entry(user, endpoint));
         }
         this.metrics.queueJoins.incrementAndGet();
         scan();
-        return true;
+        return EnqueueResult.QUEUED;
     }
 
     /** Called by the WS gateway on match_cancel. */
@@ -127,6 +137,7 @@ public class Matchmaker {
                 Entry entry = it.next();
                 if (entry.user.id == userId) {
                     it.remove();
+                    this.lifecycle.releaseIf(userId, PlayerLifecycle.QUEUED);
                     entry.endpoint.send(ProtocolCodec.encode(ProtocolCodec.T_MATCH_CANCELLED, new Object()));
                     return true;
                 }
@@ -135,11 +146,19 @@ public class Matchmaker {
         return false;
     }
 
-    /** Creates a friend room; returns its 4-digit code (PRD F-12). */
+    /**
+     * Creates a friend room; returns its 4-digit code (PRD F-12), or null
+     * when the host is busy in the queue or another match.
+     */
     public String createFriendRoom(UserAccount host, PlayerEndpoint endpoint) {
         String code;
         synchronized (this.lock) {
             dropExpiredFriendRooms();
+            String state = this.lifecycle.stateOf(host.id);
+            if (!PlayerLifecycle.FRIEND_WAITING.equals(state)
+                    && !this.lifecycle.claim(host.id, PlayerLifecycle.FRIEND_WAITING)) {
+                return null;
+            }
             // also drop any previous room hosted by this user
             this.friendRooms.removeIf(r -> r.host.id.equals(host.id));
             do {
@@ -150,8 +169,8 @@ public class Matchmaker {
         return code;
     }
 
-    /** Guest joins by code; true when the pairing was launched. */
-    public boolean joinFriendRoom(String code, UserAccount guest, PlayerEndpoint endpoint) {
+    /** Guest joins by code; the pairing is launched under the lifecycle gate. */
+    public JoinResult joinFriendRoom(String code, UserAccount guest, PlayerEndpoint endpoint) {
         FriendRoom room = null;
         synchronized (this.lock) {
             dropExpiredFriendRooms();
@@ -161,15 +180,29 @@ public class Matchmaker {
                     break;
                 }
             }
-            if (room != null) {
-                this.friendRooms.remove(room);
+            if (room == null) {
+                return JoinResult.NO_SUCH_ROOM;
             }
+            if (!this.lifecycle.claim(guest.id, PlayerLifecycle.MATCHING)) {
+                return JoinResult.BUSY;
+            }
+            if (!this.lifecycle.transition(room.host.id, PlayerLifecycle.FRIEND_WAITING,
+                    PlayerLifecycle.MATCHING)) {
+                // Host left/cancelled between our lookup and the claim.
+                this.lifecycle.release(guest.id);
+                return JoinResult.NO_SUCH_ROOM;
+            }
+            this.friendRooms.remove(room);
         }
-        if (room == null) {
-            return false;
+        try {
+            this.manager.createRoom(room.host, room.hostEndpoint, guest, endpoint, null, true);
+        } catch (RuntimeException e) {
+            log.error("friend room launch failed: {}", e.getMessage());
+            this.lifecycle.release(room.host.id);
+            this.lifecycle.release(guest.id);
+            return JoinResult.NO_SUCH_ROOM;
         }
-        this.manager.createRoom(room.host, room.hostEndpoint, guest, endpoint, null, true);
-        return true;
+        return JoinResult.LAUNCHED;
     }
 
     /** Host cancelled the room (or disconnected). */
@@ -177,6 +210,7 @@ public class Matchmaker {
         synchronized (this.lock) {
             this.friendRooms.removeIf(r -> r.host.id == hostUserId);
         }
+        this.lifecycle.releaseIf(hostUserId, PlayerLifecycle.FRIEND_WAITING);
     }
 
     private boolean roomCodeTaken(String code) {
@@ -190,7 +224,13 @@ public class Matchmaker {
 
     private void dropExpiredFriendRooms() {
         long now = System.currentTimeMillis();
-        this.friendRooms.removeIf(r -> now - r.createdAt >= FRIEND_ROOM_TTL_MS);
+        this.friendRooms.removeIf(r -> {
+            if (now - r.createdAt >= FRIEND_ROOM_TTL_MS) {
+                this.lifecycle.releaseIf(r.host.id, PlayerLifecycle.FRIEND_WAITING);
+                return true;
+            }
+            return false;
+        });
     }
 
     /** Periodic scan; also triggered opportunistically after each enqueue. */
@@ -209,8 +249,14 @@ public class Matchmaker {
                     continue;
                 }
                 if (now - a.enqueuedAt >= botWait || a.user.restrictedMatches > 0) {
-                    botFallbacks.add(a);
-                    this.queue.set(i, null);
+                    if (this.lifecycle.transition(a.user.id, PlayerLifecycle.QUEUED,
+                            PlayerLifecycle.MATCHING)) {
+                        botFallbacks.add(a);
+                        this.queue.set(i, null);
+                    } else {
+                        // Left the queue through another path; drop the entry.
+                        this.queue.set(i, null);
+                    }
                     continue;
                 }
                 long waited = now - a.enqueuedAt;
@@ -220,39 +266,74 @@ public class Matchmaker {
                     if (b == null) {
                         continue;
                     }
-                    if (Math.abs(a.user.elo - b.user.elo) <= width) {
-                        pairsToStart.add(new Entry[]{a, b});
+                    if (Math.abs(a.user.elo - b.user.elo) > width) {
+                        continue;
+                    }
+                    if (!this.lifecycle.transition(a.user.id, PlayerLifecycle.QUEUED,
+                            PlayerLifecycle.MATCHING)) {
                         this.queue.set(i, null);
-                        this.queue.set(j, null);
                         break;
                     }
+                    if (!this.lifecycle.transition(b.user.id, PlayerLifecycle.QUEUED,
+                            PlayerLifecycle.MATCHING)) {
+                        this.lifecycle.transition(a.user.id, PlayerLifecycle.MATCHING,
+                                PlayerLifecycle.QUEUED);
+                        this.queue.set(j, null);
+                        continue;
+                    }
+                    pairsToStart.add(new Entry[]{a, b});
+                    this.queue.set(i, null);
+                    this.queue.set(j, null);
+                    break;
                 }
             }
             this.queue.removeIf(e -> e == null);
         }
-        for (Entry[] pair : pairsToStart) {
+        for (final Entry[] pair : pairsToStart) {
             long wait = System.currentTimeMillis() - pair[0].enqueuedAt;
             this.metrics.pairings.incrementAndGet();
             this.metrics.queueWaitTotalMs.addAndGet(wait);
             this.events.emit("PAIRED", null, "a=" + pair[0].user.id + " b=" + pair[1].user.id
                     + " waited=" + wait + "ms");
-            this.manager.createRoom(pair[0].user, pair[0].endpoint, pair[1].user, pair[1].endpoint, null);
+            this.manager.launchRoom(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Matchmaker.this.manager.createRoom(pair[0].user, pair[0].endpoint,
+                                pair[1].user, pair[1].endpoint, null);
+                    } catch (RuntimeException e) {
+                        log.error("paired room launch failed for {}/{}: {}",
+                                pair[0].user.id, pair[1].user.id, e.getMessage());
+                        Matchmaker.this.lifecycle.release(pair[0].user.id);
+                        Matchmaker.this.lifecycle.release(pair[1].user.id);
+                    }
+                }
+            });
         }
-        for (Entry alone : botFallbacks) {
+        for (final Entry alone : botFallbacks) {
             long wait = System.currentTimeMillis() - alone.enqueuedAt;
             this.metrics.botFallbacks.incrementAndGet();
             this.metrics.queueWaitTotalMs.addAndGet(wait);
             this.events.emit("BOT_FALLBACK", null,
                     "user=" + alone.user.id + " waited=" + wait + "ms");
-            if (this.manager.roomFor(alone.user.id) != null) {
-                // User reached a live match through another path while the
-                // stale entry waited out the bot timer — drop the entry.
+            if (!this.manager.acceptingMatches()) {
+                this.lifecycle.release(alone.user.id);
                 continue;
             }
-            String botName = BOT_NAMES[this.random.nextInt(BOT_NAMES.length)];
+            final String botName = BOT_NAMES[this.random.nextInt(BOT_NAMES.length)];
             log.info("bot fallback for user {} after {}ms wait", alone.user.id,
                     System.currentTimeMillis() - alone.enqueuedAt);
-            this.manager.createRoom(alone.user, alone.endpoint, null, null, botName);
+            this.manager.launchRoom(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Matchmaker.this.manager.createRoom(alone.user, alone.endpoint, null, null, botName);
+                    } catch (RuntimeException e) {
+                        log.error("bot fallback launch failed for {}: {}", alone.user.id, e.getMessage());
+                        Matchmaker.this.lifecycle.release(alone.user.id);
+                    }
+                }
+            });
         }
     }
 

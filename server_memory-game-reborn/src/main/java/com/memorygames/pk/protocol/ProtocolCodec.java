@@ -62,6 +62,18 @@ public final class ProtocolCodec {
     public static final String RESULT_LOSE = "L";
     public static final String RESULT_DRAW = "D";
 
+    /** Stable machine error codes (ErrorMsg.code). */
+    public static final int ERR_BAD_FRAME = 400;
+    public static final int ERR_UNSUPPORTED_VERSION = 400;
+    public static final int ERR_UNKNOWN_TYPE = 405;
+    public static final int ERR_NOT_AUTHENTICATED = 401;
+    public static final int ERR_FORBIDDEN = 403;
+    public static final int ERR_NOT_FOUND = 404;
+    public static final int ERR_STATE_CONFLICT = 409;
+    public static final int ERR_PAYMENT_REQUIRED = 402;
+    public static final int ERR_RATE_LIMITED = 429;
+    public static final int ERR_UNAVAILABLE = 503;
+
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
@@ -76,6 +88,12 @@ public final class ProtocolCodec {
         public int v;
         public String t;
         public Object d;
+        /**
+         * Optional request correlation id (P2-7): commands may carry one and
+         * immediate replies echo it verbatim, letting clients match retries
+         * to responses safely. Absent on server-initiated frames.
+         */
+        public String rid;
     }
 
     public static class Register {
@@ -266,19 +284,37 @@ public final class ProtocolCodec {
     }
 
     public static String encode(String type, Object data) {
+        return encode(type, data, null);
+    }
+
+    /** Same as {@link #encode(String, Object)} but echoing a request id. */
+    public static String encode(String type, Object data, String rid) {
+        String body;
         if (data == null || data.getClass() == Object.class) {
             // Empty payloads (match_join, resign, ...) carry no fields; a bare
             // java.lang.Object has nothing for Jackson to reflect on.
-            return "{\"v\":" + VERSION + ",\"t\":\"" + type + "\",\"d\":{}}";
+            body = "{}";
+        } else {
+            try {
+                body = MAPPER.writeValueAsString(data);
+            } catch (JsonProcessingException e) {
+                throw new IllegalStateException("unencodable frame", e);
+            }
         }
-        Envelope envelope = new Envelope();
-        envelope.v = VERSION;
-        envelope.t = type;
-        envelope.d = data;
+        StringBuilder frame = new StringBuilder(64 + body.length());
+        frame.append("{\"v\":").append(VERSION)
+                .append(",\"t\":\"").append(type).append("\",\"d\":").append(body);
+        if (rid != null && !rid.isEmpty()) {
+            frame.append(",\"rid\":").append(quote(rid));
+        }
+        return frame.append("}").toString();
+    }
+
+    private static String quote(String raw) {
         try {
-            return MAPPER.writeValueAsString(envelope);
+            return MAPPER.writeValueAsString(raw);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("unencodable frame", e);
+            return "\"?\"";
         }
     }
 }

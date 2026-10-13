@@ -19,14 +19,22 @@ public class AdminGuard {
 
     private final String adminToken;
     private final int ratePerMinute;
+    /**
+     * X-Forwarded-For is only honoured when the service sits behind a
+     * trusted proxy (P2-5): a directly exposed instance would otherwise let
+     * callers forge the limiter key and pollute audit IPs.
+     */
+    private final boolean trustForwardedHeaders;
 
     /** ip -> {windowStartMs, count}. */
     private final ConcurrentHashMap<String, long[]> buckets = new ConcurrentHashMap<>();
 
     public AdminGuard(@Value("${pk.admin-token:}") String adminToken,
-                      @Value("${pk.admin-rate-limit:60}") int ratePerMinute) {
+                      @Value("${pk.admin-rate-limit:60}") int ratePerMinute,
+                      @Value("${pk.admin.trust-forwarded-headers:false}") boolean trustForwardedHeaders) {
         this.adminToken = adminToken == null ? "" : adminToken.trim();
         this.ratePerMinute = Math.max(1, ratePerMinute);
+        this.trustForwardedHeaders = trustForwardedHeaders;
     }
 
     /** @return null when allowed, otherwise the error response to return. */
@@ -59,11 +67,13 @@ public class AdminGuard {
         return bucket[1] <= this.ratePerMinute;
     }
 
-    public static String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            int comma = forwarded.indexOf(',');
-            return comma > 0 ? forwarded.substring(0, comma).trim() : forwarded.trim();
+    public String clientIp(HttpServletRequest request) {
+        if (this.trustForwardedHeaders) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                int comma = forwarded.indexOf(',');
+                return comma > 0 ? forwarded.substring(0, comma).trim() : forwarded.trim();
+            }
         }
         return request.getRemoteAddr();
     }

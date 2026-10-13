@@ -23,6 +23,9 @@ services:
         condition: service_healthy
     environment:
       PK_DB_PASSWORD: ${PK_DB_PASSWORD:-change-me}
+      # README promises this passthrough; without it the admin API stays
+      # disabled in compose deployments.
+      PK_ADMIN_TOKEN: ${PK_ADMIN_TOKEN:-}
     ports:
       - "8080:8080"
     restart: unless-stopped

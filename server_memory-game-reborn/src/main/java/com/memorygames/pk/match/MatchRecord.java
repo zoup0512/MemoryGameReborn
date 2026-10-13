@@ -16,37 +16,42 @@ public class MatchRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    @Column(nullable = false)
+    /**
+     * Settlement idempotency key: exactly one record may exist per match,
+     * enforced by the database, so replays (settle retries, restart
+     * recovery) can never double-apply coins/ELO/W-L.
+     */
+    @Column(nullable = false, unique = true)
     public String matchId;
 
     /** RANKED or FRIEND. */
     @Column(nullable = false)
     public String mode;
 
-    @Column(nullable = false)
+    @Column(name = "player_a", nullable = false)
     public long playerA;
 
-    @Column(nullable = false)
+    @Column(name = "nickname_a", nullable = false)
     public String nicknameA;
 
     /** W / L / D from player A's perspective. */
-    @Column(nullable = false)
+    @Column(name = "result_a", nullable = false)
     public String resultA;
 
-    @Column(nullable = false)
+    @Column(name = "score_a", nullable = false)
     public int scoreA;
 
-    @Column(nullable = false)
+    @Column(name = "player_b", nullable = false)
     public long playerB;
 
-    @Column(nullable = false)
+    @Column(name = "nickname_b", nullable = false)
     public String nicknameB;
 
-    @Column(nullable = false)
+    @Column(name = "score_b", nullable = false)
     public int scoreB;
 
     /** ELO delta applied to player A. */
-    @Column(nullable = false)
+    @Column(name = "elo_delta_a", nullable = false)
     public int eloDeltaA;
 
     @Column(nullable = false)
@@ -58,4 +63,11 @@ public class MatchRecord {
     /** Bot opponent flag for seat B. */
     @Column(nullable = false)
     public boolean botOpponent;
+
+    /**
+     * Admin void / shutdown abort: entry refunded, no ELO or W-L counted;
+     * excluded from client-facing history and the practice reward cap.
+     */
+    @Column(nullable = false)
+    public boolean voided;
 }

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,8 +24,8 @@ public class OnlineTutorialActivity extends AppCompatActivity {
     OnlineTutorialAdapter adapter;
     @BindView(R.id.btnBack)
     ImageView btnBack;
-    private String fontPath = "Roboto-Regular.ttf";
-    private String fontPathLight = "Roboto-Light.ttf";
+    private String fontPath = "Roboto-Medium.ttf";
+    private String fontPathLight = "Roboto-Regular.ttf";
     @BindView(R.id.indicator)
     CirclePageIndicator indicator;
     @BindView(R.id.txt_start_game_description)
@@ -40,6 +41,21 @@ public class OnlineTutorialActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start_game);
         ButterKnife.bind(this);
+        findViewById(android.R.id.content).setBackgroundColor(
+                ContextCompat.getColor(this, R.color.online_page));
+        View header = findViewById(R.id.panel_header);
+        if (header != null) {
+            header.setBackgroundColor(ContextCompat.getColor(this, R.color.online_surface));
+        }
+        View playBar = findViewById(R.id.play_button);
+        if (playBar != null) {
+            playBar.setBackgroundColor(ContextCompat.getColor(this, R.color.online_surface));
+        }
+        View divider = findViewById(R.id.divider);
+        if (divider != null) {
+            divider.setBackgroundColor(ContextCompat.getColor(this, R.color.online_divider));
+        }
+        this.btnBack.setColorFilter(ContextCompat.getColor(this, R.color.online_text_primary));
         this.textPlayButton.setText(R.string.next);
         setUI();
         showTutorial();
@@ -94,7 +110,12 @@ public class OnlineTutorialActivity extends AppCompatActivity {
         });
         this.typeface = Typeface.createFromAsset(getAssets(), this.fontPath);
         this.typefaceLight = Typeface.createFromAsset(getAssets(), this.fontPathLight);
-        this.textBotton.setTypeface(this.typeface, Typeface.BOLD_ITALIC);
+        this.textBotton.setTypeface(this.typeface);
+        this.textBotton.setTextColor(ContextCompat.getColor(this, R.color.online_text_primary));
         this.textPlayButton.setTypeface(this.typeface);
+        this.textPlayButton.setBackgroundResource(R.drawable.online_primary_button);
+        this.indicator.setFillColor(ContextCompat.getColor(this, R.color.online_primary));
+        this.indicator.setPageColor(ContextCompat.getColor(this, R.color.online_divider));
+        this.indicator.setStrokeColor(ContextCompat.getColor(this, R.color.online_divider));
     }
 }

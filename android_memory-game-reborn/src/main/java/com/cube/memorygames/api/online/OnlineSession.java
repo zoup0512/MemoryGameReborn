@@ -55,6 +55,9 @@ public class OnlineSession {
     private static final long RECONNECT_BASE_MS = 1000L;
     private static final long RECONNECT_MAX_MS = 15000L;
     private static final long RECONNECT_WINDOW_MS = 90000L;
+    /** Server accept timeout (30s) plus one second for the cancellation frame. */
+    private static final long MATCH_ACCEPT_FALLBACK_MS = 31000L;
+    private static final long POST_AUTH_MATCH_GRACE_MS = 3000L;
 
     /** UI callback invoked on the main thread. */
     public interface MatchListener {
@@ -64,7 +67,7 @@ public class OnlineSession {
 
         void onMatchFound(MatchFound match);
 
-        void onMatchCancelled();
+        void onMatchCancelled(boolean acceptedMatch, String mode);
 
         void onRoundStart(RoundStart round);
 
@@ -92,7 +95,7 @@ public class OnlineSession {
 
     /** Lightweight hook used by the in-game HUD (single consumer). */
     public interface ScoreListener {
-        void onOpponentScore(int score);
+        void onScoreChanged(int myScore, int opponentScore);
     }
 
     private static OnlineSession instance;
@@ -147,6 +150,15 @@ public class OnlineSession {
     private int myCompletedScore;
     private int oppScore;
     private boolean roundReported;
+    /** Exact entry fee mirrored locally for the accepted non-practice match. */
+    private int localEntryFeeCharged;
+    /** True after this client pressed START for the current accepted match. */
+    private boolean localMatchStartSent;
+    /** Match id whose resign retry chain is currently active. */
+    private String resigningMatchId;
+    /** Local fallback for a lost match_cancelled frame during the START gate. */
+    private Runnable acceptFallback;
+    private long acceptDeadlineElapsed;
     private long disconnectedAt;
     private int reconnectAttempt;
     private final Runnable reconnectRunnable = new Runnable() {
@@ -182,7 +194,7 @@ public class OnlineSession {
     }
 
     public boolean isInMatch() {
-        return matchId != null && (state == STATE_MATCH || state == STATE_DISCONNECTED);
+        return this.matchId != null;
     }
 
     public void setMatchListener(MatchListener l) {
@@ -214,8 +226,11 @@ public class OnlineSession {
      * / production defaults when no server value is known.
      */
     public long roundDurationMs(Context context, long defaultMs) {
-        if (serverRoundDurationMs > 0L) {
-            return serverRoundDurationMs;
+        if (this.roundStartedElapsed > 0L) {
+            return Math.max(1L, roundRemainingMs());
+        }
+        if (this.serverRoundDurationMs > 0L) {
+            return this.serverRoundDurationMs;
         }
         return OnlineDebug.roundMs(context, defaultMs);
     }
@@ -259,6 +274,12 @@ public class OnlineSession {
 
     public void setProfileCallback(Runnable callback) {
         this.profileCallback = callback;
+    }
+
+    public void clearProfileCallback(Runnable callback) {
+        if (this.profileCallback == callback) {
+            this.profileCallback = null;
+        }
     }
 
     /** True while the running match is a friend-room duel. */
@@ -327,6 +348,7 @@ public class OnlineSession {
         roundStartedElapsed = 0L;
         friendRoomPending = false;
         practicePending = false;
+        cancelAcceptFallback();
         cancelRoomAck();
         main.removeCallbacks(reconnectRunnable);
         if (client != null) {
@@ -379,12 +401,12 @@ public class OnlineSession {
             main.postDelayed(reconnectRunnable, delay);
             return;
         }
-        // Window expired: drop the match locally (the server will have
-        // forfeited us after its own deadline) and stop retrying — the next
-        // user action reopens a connection.
-        matchId = null;
-        currentRound = -1;
-        roundStartedElapsed = 0L;
+        // Window expired: an accepted match that never started was refunded
+        // by the server; a running match was forfeited. Mirror only the former.
+        if (this.matchId != null && this.currentRound < 0) {
+            refundEntryFeeIfNeeded();
+        }
+        clearMatchSnapshot();
         disconnectedAt = 0L;
         setState(STATE_DISCONNECTED);
     }
@@ -552,6 +574,9 @@ public class OnlineSession {
 
     /** Origin's manual START: releases round 1 once both seats pressed. */
     public void sendMatchStart() {
+        if (this.matchId != null) {
+            this.localMatchStartSent = true;
+        }
         send(OnlineMessages.T_MATCH_START, new Object());
     }
 
@@ -579,6 +604,7 @@ public class OnlineSession {
         }
         // Live HUD value: completed rounds total plus the running round score.
         this.myScore = this.myCompletedScore + totalScore;
+        notifyScoreChanged();
         LevelWin msg = new LevelWin();
         msg.round = currentRound;
         msg.level = level;
@@ -603,9 +629,10 @@ public class OnlineSession {
 
     /** Called when the player confirms leaving an online match (forfeit). */
     public void resign() {
-        if (matchId != null) {
+        if (this.matchId != null) {
+            this.resigningMatchId = this.matchId;
             this.resignRetries = RESIGN_RETRY_MAX;
-            sendResign();
+            sendResign(this.resigningMatchId);
         }
     }
 
@@ -615,18 +642,20 @@ public class OnlineSession {
      * server kept the duel running while the player sat on the scoreboard),
      * so the resign is re-sent until match_end confirms the settlement.
      */
-    private void sendResign() {
+    private void sendResign(final String targetMatchId) {
         OnlineClient c = client;
-        android.util.Log.d("OnlinePK", "sendResign matchId=" + matchId
+        android.util.Log.d("OnlinePK", "sendResign matchId=" + targetMatchId
                 + " connected=" + (c != null && c.isConnected())
                 + " retriesLeft=" + resignRetries);
         send(OnlineMessages.T_RESIGN, new Object());
         this.main.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (OnlineSession.this.matchId != null && !OnlineSession.this.matchEndSeen
+                if (targetMatchId.equals(OnlineSession.this.matchId)
+                        && targetMatchId.equals(OnlineSession.this.resigningMatchId)
+                        && !OnlineSession.this.matchEndSeen
                         && OnlineSession.this.resignRetries-- > 0) {
-                    sendResign();
+                    sendResign(targetMatchId);
                 }
             }
         }, RESIGN_RETRY_MS);
@@ -653,21 +682,9 @@ public class OnlineSession {
                 // window clock for any future drop.
                 this.disconnectedAt = 0L;
                 this.reconnectAttempt = 0;
-                if (this.pendingQueueRejoin && this.matchId == null) {
-                    this.pendingQueueRejoin = false;
-                    this.state = STATE_IDLE;
-                    startMatchmaking();
-                    return;
-                }
-                if (ok.entryFee > 0) {
-                    this.serverEntryFee = ok.entryFee;
-                }
-                if (ok.winCoins > 0) {
-                    this.serverWinCoins = ok.winCoins;
-                }
-                if (ok.drawCoins > 0) {
-                    this.serverDrawCoins = ok.drawCoins;
-                }
+                this.serverEntryFee = nonNegativeFieldOf(json, "entryFee", this.serverEntryFee);
+                this.serverWinCoins = nonNegativeFieldOf(json, "winCoins", this.serverWinCoins);
+                this.serverDrawCoins = nonNegativeFieldOf(json, "drawCoins", this.serverDrawCoins);
                 this.practiceStreak = ok.practiceStreak;
                 Runnable callback = this.profileCallback;
                 if (callback != null) {
@@ -678,12 +695,25 @@ public class OnlineSession {
                 }
                 OnlineIdentity.saveToken(appContext, tokenOf(json), ok.userId);
                 OnlineIdentity.setNickname(appContext, ok.nickname);
-                setState(STATE_IDLE);
+                boolean resumeMatch = this.matchId != null;
+                setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
+                if (resumeMatch && this.currentRound < 0) {
+                    if (this.localMatchStartSent) {
+                        send(OnlineMessages.T_MATCH_START, new Object());
+                    }
+                    long remaining = this.acceptDeadlineElapsed > 0L
+                            ? this.acceptDeadlineElapsed - SystemClock.elapsedRealtime() : 0L;
+                    armAcceptFallback(Math.max(POST_AUTH_MATCH_GRACE_MS, remaining));
+                }
                 if (listener != null) {
                     try {
                         listener.onAuthOk(ok);
                     } catch (RuntimeException ignored) {
                     }
+                }
+                if (this.pendingQueueRejoin && !resumeMatch) {
+                    this.pendingQueueRejoin = false;
+                    startMatchmaking();
                 }
             }
             return;
@@ -744,10 +774,17 @@ public class OnlineSession {
                 this.myCompletedScore = 0;
                 this.oppScore = 0;
                 this.roundReported = false;
+                this.matchEndSeen = false;
+                this.resigningMatchId = null;
+                this.localEntryFeeCharged = 0;
+                this.localMatchStartSent = false;
                 this.disconnectedAt = 0L;
                 if (!this.practiceMode) {
                     chargeEntryFee();
                 }
+                this.acceptDeadlineElapsed = SystemClock.elapsedRealtime()
+                        + MATCH_ACCEPT_FALLBACK_MS;
+                armAcceptFallback(MATCH_ACCEPT_FALLBACK_MS);
                 setState(STATE_MATCH);
                 if (listener != null) {
                     try {
@@ -759,13 +796,22 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_MATCH_CANCELLED.equals(type)) {
+            boolean cancelledAcceptedMatch = this.matchId != null;
+            String cancelledMode = this.practiceMode ? MODE_PRACTICE
+                    : this.friendMode ? MODE_FRIEND : MODE_RANKED;
+            cancelAcceptFallback();
+            if (cancelledAcceptedMatch) {
+                refundEntryFeeIfNeeded();
+            }
+            clearMatchSnapshot();
             this.friendRoomPending = false;
             this.practicePending = false;
+            cancelRoomAck();
             cancelQueuedWatchdog();
             setState(STATE_IDLE);
             if (listener != null) {
                 try {
-                    listener.onMatchCancelled();
+                    listener.onMatchCancelled(cancelledAcceptedMatch, cancelledMode);
                 } catch (RuntimeException ignored) {
                 }
             }
@@ -774,8 +820,13 @@ public class OnlineSession {
         if (OnlineMessages.T_ROUND_START.equals(type)) {
             RoundStart start = OnlineMessages.payloadOf(json, RoundStart.class);
             if (start != null) {
+                cancelAcceptFallback();
+                boolean resumeSameRound = this.currentRound == start.round
+                        && this.roundStartedElapsed > 0L;
                 this.currentRound = start.round;
-                this.roundStartedElapsed = SystemClock.elapsedRealtime();
+                if (!resumeSameRound) {
+                    this.roundStartedElapsed = SystemClock.elapsedRealtime();
+                }
                 if (start.durationMs > 0) {
                     this.serverRoundDurationMs = start.durationMs;
                 }
@@ -793,12 +844,7 @@ public class OnlineSession {
             OpponentScore score = OnlineMessages.payloadOf(json, OpponentScore.class);
             if (score != null) {
                 this.oppScore = score.score;
-                if (scoreListener != null) {
-                    try {
-                        scoreListener.onOpponentScore(score.score);
-                    } catch (RuntimeException ignored) {
-                    }
-                }
+                notifyScoreChanged();
                 if (listener != null) {
                     try {
                         listener.onOpponentScore(score);
@@ -814,6 +860,7 @@ public class OnlineSession {
                 this.myScore = end.myScore;
                 this.oppScore = end.oppScore;
                 this.myCompletedScore = end.myScore;
+                notifyScoreChanged();
                 if (listener != null) {
                     try {
                         listener.onRoundEnd(end);
@@ -824,6 +871,7 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_OPPONENT_START.equals(type)) {
+            cancelAcceptFallback();
             if (listener != null) {
                 try {
                     listener.onOpponentStart();
@@ -835,14 +883,19 @@ public class OnlineSession {
         if (OnlineMessages.T_MATCH_END.equals(type)) {
             MatchEnd end = OnlineMessages.payloadOf(json, MatchEnd.class);
             if (end != null) {
+                cancelAcceptFallback();
                 applySettlement(end);
                 this.matchEndSeen = true;
+                this.resigningMatchId = null;
                 refreshProfileRecord(end);
                 this.matchId = null;
                 this.friendMode = false;
                 this.practiceMode = false;
                 this.currentRound = -1;
                 this.roundStartedElapsed = 0L;
+                this.serverRoundDurationMs = 0L;
+                this.localEntryFeeCharged = 0;
+                this.localMatchStartSent = false;
                 this.disconnectedAt = 0L;
                 setState(STATE_IDLE);
                 if (listener != null) {
@@ -953,6 +1006,82 @@ public class OnlineSession {
         }
     }
 
+    private void notifyScoreChanged() {
+        ScoreListener scores = this.scoreListener;
+        if (scores != null) {
+            try {
+                scores.onScoreChanged(this.myScore, this.oppScore);
+            } catch (RuntimeException ignored) {
+            }
+        }
+    }
+
+    private void armAcceptFallback(long delayMs) {
+        if (this.acceptFallback != null) {
+            this.main.removeCallbacks(this.acceptFallback);
+            this.acceptFallback = null;
+        }
+        final String targetMatchId = this.matchId;
+        if (targetMatchId == null) {
+            return;
+        }
+        this.acceptFallback = new Runnable() {
+            @Override
+            public void run() {
+                OnlineSession.this.acceptFallback = null;
+                if (!targetMatchId.equals(OnlineSession.this.matchId)
+                        || OnlineSession.this.currentRound >= 0) {
+                    return;
+                }
+                OnlineClient active = OnlineSession.this.client;
+                if (active == null || !active.isConnected()) {
+                    return;
+                }
+                String mode = OnlineSession.this.practiceMode ? MODE_PRACTICE
+                        : OnlineSession.this.friendMode ? MODE_FRIEND : MODE_RANKED;
+                refundEntryFeeIfNeeded();
+                clearMatchSnapshot();
+                setState(STATE_IDLE);
+                MatchListener target = OnlineSession.this.listener;
+                if (target != null) {
+                    try {
+                        target.onMatchCancelled(true, mode);
+                    } catch (RuntimeException ignored) {
+                    }
+                }
+            }
+        };
+        this.main.postDelayed(this.acceptFallback, delayMs);
+    }
+
+    private void cancelAcceptFallback() {
+        if (this.acceptFallback != null) {
+            this.main.removeCallbacks(this.acceptFallback);
+            this.acceptFallback = null;
+        }
+        this.acceptDeadlineElapsed = 0L;
+    }
+
+    private void clearMatchSnapshot() {
+        cancelAcceptFallback();
+        this.matchId = null;
+        this.opponent = null;
+        this.rounds = null;
+        this.friendMode = false;
+        this.practiceMode = false;
+        this.currentRound = -1;
+        this.roundStartedElapsed = 0L;
+        this.serverRoundDurationMs = 0L;
+        this.myScore = 0;
+        this.myCompletedScore = 0;
+        this.oppScore = 0;
+        this.roundReported = false;
+        this.localEntryFeeCharged = 0;
+        this.localMatchStartSent = false;
+        this.resigningMatchId = null;
+        this.resignRetries = 0;
+    }
+
     /** MatchEnd carries the fresh season record; fold it into the cached
      * profile so the lobby's stats row reflects the settled match without
      * waiting for the next auth_ok. */
@@ -993,46 +1122,69 @@ public class OnlineSession {
         }
     }
 
-    /** Mirrors the server-side entry fee (-30) into the local coin ledger. */
+    /** Mirrors the live server entry fee into the local coin ledger. */
     private void chargeEntryFee() {
-        if (com.cube.memorygames.api.online.OnlineDebug.freeEconomy(this.appContext)) {
-            return; // debug free economy: no local mirroring, server books only
+        if (OnlineDebug.freeEconomy(this.appContext) || this.serverEntryFee <= 0) {
+            return;
         }
         try {
-            MemoryApplicationModel.getInstance().getLocalDataManager().chargeForOnline();
+            LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
+            if (!dm.getLocalUser().unlimitedOnline) {
+                dm.chargeForOnline(this.serverEntryFee);
+                this.localEntryFeeCharged = this.serverEntryFee;
+            }
         } catch (RuntimeException ignored) {
         }
     }
 
-    /** Mirrors the server-side settlement payout into the local coin ledger. */
+    /** Mirrors an accepted-match cancellation refund into the local ledger. */
+    private void refundEntryFeeIfNeeded() {
+        int charged = this.localEntryFeeCharged;
+        if (charged <= 0 || OnlineDebug.freeEconomy(this.appContext)) {
+            this.localEntryFeeCharged = 0;
+            return;
+        }
+        try {
+            MemoryApplicationModel.getInstance().getLocalDataManager()
+                    .refundForOnline(charged);
+        } catch (RuntimeException ignored) {
+        }
+        this.localEntryFeeCharged = 0;
+    }
+
+    /** Mirrors the authoritative settlement payout into the local coin ledger. */
     private void applySettlement(MatchEnd end) {
-        if (com.cube.memorygames.api.online.OnlineDebug.freeEconomy(this.appContext)) {
-            return; // debug free economy: no local mirroring, server books only
+        this.localEntryFeeCharged = 0;
+        if (OnlineDebug.freeEconomy(this.appContext)) {
+            return;
         }
         try {
             LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
-            if (isPracticeMode()) {
-                // Practice duels charge no entry fee; the payout is whatever
-                // the server booked (tier coins, 0 beyond the daily cap or
-                // on a loss) — mirror that value verbatim.
-                if (OnlineSession.RESULT_WIN.equals(end.result)) {
-                    dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, end.coinDelta);
-                } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {
-                    dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, end.coinDelta);
-                } else {
-                    dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, 0);
-                }
-                return;
-            }
             if (OnlineSession.RESULT_WIN.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, this.serverWinCoins);
+                dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, end.coinDelta);
             } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, this.serverDrawCoins);
+                dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, end.coinDelta);
             } else {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, 0);
+                dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, end.coinDelta);
             }
         } catch (RuntimeException ignored) {
         }
+    }
+
+    /** Reads a non-negative numeric payload field while tolerating older servers. */
+    private int nonNegativeFieldOf(String json, String field, int fallback) {
+        try {
+            com.google.gson.JsonObject root =
+                    new com.google.gson.JsonParser().parse(json).getAsJsonObject();
+            if (root.has("d") && root.get("d").isJsonObject()) {
+                com.google.gson.JsonObject d = root.get("d").getAsJsonObject();
+                if (d.has(field) && !d.get(field).isJsonNull()) {
+                    return Math.max(0, d.get(field).getAsInt());
+                }
+            }
+        } catch (RuntimeException ignored) {
+        }
+        return fallback;
     }
 
     /** The register/auth_ok token is echoed by the server inside the raw frame. */

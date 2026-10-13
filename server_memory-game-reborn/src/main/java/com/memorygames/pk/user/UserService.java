@@ -15,26 +15,36 @@ public class UserService {
     private static final int MAX_BALANCE = 100000;
 
     private final UserRepository repository;
+    private final CoinLedgerRepository ledger;
     private final PkProperties properties;
     private final Rating rating;
 
-    public UserService(UserRepository repository, PkProperties properties, Rating rating) {
+    public UserService(UserRepository repository, CoinLedgerRepository ledger,
+                       PkProperties properties, Rating rating) {
         this.repository = repository;
+        this.ledger = ledger;
         this.properties = properties;
         this.rating = rating;
     }
 
+    /**
+     * Guest registration. The balance a client claims is IGNORED (P1-3): a
+     * fresh account starts with the server-side welcome grant only, keeping
+     * the economy server-authoritative. Re-registering an existing UUID
+     * rotates the token — that is the guest-recovery path, so the gateway
+     * rate-limits registrations instead of requiring the old token.
+     */
     @Transactional
-    public UserAccount register(String uuid, String nickname, int importedBalance) {
+    public UserAccount register(String uuid, String nickname) {
         if (nickname == null || nickname.isBlank()) {
             nickname = "Player";
         }
         if (nickname.length() > 24) {
             nickname = nickname.substring(0, 24);
         }
-        int balance = Math.max(0, Math.min(importedBalance, MAX_BALANCE));
         UserAccount account = this.repository.findByUuid(uuid).orElse(null);
-        if (account == null) {
+        boolean isNew = account == null;
+        if (isNew) {
             account = new UserAccount();
             account.uuid = uuid;
             account.elo = this.properties.getRating().getInitialElo();
@@ -44,13 +54,17 @@ public class UserService {
             // Server-authoritative welcome grant on first registration; the
             // client no longer gifts itself coins (its grant could never
             // reach this balance and match_join would 402).
-            account.balance = Math.min(balance + this.properties.getEconomy().getWelcomeCoins(), MAX_BALANCE);
+            account.balance = Math.min(this.properties.getEconomy().getWelcomeCoins(), MAX_BALANCE);
             account.createdAt = System.currentTimeMillis();
         }
         account.nickname = nickname;
         account.token = UUID.randomUUID().toString().replace("-", "");
         account.updatedAt = System.currentTimeMillis();
-        return this.repository.save(account);
+        account = this.repository.save(account); // assigns the ledger's user id
+        if (isNew && account.balance > 0) {
+            writeLedger(account, null, account.balance, CoinLedger.REASON_WELCOME);
+        }
+        return account;
     }
 
     @Transactional(readOnly = true)
@@ -58,41 +72,27 @@ public class UserService {
         return this.repository.findByToken(token);
     }
 
+    /** Admin/manual balance grant or charge; never negative, capped. */
     @Transactional
-    public void chargeEntryFee(UserAccount account, int fee) {
-        account.balance = Math.max(0, account.balance - fee);
-        account.updatedAt = System.currentTimeMillis();
-        this.repository.save(account);
-    }
-
-    @Transactional
-    public void applySettlement(UserAccount account, int eloDelta, int coinDelta,
-                                boolean win, boolean draw, boolean practice) {
-        account.elo = Math.max(100, account.elo + eloDelta);
-        account.balance = Math.max(0, Math.min(account.balance + coinDelta, MAX_BALANCE));
-        if (win) {
-            account.wins++;
-        } else if (draw) {
-            account.draws++;
-        } else {
-            account.losses++;
-        }
-        if (practice) {
-            // The practice streak counts consecutive vs-bot wins only; ranked
-            // and friend results leave it untouched.
-            int streak = account.practiceStreak != null ? account.practiceStreak : 0;
-            account.practiceStreak = win ? streak + 1 : 0;
-        }
-        account.updatedAt = System.currentTimeMillis();
-        this.repository.save(account);
-    }
-
-    /** Admin balance grant/charge; never negative, capped as registrations. */
-    @Transactional
-    public UserAccount adjustBalance(UserAccount account, int delta) {
+    public UserAccount adjustBalance(UserAccount account, int delta, String reason) {
         account.balance = Math.max(0, Math.min(account.balance + delta, MAX_BALANCE));
         account.updatedAt = System.currentTimeMillis();
-        return this.repository.save(account);
+        UserAccount saved = this.repository.save(account);
+        writeLedger(account, null, delta, CoinLedger.REASON_ADMIN);
+        return saved;
+    }
+
+    private void writeLedger(UserAccount account, String matchId, int amount, String reason) {
+        if (amount == 0) {
+            return;
+        }
+        CoinLedger row = new CoinLedger();
+        row.userId = account.id;
+        row.matchId = matchId;
+        row.amount = amount;
+        row.reason = reason;
+        row.createdAt = System.currentTimeMillis();
+        this.ledger.save(row);
     }
 
     /** Admin ELO override. */
@@ -128,13 +128,6 @@ public class UserService {
         account.nickname = "deleted-" + account.id;
         account.updatedAt = System.currentTimeMillis();
         return this.repository.save(account);
-    }
-
-    /** Persists anti-cheat flag changes without touching match counters. */
-    @Transactional
-    public void saveFlags(UserAccount account) {
-        account.updatedAt = System.currentTimeMillis();
-        this.repository.save(account);
     }
 
     /** Top-20 leaderboard by ELO (TOP Online board). */

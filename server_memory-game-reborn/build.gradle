@@ -24,19 +24,37 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'org.flywaydb:flyway-core'
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.java-websocket:Java-WebSocket:1.5.7'
+    // Opt-in PostgreSQL integration tests: ./gradlew pgTest (needs Docker).
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:postgresql:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'docker'
+    }
     // The full-match integration test plays accelerated rounds through the
     // real WebSocket stack; give it room on slow CI machines.
     testLogging {
         events 'failed', 'skipped'
         exceptionFormat 'full'
     }
+}
+
+tasks.register('pgTest', Test) {
+    description = 'PostgreSQL-backed integration tests (requires Docker).'
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'docker'
+    }
+    shouldRunAfter tasks.named('test')
 }

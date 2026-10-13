@@ -132,7 +132,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             this.button3.setTypeface(typeFaceRoboto);
             this.button4.setTypeface(typeFaceRoboto);
             this.title.setTypeface(typeFaceRoboto, 2);
-            this.title.setText(Game5CountAllActivity.this.getString(R.string.game5_dialog_text) + " ");
+            this.title.setText(Game5CountAllActivity.this.getString(R.string.game5_dialog_text));
             this.panelPause.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     Game5CountAllActivity.this.soundClick();

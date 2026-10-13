@@ -84,7 +84,7 @@ public class AdminMatchController {
         boolean refund = body != null && Boolean.TRUE.equals(body.refund);
         boolean applied = room.adminSettle(refund);
         this.audit.record("MATCH_SETTLE", "id=" + id + " refund=" + refund,
-                AdminGuard.clientIp(request), applied ? "ok" : "error:already-settled");
+                this.guard.clientIp(request), applied ? "ok" : "error:already-settled");
         return ResponseEntity.ok(Map.of("applied", applied));
     }
 
@@ -100,7 +100,7 @@ public class AdminMatchController {
         }
         boolean applied = room.adminTerminate();
         this.audit.record("MATCH_TERMINATE", "id=" + id,
-                AdminGuard.clientIp(request), applied ? "ok" : "error:already-settled");
+                this.guard.clientIp(request), applied ? "ok" : "error:already-settled");
         return ResponseEntity.ok(Map.of("applied", applied, "voided", true));
     }
 }

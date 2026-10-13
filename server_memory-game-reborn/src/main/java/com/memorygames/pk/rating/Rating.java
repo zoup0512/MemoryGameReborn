@@ -18,8 +18,13 @@ public class Rating {
 
     /** Standard ELO delta for the player with rating a against b; s in {0,0.5,1}. */
     public int delta(int ratingA, int ratingB, double s) {
+        return delta(ratingA, ratingB, s, this.properties.getRating().getKFactor());
+    }
+
+    /** Same maths with an explicit K factor (per-match terms snapshot). */
+    public int delta(int ratingA, int ratingB, double s, int k) {
         double expected = 1.0 / (1.0 + Math.pow(10.0, (ratingB - ratingA) / 400.0));
-        return (int) Math.round(this.properties.getRating().getKFactor() * (s - expected));
+        return (int) Math.round(k * (s - expected));
     }
 
     public int rankIndex(int elo) {

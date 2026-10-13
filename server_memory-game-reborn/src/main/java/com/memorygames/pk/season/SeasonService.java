@@ -1,20 +1,24 @@
 package com.memorygames.pk.season;
 
 import com.memorygames.pk.config.PkProperties;
-import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Season lifecycle (PRD F-13): fixed-length ranked windows. When a season
- * expires, the next settle/boot call finalizes it and soft-resets every
+ * expires, the next settle/auth call finalizes it and soft-resets every
  * account's ELO halfway toward the initial value, then opens the next
  * season. Cheap and safe on a single instance; no cron needed.
+ *
+ * Rollover is race-proof (P2-3): the method serializes in-process, the
+ * finalize is a conditional UPDATE (the loser sees row count 0 and re-reads
+ * instead of resetting ELO twice), and the unique(activeFlag) constraint
+ * keeps exactly one active season even across instances.
  */
 @Service
 public class SeasonService {
@@ -24,11 +28,14 @@ public class SeasonService {
     private final SeasonRepository seasons;
     private final UserRepository users;
     private final PkProperties properties;
+    private final TransactionTemplate tx;
 
-    public SeasonService(SeasonRepository seasons, UserRepository users, PkProperties properties) {
+    public SeasonService(SeasonRepository seasons, UserRepository users,
+                         PkProperties properties, PlatformTransactionManager transactionManager) {
         this.seasons = seasons;
         this.users = users;
         this.properties = properties;
+        this.tx = new TransactionTemplate(transactionManager);
     }
 
     public static class Snapshot {
@@ -74,48 +81,64 @@ public class SeasonService {
     }
 
     /** Finalizes an expired season if needed and returns the active one. */
-    @Transactional
-    public Snapshot activeSeason() {
-        Season current = this.seasons.findFirstByFinalizedFalseOrderByStartAtDesc().orElse(null);
+    public synchronized Snapshot activeSeason() {
+        try {
+            Snapshot snapshot = this.tx.execute(status -> rolloverIfNeeded());
+            if (snapshot != null) {
+                return snapshot;
+            }
+        } catch (DataIntegrityViolationException raced) {
+            // Lost the unique(activeFlag) race against another instance; the
+            // winner's season (and reset, if any) stands.
+            log.info("season open lost a race; re-reading the winner");
+        }
+        Season winner = this.seasons.findFirstByActiveFlagOrderByIdDesc(1).orElse(null);
+        if (winner != null) {
+            return new Snapshot(winner.index, winner.endAt);
+        }
+        // Degenerate empty table (should not happen): open one more attempt
+        // inside a fresh transaction.
+        return this.tx.execute(status -> rolloverIfNeeded());
+    }
+
+    private Snapshot rolloverIfNeeded() {
+        Season current = this.seasons.findFirstByActiveFlagOrderByIdDesc(1).orElse(null);
         long now = System.currentTimeMillis();
         long duration = this.properties.getSeason().getDurationMs();
         if (current == null) {
             int nextIndex = this.seasons.findFirstByFinalizedTrueOrderByIndexDesc()
                     .map(s -> s.index + 1).orElse(1);
-            current = new Season();
-            current.index = nextIndex;
-            current.startAt = now;
-            current.endAt = now + duration;
-            current.finalized = false;
-            this.seasons.save(current);
+            current = open(nextIndex, now, duration);
             log.info("season {} opened ({} ms)", nextIndex, duration);
         } else if (now >= current.endAt) {
-            current.finalized = true;
-            this.seasons.save(current);
-            softResetAll();
-            Season next = new Season();
-            next.index = current.index + 1;
-            next.startAt = now;
-            next.endAt = now + duration;
-            next.finalized = false;
-            this.seasons.save(next);
-            log.info("season {} finalized; season {} opened with ELO soft reset",
-                    current.index, next.index);
+            int finalized = this.seasons.finalizeIfActive(current.id);
+            if (finalized == 0) {
+                // Another thread/instance already rolled this season over.
+                Season winner = this.seasons.findFirstByActiveFlagOrderByIdDesc(1).orElse(current);
+                return new Snapshot(winner.index, winner.endAt);
+            }
+            int reset = softResetAll(now);
+            Season next = open(current.index + 1, now, duration);
+            log.info("season {} finalized; season {} opened with ELO soft reset for {} accounts",
+                    current.index, next.index, reset);
             current = next;
         }
         return new Snapshot(current.index, current.endAt);
     }
 
+    private Season open(int index, long now, long duration) {
+        Season season = new Season();
+        season.index = index;
+        season.startAt = now;
+        season.endAt = now + duration;
+        season.finalized = false;
+        season.activeFlag = 1;
+        return this.seasons.saveAndFlush(season);
+    }
+
     /** ELO halves its distance to the initial rating; floors at 100. */
-    private void softResetAll() {
+    private int softResetAll(long now) {
         int initial = this.properties.getRating().getInitialElo();
-        List<UserAccount> all = this.users.findAll();
-        for (UserAccount account : all) {
-            int reset = initial + (account.elo - initial) / 2;
-            account.elo = Math.max(100, reset);
-            account.updatedAt = System.currentTimeMillis();
-        }
-        this.users.saveAll(all);
-        log.info("ELO soft reset applied to {} accounts", all.size());
+        return this.users.softResetElo(initial, now);
     }
 }

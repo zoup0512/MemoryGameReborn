@@ -90,7 +90,7 @@ public class AdminOpsController {
         this.metrics.adminOps.incrementAndGet();
         this.audit.record(enabled ? "MAINTENANCE_ON" : "MAINTENANCE_OFF",
                 "message=" + (body == null ? "" : body.message),
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(Map.of(
                 "maintenance", enabled,
                 "message", this.state.getMaintenanceMessage()));
@@ -115,7 +115,7 @@ public class AdminOpsController {
         context.getLogger(body.logger).setLevel(level);
         this.metrics.adminOps.incrementAndGet();
         this.audit.record("LOG_LEVEL", "logger=" + body.logger + " level=" + level,
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(Map.of("logger", body.logger, "level", level.toString()));
     }
 }

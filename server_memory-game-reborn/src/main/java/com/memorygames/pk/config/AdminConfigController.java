@@ -119,7 +119,7 @@ public class AdminConfigController {
         if (denied != null) {
             return denied;
         }
-        this.audit.record("CONFIG_PUT", body.toString(), AdminGuard.clientIp(request), "ok");
+        this.audit.record("CONFIG_PUT", body.toString(), this.guard.clientIp(request), "ok");
         StringBuilder audit = new StringBuilder("runtime config change:");
         if (body.roundDurationOverrideMs != null) {
             long value = clamp(body.roundDurationOverrideMs, MIN_ROUND_MS, MAX_ROUND_MS);
@@ -217,7 +217,7 @@ public class AdminConfigController {
             }
         }
         log.info("{}", audit);
-        this.audit.record("CONFIG_APPLIED", audit.toString(), AdminGuard.clientIp(request), "ok");
+        this.audit.record("CONFIG_APPLIED", audit.toString(), this.guard.clientIp(request), "ok");
         return get(request);
     }
 

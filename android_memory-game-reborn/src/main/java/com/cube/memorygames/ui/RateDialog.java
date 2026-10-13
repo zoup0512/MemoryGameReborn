@@ -31,7 +31,7 @@ public class RateDialog extends Dialog {
         this.title.setTypeface(typeFaceRobotoRegular);
         this.buttonNo.setTypeface(typeFaceRobotoRegular);
         this.buttonYes.setTypeface(typeFaceRobotoRegular);
-        String titleWithAppName = context.getString(titleText) + " " + context.getString(R.string.app_name) + "?";
+        String titleWithAppName = context.getString(R.string.rate_dialog_title_format, context.getString(titleText), context.getString(R.string.app_name));
         this.lionImage.setImageResource(lionImageRes);
         this.buttonNo.setText(buttonNoText);
         this.buttonYes.setText(buttonYesText);

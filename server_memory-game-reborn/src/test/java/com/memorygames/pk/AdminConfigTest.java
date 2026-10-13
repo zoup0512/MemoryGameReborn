@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "pk.admin-token=test-admin",
-        "pk.economy.welcome-coins=0",
+        "pk.economy.welcome-coins=50",
 })
 class AdminConfigTest {
 

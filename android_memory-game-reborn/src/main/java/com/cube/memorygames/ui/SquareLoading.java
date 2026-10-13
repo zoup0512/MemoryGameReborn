@@ -53,6 +53,25 @@ public class SquareLoading extends ViewGroup {
         init(context, attrs);
     }
 
+    /** Configures instances created from Java, where no XML attributes exist. */
+    public void configure(int squareColor, int squareSize, int squareCorner,
+                          int dividerSize, int xCount, int yCount) {
+        cancelAnims(this.startAnims);
+        cancelAnims(this.reverseAnims);
+        this.mSquareColor = squareColor;
+        this.mSquareSize = squareSize;
+        this.mSquareCorner = squareCorner;
+        this.mDividerSize = dividerSize;
+        this.mXCount = Math.max(2, Math.min(6, xCount));
+        this.mYCount = Math.max(2, Math.min(6, yCount));
+        this.mFirstIndex = this.mXCount * (this.mYCount - 1);
+        this.mLastIndex = this.mXCount - 1;
+        removeViewsIfNeeded();
+        initSquare(getContext());
+        initAnim();
+        requestLayout();
+    }
+
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
     }
 

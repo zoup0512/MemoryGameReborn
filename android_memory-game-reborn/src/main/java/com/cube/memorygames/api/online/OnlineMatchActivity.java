@@ -7,13 +7,11 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -66,7 +64,6 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private static final long PULSE_INTERVAL_MS = 400L;
     private static final long PULSE_STEP_MS = 200L;
 
-    private Typeface fontLight;
     // Top bar (activity_play_online.xml).
     private TextView coinsView;
     // VS header (fragment_header.xml).
@@ -75,10 +72,14 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private TextView myNameView;
     private TextView oppNameView;
     private ImageView boltView;
+    private TextView modeChip;
+    private int matchModeLabel = R.string.online_mode_ranked;
     private final View[] pulseCircles = new View[3];
     private int pulsePosition;
     // Board container and the boards swapped inside it.
     private FrameLayout content;
+    private LinearLayout reconnectBar;
+    private TextView reconnectText;
     private LinearLayout searchBoard;
     private LinearLayout matchBoard;
     private LinearLayout statsBoard;
@@ -118,7 +119,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private LinearLayout ratingRow;
     private TextView ratingDelta;
     private TextView ratingTotal;
-    private Button okButton;
+    private TextView resultSubtitle;
+    private TextView okButton;
     // Bottom bar (activity_play_online.xml buttonsContainer).
     private LinearLayout bottomBar;
     private TextView bottomButton;
@@ -165,7 +167,6 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         OnlineSession.get().init(getApplicationContext());
-        this.fontLight = Typeface.createFromAsset(getAssets(), "Roboto-Light.ttf");
         setContentView(buildView());
         OnlineSession.get().setMatchListener(this);
         if (OnlineSession.get().isInMatch()) {
@@ -227,23 +228,30 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private View buildView() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(ContextCompat.getColor(this, R.color.background));
+        root.setBackgroundColor(OnlineUi.color(this, R.color.online_page));
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         root.addView(buildTopBar(), new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(45)));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                OnlineUi.dim(this, R.dimen.online_toolbar_height)));
 
         root.addView(buildVsHeader(), new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        this.reconnectBar = buildReconnectBar();
+        this.reconnectBar.setVisibility(View.GONE);
+        root.addView(this.reconnectBar, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         this.content = new FrameLayout(this);
+        this.content.setBackgroundColor(OnlineUi.color(this, R.color.online_page));
         this.content.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
         root.addView(this.content);
 
         View divider = new View(this);
-        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.grid_stroke));
+        divider.setBackgroundColor(OnlineUi.color(this, R.color.online_divider));
         root.addView(divider, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 1));
 
@@ -259,97 +267,112 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         return root;
     }
 
-    /** activity_play_online.xml's panel_header: back, title, coin count. */
+    /** Modern toolbar with a compact, tappable-looking coin balance chip. */
     private View buildTopBar() {
-        LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackgroundColor(Color.WHITE);
-        bar.setPadding(0, 0, dp(15), 0);
+        OnlineUi.ToolbarBlock toolbar = OnlineUi.toolbar(this, R.string.tab_online,
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        onBackPressed();
+                    }
+                });
 
-        ImageView back = new ImageView(this);
-        back.setImageResource(R.drawable.ic_arrow_back_white);
-        back.setColorFilter(Color.BLACK);
-        back.setPadding(dp(8), dp(8), dp(8), dp(8));
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });
-        LinearLayout.LayoutParams backParams = new LinearLayout.LayoutParams(dp(45), dp(45));
-        backParams.leftMargin = dp(8);
-        backParams.rightMargin = dp(8);
-        bar.addView(back, backParams);
-
-        TextView title = new TextView(this);
-        title.setText(R.string.tab_online);
-        title.setTypeface(this.fontLight);
-        title.setTextSize(20.0f);
-        title.setTextColor(Color.BLACK);
-        title.setGravity(Gravity.CENTER_VERTICAL);
-        bar.addView(title, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        TextView spacer = new TextView(this);
-        bar.addView(spacer, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
-
-        this.coinsView = new TextView(this);
-        this.coinsView.setTypeface(this.fontLight, Typeface.BOLD);
-        this.coinsView.setTextSize(20.0f);
-        this.coinsView.setTextColor(Color.BLACK);
-        this.coinsView.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
-        this.coinsView.setPadding(dp(4), 0, dp(4), 0);
-        bar.addView(this.coinsView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout coinChip = new LinearLayout(this);
+        coinChip.setOrientation(LinearLayout.HORIZONTAL);
+        coinChip.setGravity(Gravity.CENTER);
+        coinChip.setBackgroundResource(R.drawable.online_chip_background);
+        coinChip.setPadding(dp(10), 0, dp(12), 0);
+        coinChip.setMinimumHeight(OnlineUi.dim(this, R.dimen.online_chip_height));
 
         ImageView coin = new ImageView(this);
         coin.setImageResource(R.drawable.ic_coin);
-        coin.setPadding(dp(11), dp(11), dp(11), dp(11));
-        bar.addView(coin, new LinearLayout.LayoutParams(dp(45), dp(45)));
+        LinearLayout.LayoutParams coinParams = new LinearLayout.LayoutParams(dp(20), dp(20));
+        coinParams.rightMargin = dp(6);
+        coinChip.addView(coin, coinParams);
 
+        this.coinsView = OnlineUi.text(this, "", 14.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
+        this.coinsView.setGravity(Gravity.CENTER_VERTICAL);
+        this.coinsView.setSingleLine(true);
+        coinChip.addView(this.coinsView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        toolbar.actions.addView(coinChip, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         refreshCoins();
+        return toolbar.view;
+    }
+
+    /** Persistent in-match connectivity notice; hidden again on reconnect. */
+    private LinearLayout buildReconnectBar() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER);
+        bar.setBackgroundColor(OnlineUi.color(this, R.color.online_warning_soft));
+        bar.setPadding(dp(16), dp(9), dp(16), dp(9));
+
+        View dot = new View(this);
+        dot.setBackground(OnlineUi.roundedBackground(this, R.color.online_warning, 20));
+        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(8), dp(8));
+        dotParams.rightMargin = dp(8);
+        bar.addView(dot, dotParams);
+
+        this.reconnectText = OnlineUi.text(this,
+                getString(R.string.online_opponent_reconnecting), 13.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
+        this.reconnectText.setGravity(Gravity.CENTER);
+        bar.addView(this.reconnectText, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return bar;
     }
 
-    /**
-     * fragment_header.xml: my avatar left, the pulse/bolt slot in the middle,
-     * the opponent right; 18sp names under each side.
-     */
+    /** Symmetric player header shared by search, ready, play and result states. */
     private View buildVsHeader() {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+        header.setBackgroundColor(OnlineUi.color(this, R.color.online_surface));
+        header.setPadding(OnlineUi.dim(this, R.dimen.online_page_padding), dp(14),
+                OnlineUi.dim(this, R.dimen.online_page_padding), dp(14));
 
-        LinearLayout avatars = new LinearLayout(this);
-        avatars.setOrientation(LinearLayout.HORIZONTAL);
-        avatars.setBaselineAligned(false);
-        LinearLayout.LayoutParams avatarsParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(100));
-        avatarsParams.topMargin = dp(10);
-        header.addView(avatars, avatarsParams);
-
-        this.myAvatar = OnlineUi.avatar(this, 100, true);
-        LinearLayout.LayoutParams myParams = new LinearLayout.LayoutParams(
+        this.modeChip = OnlineUi.chip(this, getString(R.string.online_mode_ranked));
+        LinearLayout.LayoutParams modeParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        myParams.leftMargin = dp(25);
-        myParams.topMargin = dp(12);
-        avatars.addView(this.myAvatar.view, myParams);
+        modeParams.gravity = Gravity.CENTER_HORIZONTAL;
+        modeParams.bottomMargin = dp(12);
+        header.addView(this.modeChip, modeParams);
+
+        LinearLayout players = new LinearLayout(this);
+        players.setOrientation(LinearLayout.HORIZONTAL);
+        players.setGravity(Gravity.CENTER_VERTICAL);
+        players.setBaselineAligned(false);
+        header.addView(players, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout mySide = playerHeaderSide();
+        this.myAvatar = OnlineUi.avatar(this, 76, true);
+        mySide.addView(this.myAvatar.view, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        this.myNameView = headerName();
+        mySide.addView(this.myNameView, playerNameParams());
+        players.addView(mySide, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
         FrameLayout middle = new FrameLayout(this);
         LinearLayout middleRow = new LinearLayout(this);
         middleRow.setOrientation(LinearLayout.HORIZONTAL);
         int[] weights = {30, 40, 60};
-        int[] sizes = {16, 24, 32};
+        int[] sizes = {12, 18, 24};
         for (int i = 0; i < this.pulseCircles.length; i++) {
             FrameLayout slot = new FrameLayout(this);
             View circle = new View(this);
             circle.setBackgroundResource(R.drawable.online_mode_anim_background);
             circle.setVisibility(View.INVISIBLE);
-            FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams(dp(sizes[i]), dp(sizes[i]), Gravity.CENTER);
-            slot.addView(circle, circleParams);
+            slot.addView(circle, new FrameLayout.LayoutParams(
+                    dp(sizes[i]), dp(sizes[i]), Gravity.CENTER));
             this.pulseCircles[i] = circle;
-            LinearLayout.LayoutParams slotParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weights[i]);
-            middleRow.addView(slot, slotParams);
+            middleRow.addView(slot, new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.MATCH_PARENT, weights[i]));
         }
         middle.addView(middleRow, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -357,66 +380,104 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.boltView = new ImageView(this);
         this.boltView.setImageResource(R.drawable.ic_versus);
         this.boltView.setVisibility(View.GONE);
-        FrameLayout.LayoutParams boltParams = new FrameLayout.LayoutParams(dp(96), dp(96), Gravity.CENTER);
-        middle.addView(this.boltView, boltParams);
-        avatars.addView(middle, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
+        this.boltView.setContentDescription(getString(R.string.online_vs));
+        middle.addView(this.boltView, new FrameLayout.LayoutParams(
+                dp(70), dp(70), Gravity.CENTER));
+        players.addView(middle, new LinearLayout.LayoutParams(
+                dp(88), dp(96)));
 
-        this.oppAvatar = OnlineUi.avatar(this, 100, true);
-        LinearLayout.LayoutParams oppParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        oppParams.rightMargin = dp(25);
-        oppParams.topMargin = dp(12);
-        avatars.addView(this.oppAvatar.view, oppParams);
-
-        LinearLayout names = new LinearLayout(this);
-        names.setOrientation(LinearLayout.HORIZONTAL);
-        this.myNameView = headerName();
-        names.addView(this.myNameView, new LinearLayout.LayoutParams(dp(150), ViewGroup.LayoutParams.WRAP_CONTENT));
-        names.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1.0f));
+        LinearLayout opponentSide = playerHeaderSide();
+        this.oppAvatar = OnlineUi.avatar(this, 76, true);
+        opponentSide.addView(this.oppAvatar.view, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         this.oppNameView = headerName();
-        names.addView(this.oppNameView, new LinearLayout.LayoutParams(dp(150), ViewGroup.LayoutParams.WRAP_CONTENT));
-        LinearLayout.LayoutParams namesParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        header.addView(names, namesParams);
+        opponentSide.addView(this.oppNameView, playerNameParams());
+        players.addView(opponentSide, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        View divider = OnlineUi.divider(this);
+        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        dividerParams.topMargin = dp(14);
+        header.addView(divider, dividerParams);
         return header;
     }
 
+    private LinearLayout playerHeaderSide() {
+        LinearLayout side = new LinearLayout(this);
+        side.setOrientation(LinearLayout.VERTICAL);
+        side.setGravity(Gravity.CENTER_HORIZONTAL);
+        return side;
+    }
+
+    private LinearLayout.LayoutParams playerNameParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(9);
+        return params;
+    }
+
     private TextView headerName() {
-        TextView name = new TextView(this);
-        name.setTypeface(this.fontLight);
-        name.setTextSize(18.0f);
-        name.setTextColor(Color.BLACK);
+        TextView name = OnlineUi.text(this, "", 15.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
         name.setGravity(Gravity.CENTER_HORIZONTAL);
+        name.setSingleLine(true);
         name.setMaxLines(1);
-        name.setPadding(0, dp(10), 0, dp(4));
         return name;
     }
 
-    /** fragment_search.xml: the centred searching message plus a hint line. */
+    /** Search state with the legacy automation label retained verbatim. */
     private LinearLayout buildSearchBoard() {
-        LinearLayout board = new LinearLayout(this);
-        board.setOrientation(LinearLayout.VERTICAL);
-        board.setGravity(Gravity.CENTER);
-        board.setPadding(dp(24), 0, dp(24), 0);
+        LinearLayout board = OnlineUi.emphasisCard(this);
+        board.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        this.searchMessage = new TextView(this);
-        this.searchMessage.setTypeface(this.fontLight);
-        this.searchMessage.setTextSize(18.0f);
-        this.searchMessage.setTextColor(Color.BLACK);
+        TextView eyebrow = OnlineUi.text(this, getString(R.string.online_search_title), 13.0f,
+                R.color.online_primary, OnlineUi.bold(this));
+        eyebrow.setGravity(Gravity.CENTER);
+        board.addView(eyebrow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        this.searchMessage = OnlineUi.text(this,
+                getString(R.string.searching_for_opponents), 24.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
         this.searchMessage.setGravity(Gravity.CENTER);
-        this.searchMessage.setText(R.string.searching_for_opponents);
-        board.addView(this.searchMessage, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams messageParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        messageParams.topMargin = dp(10);
+        board.addView(this.searchMessage, messageParams);
 
-        this.searchHint = new TextView(this);
-        this.searchHint.setTypeface(this.fontLight);
-        this.searchHint.setTextSize(15.0f);
-        this.searchHint.setTextColor(ContextCompat.getColor(this, R.color.onlineTextHint));
+        LinearLayout pulseLine = new LinearLayout(this);
+        pulseLine.setGravity(Gravity.CENTER);
+        for (int i = 0; i < 3; i++) {
+            View dot = new View(this);
+            dot.setBackground(OnlineUi.roundedBackground(this, R.color.online_primary, 20));
+            LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(7), dp(7));
+            dotParams.leftMargin = dp(4);
+            dotParams.rightMargin = dp(4);
+            pulseLine.addView(dot, dotParams);
+        }
+        LinearLayout.LayoutParams pulseParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pulseParams.topMargin = dp(14);
+        board.addView(pulseLine, pulseParams);
+
+        this.searchHint = OnlineUi.text(this,
+                getString(R.string.online_search_hint), 15.0f,
+                R.color.online_text_secondary, OnlineUi.regular(this));
         this.searchHint.setGravity(Gravity.CENTER);
-        this.searchHint.setPadding(0, dp(16), 0, 0);
-        this.searchHint.setText(android.text.Html.fromHtml(getString(R.string.online_tutorial_1)));
-        board.addView(this.searchHint, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        hintParams.topMargin = dp(14);
+        board.addView(this.searchHint, hintParams);
+
+        TextView stakeHint = OnlineUi.text(this,
+                android.text.Html.fromHtml(getString(R.string.online_tutorial_1)), 13.0f,
+                R.color.online_text_secondary, OnlineUi.regular(this));
+        stakeHint.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams stakeParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        stakeParams.topMargin = dp(8);
+        board.addView(stakeHint, stakeParams);
         return board;
     }
 
@@ -426,17 +487,35 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      * the two BETS coins carrying the live entry fee.
      */
     private LinearLayout buildStatsBoard() {
-        LinearLayout board = new LinearLayout(this);
-        board.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout board = OnlineUi.card(this);
+        board.setGravity(Gravity.CENTER_HORIZONTAL);
 
         java.util.List<View> fade = new java.util.ArrayList<View>();
-        TextView statsTitle = new TextView(this);
-        statsTitle.setTypeface(this.fontLight, Typeface.BOLD);
-        statsTitle.setTextSize(20.0f);
-        statsTitle.setTextColor(Color.BLACK);
+        TextView readyTitle = OnlineUi.text(this,
+                getString(R.string.online_match_ready_title), 24.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
+        readyTitle.setGravity(Gravity.CENTER);
+        board.addView(readyTitle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        fade.add(readyTitle);
+
+        TextView readySubtitle = OnlineUi.body(this, R.string.online_match_ready_subtitle);
+        readySubtitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        subtitleParams.topMargin = dp(6);
+        board.addView(readySubtitle, subtitleParams);
+        fade.add(readySubtitle);
+
+        View upperDivider = OnlineUi.divider(this);
+        LinearLayout.LayoutParams upperDividerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        upperDividerParams.topMargin = dp(16);
+        upperDividerParams.bottomMargin = dp(12);
+        board.addView(upperDivider, upperDividerParams);
+
+        TextView statsTitle = OnlineUi.sectionTitle(this, R.string.stats);
         statsTitle.setGravity(Gravity.CENTER);
-        statsTitle.setText(R.string.stats);
-        statsTitle.setPadding(0, dp(8), 0, dp(8));
         board.addView(statsTitle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         fade.add(statsTitle);
@@ -455,26 +534,39 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         fade.add(addStatsRow(board, ratio(myWins, myWins + myLosses + myDraws),
                 R.string.online_title_ratio, ratio(oppWins, oppWins + oppLosses + oppDraws)));
 
-        TextView betsTitle = new TextView(this);
-        betsTitle.setTypeface(this.fontLight, Typeface.BOLD);
-        betsTitle.setTextSize(20.0f);
-        betsTitle.setTextColor(Color.BLACK);
+        View lowerDivider = OnlineUi.divider(this);
+        LinearLayout.LayoutParams lowerDividerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        lowerDividerParams.topMargin = dp(14);
+        lowerDividerParams.bottomMargin = dp(14);
+        board.addView(lowerDivider, lowerDividerParams);
+
+        TextView betsTitle = OnlineUi.text(this,
+                getString(R.string.online_stake_title), 14.0f,
+                R.color.online_text_secondary, OnlineUi.medium(this));
         betsTitle.setGravity(Gravity.CENTER);
-        betsTitle.setText(R.string.bets);
-        betsTitle.setPadding(0, dp(16), 0, dp(8));
         board.addView(betsTitle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         fade.add(betsTitle);
 
         LinearLayout betsRow = new LinearLayout(this);
         betsRow.setGravity(Gravity.CENTER);
-        // Practice duels are free: showing the ranked entry fee would imply
-        // a stake the match never charges.
         int fee = OnlineSession.get().isPracticeMode() ? 0 : OnlineSession.get().getServerEntryFee();
-        betsRow.addView(coinBadge(fee));
-        betsRow.addView(coinBadge(fee));
-        board.addView(betsRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (fee == 0) {
+            TextView free = OnlineUi.chip(this, getString(R.string.online_free_match));
+            betsRow.addView(free);
+        } else {
+            betsRow.addView(coinBadge(fee));
+            TextView versus = OnlineUi.text(this, getString(R.string.online_vs), 12.0f,
+                    R.color.online_text_secondary, OnlineUi.bold(this));
+            versus.setGravity(Gravity.CENTER);
+            betsRow.addView(versus, new LinearLayout.LayoutParams(dp(44), dp(38)));
+            betsRow.addView(coinBadge(fee));
+        }
+        LinearLayout.LayoutParams betsParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        betsParams.topMargin = dp(8);
+        board.addView(betsRow, betsParams);
         fade.add(betsRow);
         this.statsFadeViews = fade;
         return board;
@@ -484,26 +576,25 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private View addStatsRow(LinearLayout parent, int mine, int titleRes, int theirs) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.addView(statsCell(String.valueOf(mine)), new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.33f));
-        TextView title = statsCell(getString(titleRes));
-        title.setTypeface(this.fontLight, Typeface.BOLD);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(7), 0, dp(7));
+        row.addView(statsCell(String.valueOf(mine), true), new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.28f));
+        TextView title = statsCell(getString(titleRes), false);
         row.addView(title, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.34f));
-        row.addView(statsCell(String.valueOf(theirs)), new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.33f));
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.44f));
+        row.addView(statsCell(String.valueOf(theirs), true), new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.28f));
         parent.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return row;
     }
 
-    private TextView statsCell(String text) {
-        TextView cell = new TextView(this);
-        cell.setTypeface(this.fontLight);
-        cell.setTextSize(18.0f);
-        cell.setTextColor(ContextCompat.getColor(this, R.color.onlineStatsColor));
+    private TextView statsCell(String text, boolean value) {
+        TextView cell = OnlineUi.text(this, text, value ? 20.0f : 14.0f,
+                value ? R.color.online_accent : R.color.online_text_secondary,
+                value ? OnlineUi.medium(this) : OnlineUi.regular(this));
         cell.setGravity(Gravity.CENTER);
-        cell.setText(text);
         return cell;
     }
 
@@ -511,142 +602,144 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         return total == 0 ? 0 : Math.round(wins * 100.0f / total);
     }
 
-    /** fragment_online_stats.xml's ic_coin badge showing the entry fee. */
+    /** Entry-fee coin badge used on both sides of the matchup. */
     private TextView coinBadge(int fee) {
-        TextView badge = new TextView(this);
-        badge.setTypeface(this.fontLight);
-        badge.setTextSize(14.0f);
-        badge.setTextColor(Color.WHITE);
+        TextView badge = OnlineUi.text(this, String.valueOf(fee), 13.0f,
+                R.color.online_text_primary, OnlineUi.bold(this));
         badge.setBackgroundResource(R.drawable.ic_coin);
         badge.setGravity(Gravity.CENTER);
-        badge.setText(String.valueOf(fee));
+        badge.setContentDescription(String.format(Locale.US,
+                getString(R.string.online_entry_fee), fee));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(38), dp(38));
-        params.leftMargin = dp(16);
-        params.rightMargin = dp(16);
         badge.setLayoutParams(params);
         return badge;
     }
 
-    /** Round line + live score + the 3-2-1 launch countdown. */
+    /** Round line, live score and the 3-2-1 launch countdown. */
     private LinearLayout buildMatchBoard() {
-        LinearLayout board = new LinearLayout(this);
-        board.setOrientation(LinearLayout.VERTICAL);
-        board.setGravity(Gravity.CENTER);
+        LinearLayout board = OnlineUi.emphasisCard(this);
+        board.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        this.statusView = new TextView(this);
-        this.statusView.setTypeface(this.fontLight, Typeface.BOLD);
-        this.statusView.setTextSize(25.0f);
-        this.statusView.setTextColor(ContextCompat.getColor(this, R.color.grid_correct));
+        this.statusView = OnlineUi.text(this, "", 48.0f,
+                R.color.online_primary, OnlineUi.bold(this));
         this.statusView.setGravity(Gravity.CENTER);
         board.addView(this.statusView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        this.detailView = new TextView(this);
-        this.detailView.setTypeface(this.fontLight);
-        this.detailView.setTextSize(16.0f);
-        this.detailView.setTextColor(Color.BLACK);
+        this.detailView = OnlineUi.text(this, "", 16.0f,
+                R.color.online_text_secondary, OnlineUi.medium(this));
         this.detailView.setGravity(Gravity.CENTER);
-        this.detailView.setPadding(0, dp(8), 0, 0);
-        board.addView(this.detailView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        detailParams.topMargin = dp(4);
+        board.addView(this.detailView, detailParams);
 
-        this.scoreView = new TextView(this);
-        this.scoreView.setTypeface(this.fontLight, Typeface.BOLD);
-        this.scoreView.setTextSize(34.0f);
-        this.scoreView.setTextColor(Color.BLACK);
+        this.scoreView = OnlineUi.text(this, "", 32.0f,
+                R.color.online_text_primary, OnlineUi.bold(this));
         this.scoreView.setGravity(Gravity.CENTER);
-        this.scoreView.setPadding(0, dp(10), 0, 0);
-        board.addView(this.scoreView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        this.scoreView.setBackgroundResource(R.drawable.online_score_pill);
+        this.scoreView.setPadding(dp(22), dp(8), dp(22), dp(8));
+        LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scoreParams.gravity = Gravity.CENTER_HORIZONTAL;
+        scoreParams.topMargin = dp(18);
+        board.addView(this.scoreView, scoreParams);
         return board;
     }
 
-    /**
-     * The waiting board as the original progress dialog: button_pro_normal
-     * card, bold grid_correct title, a 16sp line and the 100dip TimerView.
-     */
+    /** Accept-gate waiting state with the original visible labels intact. */
     private LinearLayout buildWaitingCard() {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout card = OnlineUi.emphasisCard(this);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setBackgroundResource(R.drawable.button_pro_normal);
-        card.setPadding(0, dp(8), 0, dp(16));
 
-        this.waitingTitle = new TextView(this);
-        this.waitingTitle.setTypeface(this.fontLight, Typeface.BOLD);
-        this.waitingTitle.setTextSize(20.0f);
-        this.waitingTitle.setTextColor(ContextCompat.getColor(this, R.color.grid_correct));
+        this.waitingTitle = OnlineUi.text(this,
+                getString(R.string.opponent_waiting), 24.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
         this.waitingTitle.setGravity(Gravity.CENTER);
-        this.waitingTitle.setText(R.string.opponent_waiting);
         card.addView(this.waitingTitle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        this.waitingLine = new TextView(this);
-        this.waitingLine.setTypeface(this.fontLight);
-        this.waitingLine.setTextSize(16.0f);
-        this.waitingLine.setTextColor(Color.BLACK);
+        this.waitingLine = OnlineUi.body(this, R.string.online_waiting_subtitle);
         this.waitingLine.setGravity(Gravity.CENTER);
-        this.waitingLine.setPadding(dp(16), dp(24), dp(16), 0);
-        card.addView(this.waitingLine, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams lineParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lineParams.topMargin = dp(8);
+        card.addView(this.waitingLine, lineParams);
 
         this.timerView = new TimerView(this);
-        LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(dp(100), dp(100));
-        timerParams.topMargin = dp(40);
-        timerParams.bottomMargin = dp(40);
+        LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(dp(112), dp(112));
+        timerParams.topMargin = dp(24);
+        timerParams.bottomMargin = dp(8);
         timerParams.gravity = Gravity.CENTER_HORIZONTAL;
         card.addView(this.timerView, timerParams);
         return card;
     }
 
-    /**
-     * dialog_online_result.xml as a board: 300dip white cell, 25sp
-     * grid_correct title, 110dip doodle, coin and crown rows, OK action.
-     */
+    /** Final settlement card with prominent result and reward hierarchy. */
     private LinearLayout buildSettlementCard() {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout card = OnlineUi.card(this);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setBackgroundResource(R.drawable.drawable_state_cell_empty);
-        card.setPadding(0, 0, 0, dp(16));
 
-        this.titleView = new TextView(this);
-        this.titleView.setTypeface(this.fontLight);
-        this.titleView.setTextSize(25.0f);
-        this.titleView.setTextColor(ContextCompat.getColor(this, R.color.grid_correct));
-        this.titleView.setGravity(Gravity.CENTER);
-        this.titleView.setPadding(dp(16), dp(16), dp(16), dp(16));
-        card.addView(this.titleView, new LinearLayout.LayoutParams(
+        TextView complete = OnlineUi.text(this,
+                getString(R.string.online_match_complete), 12.0f,
+                R.color.online_primary, OnlineUi.bold(this));
+        complete.setGravity(Gravity.CENTER);
+        card.addView(complete, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        this.titleView = OnlineUi.text(this, "", 28.0f,
+                R.color.online_text_primary, OnlineUi.bold(this));
+        this.titleView.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        titleParams.topMargin = dp(5);
+        card.addView(this.titleView, titleParams);
+
+        this.resultSubtitle = OnlineUi.text(this, "", 15.0f,
+                R.color.online_text_secondary, OnlineUi.regular(this));
+        this.resultSubtitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams resultSubtitleParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        resultSubtitleParams.topMargin = dp(6);
+        card.addView(this.resultSubtitle, resultSubtitleParams);
+
         this.doodleView = new ImageView(this);
-        LinearLayout.LayoutParams doodleParams = new LinearLayout.LayoutParams(dp(110), dp(110));
-        doodleParams.topMargin = dp(24);
+        this.doodleView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        LinearLayout.LayoutParams doodleParams = new LinearLayout.LayoutParams(
+                OnlineUi.dim(this, R.dimen.online_hero_art_size),
+                OnlineUi.dim(this, R.dimen.online_hero_art_size));
+        doodleParams.topMargin = dp(12);
         doodleParams.gravity = Gravity.CENTER_HORIZONTAL;
         card.addView(this.doodleView, doodleParams);
 
-        // Coin row (+15 [coin] 1298) — dialog_online_result.xml parity.
+        LinearLayout rewards = new LinearLayout(this);
+        rewards.setOrientation(LinearLayout.HORIZONTAL);
+        rewards.setBaselineAligned(false);
+        LinearLayout.LayoutParams rewardsParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rewardsParams.topMargin = dp(14);
+        card.addView(rewards, rewardsParams);
+
+        LinearLayout coinReward = rewardColumn(R.string.online_reward_coins);
         this.coinRow = new LinearLayout(this);
         this.coinRow.setGravity(Gravity.CENTER);
-        this.coinRow.setPadding(dp(16), dp(8), dp(16), dp(8));
         this.coinDelta = styledRowText();
         this.coinRow.addView(this.coinDelta);
         ImageView coin = new ImageView(this);
         coin.setImageResource(R.drawable.ic_coin);
         LinearLayout.LayoutParams coinParams = new LinearLayout.LayoutParams(dp(24), dp(24));
-        coinParams.leftMargin = dp(16);
-        coinParams.rightMargin = dp(16);
-        coinParams.gravity = Gravity.CENTER_VERTICAL;
+        coinParams.leftMargin = dp(8);
+        coinParams.rightMargin = dp(8);
         this.coinRow.addView(coin, coinParams);
         this.coinTotal = styledRowText();
         this.coinRow.addView(this.coinTotal);
-        card.addView(this.coinRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        coinReward.addView(this.coinRow, rewardValueParams());
+        rewards.addView(coinReward, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
-        // Rating row (-5 [crown] 45) — dialog_online_result.xml parity.
+        LinearLayout ratingReward = rewardColumn(R.string.online_reward_rating);
         this.ratingRow = new LinearLayout(this);
         this.ratingRow.setGravity(Gravity.CENTER);
-        this.ratingRow.setPadding(dp(16), dp(8), dp(16), dp(8));
         this.ratingDelta = styledRowText();
         this.ratingRow.addView(this.ratingDelta);
         ImageView crown = new ImageView(this);
@@ -656,23 +749,44 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         int pad4 = dp(4);
         crown.setPadding(pad4, pad4, pad4, pad4);
         LinearLayout.LayoutParams crownParams = new LinearLayout.LayoutParams(dp(26), dp(26));
-        crownParams.leftMargin = dp(16);
-        crownParams.rightMargin = dp(16);
-        crownParams.gravity = Gravity.CENTER_VERTICAL;
+        crownParams.leftMargin = dp(8);
+        crownParams.rightMargin = dp(8);
         this.ratingRow.addView(crown, crownParams);
         this.ratingTotal = styledRowText();
         this.ratingRow.addView(this.ratingTotal);
-        card.addView(this.ratingRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        ratingReward.addView(this.ratingRow, rewardValueParams());
+        rewards.addView(ratingReward, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
-        this.okButton = originalButton();
-        this.okButton.setText(R.string.ok);
+        this.okButton = OnlineUi.secondaryButton(this, R.string.ok);
         LinearLayout.LayoutParams okParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(42));
-        okParams.topMargin = dp(48);
-        okParams.gravity = Gravity.CENTER_HORIZONTAL;
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                OnlineUi.dim(this, R.dimen.online_button_height));
+        okParams.topMargin = dp(22);
         card.addView(this.okButton, okParams);
         return card;
+    }
+
+    private LinearLayout rewardColumn(int titleRes) {
+        LinearLayout column = new LinearLayout(this);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setGravity(Gravity.CENTER_HORIZONTAL);
+        column.setBackgroundColor(OnlineUi.color(this, R.color.online_surface_alt));
+        column.setPadding(dp(6), dp(10), dp(6), dp(10));
+        TextView title = OnlineUi.text(this, getString(titleRes), 12.0f,
+                R.color.online_text_secondary, OnlineUi.medium(this));
+        title.setGravity(Gravity.CENTER);
+        column.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return column;
+    }
+
+    private LinearLayout.LayoutParams rewardValueParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_HORIZONTAL;
+        params.topMargin = dp(7);
+        return params;
     }
 
     /**
@@ -681,8 +795,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      * online_game_win_circle riding the round winner, then the bold totals.
      */
     private LinearLayout buildResultsBoard(MatchEnd end) {
-        LinearLayout board = new LinearLayout(this);
+        LinearLayout board = OnlineUi.card(this);
         board.setOrientation(LinearLayout.VERTICAL);
+
+        TextView title = OnlineUi.sectionTitle(this, R.string.online_round_results);
+        title.setGravity(Gravity.CENTER);
+        board.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         OnlineMessages.RoundDesc[] plan = OnlineSession.get().getRounds();
         OnlineMessages.RoundScore[] scores = end.rounds;
@@ -706,56 +825,56 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         return board;
     }
 
-    /** One results row; a null game name marks the bold totals row. */
+    /** One compact results row; a null game name marks the totals row. */
     private View resultsRow(String name, int imageRes, int mine, int theirs) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-
         boolean totals = name == null;
-        if (!totals) {
-            TextView nameView = new TextView(this);
-            nameView.setTypeface(this.fontLight);
-            nameView.setTextSize(18.0f);
-            nameView.setTextColor(Color.BLACK);
-            nameView.setGravity(Gravity.CENTER);
-            nameView.setText(name);
-            row.addView(nameView, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, totals ? dp(14) : dp(10), 0, totals ? dp(2) : dp(10));
+        if (totals) {
+            row.setBackgroundColor(OnlineUi.color(this, R.color.online_primary_soft));
         }
 
-        LinearLayout scores = new LinearLayout(this);
-        scores.setOrientation(LinearLayout.HORIZONTAL);
-        scores.addView(resultsScore(String.valueOf(mine), totals, mine > theirs),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.24f));
+        row.addView(resultsScore(String.valueOf(mine), totals, mine > theirs),
+                new LinearLayout.LayoutParams(dp(54), dp(44)));
+
+        LinearLayout game = new LinearLayout(this);
+        game.setOrientation(LinearLayout.HORIZONTAL);
+        game.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
         if (!totals) {
             ImageView icon = new ImageView(this);
             icon.setImageResource(imageRes);
             icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            scores.addView(icon, new LinearLayout.LayoutParams(0, dp(100), 0.52f));
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+            iconParams.rightMargin = dp(10);
+            game.addView(icon, iconParams);
+            TextView nameView = OnlineUi.text(this, name, 15.0f,
+                    R.color.online_text_primary, OnlineUi.medium(this));
+            nameView.setGravity(Gravity.CENTER_VERTICAL);
+            game.addView(nameView, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         } else {
-            TextView placeholder = new TextView(this);
-            placeholder.setGravity(Gravity.CENTER);
-            placeholder.setTypeface(this.fontLight, Typeface.BOLD);
-            placeholder.setTextSize(18.0f);
-            placeholder.setTextColor(ContextCompat.getColor(this, R.color.onlineStatsColor));
-            placeholder.setText("-");
-            scores.addView(placeholder, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.52f));
+            TextView total = OnlineUi.text(this, getString(R.string.online_total), 16.0f,
+                    R.color.online_text_primary, OnlineUi.bold(this));
+            total.setGravity(Gravity.CENTER);
+            game.addView(total, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
-        scores.addView(resultsScore(String.valueOf(theirs), totals, theirs > mine),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.24f));
-        row.addView(scores, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.addView(game, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        row.addView(resultsScore(String.valueOf(theirs), totals, theirs > mine),
+                new LinearLayout.LayoutParams(dp(54), dp(44)));
         return row;
     }
 
-    /** A score cell; the round winner's carries the win circle. */
+    /** A score cell; round and match winners carry the winner ring. */
     private TextView resultsScore(String value, boolean bold, boolean winner) {
-        TextView score = new TextView(this);
-        score.setTypeface(this.fontLight, bold ? Typeface.BOLD : Typeface.NORMAL);
-        score.setTextSize(18.0f);
-        score.setTextColor(ContextCompat.getColor(this, R.color.onlineStatsColor));
+        TextView score = OnlineUi.text(this, value, bold ? 20.0f : 17.0f,
+                winner ? R.color.online_success : R.color.online_accent,
+                bold ? OnlineUi.bold(this) : OnlineUi.medium(this));
         score.setGravity(Gravity.CENTER);
-        score.setText(value);
         if (winner) {
             score.setBackgroundResource(R.drawable.online_game_win_circle);
         }
@@ -772,15 +891,48 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      */
     private void showIntermissionUi() {
         if (this.intermissionBoard == null) {
-            this.intermissionBoard = getLayoutInflater().inflate(R.layout.dialog_online_progress, null);
-            this.interTitle = (TextView) this.intermissionBoard.findViewById(R.id.dialog_title);
-            this.interGameNumber = (TextView) this.intermissionBoard.findViewById(R.id.gameNumber);
-            this.interScore = (TextView) this.intermissionBoard.findViewById(R.id.your_score);
-            this.interTimer = (TimerView) this.intermissionBoard.findViewById(R.id.timerView);
-            Typeface regular = Typeface.createFromAsset(getAssets(), "Roboto-Regular.ttf");
-            this.interTitle.setTypeface(regular);
-            this.interGameNumber.setTypeface(this.fontLight);
-            this.interScore.setTypeface(regular);
+            LinearLayout board = OnlineUi.card(this);
+            board.setGravity(Gravity.CENTER_HORIZONTAL);
+
+            this.interTitle = OnlineUi.text(this, getString(R.string.game_finished), 24.0f,
+                    R.color.online_text_primary, OnlineUi.medium(this));
+            this.interTitle.setGravity(Gravity.CENTER);
+            board.addView(this.interTitle, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            this.interScore = OnlineUi.text(this, "", 30.0f,
+                    R.color.online_accent, OnlineUi.bold(this));
+            this.interScore.setGravity(Gravity.CENTER);
+            this.interScore.setBackgroundResource(R.drawable.online_score_pill);
+            this.interScore.setPadding(dp(20), dp(8), dp(20), dp(8));
+            LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            scoreParams.gravity = Gravity.CENTER_HORIZONTAL;
+            scoreParams.topMargin = dp(14);
+            board.addView(this.interScore, scoreParams);
+
+            this.interGameNumber = OnlineUi.text(this, "", 14.0f,
+                    R.color.online_text_secondary, OnlineUi.medium(this));
+            this.interGameNumber.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams gameParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            gameParams.topMargin = dp(12);
+            board.addView(this.interGameNumber, gameParams);
+
+            TextView waiting = OnlineUi.body(this, R.string.online_waiting_subtitle);
+            waiting.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams waitingParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            waitingParams.topMargin = dp(7);
+            board.addView(waiting, waitingParams);
+
+            this.interTimer = new TimerView(this);
+            LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(dp(112), dp(112));
+            timerParams.gravity = Gravity.CENTER_HORIZONTAL;
+            timerParams.topMargin = dp(20);
+            timerParams.bottomMargin = dp(4);
+            board.addView(this.interTimer, timerParams);
+            this.intermissionBoard = board;
         }
         this.interTitle.setText(R.string.game_finished);
         OnlineMessages.RoundDesc[] rounds = OnlineSession.get().getRounds();
@@ -790,7 +942,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                 Math.max(total, 1)));
         this.interScore.setText(String.format(Locale.US, "%s: %d",
                 getString(R.string.your_score), OnlineSession.get().getMyScore()));
-        showBoard(this.intermissionBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP);
+        showScrollableBoard(this.intermissionBoard, ViewGroup.LayoutParams.MATCH_PARENT);
         long remaining = OnlineSession.get().roundRemainingMs();
         if (remaining >= 1000L) {
             this.interTimer.setVisibility(View.VISIBLE);
@@ -806,15 +958,18 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      * countdown disc origin showed before the first round launched.
      */
     private void showGameListUi(final RoundStart start, final GameInfo info) {
-        LinearLayout board = new LinearLayout(this);
+        LinearLayout board = OnlineUi.card(this);
         board.setOrientation(LinearLayout.VERTICAL);
 
-        View divider = new View(this);
-        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.grid_stroke));
+        TextView title = OnlineUi.sectionTitle(this, R.string.generating_game_list);
+        title.setGravity(Gravity.CENTER);
+        board.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        View divider = OnlineUi.divider(this);
         int pad = dp(10);
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 1);
-        dividerParams.topMargin = pad;
         dividerParams.bottomMargin = pad;
         board.addView(divider, dividerParams);
 
@@ -826,23 +981,21 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                     continue;
                 }
                 LinearLayout row = new LinearLayout(this);
-                row.setOrientation(LinearLayout.VERTICAL);
-                TextView name = new TextView(this);
-                name.setTypeface(this.fontLight);
-                name.setTextSize(18.0f);
-                name.setTextColor(Color.BLACK);
-                name.setGravity(Gravity.CENTER);
-                name.setText(roundInfo.getGameNameRes());
-                row.addView(name, new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(dp(4), dp(7), dp(4), dp(7));
                 ImageView icon = new ImageView(this);
                 icon.setImageResource(roundInfo.getGameImageRes());
                 icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, dp(100));
-                iconParams.topMargin = dp(4);
-                iconParams.bottomMargin = dp(4);
+                LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(54), dp(54));
+                iconParams.rightMargin = dp(14);
                 row.addView(icon, iconParams);
+                TextView name = OnlineUi.text(this,
+                        getString(roundInfo.getGameNameRes()), 16.0f,
+                        R.color.online_text_primary, OnlineUi.medium(this));
+                name.setGravity(Gravity.CENTER_VERTICAL);
+                row.addView(name, new LinearLayout.LayoutParams(
+                        0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
                 board.addView(row, new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             }
@@ -856,7 +1009,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         board.addView(this.gameListTimer, timerParams);
         this.gameListBoard = board;
 
-        showBoard(board, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP);
+        showScrollableBoard(board, ViewGroup.LayoutParams.MATCH_PARENT);
         this.gameListTimer.showTimer((int) GAME_LIST_TIMEOUT_MS, false);
         this.roundLaunchScheduled = true;
         this.handler.postDelayed(new Runnable() {
@@ -869,38 +1022,28 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         }, GAME_LIST_TIMEOUT_MS);
     }
 
-    /** activity_play_online.xml's white bottom bar with one 180dip action. */
+    /** Persistent bottom action area using the redesigned full-width controls. */
     private LinearLayout buildBottomBar() {
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.VERTICAL);
         bar.setGravity(Gravity.CENTER_HORIZONTAL);
-        bar.setBackgroundColor(Color.WHITE);
-        int pad = getResources().getDimensionPixelOffset(R.dimen.padding_big);
-        bar.setPadding(0, pad, 0, pad);
+        bar.setBackgroundColor(OnlineUi.color(this, R.color.online_surface));
+        int horizontal = OnlineUi.dim(this, R.dimen.online_page_padding);
+        int vertical = dp(12);
+        bar.setPadding(horizontal, vertical, horizontal, vertical);
 
-        this.bottomButton = OnlineUi.menuButton(this, this.fontLight, R.string.cancel);
-        bar.addView(this.bottomButton, new LinearLayout.LayoutParams(dp(180), ViewGroup.LayoutParams.WRAP_CONTENT));
+        this.bottomButton = OnlineUi.primaryButton(this, R.string.cancel);
+        bar.addView(this.bottomButton, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                OnlineUi.dim(this, R.dimen.online_button_height)));
         return bar;
     }
 
     private TextView styledRowText() {
-        TextView text = new TextView(this);
-        text.setTypeface(this.fontLight);
-        text.setTextSize(20.0f);
-        text.setTextColor(Color.BLACK);
+        TextView text = OnlineUi.text(this, "", 18.0f,
+                R.color.online_text_primary, OnlineUi.medium(this));
+        text.setGravity(Gravity.CENTER_VERTICAL);
         return text;
-    }
-
-    /** The original flat green action button (button_play, 42dip high). */
-    private Button originalButton() {
-        Button button = new Button(this);
-        button.setTypeface(this.fontLight);
-        button.setTextSize(20.0f);
-        button.setTextColor(Color.WHITE);
-        button.setBackgroundResource(R.drawable.button_play);
-        button.setAllCaps(false);
-        button.setPadding(dp(48), 0, dp(48), 0);
-        return button;
     }
 
     private int dp(int value) {
@@ -913,10 +1056,11 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.content.removeAllViews();
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width,
                 ViewGroup.LayoutParams.WRAP_CONTENT, gravity);
-        if (board == this.waitingCard || board == this.matchBoard || board == this.searchBoard) {
-            params.leftMargin = dp(16);
-            params.rightMargin = dp(16);
-        }
+        int margin = OnlineUi.dim(this, R.dimen.online_page_padding);
+        params.leftMargin = margin;
+        params.rightMargin = margin;
+        params.topMargin = margin;
+        params.bottomMargin = margin;
         this.content.addView(board, params);
     }
 
@@ -931,27 +1075,35 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         ScrollView scroller = new ScrollView(this);
         scroller.setFillViewport(true);
         FrameLayout inner = new FrameLayout(this);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width,
-                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-        int margin = dp(16);
+        int margin = OnlineUi.dim(this, R.dimen.online_page_padding);
+        int availableWidth = getResources().getDisplayMetrics().widthPixels - (margin * 2);
+        int boardWidth = width == ViewGroup.LayoutParams.MATCH_PARENT
+                ? ViewGroup.LayoutParams.MATCH_PARENT : Math.min(width, availableWidth);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(boardWidth,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         params.leftMargin = margin;
         params.rightMargin = margin;
+        params.topMargin = margin;
+        params.bottomMargin = margin;
         inner.addView(board, params);
         scroller.addView(inner, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         this.content.addView(scroller, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     private void showSearchUi() {
         this.acceptWaiting = false;
+        hideReconnectStatus();
         fillMyHeaderSide();
         resetOpponentSide();
+        updateModeChip();
         startPulse();
-        showBoard(this.searchBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
+        showScrollableBoard(this.searchBoard, ViewGroup.LayoutParams.MATCH_PARENT);
         this.bottomBar.setVisibility(View.VISIBLE);
         this.bottomButton.setText(R.string.cancel);
-        this.bottomButton.setBackgroundResource(R.drawable.button_play);
+        this.bottomButton.setTextColor(OnlineUi.color(this, R.color.online_primary));
+        this.bottomButton.setBackgroundResource(R.drawable.online_secondary_button);
         this.bottomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -965,6 +1117,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.acceptWaiting = false;
         fillMyHeaderSide();
         fillOpponentSide(OnlineSession.get().getOpponent());
+        updateModeChip();
         stopPulse();
         // The comparison is built against the freshly found opponent, so it
         // is recreated on every match_found.
@@ -972,7 +1125,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             this.content.removeView(this.statsBoard);
         }
         this.statsBoard = buildStatsBoard();
-        showBoard(this.statsBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
+        showScrollableBoard(this.statsBoard, ViewGroup.LayoutParams.MATCH_PARENT);
         // Origin faded the stats rows in one-by-one (100ms per row).
         if (this.statsFadeViews != null && !this.statsFadeViews.isEmpty()) {
             for (View view : this.statsFadeViews) {
@@ -987,8 +1140,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         }
         this.bottomBar.setVisibility(View.VISIBLE);
         this.bottomButton.setText(R.string.start);
-        // Origin's START confirmation used the blue button_play_online skin.
-        this.bottomButton.setBackgroundResource(R.drawable.button_play_online);
+        this.bottomButton.setTextColor(Color.WHITE);
+        this.bottomButton.setBackgroundResource(R.drawable.online_primary_button);
         this.bottomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1002,9 +1155,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private void showAcceptWaitingUi() {
         this.acceptWaiting = true;
         this.waitingTitle.setText(R.string.opponent_waiting);
-        this.waitingLine.setText("");
-        this.waitingLine.setVisibility(View.GONE);
-        showBoard(this.waitingCard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
+        this.waitingLine.setText(R.string.online_waiting_subtitle);
+        this.waitingLine.setVisibility(View.VISIBLE);
+        showScrollableBoard(this.waitingCard, ViewGroup.LayoutParams.MATCH_PARENT);
         this.timerView.setVisibility(View.VISIBLE);
         // Mirrors the server's accept window (acceptTimeoutMs).
         this.timerView.showTimer(ACCEPT_WINDOW_MS, true);
@@ -1013,10 +1166,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     private void showSettlementUi(final MatchEnd end) {
         this.acceptWaiting = false;
+        hideReconnectStatus();
         refreshCoins();
         boolean win = OnlineSession.RESULT_WIN.equals(end.result);
         boolean draw = OnlineSession.RESULT_DRAW.equals(end.result);
         this.titleView.setText(draw ? R.string.online_draw : (win ? R.string.online_win : R.string.online_lose));
+        this.resultSubtitle.setText(draw ? R.string.online_result_draw_subtitle
+                : (win ? R.string.online_result_win_subtitle : R.string.online_result_loss_subtitle));
         this.doodleView.setImageResource(win ? R.drawable.doodle_33
                 : draw ? R.drawable.doodle_26 : R.drawable.doodle_31);
         this.coinDelta.setText(String.format(Locale.US, "%+d", end.coinDelta));
@@ -1025,7 +1181,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.ratingTotal.setText(String.valueOf(end.elo));
         this.myAvatar.rating.setText(String.valueOf(end.elo));
 
-        showScrollableBoard(this.card, dp(300));
+        showScrollableBoard(this.card,
+                OnlineUi.dim(this, R.dimen.online_result_card_width));
         // OK drops the result card onto the per-round results list, exactly
         // like the original dialog revealed the results screen underneath.
         this.okButton.setOnClickListener(new View.OnClickListener() {
@@ -1037,7 +1194,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         });
         this.bottomBar.setVisibility(View.VISIBLE);
         this.bottomButton.setText(R.string.nextDuel);
-        this.bottomButton.setBackgroundResource(R.drawable.button_play);
+        this.bottomButton.setTextColor(Color.WHITE);
+        this.bottomButton.setBackgroundResource(R.drawable.online_primary_button);
         this.bottomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1049,10 +1207,38 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     // ---------------------------------------------------------- VS header
 
+    private void updateModeChip() {
+        if (OnlineSession.get().isPracticeMode()) {
+            this.matchModeLabel = R.string.online_mode_practice;
+        } else if (OnlineSession.get().isFriendMode()) {
+            this.matchModeLabel = R.string.online_mode_friend;
+        } else if (!OnlineSession.get().isInMatch()) {
+            this.matchModeLabel = R.string.online_mode_ranked;
+        }
+        if (this.modeChip != null) {
+            this.modeChip.setText(this.matchModeLabel);
+        }
+    }
+
+    private void showReconnectStatus() {
+        if (this.reconnectBar != null) {
+            this.reconnectText.setText(R.string.online_opponent_reconnecting);
+            this.reconnectBar.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideReconnectStatus() {
+        if (this.reconnectBar != null) {
+            this.reconnectBar.setVisibility(View.GONE);
+        }
+    }
+
     private void fillMyHeaderSide() {
         AuthOk profile = OnlineSession.get().getLastProfile();
         this.myNameView.setText(profile != null ? profile.nickname
                 : OnlineIdentity.getNickname(this));
+        this.myAvatar.image.setImageResource(R.drawable.ic_user_placeholder);
+        this.myAvatar.badge.setVisibility(View.VISIBLE);
         this.myAvatar.rating.setText(String.valueOf(profile != null ? profile.elo : 0));
         refreshCoins();
     }
@@ -1136,7 +1322,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             return;
         }
         this.statusView.setText("3");
-        showBoard(this.matchBoard, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
+        showScrollableBoard(this.matchBoard, ViewGroup.LayoutParams.MATCH_PARENT);
         this.roundLaunchScheduled = true;
         this.handler.postDelayed(new Runnable() {
             @Override
@@ -1241,12 +1427,17 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     @Override
-    public void onMatchCancelled() {
-        if (OnlineSession.get().isInMatch()) {
-            // The START gate expired or the opponent walked away.
-            Toast.makeText(this, R.string.toast_game_not_accepted, Toast.LENGTH_SHORT).show();
+    public void onMatchCancelled(boolean acceptedMatch, String mode) {
+        if (!acceptedMatch || isFinishing()) {
+            return;
         }
-        showSearchUi();
+        Toast.makeText(this, R.string.toast_game_not_accepted, Toast.LENGTH_SHORT).show();
+        if (OnlineSession.MODE_RANKED.equals(mode)) {
+            OnlineSession.get().startMatchmaking();
+            showSearchUi();
+        } else {
+            finish();
+        }
     }
 
     @Override
@@ -1303,11 +1494,12 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onOpponentDisconnected() {
-        Toast.makeText(this, R.string.online_opponent_reconnecting, Toast.LENGTH_SHORT).show();
+        showReconnectStatus();
     }
 
     @Override
     public void onOpponentReconnected() {
+        hideReconnectStatus();
     }
 
     @Override

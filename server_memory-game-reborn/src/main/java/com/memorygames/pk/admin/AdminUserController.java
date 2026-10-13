@@ -110,10 +110,11 @@ public class AdminUserController {
         if (account == null || body.delta == null) {
             return ResponseEntity.badRequest().build();
         }
-        account = this.service.adjustBalance(account, body.delta);
+        account = this.service.adjustBalance(account, body.delta,
+                body.reason != null && !body.reason.isBlank() ? body.reason : "unspecified");
         this.audit.record("USER_BALANCE",
                 "id=" + id + " delta=" + body.delta + " reason=" + body.reason,
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
@@ -130,7 +131,7 @@ public class AdminUserController {
         }
         account = this.service.setElo(account, body.set);
         this.audit.record("USER_ELO", "id=" + id + " set=" + body.set + " reason=" + body.reason,
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
@@ -147,7 +148,7 @@ public class AdminUserController {
         }
         account = this.service.setRestriction(account, Math.min(body.matches, 100));
         this.audit.record("USER_RESTRICT", "id=" + id + " matches=" + body.matches,
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
@@ -164,7 +165,7 @@ public class AdminUserController {
         }
         account = this.service.setBan(account, Math.min(body.hours, 24 * 365));
         this.audit.record("USER_BAN", "id=" + id + " hours=" + body.hours + " reason=" + body.reason,
-                AdminGuard.clientIp(request), "ok");
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
@@ -179,7 +180,7 @@ public class AdminUserController {
             return ResponseEntity.notFound().build();
         }
         account = this.service.setBan(account, 0);
-        this.audit.record("USER_UNBAN", "id=" + id, AdminGuard.clientIp(request), "ok");
+        this.audit.record("USER_UNBAN", "id=" + id, this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
@@ -194,7 +195,7 @@ public class AdminUserController {
             return ResponseEntity.notFound().build();
         }
         account = this.service.markDeleted(account);
-        this.audit.record("USER_DELETE", "id=" + id, AdminGuard.clientIp(request), "ok");
+        this.audit.record("USER_DELETE", "id=" + id, this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 

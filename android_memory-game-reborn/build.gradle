@@ -19,6 +19,9 @@ android {
         versionCode 74
         versionName '3.6.3'
         vectorDrawables.useSupportLibrary = true
+        // Only languages with real translations are bundled; everything else
+        // would fall back to the English default anyway.
+        resourceConfigurations += ['en', 'de', 'es', 'fr', 'pt', 'ru', 'uk', 'zh']
     }
 
     buildTypes {

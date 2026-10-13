@@ -1,10 +1,15 @@
 spring:
   application:
     name: memorygames-pk
+  # Flyway owns the schema; Hibernate only validates its mappings against it.
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
   datasource:
     url: jdbc:h2:mem:pk;DB_CLOSE_DELAY=-1
     username: sa
@@ -12,6 +17,25 @@ spring:
 
 server:
   port: 8080
+  # Stop accepting new connections/requests before beans die so the match
+  # manager's room-voiding runs behind a closed door.
+  shutdown: graceful
+
+spring.lifecycle.timeout-per-shutdown-phase: 20s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    defaults:
+      enabled: true
 
 pk:
   # Runtime admin API token for /api/admin/config (empty = endpoint disabled).
@@ -34,6 +58,7 @@ pk:
     match-found-delay-ms: 3000
     round-intermission-ms: 6000
     round-grace-ms: 10000
+    score-accept-grace-ms: 2000
     bot-wait-ms: 15000
     reconnect-window-ms: 90000
 
@@ -50,6 +75,3 @@ spring:
     url: jdbc:postgresql://${PK_DB_HOST:postgres}:${PK_DB_PORT:5432}/${PK_DB_NAME:memorygames}
     username: ${PK_DB_USER:pk}
     password: ${PK_DB_PASSWORD:pk}
-  jpa:
-    hibernate:
-      ddl-auto: update

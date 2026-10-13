@@ -2,121 +2,227 @@ package com.cube.memorygames.api.online;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.content.ContextCompat;
-import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.cube.memorygames.MemoryApplicationModel;
-import com.cube.memorygames.api.local.LocalDataManager;
-import com.cube.memorygames.api.online.OnlineMessages;
 import com.memory.brain.training.games.R;
 
-/**
- * RecyclerView adapter rendering the Online PK lobby inside the main menu's
- * Online tab. Visuals follow the original online menu (item_online_menu.xml):
- * the ringed avatar with the crown/elo badge, the 22sp nickname, the 180dip
- * green menu actions, and fragment_online_stats' wins/losses/draws row inside
- * the result dialog's white cell.
- */
-public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.Adapter {
+import java.util.Locale;
 
-    private static final int VIEW_TYPE_PROFILE = 0;
-    private static final int VIEW_TYPE_TUTORIAL = 1;
+/** The Online tab dashboard: profile, play modes, friend rooms and shortcuts. */
+public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.LobbyHolder> {
 
     private final Context context;
-    private final Typeface fontLight;
-    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private OnlineMessages.AuthOk profile;
     private android.app.Dialog waitingDialog;
-    /** Monotonic clock reading of the last friend-room creation (TTL display). */
     private long roomCreatedElapsed;
+    private boolean refreshPosted;
+
+    private final Runnable profileCallback = new Runnable() {
+        @Override
+        public void run() {
+            OnlineLobbyAdapter.this.profile = OnlineSession.get().getLastProfile();
+            requestRefresh();
+        }
+    };
+
+    private final OnlineSession.MatchListener lobbyListener = new OnlineSession.MatchListener() {
+        @Override
+        public void onStateChanged(int state) {
+            requestRefresh();
+        }
+
+        @Override
+        public void onAuthOk(OnlineMessages.AuthOk profile) {
+            OnlineLobbyAdapter.this.profile = profile;
+            requestRefresh();
+        }
+
+        @Override
+        public void onMatchFound(OnlineMessages.MatchFound match) {
+            dismissWaiting();
+            context.startActivity(new Intent(context, OnlineMatchActivity.class));
+        }
+
+        @Override
+        public void onMatchCancelled(boolean acceptedMatch, String mode) {
+            requestRefresh();
+        }
+
+        @Override
+        public void onRoundStart(OnlineMessages.RoundStart round) {
+        }
+
+        @Override
+        public void onOpponentScore(OnlineMessages.OpponentScore score) {
+        }
+
+        @Override
+        public void onRoundEnd(OnlineMessages.RoundEnd round) {
+        }
+
+        @Override
+        public void onMatchEnd(OnlineMessages.MatchEnd end) {
+            OnlineLobbyAdapter.this.profile = OnlineSession.get().getLastProfile();
+            requestRefresh();
+        }
+
+        @Override
+        public void onOpponentStart() {
+        }
+
+        @Override
+        public void onRoomCreated(final String code) {
+            roomCreatedElapsed = android.os.SystemClock.elapsedRealtime();
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    showWaitingForFriend(code);
+                }
+            });
+        }
+
+        @Override
+        public void onHistory(OnlineMessages.HistoryEntry[] entries) {
+        }
+
+        @Override
+        public void onTop(OnlineMessages.TopEntry[] entries) {
+        }
+
+        @Override
+        public void onOpponentDisconnected() {
+        }
+
+        @Override
+        public void onOpponentReconnected() {
+        }
+
+        @Override
+        public void onError(final int code, final String message) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(context,
+                            message != null ? message : context.getString(R.string.online_error_connection),
+                            Toast.LENGTH_SHORT).show();
+                    dismissWaiting();
+                    requestRefresh();
+                }
+            });
+        }
+    };
 
     public OnlineLobbyAdapter(Context context) {
         this.context = context;
-        this.fontLight = Typeface.createFromAsset(context.getAssets(), "Roboto-Light.ttf");
-        OnlineSession.get().setProfileCallback(new Runnable() {
-            @Override
-            public void run() {
-                if (OnlineLobbyAdapter.this.profile == null) {
-                    // Post out of the current frame: notifyDataSetChanged during
-                    // a RecyclerView layout/scroll pass is fatal.
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (OnlineLobbyAdapter.this.profile == null) {
-                                OnlineLobbyAdapter.this.setProfile(OnlineSession.get().getLastProfile());
-                            }
-                        }
-                    });
-                }
-            }
-        });
+        OnlineSession.get().setProfileCallback(this.profileCallback);
     }
 
     public void setProfile(OnlineMessages.AuthOk profile) {
         this.profile = profile;
-        notifyDataSetChanged();
+        requestRefresh();
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        return position == 0 ? VIEW_TYPE_PROFILE : VIEW_TYPE_TUTORIAL;
+    public void resume() {
+        OnlineSession.get().setProfileCallback(this.profileCallback);
+        OnlineSession.get().setMatchListener(this.lobbyListener);
+        this.profile = OnlineSession.get().getLastProfile();
+        requestRefresh();
+    }
+
+    public void dispose() {
+        dismissWaiting();
+        this.mainHandler.removeCallbacksAndMessages(null);
+        OnlineSession session = OnlineSession.get();
+        session.clearProfileCallback(this.profileCallback);
+        if (session.getMatchListener() == this.lobbyListener) {
+            session.setMatchListener(null);
+        }
+    }
+
+    private void requestRefresh() {
+        if (this.refreshPosted) {
+            return;
+        }
+        this.refreshPosted = true;
+        this.mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                refreshPosted = false;
+                notifyDataSetChanged();
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return 6;
+        return 1;
     }
 
     @Override
-    public android.support.v7.widget.RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if (viewType == VIEW_TYPE_PROFILE) {
-            return new android.support.v7.widget.RecyclerView.ViewHolder(buildProfileView(parent)) {
-            };
-        }
-        return new android.support.v7.widget.RecyclerView.ViewHolder(buildTutorialView(parent)) {
-        };
+    public LobbyHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        return buildDashboard();
     }
 
     @Override
-    public void onBindViewHolder(android.support.v7.widget.RecyclerView.ViewHolder holder, int position) {
-        if (position == 0) {
-            bindProfile(holder.itemView);
-        } else {
-            int[] strings = {
-                    R.string.online_tutorial_1, R.string.online_tutorial_2, R.string.online_tutorial_3,
-                    R.string.online_tutorial_4, R.string.online_tutorial_5
-            };
-            // tutorial_1 carries <b> markup; render it like the original app did.
-            ((TextView) holder.itemView).setText(
-                    android.text.Html.fromHtml(this.context.getString(strings[position - 1])));
-        }
+    public void onBindViewHolder(LobbyHolder holder, int position) {
+        bindDashboard(holder);
     }
 
-    // --------------------------------------------------------------- views
-
-    private View buildProfileView(ViewGroup parent) {
-        LinearLayout root = new LinearLayout(this.context);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setBackgroundColor(ContextCompat.getColor(this.context, R.color.background));
-        root.setPadding(dp(16), dp(20), dp(16), dp(8));
-        root.setLayoutParams(new ViewGroup.LayoutParams(
+    private LobbyHolder buildDashboard() {
+        android.widget.FrameLayout root = new android.widget.FrameLayout(this.context);
+        root.setBackgroundColor(OnlineUi.color(this.context, R.color.online_page));
+        root.setLayoutParams(new RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // item_online_menu.xml: 100dip ringed avatar with the crown/elo badge,
-        // then the nickname in 22sp black under it. The debug endpoint
-        // switcher rides on a long-press over the avatar block.
-        OnlineUi.AvatarBlock avatar = OnlineUi.avatar(this.context, 100, true);
+        LinearLayout page = OnlineUi.page(this.context);
+        int availableWidth = this.context.getResources().getDisplayMetrics().widthPixels;
+        int contentWidth = Math.min(availableWidth,
+                getDimen(R.dimen.online_content_max_width));
+        android.widget.FrameLayout.LayoutParams pageParams = new android.widget.FrameLayout.LayoutParams(
+                contentWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        root.addView(page, pageParams);
+
+        TextView eyebrow = OnlineUi.text(this.context,
+                this.context.getString(R.string.online_lobby_eyebrow), 12.0f,
+                R.color.online_primary, OnlineUi.bold(this.context));
+        eyebrow.setLetterSpacing(0.08f);
+        page.addView(eyebrow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView headline = OnlineUi.text(this.context,
+                this.context.getString(R.string.online_lobby_title), 26.0f,
+                R.color.online_text_primary, OnlineUi.bold(this.context));
+        headline.setPadding(0, dp(4), 0, 0);
+        page.addView(headline, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView subtitle = OnlineUi.body(this.context, R.string.online_lobby_subtitle);
+        subtitle.setPadding(0, dp(6), 0, dp(4));
+        page.addView(subtitle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout profileCard = OnlineUi.emphasisCard(this.context);
+        LinearLayout profileRow = new LinearLayout(this.context);
+        profileRow.setOrientation(LinearLayout.HORIZONTAL);
+        profileRow.setGravity(Gravity.CENTER_VERTICAL);
+        profileCard.addView(profileRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        OnlineUi.AvatarBlock avatar = OnlineUi.avatar(this.context, 92, true);
         avatar.rating.setId(R.id.online_profile_elo);
         avatar.view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -125,384 +231,360 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
                 return true;
             }
         });
-        root.addView(avatar.view, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        profileRow.addView(avatar.view, new LinearLayout.LayoutParams(dp(92), dp(92)));
 
-        TextView nickname = new TextView(this.context);
+        LinearLayout identity = new LinearLayout(this.context);
+        identity.setOrientation(LinearLayout.VERTICAL);
+        identity.setPadding(dp(16), 0, 0, 0);
+        profileRow.addView(identity, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        TextView status = OnlineUi.chip(this.context, "");
+        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        identity.addView(status, statusParams);
+
+        TextView nickname = OnlineUi.text(this.context, "", 23.0f,
+                R.color.online_text_primary, OnlineUi.bold(this.context));
         nickname.setId(R.id.online_profile_line);
-        nickname.setTypeface(this.fontLight);
-        nickname.setTextSize(22.0f);
-        nickname.setTextColor(Color.BLACK);
-        nickname.setGravity(Gravity.CENTER);
-        nickname.setPadding(0, dp(12), 0, 0);
-        root.addView(nickname, new LinearLayout.LayoutParams(
+        nickname.setSingleLine(true);
+        nickname.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        nickname.setPadding(0, dp(8), 0, 0);
+        identity.addView(nickname, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView rank = new TextView(this.context);
+        TextView rank = OnlineUi.text(this.context, "", 15.0f,
+                R.color.online_accent, OnlineUi.medium(this.context));
         rank.setId(R.id.online_profile_rank);
-        rank.setTypeface(this.fontLight);
-        rank.setTextSize(16.0f);
-        rank.setTextColor(ContextCompat.getColor(this.context, R.color.onlineStatsColor));
-        rank.setGravity(Gravity.CENTER);
-        rank.setPadding(0, dp(2), 0, dp(4));
-        root.addView(rank, new LinearLayout.LayoutParams(
+        rank.setPadding(0, dp(2), 0, 0);
+        identity.addView(rank, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // The origin menu's three 180dip actions (item_online_menu.xml):
-        // PLAY / HISTORY / TOP, plus the new practice entry
-        // (docs/bot-battle-prd.md) in the same green skin.
-        TextView play = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlinePlay);
-        play.setId(R.id.online_play_button);
-        LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        playParams.topMargin = dp(8);
-        root.addView(play, playParams);
-
-        TextView playBot = OnlineUi.menuButton(this.context, this.fontLight, R.string.menu_online_play_bot);
-        playBot.setId(R.id.online_play_bot_button);
-        LinearLayout.LayoutParams playBotParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        playBotParams.topMargin = dp(12);
-        root.addView(playBot, playBotParams);
-
-        TextView history = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineHistory);
-        history.setId(R.id.online_history_link);
-        LinearLayout.LayoutParams historyParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        historyParams.topMargin = dp(12);
-        root.addView(history, historyParams);
-
-        TextView top = OnlineUi.menuButton(this.context, this.fontLight, R.string.menuOnlineTop);
-        LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
-                dp(180), ViewGroup.LayoutParams.WRAP_CONTENT);
-        topParams.topMargin = dp(12);
-        root.addView(top, topParams);
-        top.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                OnlineLobbyAdapter.this.context.startActivity(new Intent(
-                        OnlineLobbyAdapter.this.context, OnlineTopActivity.class));
-            }
-        });
-
-        // White cell card with the season stats — the result dialog's cell
-        // carrying fragment_online_stats' three-column wins/losses/draws row.
-        LinearLayout card = new LinearLayout(this.context);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setBackgroundResource(R.drawable.drawable_state_cell_empty);
-        int pad = dp(12);
-        card.setPadding(pad, pad, pad, pad);
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.topMargin = dp(6);
-        root.addView(card, cardParams);
+        TextView season = OnlineUi.text(this.context, "", 13.0f,
+                R.color.online_text_secondary, OnlineUi.regular(this.context));
+        season.setId(R.id.online_season_line);
+        season.setPadding(0, dp(4), 0, 0);
+        identity.addView(season, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         LinearLayout stats = new LinearLayout(this.context);
-        card.addView(stats, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        addStatColumn(stats, R.id.online_stat_wins, R.string.online_title_wins);
-        addStatColumn(stats, R.id.online_stat_losses, R.string.online_title_loses);
-        addStatColumn(stats, R.id.online_stat_draws, R.string.online_title_draws);
-
-        TextView season = new TextView(this.context);
-        season.setId(R.id.online_season_line);
-        season.setTypeface(this.fontLight);
-        season.setTextSize(13.0f);
-        season.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTextHint));
-        season.setGravity(Gravity.CENTER);
-        season.setPadding(0, dp(6), 0, 0);
-        card.addView(season, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        // Friend rooms (PRD F-12) below the ranked actions — no original
-        // counterpart, so they reuse the green skin at half the width.
-        LinearLayout friendRow = new LinearLayout(this.context);
-        friendRow.setOrientation(LinearLayout.HORIZONTAL);
-        friendRow.setGravity(Gravity.CENTER_HORIZONTAL);
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+        stats.setOrientation(LinearLayout.HORIZONTAL);
+        stats.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams statsParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rowParams.topMargin = dp(10);
-        root.addView(friendRow, rowParams);
+        statsParams.topMargin = dp(16);
+        profileCard.addView(stats, statsParams);
+        TextView wins = addStat(stats, R.id.online_stat_wins, R.string.online_title_wins);
+        TextView losses = addStat(stats, R.id.online_stat_losses, R.string.online_title_loses);
+        TextView draws = addStat(stats, R.id.online_stat_draws, R.string.online_title_draws);
+        TextView winRate = addStat(stats, View.generateViewId(), R.string.online_win_rate);
+        page.addView(profileCard, OnlineUi.cardParams(this.context));
 
-        Button createRoom = smallButton(R.string.online_create_room);
+        LinearLayout ranked = OnlineUi.card(this.context);
+        ranked.addView(OnlineUi.sectionTitle(this.context, R.string.online_ranked_title));
+        ranked.addView(OnlineUi.body(this.context, R.string.online_ranked_subtitle));
+        LinearLayout rankedMeta = new LinearLayout(this.context);
+        rankedMeta.setGravity(Gravity.CENTER_VERTICAL);
+        TextView fee = OnlineUi.chip(this.context, "");
+        rankedMeta.addView(fee, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView rounds = OnlineUi.text(this.context, "", 13.0f,
+                R.color.online_text_secondary, OnlineUi.medium(this.context));
+        rounds.setPadding(dp(12), 0, 0, 0);
+        rankedMeta.addView(rounds, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        LinearLayout.LayoutParams metaParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        metaParams.topMargin = dp(12);
+        ranked.addView(rankedMeta, metaParams);
+        TextView play = OnlineUi.primaryButton(this.context, R.string.menuOnlinePlay);
+        play.setId(R.id.online_play_button);
+        LinearLayout.LayoutParams fullButton = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, getDimen(R.dimen.online_button_height));
+        fullButton.topMargin = dp(14);
+        ranked.addView(play, fullButton);
+        page.addView(ranked, OnlineUi.cardParams(this.context));
+
+        LinearLayout practice = OnlineUi.card(this.context);
+        practice.addView(OnlineUi.sectionTitle(this.context, R.string.online_practice_title));
+        TextView practiceDetail = OnlineUi.body(this.context, R.string.online_practice_subtitle);
+        practice.addView(practiceDetail);
+        TextView playBot = OnlineUi.secondaryButton(this.context, R.string.menu_online_play_bot);
+        playBot.setId(R.id.online_play_bot_button);
+        LinearLayout.LayoutParams practiceButtonParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, getDimen(R.dimen.online_button_height));
+        practiceButtonParams.topMargin = dp(14);
+        practice.addView(playBot, practiceButtonParams);
+        page.addView(practice, OnlineUi.cardParams(this.context));
+
+        LinearLayout friend = OnlineUi.card(this.context);
+        friend.addView(OnlineUi.sectionTitle(this.context, R.string.online_friend_title));
+        friend.addView(OnlineUi.body(this.context, R.string.online_friend_subtitle));
+        LinearLayout friendActions = new LinearLayout(this.context);
+        friendActions.setOrientation(LinearLayout.HORIZONTAL);
+        TextView createRoom = OnlineUi.primaryButton(this.context, R.string.online_create_room);
         createRoom.setId(R.id.online_create_room);
-        LinearLayout.LayoutParams createParams = new LinearLayout.LayoutParams(0, dp(38), 1.0f);
-        createParams.rightMargin = dp(4);
-        friendRow.addView(createRoom, createParams);
-        Button joinRoom = smallButton(R.string.online_join_room);
+        LinearLayout.LayoutParams createParams = new LinearLayout.LayoutParams(
+                0, getDimen(R.dimen.online_button_height), 1.0f);
+        createParams.rightMargin = dp(6);
+        friendActions.addView(createRoom, createParams);
+        TextView joinRoom = OnlineUi.secondaryButton(this.context, R.string.online_join_room);
         joinRoom.setId(R.id.online_join_room);
-        LinearLayout.LayoutParams joinParams = new LinearLayout.LayoutParams(0, dp(38), 1.0f);
-        joinParams.leftMargin = dp(4);
-        friendRow.addView(joinRoom, joinParams);
+        LinearLayout.LayoutParams joinParams = new LinearLayout.LayoutParams(
+                0, getDimen(R.dimen.online_button_height), 1.0f);
+        joinParams.leftMargin = dp(6);
+        friendActions.addView(joinRoom, joinParams);
+        LinearLayout.LayoutParams friendActionsParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        friendActionsParams.topMargin = dp(14);
+        friend.addView(friendActions, friendActionsParams);
+        page.addView(friend, OnlineUi.cardParams(this.context));
 
-        return root;
+        LinearLayout shortcuts = OnlineUi.card(this.context);
+        shortcuts.addView(OnlineUi.sectionTitle(this.context, R.string.online_shortcuts_title));
+        LinearLayout shortcutActions = new LinearLayout(this.context);
+        shortcutActions.setOrientation(LinearLayout.HORIZONTAL);
+        TextView history = OnlineUi.secondaryButton(this.context, R.string.menuOnlineHistory);
+        history.setId(R.id.online_history_link);
+        LinearLayout.LayoutParams historyParams = new LinearLayout.LayoutParams(
+                0, getDimen(R.dimen.online_button_height), 1.0f);
+        historyParams.rightMargin = dp(6);
+        shortcutActions.addView(history, historyParams);
+        TextView top = OnlineUi.secondaryButton(this.context, R.string.menuOnlineTop);
+        LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
+                0, getDimen(R.dimen.online_button_height), 1.0f);
+        topParams.leftMargin = dp(6);
+        shortcutActions.addView(top, topParams);
+        shortcuts.addView(shortcutActions, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        page.addView(shortcuts, OnlineUi.cardParams(this.context));
+
+        LinearLayout rules = OnlineUi.card(this.context);
+        rules.addView(OnlineUi.sectionTitle(this.context, R.string.online_rules_title));
+        addRule(rules, "1", R.string.online_rule_one);
+        addRule(rules, "2", R.string.online_rule_two);
+        addRule(rules, "3", R.string.online_rule_three);
+        page.addView(rules, OnlineUi.cardParams(this.context));
+
+        LobbyHolder holder = new LobbyHolder(root);
+        holder.avatar = avatar;
+        holder.status = status;
+        holder.nickname = nickname;
+        holder.rank = rank;
+        holder.season = season;
+        holder.wins = wins;
+        holder.losses = losses;
+        holder.draws = draws;
+        holder.winRate = winRate;
+        holder.fee = fee;
+        holder.rounds = rounds;
+        holder.practiceDetail = practiceDetail;
+        holder.play = play;
+        holder.playBot = playBot;
+        holder.createRoom = createRoom;
+        holder.joinRoom = joinRoom;
+        holder.history = history;
+        holder.top = top;
+        return holder;
     }
 
-    private Button smallButton(int textRes) {
-        Button button = new Button(this.context);
-        button.setText(textRes);
-        button.setTypeface(this.fontLight, Typeface.BOLD);
-        button.setTextSize(14.0f);
-        button.setTextColor(Color.WHITE);
-        button.setBackgroundResource(R.drawable.button_play);
-        button.setAllCaps(false);
-        return button;
-    }
-
-    private void addStatColumn(LinearLayout parent, int valueId, int labelRes) {
-        TextView value = new TextView(this.context);
-        value.setId(valueId);
-        value.setTypeface(this.fontLight);
-        value.setTextSize(18.0f);
-        value.setTextColor(ContextCompat.getColor(this.context, R.color.onlineStatsColor));
-        value.setGravity(Gravity.CENTER);
-        TextView label = new TextView(this.context);
-        label.setText(labelRes);
-        label.setTypeface(this.fontLight);
-        label.setTextSize(12.0f);
-        label.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTextHint));
-        label.setGravity(Gravity.CENTER);
+    private TextView addStat(LinearLayout parent, int id, int labelRes) {
         LinearLayout column = new LinearLayout(this.context);
         column.setOrientation(LinearLayout.VERTICAL);
+        column.setGravity(Gravity.CENTER_HORIZONTAL);
+        TextView value = OnlineUi.text(this.context, "0", 21.0f,
+                R.color.online_accent, OnlineUi.bold(this.context));
+        value.setId(id);
+        value.setGravity(Gravity.CENTER);
         column.addView(value, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView label = OnlineUi.text(this.context, this.context.getString(labelRes), 11.0f,
+                R.color.online_text_secondary, OnlineUi.regular(this.context));
+        label.setGravity(Gravity.CENTER);
+        label.setSingleLine(true);
         column.addView(label, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         parent.addView(column, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        return value;
     }
 
-    private View buildTutorialView(ViewGroup parent) {
-        TextView item = new TextView(this.context);
-        item.setTypeface(this.fontLight);
-        item.setTextSize(15.0f);
-        item.setTextColor(ContextCompat.getColor(this.context, R.color.onlineTutorialText));
-        item.setPadding(dp(24), dp(6), dp(24), dp(6));
-        item.setLayoutParams(new ViewGroup.LayoutParams(
+    private void addRule(LinearLayout parent, String number, int textRes) {
+        LinearLayout row = new LinearLayout(this.context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(7), 0, dp(7));
+        TextView badge = OnlineUi.chip(this.context, number);
+        LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(dp(30), dp(30));
+        row.addView(badge, badgeParams);
+        TextView text = OnlineUi.body(this.context, textRes);
+        text.setPadding(dp(12), 0, 0, 0);
+        row.addView(text, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        parent.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        return item;
     }
 
-    private void bindProfile(View view) {
-        // Silent connect on first visit so the profile card fills in.
+    private void bindDashboard(LobbyHolder holder) {
         if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) {
             OnlineSession.get().init(this.context);
             OnlineSession.get().connect();
         }
-        // The lobby temporarily listens so friend-room pairings can launch
-        // the match screen straight from the dialogs.
-        OnlineSession.get().setMatchListener(new OnlineSession.MatchListener() {
-            @Override
-            public void onStateChanged(int state) {
-            }
+        OnlineSession.get().setMatchListener(this.lobbyListener);
+        OnlineSession.get().setProfileCallback(this.profileCallback);
 
-            @Override
-            public void onAuthOk(OnlineMessages.AuthOk profile) {
-            }
-
-            @Override
-            public void onMatchFound(OnlineMessages.MatchFound match) {
-                dismissWaiting();
-                OnlineLobbyAdapter.this.context.startActivity(
-                        new Intent(OnlineLobbyAdapter.this.context, OnlineMatchActivity.class));
-            }
-
-            @Override
-            public void onMatchCancelled() {
-            }
-
-            @Override
-            public void onRoundStart(OnlineMessages.RoundStart round) {
-            }
-
-            @Override
-            public void onOpponentScore(OnlineMessages.OpponentScore score) {
-            }
-
-            @Override
-            public void onRoundEnd(OnlineMessages.RoundEnd round) {
-            }
-
-            @Override
-            public void onMatchEnd(OnlineMessages.MatchEnd end) {
-            }
-
-            @Override
-            public void onOpponentStart() {
-            }
-
-            @Override
-            public void onRoomCreated(final String code) {
-                OnlineLobbyAdapter.this.roomCreatedElapsed =
-                        android.os.SystemClock.elapsedRealtime();
-                mainHandler.post(new Runnable() {
+        OnlineMessages.AuthOk current = this.profile != null
+                ? this.profile : OnlineSession.get().getLastProfile();
+        int state = OnlineSession.get().getState();
+        holder.status.setText(connectionText(state));
+        holder.status.setTextColor(OnlineUi.color(this.context,
+                state == OnlineSession.STATE_IDLE ? R.color.online_success
+                        : state == OnlineSession.STATE_DISCONNECTED
+                        ? R.color.online_danger : R.color.online_accent));
+        holder.status.setOnClickListener(state == OnlineSession.STATE_DISCONNECTED
+                ? new View.OnClickListener() {
                     @Override
-                    public void run() {
-                        showWaitingForFriend(code);
+                    public void onClick(View v) {
+                        OnlineSession.get().connect();
+                        requestRefresh();
                     }
-                });
-            }
+                } : null);
 
-            @Override
-            public void onHistory(OnlineMessages.HistoryEntry[] entries) {
-            }
+        if (current != null) {
+            holder.nickname.setTextSize(23.0f);
+            holder.nickname.setSingleLine(true);
+            long daysLeft = Math.max(0L,
+                    (current.seasonEndsAt - System.currentTimeMillis()) / 86400000L);
+            holder.avatar.rating.setText(String.valueOf(current.elo));
+            holder.nickname.setText(current.nickname);
+            holder.rank.setText(this.context.getString(R.string.online_profile_rank_line,
+                    rankName(current.rank), current.elo));
+            holder.season.setText(String.format(Locale.US,
+                    this.context.getString(R.string.online_season_line),
+                    current.seasonIndex, daysLeft));
+            holder.wins.setText(String.valueOf(current.wins));
+            holder.losses.setText(String.valueOf(current.losses));
+            holder.draws.setText(String.valueOf(current.draws));
+            int total = current.wins + current.losses + current.draws;
+            holder.winRate.setText(this.context.getString(R.string.online_percent,
+                    total == 0 ? 0 : Math.round(current.wins * 100.0f / total)));
+        } else {
+            holder.avatar.rating.setText("—");
+            holder.nickname.setTextSize(18.0f);
+            holder.nickname.setSingleLine(false);
+            holder.nickname.setMaxLines(2);
+            holder.nickname.setText(R.string.online_profile_offline);
+            holder.rank.setText("");
+            holder.season.setText("");
+            holder.wins.setText("0");
+            holder.losses.setText("0");
+            holder.draws.setText("0");
+            holder.winRate.setText("0%");
+        }
 
-            @Override
-            public void onTop(OnlineMessages.TopEntry[] entries) {
-            }
+        holder.fee.setText(this.context.getString(R.string.online_entry_fee,
+                OnlineSession.get().getServerEntryFee()));
+        holder.rounds.setText(R.string.online_ranked_rating_note);
+        int streak = OnlineSession.get().getPracticeStreak();
+        holder.practiceDetail.setText(streak >= 2
+                ? this.context.getString(R.string.online_practice_with_streak, streak)
+                : this.context.getString(R.string.online_practice_subtitle));
 
-            @Override
-            public void onOpponentDisconnected() {
-            }
-
-            @Override
-            public void onOpponentReconnected() {
-            }
-
-            @Override
-            public void onError(final int code, final String message) {
-                // Room failures were silent before (empty listener) — a dead
-                // lobby socket left the waiting card up forever (2026-10-04).
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        android.widget.Toast.makeText(OnlineLobbyAdapter.this.context,
-                                message != null ? message
-                                        : OnlineLobbyAdapter.this.context.getString(
-                                                R.string.online_error_connection),
-                                android.widget.Toast.LENGTH_SHORT).show();
-                        dismissWaiting();
-                    }
-                });
-            }
-        });
-        view.<Button>findViewById(R.id.online_create_room).setOnClickListener(new View.OnClickListener() {
+        holder.createRoom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 OnlineSession.get().createFriendRoom();
             }
         });
-        view.<Button>findViewById(R.id.online_join_room).setOnClickListener(new View.OnClickListener() {
+        holder.joinRoom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showJoinDialog();
             }
         });
-        view.findViewById(R.id.online_history_link).setOnClickListener(new View.OnClickListener() {
+        holder.history.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                OnlineLobbyAdapter.this.context.startActivity(
-                        new Intent(OnlineLobbyAdapter.this.context, OnlineHistoryActivity.class));
+                context.startActivity(new Intent(context, OnlineHistoryActivity.class));
             }
         });
-        // Practice entry: no entry fee, no ELO — neither the coins gate nor
-        // the ranked-stakes tutorial applies (docs/bot-battle-prd.md).
-        view.findViewById(R.id.online_play_bot_button).setOnClickListener(new View.OnClickListener() {
+        holder.top.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                OnlineSession.get().init(OnlineLobbyAdapter.this.context);
-                OnlineDialogs.showBotDifficulty(OnlineLobbyAdapter.this.context,
-                        new OnlineDialogs.DifficultyListener() {
-                            @Override
-                            public void onDifficulty(String id) {
-                                OnlineSession.get().sendBotMatchRequest(id);
-                            }
-                        });
+                context.startActivity(new Intent(context, OnlineTopActivity.class));
             }
         });
-        // Bind directly from whichever profile we already hold — calling
-        // notifyDataSetChanged() here (mid-bind) throws IllegalStateException.
-        OnlineMessages.AuthOk p = this.profile != null
-                ? this.profile : OnlineSession.get().getLastProfile();
-        TextView elo = (TextView) view.findViewById(R.id.online_profile_elo);
-        TextView rank = (TextView) view.findViewById(R.id.online_profile_rank);
-        TextView nickname = (TextView) view.findViewById(R.id.online_profile_line);
-        TextView wins = (TextView) view.findViewById(R.id.online_stat_wins);
-        TextView losses = (TextView) view.findViewById(R.id.online_stat_losses);
-        TextView draws = (TextView) view.findViewById(R.id.online_stat_draws);
-        TextView seasonLine = (TextView) view.findViewById(R.id.online_season_line);
-        TextView play = (TextView) view.findViewById(R.id.online_play_button);
-        if (p != null) {
-            long daysLeft = Math.max(0L, (p.seasonEndsAt - System.currentTimeMillis()) / 86400000L);
-            seasonLine.setText(String.format(java.util.Locale.US,
-                    this.context.getString(R.string.online_season_line), p.seasonIndex, daysLeft));
-        } else {
-            seasonLine.setText("");
-        }
-        if (p != null) {
-            elo.setText(String.valueOf(p.elo));
-            rank.setText(rankName(p.rank));
-            nickname.setText(p.nickname);
-            wins.setText(String.valueOf(p.wins));
-            losses.setText(String.valueOf(p.losses));
-            draws.setText(String.valueOf(p.draws));
-        } else {
-            elo.setText("");
-            rank.setText("");
-            nickname.setText(R.string.online_not_connected);
-            wins.setText("0");
-            losses.setText("0");
-            draws.setText("0");
-        }
-        play.setOnClickListener(new View.OnClickListener() {
+        holder.playBot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // The 60-coin welcome grant is server-side (issued at guest
-                // registration) since 2026-10-04; a client-side grant desynced
-                // the server balance and match_join was rejected with 402.
-                if (!com.cube.memorygames.api.online.OnlineDebug.freeEconomy(
-                        OnlineLobbyAdapter.this.context)) {
+                OnlineSession.get().init(context);
+                OnlineDialogs.showBotDifficulty(context, new OnlineDialogs.DifficultyListener() {
+                    @Override
+                    public void onDifficulty(String id) {
+                        OnlineSession.get().sendBotMatchRequest(id);
+                    }
+                });
+            }
+        });
+        holder.play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!OnlineDebug.freeEconomy(context)) {
                     int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
                             .getLocalUser().money;
                     if (coins < OnlineSession.get().getServerEntryFee()) {
-                        OnlineDialogs.showNotEnoughCoins(OnlineLobbyAdapter.this.context);
+                        OnlineDialogs.showNotEnoughCoins(context);
                         return;
                     }
                 }
-                // First visit per install: the original 5-page online
-                // rules tutorial (coins and rating stakes) runs before the
-                // first matchmaking attempt.
-                if (!android.preference.PreferenceManager.getDefaultSharedPreferences(
-                        OnlineLobbyAdapter.this.context)
-                        .getBoolean(com.cube.memorygames.activity.OnlineTutorialActivity.PREF_ONLINE_SHOWED, false)) {
-                    OnlineLobbyAdapter.this.context.startActivity(new Intent(
-                            OnlineLobbyAdapter.this.context,
+                if (!android.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                        .getBoolean(com.cube.memorygames.activity.OnlineTutorialActivity.PREF_ONLINE_SHOWED,
+                                false)) {
+                    context.startActivity(new Intent(context,
                             com.cube.memorygames.activity.OnlineTutorialActivity.class));
                     return;
                 }
-                OnlineSession.get().init(OnlineLobbyAdapter.this.context);
-                OnlineLobbyAdapter.this.context.startActivity(new Intent(
-                        OnlineLobbyAdapter.this.context, OnlineMatchActivity.class));
+                OnlineSession.get().init(context);
+                context.startActivity(new Intent(context, OnlineMatchActivity.class));
             }
         });
     }
 
-    // Debug-only endpoint switcher (long-press on the lobby title).
+    private int connectionText(int state) {
+        if (state == OnlineSession.STATE_CONNECTING) {
+            return R.string.online_connection_connecting;
+        }
+        if (state == OnlineSession.STATE_AUTHORIZING) {
+            return R.string.online_connection_authorizing;
+        }
+        if (state == OnlineSession.STATE_DISCONNECTED) {
+            return R.string.online_connection_offline;
+        }
+        return R.string.online_connection_ready;
+    }
+
     private void showEndpointDialog() {
-        Context ctx = this.context;
-        boolean debug = (ctx.getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debug = (this.context.getApplicationInfo().flags
+                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!debug) {
             return;
         }
-        final EditText input = new EditText(ctx);
+        final EditText input = new EditText(this.context);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setText(OnlineConfig.getEndpoint(ctx));
-        new AlertDialog.Builder(ctx)
+        input.setText(OnlineConfig.getEndpoint(this.context));
+        new AlertDialog.Builder(this.context)
                 .setTitle("PK server endpoint")
                 .setView(input)
                 .setPositiveButton(R.string.ok, new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface dialog, int which) {
-                        OnlineConfig.setEndpoint(OnlineLobbyAdapter.this.context,
-                                input.getText().toString().trim());
+                        OnlineConfig.setEndpoint(context, input.getText().toString().trim());
                     }
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
-    /** Host's "waiting for a friend" board showing the 4-digit code. */
     private void showWaitingForFriend(String code) {
         if (this.waitingDialog != null && this.waitingDialog.isShowing()) {
             return;
@@ -533,12 +615,47 @@ public class OnlineLobbyAdapter extends android.support.v7.widget.RecyclerView.A
     }
 
     private String rankName(int rank) {
-        // Rank indices follow the server: 0 bronze .. 5 master.
-        String[] names = {"Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"};
-        return rank >= 0 && rank < names.length ? names[rank] : "Bronze";
+        int[] names = {
+                R.string.online_rank_bronze,
+                R.string.online_rank_silver,
+                R.string.online_rank_gold,
+                R.string.online_rank_platinum,
+                R.string.online_rank_diamond,
+                R.string.online_rank_master
+        };
+        return this.context.getString(rank >= 0 && rank < names.length ? names[rank] : names[0]);
+    }
+
+    private int getDimen(int resId) {
+        return this.context.getResources().getDimensionPixelSize(resId);
     }
 
     private int dp(int value) {
-        return (int) (value * this.context.getResources().getDisplayMetrics().density + 0.5f);
+        return OnlineUi.dp(this.context, value);
+    }
+
+    static final class LobbyHolder extends RecyclerView.ViewHolder {
+        OnlineUi.AvatarBlock avatar;
+        TextView status;
+        TextView nickname;
+        TextView rank;
+        TextView season;
+        TextView wins;
+        TextView losses;
+        TextView draws;
+        TextView winRate;
+        TextView fee;
+        TextView rounds;
+        TextView practiceDetail;
+        TextView play;
+        TextView playBot;
+        TextView createRoom;
+        TextView joinRoom;
+        TextView history;
+        TextView top;
+
+        LobbyHolder(View itemView) {
+            super(itemView);
+        }
     }
 }

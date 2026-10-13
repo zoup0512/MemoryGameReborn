@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "pk.admin-token=test-admin",
-        "pk.economy.welcome-coins=0",
+        "pk.economy.welcome-coins=100",
         "pk.economy.entry-fee=30",
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -177,7 +177,7 @@ class AdminP0Test {
             List<Map<String, Object>> users = (List<Map<String, Object>>) search.getBody().get("users");
             assertEquals(1, users.size());
 
-            // balance grant +50 -> 90, echoed on re-auth
+            // balance grant +50 -> 150, echoed on re-auth
             rest.exchange("/api/admin/users/" + userId + "/balance", HttpMethod.POST,
                     new HttpEntity<>("{\"delta\":50,\"reason\":\"compensation\"}", admin()), Map.class);
             TestWsClient c = newClient();
@@ -187,7 +187,7 @@ class AdminP0Test {
                 c.send(ProtocolCodec.T_AUTH, authFrame);
                 TestWsClient.Frame reauth = c.await(ProtocolCodec.T_AUTH_OK, 5000);
                 assertNotNull(reauth);
-                assertEquals(90, reauth.as(ProtocolCodec.AuthOk.class).balance);
+                assertEquals(150, reauth.as(ProtocolCodec.AuthOk.class).balance);
 
                 // ban -> auth refused with 403
                 rest.exchange("/api/admin/users/" + userId + "/ban", HttpMethod.POST,

@@ -60,6 +60,13 @@ public class PkProperties {
         private long roundIntermissionMs = 6000;
         /** Extra time after a round's duration before the server force-ends it. */
         private long roundGraceMs = 10000;
+        /**
+         * Network tolerance after the scoring deadline: level_wins arriving
+         * later than duration + this are rejected. Distinct from roundGraceMs,
+         * which only absorbs transport for in-flight events and never
+         * re-opens scoring.
+         */
+        private long scoreAcceptGraceMs = 2000;
         /** Queue wait before a bot opponent is substituted. */
         private long botWaitMs = 15000;
         /** Window after match_found for both START presses before refund-cancel. */
@@ -75,6 +82,8 @@ public class PkProperties {
         public void setAcceptTimeoutMs(long v) { this.acceptTimeoutMs = v; }
         public long getRoundGraceMs() { return roundGraceMs; }
         public void setRoundGraceMs(long v) { this.roundGraceMs = v; }
+        public long getScoreAcceptGraceMs() { return scoreAcceptGraceMs; }
+        public void setScoreAcceptGraceMs(long v) { this.scoreAcceptGraceMs = v; }
         public long getBotWaitMs() { return botWaitMs; }
         public void setBotWaitMs(long v) { this.botWaitMs = v; }
         public long getReconnectWindowMs() { return reconnectWindowMs; }

@@ -163,7 +163,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             this.ok.setTypeface(typefaceLight);
             this.cancel.setTypeface(typefaceLight);
             this.message.setTypeface(typefaceLight, 2);
-            this.message.setText(MainMenuActivity.this.getString(R.string.dialog_unlock_title) + " ");
+            this.message.setText(MainMenuActivity.this.getString(R.string.dialog_unlock_title));
             this.ok.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     UnlockDialog.this.dismiss();
@@ -294,8 +294,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                                 MainMenuActivity.this.onlineAdapter = new OnlineLobbyAdapter(MainMenuActivity.this);
                             }
                             MainMenuActivity.this.recyclerView.setAdapter(MainMenuActivity.this.onlineAdapter);
-                            MainMenuActivity.this.recyclerView.setBackgroundColor(ContextCompat.getColor(MainMenuActivity.this, R.color.grid_stroke));
-                            MainMenuActivity.this.gridSpaceItemDecorator.setSpace(MainMenuActivity.this.getResources().getDimensionPixelSize(R.dimen.cell_stroke_width));
+                            MainMenuActivity.this.recyclerView.setBackgroundColor(ContextCompat.getColor(MainMenuActivity.this, R.color.online_page));
+                            MainMenuActivity.this.gridSpaceItemDecorator.setSpace(0);
                             MainMenuActivity.this.recyclerView.invalidateItemDecorations();
                             MainMenuActivity.this.panelHeader.setVisibility(8);
                             MainMenuActivity.this.divider.setVisibility(8);
@@ -368,6 +368,9 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     }
 
     protected void onDestroy() {
+        if (this.onlineAdapter != null) {
+            this.onlineAdapter.dispose();
+        }
         super.onDestroy();
     }
 
@@ -408,7 +411,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                 }
             } else if (this.mBottomBar.getCurrentTabPosition() == TAB_ONLINE) {
                 if (this.onlineAdapter != null) {
-                    this.onlineAdapter.notifyDataSetChanged();
+                    this.onlineAdapter.resume();
                 }
             } else if (this.mBottomBar.getCurrentTabPosition() == 1 && this.workoutAdapter != null) {
                 this.workoutAdapter.notifyDataSetChanged();

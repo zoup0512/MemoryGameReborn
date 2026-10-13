@@ -16,8 +16,8 @@ public class Season {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    /** Human-facing season number, starts at 1. */
-    @Column(nullable = false)
+    /** Human-facing season number, starts at 1 ("index" is a reserved word). */
+    @Column(name = "season_index", nullable = false)
     public int index;
 
     @Column(nullable = false)
@@ -28,4 +28,12 @@ public class Season {
 
     @Column(nullable = false)
     public boolean finalized;
+
+    /**
+     * 1 while active, NULL once finalized. The unique constraint admits
+     * many NULLs but exactly one 1, so the database itself guarantees a
+     * single active season even across instances (P2-3).
+     */
+    @Column(unique = true)
+    public Integer activeFlag;
 }

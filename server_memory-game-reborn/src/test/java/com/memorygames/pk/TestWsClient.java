@@ -17,10 +17,12 @@ class TestWsClient {
 
         final String type;
         final Object data;
+        final String rid;
 
-        Frame(String type, Object data) {
+        Frame(String type, Object data, String rid) {
             this.type = type;
             this.data = data;
+            this.rid = rid;
         }
 
         <T> T as(Class<T> type) {
@@ -41,7 +43,7 @@ class TestWsClient {
             public void onMessage(String message) {
                 ProtocolCodec.Envelope envelope = ProtocolCodec.parse(message);
                 if (envelope != null) {
-                    TestWsClient.this.inbox.add(new Frame(envelope.t, envelope.d));
+                    TestWsClient.this.inbox.add(new Frame(envelope.t, envelope.d, envelope.rid));
                 }
             }
 
@@ -65,6 +67,11 @@ class TestWsClient {
 
     void send(String type, Object payload) {
         this.ws.send(ProtocolCodec.encode(type, payload));
+    }
+
+    /** Sends a raw frame string (protocol-level tests). */
+    void sendRaw(String raw) {
+        this.ws.send(raw);
     }
 
     Frame await(String type, long timeoutMs) {

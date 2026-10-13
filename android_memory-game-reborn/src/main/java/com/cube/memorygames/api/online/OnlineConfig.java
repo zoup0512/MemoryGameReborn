@@ -22,7 +22,7 @@ public final class OnlineConfig {
      * LAN test deployment (PRD 6.1 real-device integration testing): the
      * NAS's fixed LAN address, so debug builds survive the PC's roaming IP.
      */
-    public static final String LAN_TEST_ENDPOINT = "ws://192.168.110.140:8090/ws";
+    public static final String LAN_TEST_ENDPOINT = "ws://www.52razor.site:8090/ws";
 
     /** Local development endpoint used when a debug override is set. */
     private static final String PREFS = "online_config";

@@ -3,6 +3,7 @@ package com.cube.memorygames.activity;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
@@ -25,7 +26,8 @@ public class OnlineGameTutorialActivity extends AppCompatActivity {
     PagerAdapter adapter;
     @BindView(R.id.btnBack)
     ImageView btnBack;
-    private String fontPath = "Roboto-Regular.ttf";
+    private String fontPath = "Roboto-Medium.ttf";
+    private String fontPathRegular = "Roboto-Regular.ttf";
     private GameInfo gameInfo;
     @BindView(R.id.indicator)
     CirclePageIndicator indicator;
@@ -74,14 +76,18 @@ public class OnlineGameTutorialActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         this.gameInfo = getIntent().getParcelableExtra(MainMenuActivity.EXTRA_GAME_INFO);
         this.typeface = Typeface.createFromAsset(getAssets(), this.fontPath);
-        this.textBotton.setTypeface(this.typeface, Typeface.BOLD_ITALIC);
+        this.textBotton.setTypeface(Typeface.createFromAsset(getAssets(), this.fontPathRegular));
         this.title.setTypeface(this.typeface);
+        this.indicator.setFillColor(ContextCompat.getColor(this, R.color.online_primary));
+        this.indicator.setPageColor(ContextCompat.getColor(this, R.color.online_divider));
+        this.indicator.setStrokeColor(ContextCompat.getColor(this, R.color.online_divider));
         showTutorial();
         setResult(-1);
     }
 
     private void showTutorial() {
-        this.title.setText(getString(R.string.get_ready) + " " + getString(this.gameInfo.getGameNameRes()));
+        this.title.setText(getString(R.string.online_game_tutorial_title,
+                getString(this.gameInfo.getGameNameRes())));
         this.viewPager.setPadding(0, 0, 0, 0);
         this.textBotton.setVisibility(android.view.View.VISIBLE);
         this.adapter = new CustomSwipeAdapter(this.gameInfo);

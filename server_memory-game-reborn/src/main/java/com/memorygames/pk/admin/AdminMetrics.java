@@ -23,6 +23,10 @@ public class AdminMetrics {
     public final AtomicLong anomalies = new AtomicLong();
     public final AtomicLong anticheastStrikes = new AtomicLong();
     public final AtomicLong adminOps = new AtomicLong();
+    /** WS sessions force-closed because their bounded send queue filled up. */
+    public final AtomicLong sendOverflow = new AtomicLong();
+    /** Settlement transactions that exhausted their retries. */
+    public final AtomicLong settlementFailures = new AtomicLong();
 
     public Map<String, Object> snapshot() {
         Map<String, Object> view = new LinkedHashMap<>();
@@ -35,6 +39,8 @@ public class AdminMetrics {
         view.put("anomalies", this.anomalies.get());
         view.put("anticheatStrikes", this.anticheastStrikes.get());
         view.put("adminOps", this.adminOps.get());
+        view.put("sendOverflow", this.sendOverflow.get());
+        view.put("settlementFailures", this.settlementFailures.get());
         long waits = this.pairings.get() + this.botFallbacks.get();
         view.put("avgQueueWaitMs", waits == 0 ? 0 : this.queueWaitTotalMs.get() / waits);
         return view;

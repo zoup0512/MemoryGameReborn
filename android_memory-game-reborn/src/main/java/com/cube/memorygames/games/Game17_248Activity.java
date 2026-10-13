@@ -110,7 +110,7 @@ public class Game17_248Activity extends Game1MemoryGridActivity {
     protected void startGame() {
         super.startGame();
         this.totalScore = 0;
-        this.totalScoreTextView.setText(getString(R.string.score) + ": " + this.totalScore);
+        this.totalScoreTextView.setText(getString(R.string.score_format, this.totalScore));
     }
 
     protected void exitFromPauseClicked() {
@@ -182,7 +182,7 @@ public class Game17_248Activity extends Game1MemoryGridActivity {
         if (this.isChallenge) {
             this.totalScoreTextView.setText(String.valueOf(this.userScore) + " / " + getMinPassScore());
         } else {
-            this.totalScoreTextView.setText(getString(R.string.score) + ": " + this.totalScore);
+            this.totalScoreTextView.setText(getString(R.string.score_format, this.totalScore));
         }
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
@@ -263,7 +263,7 @@ public class Game17_248Activity extends Game1MemoryGridActivity {
                     int oldCoinsValue = Game17_248Activity.this.getCoinsForScore(Game17_248Activity.this.totalScore);
                     Game17_248Activity.this.totalScore = Game17_248Activity.this.totalScore + Game17_248Activity.this.currentScoreValue;
                     Game17_248Activity.this.saveAndDisplayCoins(Game17_248Activity.this.getCoinsForScore(Game17_248Activity.this.totalScore) - oldCoinsValue);
-                    Game17_248Activity.this.totalScoreTextView.setText(Game17_248Activity.this.getString(R.string.score) + ": " + Game17_248Activity.this.totalScore);
+                    Game17_248Activity.this.totalScoreTextView.setText(Game17_248Activity.this.getString(R.string.score_format, Game17_248Activity.this.totalScore));
                     Game17_248Activity.this.currentScoreText.setTranslationX(0.0f);
                     Game17_248Activity.this.currentScoreText.setTranslationY(0.0f);
                     Game17_248Activity.this.currentScoreText.setScaleX(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);

@@ -96,13 +96,17 @@ public class MatchRoom {
     private final UserService users;
     private final Rating rating;
     private final PkProperties properties;
+    /** Economy/rules snapshot captured at room creation (P2-1). */
+    private final MatchTerms terms;
     private final ScheduledThreadPoolExecutor scheduler;
+    /** Bounded pool for settlement transactions; timers never touch the DB (P2-4). */
+    private final java.util.concurrent.Executor dbExecutor;
     private final SettlementCallback settlementCallback;
-    private final MatchRecordRepository records;
+    private final SettlementService settlement;
     private final SeasonService seasons;
     private final EventRing events;
     private final AdminMetrics metrics;
-    /** Set by adminTerminate(): zero ELO/coins, refund entry, no W/L count. */
+    /** Set by adminTerminate()/shutdown: zero ELO/coins, refund entry, no W/L count. */
     private boolean adminVoided;
     /** Bot rubber-banding accuracy (PRD M2 bot tuning). */
     private double botAccuracy;
@@ -110,6 +114,8 @@ public class MatchRoom {
     private int currentRound = 0;
     private long roundStartedAt;
     private long roundDeadlineAt;
+    /** End of the scoring window (round start + duration, WITHOUT grace). */
+    private long gameplayDeadlineAt;
     private long startedAt = System.currentTimeMillis();
     private final AtomicBoolean settledOnce = new AtomicBoolean(false);
     private ScheduledFuture<?> roundDeadlineTask;
@@ -128,14 +134,17 @@ public class MatchRoom {
                      String botNickname, String mode, int botElo,
                      Double botFixedAccuracy, double botPaceMultiplier,
                      GameCatalog catalog, UserService users,
-                     Rating rating, PkProperties properties,
+                     Rating rating, PkProperties properties, MatchTerms terms,
                      ScheduledThreadPoolExecutor scheduler,
+                     java.util.concurrent.Executor dbExecutor,
                      SettlementCallback settlementCallback,
-                     MatchRecordRepository records, SeasonService seasons,
+                     SettlementService settlement, SeasonService seasons,
                      EventRing events, AdminMetrics metrics) {
         this.matchId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         this.mode = mode;
-        this.records = records;
+        this.terms = terms;
+        this.dbExecutor = dbExecutor;
+        this.settlement = settlement;
         this.seasons = seasons;
         this.events = events;
         this.metrics = metrics;
@@ -163,14 +172,13 @@ public class MatchRoom {
             if (this.settledOnce.get()) {
                 return;
             }
-            // Practice duels are free (docs/bot-battle-prd.md): no entry fee
-            // on either seat, bot or human.
-            if (!isPracticeMode()) {
-                this.users.chargeEntryFee(this.seats[0].user, this.properties.getEconomy().getEntryFee());
-                if (this.seats[1].user != null) {
-                    this.users.chargeEntryFee(this.seats[1].user, this.properties.getEconomy().getEntryFee());
-                }
-            }
+            // Escrow (P3): the entry fees and the persistent ACTIVE instance
+            // row commit atomically, so a crash mid-start can strand neither
+            // coins nor a ghost match. Practice duels open with fee 0.
+            this.settlement.openMatch(this.matchId, this.mode,
+                    this.seats[0].user != null ? this.seats[0].user.id : null,
+                    this.seats[1].user != null ? this.seats[1].user.id : null,
+                    isPracticeMode() ? 0 : this.terms.entryFee());
             this.metrics.matchesStarted.incrementAndGet();
             for (int i = 0; i < 2; i++) {
                 sendTo(i, ProtocolCodec.T_MATCH_FOUND, buildMatchFound(i));
@@ -222,26 +230,40 @@ public class MatchRoom {
     /**
      * Nobody pressed START in time: refund both entries and dissolve the
      * match without touching W/L or rating (origin refunded and requeued).
+     * The refund runs as the idempotent instance abort on the DB pool
+     * (instance ACTIVE->ABORTED + REFUND ledger rows in one transaction),
+     * so a replay or restart race can never double-refund.
      */
     private void cancelUnaccepted() {
         synchronized (this) {
             if (this.settledOnce.get() || this.currentRound > 0) {
                 return;
             }
-            for (Seat seat : this.seats) {
-                // Practice duels charged no entry fee, so there is nothing to
-                // refund (refunding would mint coins out of thin air).
-                if (seat.user != null && !isPracticeMode()) {
-                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
+            this.settledOnce.set(true);
+        }
+        this.events.emit("MATCH_NOT_ACCEPTED", this.matchId, "");
+        log.info("match {} cancelled: start not accepted", this.matchId);
+        Runnable abort = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    MatchRoom.this.settlement.abortMatch(MatchRoom.this.matchId);
+                } catch (RuntimeException e) {
+                    log.error("abort of unaccepted match {} failed: {}",
+                            MatchRoom.this.matchId, e.getMessage());
+                }
+                // Release the seats BEFORE the cancellation frame reaches
+                // the client (immediate re-queue must CAS cleanly).
+                MatchRoom.this.settlementCallback.onSettled(MatchRoom.this);
+                for (int i = 0; i < 2; i++) {
+                    sendTo(i, ProtocolCodec.T_MATCH_CANCELLED, new Object());
                 }
             }
-            this.events.emit("MATCH_NOT_ACCEPTED", this.matchId, "");
-            for (int i = 0; i < 2; i++) {
-                sendTo(i, ProtocolCodec.T_MATCH_CANCELLED, new Object());
-            }
-            this.settledOnce.set(true);
-            log.info("match {} cancelled: start not accepted", this.matchId);
-            this.settlementCallback.onSettled(this);
+        };
+        try {
+            this.dbExecutor.execute(abort);
+        } catch (RuntimeException saturated) {
+            abort.run(); // degrade to the caller thread rather than leak the room
         }
     }
 
@@ -327,7 +349,11 @@ public class MatchRoom {
             if (this.seats[1].isBot) {
                 startBotBrain(spec, round.durationMs);
             }
-            this.roundDeadlineAt = now + round.durationMs
+            // The scoring window closes at start + duration; the grace that
+            // follows only absorbs network propagation and never re-opens
+            // scoring (P1-5).
+            this.gameplayDeadlineAt = now + round.durationMs;
+            this.roundDeadlineAt = this.gameplayDeadlineAt
                     + this.properties.getTiming().getRoundGraceMs();
             this.events.emit("ROUND_START", this.matchId,
                     "round=" + roundNumber + " game=" + round.gameId + " dur=" + round.durationMs);
@@ -352,6 +378,16 @@ public class MatchRoom {
             }
             GameCatalog.GameSpec spec = this.catalog.byId(this.rounds.get(this.currentRound - 1).gameId);
             long now = System.currentTimeMillis();
+            // Late level_wins (past duration + a small network tolerance)
+            // must not score: the grace window is transport slack, not
+            // playing time — otherwise a reconnecting client banks extra
+            // answering time the opponent never had (P1-5).
+            if (now > this.gameplayDeadlineAt + this.properties.getTiming().getScoreAcceptGraceMs()) {
+                this.metrics.anomalies.incrementAndGet();
+                this.events.emit("LEVEL_WIN_REJECTED", this.matchId,
+                        "user=" + userId + " level=" + msg.level + " late");
+                return;
+            }
             // Wrong answers advance the level without scoring, so reported
             // levels legitimately contain gaps (1,3,4,6,...). Require strictly
             // increasing levels capped by what the elapsed time plausibly
@@ -487,7 +523,7 @@ public class MatchRoom {
             // A practice match never charged the fee; refunding it would mint.
             for (Seat seat : this.seats) {
                 if (seat.user != null) {
-                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
+                    this.users.adjustBalance(seat.user, this.terms.entryFee(), "admin-refund");
                 }
             }
         }
@@ -566,15 +602,23 @@ public class MatchRoom {
                 }
                 sendTo(1 - index, ProtocolCodec.T_OPPONENT_RECONNECTED, new Object());
             }
-            // Catch the returning player up with the current round.
-            if (this.currentRound > 0) {
+            // Catch the returning player up with the current round. The
+            // timer must reflect what is actually LEFT of the round: the
+            // client restarts its countdown from serverNow with
+            // durationMs, so resending the full window would hand the
+            // reconnector free playing time (P1-5). During intermission or
+            // the end-of-round grace there is nothing to resume — the
+            // round_end (or the next round_start) is already in flight.
+            long now = System.currentTimeMillis();
+            if (this.currentRound > 0 && now < this.gameplayDeadlineAt) {
                 GameCatalog.ProtocolRound round = this.rounds.get(this.currentRound - 1);
                 ProtocolCodec.RoundStart start = new ProtocolCodec.RoundStart();
                 start.matchId = this.matchId;
                 start.round = this.currentRound;
                 start.gameId = round.gameId;
-                start.durationMs = round.durationMs;
-                start.serverNow = System.currentTimeMillis();
+                start.durationMs = (int) Math.min(Integer.MAX_VALUE,
+                        Math.max(1L, this.gameplayDeadlineAt - now));
+                start.serverNow = now;
                 sendTo(index, ProtocolCodec.T_ROUND_START, start);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
                 score.matchId = this.matchId;
@@ -586,6 +630,25 @@ public class MatchRoom {
     }
 
     // ----------------------------------------------------------- settlement
+
+    /** Settlement plan plus the immutable payload inputs captured at settle time. */
+    private static final class PendingSettlement {
+
+        final SettlementService.Command command;
+        final int[][] roundScores = new int[2][];
+        final boolean forfeit;
+
+        PendingSettlement(SettlementService.Command command, int rounds, boolean forfeit) {
+            this.command = command;
+            this.forfeit = forfeit;
+            for (int i = 0; i < 2; i++) {
+                this.roundScores[i] = new int[rounds];
+            }
+        }
+    }
+
+    private static final int MAX_SETTLE_ATTEMPTS = 5;
+    private static final long SETTLE_RETRY_DELAY_MS = 2000L;
 
     /** winnerIndex 0/1, or -1 for a score-based result (including draws). */
     private void settle(int winnerIndex, boolean forfeit) {
@@ -604,10 +667,23 @@ public class MatchRoom {
                 seat.forfeitTask.cancel(false);
             }
         }
+        PendingSettlement pending = buildSettlement(winnerIndex, forfeit);
+        dispatchSettlement(pending, 0);
+    }
+
+    /**
+     * Computes the whole settlement as pure data — results, zero-sum ELO
+     * deltas from pre-match snapshots, payouts, anti-cheat flag outcomes —
+     * without touching the database, so the single-transaction apply in
+     * {@link SettlementService} is exactly this plan.
+     */
+    private PendingSettlement buildSettlement(int winnerIndex, boolean forfeit) {
         int total0 = totalScore(0);
         int total1 = totalScore(1);
         String result0;
-        if (winnerIndex == 0) {
+        if (this.adminVoided) {
+            result0 = ProtocolCodec.RESULT_DRAW;
+        } else if (winnerIndex == 0) {
             result0 = ProtocolCodec.RESULT_WIN;
         } else if (winnerIndex == 1) {
             result0 = ProtocolCodec.RESULT_LOSE;
@@ -622,175 +698,195 @@ public class MatchRoom {
         int elo1Pre = this.seats[1].elo();
         double score0 = ProtocolCodec.RESULT_WIN.equals(result0) ? 1.0
                 : ProtocolCodec.RESULT_DRAW.equals(result0) ? 0.5 : 0.0;
-        int delta0 = this.rating.delta(elo0Pre, elo1Pre, score0);
+        int delta0 = this.rating.delta(elo0Pre, elo1Pre, score0, this.terms.kFactor());
         // Friend rooms move half rating (PRD 3.11), rounded to stay zero-sum.
         // Practice duels never move rating at all (docs/bot-battle-prd.md).
-        if (isPracticeMode()) {
+        if (isPracticeMode() || this.adminVoided) {
             delta0 = 0;
         } else if (isFriendMode()) {
             delta0 = delta0 / 2;
         }
-        if (this.adminVoided) {
-            // Admin terminate: refund the entry fee, move no rating.
-            delta0 = 0;
-            for (Seat seat : this.seats) {
-                if (seat.user != null && !isPracticeMode()) {
-                    this.users.adjustBalance(seat.user, this.properties.getEconomy().getEntryFee());
-                }
-            }
-        }
+        SettlementService.Command command = new SettlementService.Command();
+        command.matchId = this.matchId;
+        command.mode = this.mode;
+        command.practice = isPracticeMode();
+        command.voided = this.adminVoided;
+        command.entryCharged = !isPracticeMode();
+        command.entryFee = this.terms.entryFee();
+        command.createdAt = this.startedAt;
+        command.botElo = this.botElo;
+        command.practiceTierWinCoins = this.terms.practiceTierWinCoins();
+        command.practiceDailyCap = this.terms.practiceDailyCap();
+        PendingSettlement pending = new PendingSettlement(command, this.rounds.size(), forfeit);
         int delta1 = -delta0;
-        ProtocolCodec.MatchEnd[] payloads = new ProtocolCodec.MatchEnd[2];
         for (int i = 0; i < 2; i++) {
             String result = i == 0 ? result0 : mirror(result0);
             boolean win = ProtocolCodec.RESULT_WIN.equals(result);
             boolean draw = ProtocolCodec.RESULT_DRAW.equals(result);
             Seat seat = this.seats[i];
+            SettlementService.SeatPlan plan = new SettlementService.SeatPlan();
+            plan.userId = seat.user != null ? seat.user.id : null;
+            plan.nickname = seat.nickname();
+            plan.score = i == 0 ? total0 : total1;
+            plan.result = result;
+            plan.eloDelta = this.adminVoided ? 0 : (i == 0 ? delta0 : delta1);
+            plan.win = win;
+            plan.draw = draw;
+            // Nominal payout from the terms snapshot: for practice the daily
+            // cap is resolved inside the settlement transaction (it queries
+            // committed wins).
+            plan.coinDelta = isPracticeMode()
+                    ? (seat.user != null && (win || draw) ? command.practiceTierWinCoins : 0)
+                    : win ? this.terms.winCoins()
+                    : draw ? this.terms.drawCoins() : 0;
+            command.seats[i] = plan;
+            for (int r = 0; r < this.rounds.size(); r++) {
+                pending.roundScores[i][r] = seat.roundScores[r];
+            }
+        }
+        planAntiCheat(command);
+        return pending;
+    }
+
+    /**
+     * Anti-cheat v2 (PRD 4.5): per-seat post-match distribution check via
+     * {@link AntiCheatPolicy}; outcomes are applied by
+     * {@link SettlementService} inside the settlement transaction.
+     */
+    private void planAntiCheat(SettlementService.Command command) {
+        long elapsed = System.currentTimeMillis() - this.roundStartedAt;
+        long floor = 0;
+        for (GameCatalog.ProtocolRound round : this.rounds) {
+            GameCatalog.GameSpec spec = this.catalog.byId(round.gameId);
+            floor = Math.max(floor, this.catalog.minLevelIntervalOf(spec));
+        }
+        for (Seat seat : this.seats) {
+            if (seat.user == null || seat.isBot) {
+                continue;
+            }
+            SettlementService.FlagUpdate flag = AntiCheatPolicy.evaluate(
+                    seat.lastReportedLevel, elapsed, floor,
+                    seat.user.suspicion, seat.user.restrictedMatches,
+                    this.properties.getAntiCheat());
+            if (flag == null) {
+                continue;
+            }
+            command.flagUpdates.put(seat.user.id, flag);
+            if (flag.strike) {
+                this.metrics.anticheastStrikes.incrementAndGet();
+                this.events.emit("ANTICHEAT_STRIKE", this.matchId,
+                        "user=" + seat.user.id + " avg=" + (int) (elapsed / Math.max(1, seat.lastReportedLevel))
+                                + " floor=" + floor + " suspicion=" + flag.suspicionAfter);
+                if (flag.restrictionAfter != null) {
+                    log.warn("user {} restricted to bot matches for {} games (answer-rate anomaly)",
+                            seat.user.id, flag.restrictionAfter);
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs the settlement transaction on the bounded DB pool and, on
+     * success, delivers match_end. Timer threads only submit here — the
+     * transaction itself never runs on the scheduler (P2-4). Failures retry
+     * on a delay — the room stays alive until the plan lands or the retries
+     * run out, instead of a permanently-settled-but-half-persisted state.
+     */
+    private void dispatchSettlement(final PendingSettlement pending, final int attempt) {
+        try {
+            this.dbExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    runSettlement(pending, attempt);
+                }
+            });
+        } catch (RuntimeException saturated) {
+            retrySettlementLater(pending, attempt, "db pool saturated: " + saturated.getMessage());
+        }
+    }
+
+    private void runSettlement(PendingSettlement pending, int attempt) {
+        SettlementService.Result result;
+        try {
+            result = this.settlement.settle(pending.command);
+        } catch (RuntimeException e) {
+            retrySettlementLater(pending, attempt, e.getMessage());
+            return;
+        }
+        deliverSettlement(pending, result);
+    }
+
+    private void retrySettlementLater(PendingSettlement pending, int attempt, String reason) {
+        if (attempt >= MAX_SETTLE_ATTEMPTS || this.scheduler.isShutdown()) {
+            log.error("match {} settlement failed after {} attempts ({}); room dropped unsettled",
+                    this.matchId, attempt + 1, reason);
+            this.metrics.settlementFailures.incrementAndGet();
+            this.events.emit("SETTLE_FAILED", this.matchId, "attempts=" + (attempt + 1));
+            return;
+        }
+        log.warn("match {} settlement attempt {} failed ({}); retrying",
+                this.matchId, attempt + 1, reason);
+        this.events.emit("SETTLE_RETRY", this.matchId, "attempt=" + (attempt + 1));
+        try {
+            this.scheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    dispatchSettlement(pending, attempt + 1);
+                }
+            }, SETTLE_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
+        } catch (RuntimeException rejected) {
+            log.error("match {} settlement retry rejected; room dropped unsettled", this.matchId);
+            this.metrics.settlementFailures.incrementAndGet();
+            this.events.emit("SETTLE_FAILED", this.matchId, "scheduler rejected");
+        }
+    }
+
+    /** Builds and sends the match_end frames AFTER the transaction committed. */
+    private void deliverSettlement(PendingSettlement pending, SettlementService.Result result) {
+        SettlementService.Command command = pending.command;
+        log.info("match {} settled: mode={} forfeit={} voided={} scores {}/{} replayed={}",
+                this.matchId, this.mode, pending.forfeit,
+                command.voided, command.seats[0].score, command.seats[1].score,
+                result.alreadySettled);
+        this.metrics.matchesSettled.incrementAndGet();
+        this.events.emit("SETTLED", this.matchId,
+                "mode=" + this.mode
+                        + " forfeit=" + pending.forfeit + " voided=" + command.voided
+                        + " scores=" + command.seats[0].score + "/" + command.seats[1].score);
+        // Release the seats BEFORE the clients learn the match ended: the
+        // moment a client reacts to match_end by queueing again, its
+        // lifecycle claim must already be free or the CAS will 409 it.
+        this.settlementCallback.onSettled(this);
+        for (int i = 0; i < 2; i++) {
+            SettlementService.SeatPlan plan = command.seats[i];
+            SettlementService.SeatOutcome outcome = result.seats[i];
             ProtocolCodec.MatchEnd end = new ProtocolCodec.MatchEnd();
             end.matchId = this.matchId;
-            end.result = result;
-            end.myScore = i == 0 ? total0 : total1;
-            end.oppScore = i == 0 ? total1 : total0;
-            int coinDelta;
-            if (isPracticeMode()) {
-                // Practice economy (docs/bot-battle-prd.md): tier payout for a
-                // win (draws pay half), the loser walks away with nothing, and
-                // the daily cap zeroes later wins without ending the match.
-                // Only the human seat is paid; the bot's payload discards it.
-                coinDelta = seat.user != null
-                        ? (win ? this.practiceWinCoins(seat)
-                                : draw ? this.practiceWinCoins(seat) / 2 : 0)
-                        : 0;
-            } else {
-                coinDelta = win ? this.properties.getEconomy().getWinCoins()
-                        : draw ? this.properties.getEconomy().getDrawCoins() : 0;
-            }
-            end.coinDelta = coinDelta;
-            if (seat.user != null && !this.adminVoided) {
-                int eloDelta = i == 0 ? delta0 : delta1;
-                this.users.applySettlement(seat.user, eloDelta, coinDelta, win, draw, isPracticeMode());
-                end.eloDelta = eloDelta;
-                end.elo = seat.user.elo;
-                end.balance = seat.user.balance;
-                end.practiceStreak = seat.user.practiceStreak != null ? seat.user.practiceStreak : 0;
-            } else {
-                end.eloDelta = 0;
-                end.elo = this.botElo;
-                end.balance = 0;
-                end.practiceStreak = 0;
-            }
-            if (this.adminVoided) {
-                end.eloDelta = 0;
-                end.coinDelta = this.properties.getEconomy().getEntryFee();
-                end.balance = seat.user != null ? seat.user.balance : 0;
-            }
-            if (seat.user != null) {
-                end.myWins = seat.user.wins;
-                end.myLosses = seat.user.losses;
-                end.myDraws = seat.user.draws;
-            }
+            end.result = plan.result;
+            end.myScore = plan.score;
+            end.oppScore = command.seats[1 - i].score;
+            end.eloDelta = plan.eloDelta;
+            end.elo = outcome.elo;
+            end.coinDelta = outcome.coinDelta;
+            end.balance = outcome.balance;
+            end.practiceStreak = outcome.practiceStreak;
+            end.myWins = outcome.wins;
+            end.myLosses = outcome.losses;
+            end.myDraws = outcome.draws;
             end.rounds = new ProtocolCodec.RoundScore[this.rounds.size()];
             for (int r = 0; r < this.rounds.size(); r++) {
                 ProtocolCodec.RoundScore score = new ProtocolCodec.RoundScore();
-                score.me = this.seats[i].roundScores[r];
-                score.opp = this.seats[1 - i].roundScores[r];
+                score.me = pending.roundScores[i][r];
+                score.opp = pending.roundScores[1 - i][r];
                 end.rounds[r] = score;
             }
-            payloads[i] = end;
+            sendTo(i, ProtocolCodec.T_MATCH_END, end);
         }
-        // Persist everything BEFORE the (async) match_end frames reach the
-        // clients: a client that reacts to match_end by reading history or
-        // having the test inspect suspicion must observe committed state.
-        persistRecord(total0, total1, result0, payloads[0].eloDelta);
-        evaluateAntiCheat();
         if (this.seasons != null) {
             try {
                 this.seasons.activeSeason(); // cheap rollover check on every settle
             } catch (RuntimeException e) {
                 log.warn("season check failed: {}", e.getMessage());
-            }
-        }
-        for (int i = 0; i < 2; i++) {
-            sendTo(i, ProtocolCodec.T_MATCH_END, payloads[i]);
-        }
-        log.info("match {} settled: mode={} forfeit={} voided={} scores {}/{}",
-                this.matchId, this.mode, forfeit,
-                this.adminVoided, total0, total1);
-        this.metrics.matchesSettled.incrementAndGet();
-        this.events.emit("SETTLED", this.matchId,
-                "mode=" + this.mode
-                        + " forfeit=" + forfeit + " voided=" + this.adminVoided
-                        + " scores=" + total0 + "/" + total1);
-        this.settlementCallback.onSettled(this);
-    }
-
-    private void persistRecord(int total0, int total1, String result0, int eloDeltaA) {
-        if (this.records == null) {
-            return;
-        }
-        try {
-            MatchRecord record = new MatchRecord();
-            record.matchId = this.matchId;
-            record.mode = this.mode;
-            record.playerA = this.seats[0].user != null ? this.seats[0].user.id : -1L;
-            record.nicknameA = this.seats[0].nickname();
-            record.resultA = result0;
-            record.scoreA = total0;
-            record.playerB = this.seats[1].user != null ? this.seats[1].user.id : -1L;
-            record.nicknameB = this.seats[1].nickname();
-            record.scoreB = total1;
-            record.eloDeltaA = eloDeltaA;
-            record.createdAt = this.startedAt;
-            record.settledAt = System.currentTimeMillis();
-            record.botOpponent = this.seats[1].isBot;
-            this.records.save(record);
-        } catch (RuntimeException e) {
-            log.warn("match record persist failed: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * Anti-cheat v2 (PRD 4.5): per-seat post-match distribution check. A
-     * human answering faster than floor*speedFactor across the round is a
-     * bot/automation signature; strikes accumulate and eventually restrict
-     * the account to bot opponents only.
-     */
-    private void evaluateAntiCheat() {
-        long elapsed = System.currentTimeMillis() - this.roundStartedAt;
-        for (Seat seat : this.seats) {
-            if (seat.user == null || seat.isBot) {
-                continue;
-            }
-            long floor = 0;
-            for (GameCatalog.ProtocolRound round : this.rounds) {
-                GameCatalog.GameSpec spec = this.catalog.byId(round.gameId);
-                floor = Math.max(floor, this.catalog.minLevelIntervalOf(spec));
-            }
-            if (floor <= 0 || elapsed <= 0) {
-                continue;
-            }
-            int answers = seat.lastReportedLevel;
-            if (answers < this.properties.getAntiCheat().getMinAnswersForCheck()) {
-                continue;
-            }
-            double avgInterval = (double) elapsed / answers;
-            if (seat.user.restrictedMatches > 0) {
-                seat.user.restrictedMatches--;
-                this.users.saveFlags(seat.user);
-            }
-            if (avgInterval < floor * this.properties.getAntiCheat().getSpeedFactor()) {
-                seat.user.suspicion++;
-                this.metrics.anticheastStrikes.incrementAndGet();
-                this.events.emit("ANTICHEAT_STRIKE", this.matchId,
-                        "user=" + seat.user.id + " avg=" + (int) avgInterval + " floor=" + floor
-                                + " suspicion=" + seat.user.suspicion);
-                if (seat.user.suspicion >= this.properties.getAntiCheat().getSuspicionThreshold()) {
-                    seat.user.restrictedMatches = this.properties.getAntiCheat().getRestrictionMatches();
-                    seat.user.suspicion = 0;
-                    log.warn("user {} restricted to bot matches for {} games (answer-rate anomaly)",
-                            seat.user.id, seat.user.restrictedMatches);
-                }
-                this.users.saveFlags(seat.user);
             }
         }
     }
@@ -944,29 +1040,6 @@ public class MatchRoom {
 
     public boolean isPracticeMode() {
         return MODE_PRACTICE.equals(this.mode);
-    }
-
-    /**
-     * Practice payout for the human seat: the tier's win coins while today's
-     * settled wins stay below the cap, zero afterwards (docs/bot-battle-prd.md
-     * section 6). The cap counts wins already persisted, so it gates without
-     * ever blocking the match itself.
-     */
-    private int practiceWinCoins(Seat seat) {
-        int winCoins = 0;
-        for (PkProperties.BotDifficulty tier : this.properties.getPractice().getDifficulties()) {
-            if (tier.getElo() == this.botElo) {
-                winCoins = tier.getWinCoins();
-                break;
-            }
-        }
-        if (winCoins <= 0 || this.records == null) {
-            return 0;
-        }
-        long dayStart = java.time.LocalDate.now()
-                .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
-        long winsToday = this.records.countPracticeWinsSince(seat.user.id, dayStart);
-        return winsToday < this.properties.getPractice().getDailyRewardCap() ? winCoins : 0;
     }
 
     private void stopBotBrain() {
