@@ -2,6 +2,16 @@ plugins {
     id 'com.android.application' version '8.13.2'
 }
 
+// Single source of truth for the version and the build timestamp: the manifest,
+// BuildConfig and the APK file name all read from here. The timestamp formats are
+// pinned to Locale.US so artifact names and in-app stamps stay stable on
+// non-English machines.
+def appVersionCode = 74
+def appVersionName = '3.6.3'
+def buildTime = new Date()
+def buildStamp = new java.text.SimpleDateFormat('yyyyMMdd-HHmm', java.util.Locale.US).format(buildTime)
+def buildTimeText = new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss', java.util.Locale.US).format(buildTime)
+
 android {
     namespace 'com.memory.brain.training.games'
     compileSdk 36
@@ -16,8 +26,12 @@ android {
         // default from API 21, so WSS needs no manual SSLSocketFactory setup.
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 74
-        versionName '3.6.3'
+        versionCode appVersionCode
+        versionName appVersionName
+        // The build stamp travels inside the package: a renamed or forwarded APK
+        // can still be traced back to the build it came from.
+        buildConfigField 'String', 'BUILD_TIME', "\"${buildTimeText}\""
+        manifestPlaceholders = [buildTime: buildTimeText]
         vectorDrawables.useSupportLibrary = true
         // Only languages with real translations are bundled; everything else
         // would fall back to the English default anyway.
@@ -43,6 +57,54 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
+}
+
+// Artifact naming: memory-game-<versionName>-<versionCode>-<variant>-<yyyyMMdd-HHmm>[-unsigned].apk,
+// e.g. memory-game-3.6.3-74-release-20261013-1712.apk
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.each { output ->
+            // signingConfig is never null; only a config with a complete keystore
+            // counts as signed (injected signing included). Overriding the file name
+            // suppresses the -unsigned suffix AGP would add, so re-add it here.
+            def unsigned = variant.signingConfig?.isSigningReady() ? '' : '-unsigned'
+            // The public VariantOutput interface does not expose the file name, but the
+            // implementation class carries the outputFileName property and Groovy
+            // dispatches to it at runtime (the usual AGP 8.x route).
+            output.outputFileName.set(
+                    "memory-game-${appVersionName}-${appVersionCode}-${variant.name}-${buildStamp}${unsigned}.apk")
+        }
+    }
+}
+
+// Release distribution: after assembleRelease, copy this build's signed APK to the
+// module-level release/ folder. Unsigned (-unsigned) packages stay in build/.
+tasks.register('publishReleaseApk') {
+    group = 'build'
+    description = 'Copy the signed, version/timestamp-named release APK into release/'
+    doLast {
+        def apkDir = file("$buildDir/outputs/apk/release")
+        // Only this build's output (same timestamp) - never a leftover of an earlier run
+        def signedApks = (apkDir.listFiles() ?: []).findAll {
+            it.name.endsWith('.apk') && it.name.contains(buildStamp) && !it.name.contains('-unsigned')
+        }
+        if (signedApks.isEmpty()) {
+            logger.lifecycle("publishReleaseApk: no signed release APK for this build (${buildStamp}), release/ left untouched")
+            return
+        }
+        def distDir = file("$projectDir/release")
+        distDir.mkdirs()
+        (signedApks + [new File(apkDir, 'output-metadata.json')]).each { f ->
+            if (f.exists()) {
+                new File(distDir, f.name).bytes = f.bytes
+                logger.lifecycle("publishReleaseApk: release/${f.name}")
+            }
+        }
+    }
+}
+
+tasks.matching { it.name == 'assembleRelease' }.configureEach {
+    finalizedBy 'publishReleaseApk'
 }
 
 dependencies {

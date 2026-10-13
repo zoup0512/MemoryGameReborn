@@ -21,7 +21,11 @@
 ## 构建
 
 - Android Gradle Plugin 8.13.2 / Gradle 8.13 / JDK 17
-- Android：`cd android_memory-game-reborn && gradlew assembleDebug`，产物位于 `build/outputs/apk/debug/`
+- Android：`cd android_memory-game-reborn && gradlew assembleDebug`，产物位于 `build/outputs/apk/debug/`，
+  文件名带版本号与编译时间戳：`memory-game-<versionName>-<versionCode>-<variant>-<yyyyMMdd-HHmm>[-unsigned].apk`
+- `gradlew assembleRelease` 结束后会把已签名的 release APK 复制到 `android_memory-game-reborn/release/`
+  （未签名的 `-unsigned` 包只留在 `build/` 里）。编译时间戳同时写入 `BuildConfig.BUILD_TIME` 与清单
+  `com.memory.brain.training.games.build_time`，安装包被改名或转发后仍能确认它出自哪次构建
 - 支持库沿用原版 `com.android.support:26.1.0`（未迁移 AndroidX），依赖从 Google Maven / Maven Central 下载
 
 ## 目录说明

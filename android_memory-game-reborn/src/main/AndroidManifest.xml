@@ -27,6 +27,13 @@
             android:name="AA_DB_VERSION"
             android:value="16" />
 
+        <!-- Build stamp; the placeholder value is injected by build.gradle's
+             manifestPlaceholders. Readable from an installed package with
+             aapt dump xmltree, so a device build can be traced to its build. -->
+        <meta-data
+            android:name="com.memory.brain.training.games.build_time"
+            android:value="${buildTime}" />
+
         <activity
             android:name="com.cube.memorygames.SplashActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
