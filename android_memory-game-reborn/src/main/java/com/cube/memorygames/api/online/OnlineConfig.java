@@ -5,24 +5,25 @@ import android.content.Context;
 /**
  * Online PK server endpoint configuration.
  *
- * The production default points at the overseas deployment (see
- * docs/online-pk-prd.md, decision D-2). Debug builds may override the
- * endpoint from the Online lobby (long-press on the lobby title) and the
- * override is stored locally so it survives restarts during device testing.
+ * The default points at the Tencent Cloud deployment (124.220.35.87, systemd
+ * memorygames-pk.service, ws :8091). Debug builds may override the endpoint
+ * from the Online lobby (long-press on the lobby title) and the override is
+ * stored locally so it survives restarts during device testing.
  */
 public final class OnlineConfig {
 
     /**
-     * Production WebSocket endpoint: the public domain mapped to the NAS
-     * PK server (router forwards www.52razor.site:8090 -> 192.168.110.140:8090).
+     * Production WebSocket endpoint: the cloud PK server. Port 8091, not
+     * 8090 — 8090 on that box is taken by the Halo blog container.
      */
-    public static final String DEFAULT_ENDPOINT = "ws://www.52razor.site:8090/ws";
+    public static final String DEFAULT_ENDPOINT = "ws://124.220.35.87:8091/ws";
 
     /**
-     * LAN test deployment (PRD 6.1 real-device integration testing): the
-     * NAS's fixed LAN address, so debug builds survive the PC's roaming IP.
+     * Test deployment default for debuggable builds: same cloud server, so
+     * on-device testing hits the same backend as release. Use the lobby
+     * long-press override to point at a LAN box when testing locally.
      */
-    public static final String LAN_TEST_ENDPOINT = "ws://www.52razor.site:8090/ws";
+    public static final String LAN_TEST_ENDPOINT = "ws://124.220.35.87:8091/ws";
 
     /** Local development endpoint used when a debug override is set. */
     private static final String PREFS = "online_config";

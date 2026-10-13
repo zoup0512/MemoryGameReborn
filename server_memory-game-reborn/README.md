@@ -60,8 +60,8 @@ docker compose up -d   # app + postgres 16；环境变量 PK_DB_PASSWORD、PK_AD
 统一 X-Admin-Token 守卫 + 每 IP 限流（pk.admin-rate-limit，默认 60/min）。详见
 `docs/online-pk-admin-design.md`。
 
-客户端默认连 `wss://pk.memorygame.example.com/ws`（`OnlineConfig`），debug 构建可在 Online
-大厅长按标题改为内网地址（如 `ws://192.168.x.x:8080/ws`）真机联调。
+客户端默认连 `ws://124.220.35.87:8091/ws`（`OnlineConfig`；云上 8090 被 Halo 占用，PK 服务跑 8091），
+debug 构建可在 Online 大厅长按标题改为其他地址（如内网 `ws://192.168.x.x:8090/ws`）真机联调。
 
 ## 协议要点（v1）
 
