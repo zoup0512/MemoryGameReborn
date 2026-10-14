@@ -108,7 +108,8 @@ public class OnlineClient {
                 // Ping/pong chatter is noise; everything else is worth a line
                 // when diagnosing dropped frames on flaky links.
                 if (!message.contains("\"t\":\"pong\"")) {
-                    android.util.Log.d("OnlinePK", "ws frame: " + message);
+                    // Authentication frames contain bearer credentials; log only their type.
+                    android.util.Log.d("OnlinePK", "ws frame type: " + OnlineMessages.typeOf(message));
                 }
                 if (message.contains("\"t\":\"pong\"")) {
                     awaitingPong = false;

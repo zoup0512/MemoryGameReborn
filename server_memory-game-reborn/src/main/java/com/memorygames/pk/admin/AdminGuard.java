@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -48,6 +49,22 @@ public class AdminGuard {
         }
         if (!rateOk(clientIp(request))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        }
+        return null;
+    }
+
+    /** Shared payload for mutations that only need an operator reason. */
+    public static class ReasonBody {
+        public String reason;
+    }
+
+    /** Validate before looking up targets, changing state or writing audit rows. */
+    public ResponseEntity<?> denyReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "reason is required"));
+        }
+        if (reason.length() > 500) {
+            return ResponseEntity.badRequest().body(Map.of("error", "reason must be at most 500 characters"));
         }
         return null;
     }

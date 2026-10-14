@@ -29,6 +29,7 @@ public final class OnlineIdentity {
     }
 
     public static String getOrCreateUuid(Context context) {
+        requireOrigin(context);
         String uuid = getString(context, KEY_UUID);
         if (uuid == null || uuid.length() == 0) {
             uuid = UUID.randomUUID().toString();
@@ -37,11 +38,47 @@ public final class OnlineIdentity {
         return uuid;
     }
 
+    public static String legacyEndpoint(Context context) {
+        String value=getString(context,"endpoint");
+        // Pre-origin installs belonged to the historical cloud, never to a debug override or new build default.
+        if (value == null && (context.getSharedPreferences(PREFS,0).contains(KEY_TOKEN)
+                || context.getSharedPreferences(PREFS,0).contains(KEY_UUID))) {
+            value=OnlineConfig.LEGACY_ENDPOINT;
+            setString(context,"endpoint",value);
+        }
+        return value;
+    }
+
+    private static void requireOrigin(Context context) {
+        String source=legacyEndpoint(context), target=OnlineConfig.getEndpoint(context);
+        if (source != null && !OnlineConfig.origin(source).equals(OnlineConfig.origin(target)))
+            throw new IllegalStateException("旧游客身份属于另一服务器，请返回原地址或明确授权 TLS 迁移");
+        if (source == null) setString(context,"endpoint",target);
+    }
+
+    public static boolean hasLegacy(Context context) {
+        // Presence is intentionally checked without decryption: corrupt credentials must not create a new guest.
+        if (!context.getSharedPreferences(PREFS,0).contains(KEY_TOKEN)) return false;
+        return true; // getToken/getMigrationToken enforce the recorded origin before any transmission.
+    }
+
+    public static String getMigrationToken(Context context, String trustedTarget) {
+        if (!trustedTarget.equals(OnlineConfig.getEndpoint(context)) || !trustedTarget.startsWith("wss://"))
+            throw new IllegalStateException("迁移目标未经信任或未启用 TLS");
+        if (legacyEndpoint(context) == null) throw new IllegalStateException("旧游客来源不明，禁止迁移");
+        String token=getString(context,KEY_TOKEN);
+        if (token == null || token.isEmpty()) throw new IllegalStateException("旧游客凭证缺失，不会创建替代身份");
+        return token;
+    }
+
     public static String getToken(Context context) {
+        requireOrigin(context);
         return getString(context, KEY_TOKEN);
     }
 
     public static void saveToken(Context context, String token, long userId) {
+        requireOrigin(context);
+        if (token == null || token.isEmpty()) throw new IllegalStateException("游客认证未返回凭证");
         setString(context, KEY_TOKEN, token);
         setString(context, KEY_USER_ID, String.valueOf(userId));
     }
@@ -90,16 +127,11 @@ public final class OnlineIdentity {
     }
 
     private static String getString(Context context, String key) {
-        String value = SecurePrefs.get(context, PREFS, key);
-        if (value != null) {
-            // re-seal a plaintext legacy value on first touch
-            SecurePrefs.seal(context, PREFS, key);
-        }
-        return value;
+        return SecurePrefs.getStrict(context, PREFS, key);
     }
 
     private static void setString(Context context, String key, String value) {
-        SecurePrefs.put(context, PREFS, key, value);
+        SecurePrefs.putStrict(context, PREFS, key, value);
     }
 
     private static boolean getBoolean(Context context, String key, boolean def) {

@@ -6,12 +6,10 @@ import com.memorygames.pk.admin.AdminAuditService;
 import com.memorygames.pk.admin.AdminGuard;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,7 +43,7 @@ public class AdminConfigController {
         this.audit = audit;
     }
 
-    public static class ConfigBody {
+    public static class ConfigBody extends AdminGuard.ReasonBody {
 
         public Long roundDurationOverrideMs;
         public Long botLevelIntervalOverrideMs;
@@ -82,6 +80,11 @@ public class AdminConfigController {
         if (denied != null) {
             return denied;
         }
+        return ResponseEntity.ok(view());
+    }
+
+    /** Rendering a write response must not consume the IP limit a second time. */
+    private Map<String, Object> view() {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("roundDurationOverrideMs", this.properties.getRoundDurationOverrideMs());
         view.put("botLevelIntervalOverrideMs", this.properties.getBotLevelIntervalOverrideMs());
@@ -110,17 +113,20 @@ public class AdminConfigController {
         }
         practice.put("difficulties", tiers);
         view.put("practice", practice);
-        return ResponseEntity.ok(view);
+        return view;
     }
 
     @PutMapping("/config")
-    public ResponseEntity<?> put(HttpServletRequest request, @RequestBody ConfigBody body) {
+    public ResponseEntity<?> put(HttpServletRequest request, @RequestBody(required = false) ConfigBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
         }
-        this.audit.record("CONFIG_PUT", body.toString(), this.guard.clientIp(request), "ok");
-        StringBuilder audit = new StringBuilder("runtime config change:");
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
+        }
+        StringBuilder audit = new StringBuilder("runtime config change: reason=").append(body.reason);
         if (body.roundDurationOverrideMs != null) {
             long value = clamp(body.roundDurationOverrideMs, MIN_ROUND_MS, MAX_ROUND_MS);
             this.properties.setRoundDurationOverrideMs(value);
@@ -218,7 +224,7 @@ public class AdminConfigController {
         }
         log.info("{}", audit);
         this.audit.record("CONFIG_APPLIED", audit.toString(), this.guard.clientIp(request), "ok");
-        return get(request);
+        return ResponseEntity.ok(view());
     }
 
     private static long clamp(long value, long min, long max) {

@@ -64,4 +64,19 @@ public class UserAccount {
 
     /** Consecutive practice (vs-bot) wins; nullable for pre-P2 rows. */
     public Integer practiceStreak;
+
+    @Column(nullable = false)
+    public String accountType = "GUEST";
+    @Column(nullable = false)
+    public long upgradedAt;
+    @Column(nullable = false)
+    public String avatarValue = "avatar_1";
+    @Column(nullable = false)
+    public boolean legacyAuthDisabled;
+    @Column(nullable = false)
+    public long deleteRequestedAt;
+    @Column(nullable = false)
+    public long deleteAfter;
+    @Column(nullable = false)
+    public long nicknameChangedAt;
 }

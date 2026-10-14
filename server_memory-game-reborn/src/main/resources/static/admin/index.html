@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>MemoryGameReborn · 服务端管理</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/admin/admin.js" defer></script>
+</head>
+<body>
+  <section id="login" class="login-panel" aria-labelledby="login-title">
+    <div class="brand-mark" aria-hidden="true">M</div>
+    <p class="eyebrow">MEMORY GAME REBORN</p>
+    <h1 id="login-title">服务端管理</h1>
+    <p class="muted">仅限管理员。请通过 HTTPS 或本机访问。</p>
+    <form id="login-form">
+      <label for="admin-token">管理 Token</label>
+      <input id="admin-token" type="password" autocomplete="off" required maxlength="4096" spellcheck="false">
+      <p class="hint">Token 仅保存在当前页面内存，刷新或退出后需要重新输入。玩家账号不能用于管理登录。</p>
+      <button id="login-submit" type="submit" class="primary">进入控制台</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+    <p class="hint">管理接口未启用或凭证错误时均返回 404。此页面本身不包含业务数据。</p>
+  </section>
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark small" aria-hidden="true">M</span><div>MemoryGameReborn<span class="brand-caption">服务端管理</span></div></div>
+      <div class="toolbar"><span id="origin" class="muted"></span><button id="logout" type="button">退出管理</button></div>
+    </header>
+    <div class="shell">
+      <aside class="sidebar">
+        <nav aria-label="管理页面">
+          <button type="button" data-page="overview" aria-current="page">运行概览</button>
+          <button type="button" data-page="matches">对局与匹配</button>
+          <button type="button" data-page="users">用户管理</button>
+          <button type="button" data-page="config">运行配置</button>
+          <button type="button" data-page="ops">事件与运维</button>
+        </nav>
+        <p class="sidebar-note">单管理员控制台<br>变更需要理由与确认<br>不提供删库或重启入口</p>
+      </aside>
+      <main id="main">
+        <div class="page-heading"><div><p class="eyebrow">OPERATIONS</p><h1 id="page-title">运行概览</h1><p id="page-description" class="muted"></p></div><div class="toolbar"><label class="refresh-toggle"><input id="auto-refresh" type="checkbox" checked>每 15 秒刷新</label><button id="refresh" type="button">刷新当前页</button></div></div>
+        <p id="sample-time" class="hint" role="status"></p>
+        <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+        <div id="content" aria-busy="false"></div>
+      </main>
+    </div>
+  </div>
+  <dialog id="action-dialog" aria-labelledby="action-title">
+    <form id="action-form">
+      <div class="dialog-heading"><h2 id="action-title"></h2><button id="dialog-close" type="button" aria-label="关闭操作确认">关闭</button></div>
+      <p id="action-impact" class="warning"></p>
+      <div id="action-fields"></div>
+      <label for="action-reason">操作理由（必填）</label>
+      <textarea id="action-reason" required maxlength="500" rows="3" placeholder="说明处理依据，便于审计追溯"></textarea>
+      <p id="action-error" class="error" role="alert"></p>
+      <div class="dialog-footer"><button id="dialog-cancel" type="button">取消</button><button id="action-submit" type="submit" class="primary">确认提交</button></div>
+    </form>
+  </dialog>
+  <noscript><p class="warning">管理控制台需要启用 JavaScript。</p></noscript>
+</body>
+</html>

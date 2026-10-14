@@ -1245,6 +1245,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.myNameView.setText(profile != null ? profile.nickname
                 : OnlineIdentity.getNickname(this));
         this.myAvatar.image.setImageResource(R.drawable.ic_user_placeholder);
+        OnlineUi.applyAvatar(this,this.myAvatar,profile != null ? profile.avatarValue : null);
         this.myAvatar.badge.setVisibility(View.VISIBLE);
         this.myAvatar.rating.setText(String.valueOf(profile != null ? profile.elo : 0));
         refreshCoins();
@@ -1286,8 +1287,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     private void refreshCoins() {
-        this.coinsView.setText(String.valueOf(MemoryApplicationModel.getInstance()
-                .getLocalDataManager().getLocalUser().money));
+        this.coinsView.setText(String.valueOf(OnlineSession.get().getOnlineCoins()));
     }
 
     // ---------------------------------------------------------- round launch

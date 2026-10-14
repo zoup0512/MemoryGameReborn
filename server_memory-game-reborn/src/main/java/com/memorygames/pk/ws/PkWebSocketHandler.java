@@ -15,8 +15,12 @@ import com.memorygames.pk.match.PlayerEndpoint;
 import com.memorygames.pk.match.PlayerLifecycle;
 import com.memorygames.pk.rating.Rating;
 import com.memorygames.pk.season.SeasonService;
+import com.memorygames.pk.user.AccountException;
+import com.memorygames.pk.user.AccountService;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -48,6 +52,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private static final int MAX_UUID_LENGTH = 64;
 
     private final UserService users;
+    private final AccountService accounts;
     private final Matchmaker matchmaker;
     private final MatchManager manager;
     private final PlayerLifecycle lifecycle;
@@ -64,8 +69,13 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, Long> authenticated = new ConcurrentHashMap<>();
     /** user id -> ws session id (single live session per account). */
     private final Map<Long, String> sessionByUser = new ConcurrentHashMap<>();
-    /** user id -> last known token (for re-resolution after auth). */
-    private final Map<Long, String> tokenByUser = new ConcurrentHashMap<>();
+    /** ws session id -> legacy token, only for unmigrated guests. */
+    private final Map<String, String> legacyTokens = new ConcurrentHashMap<>();
+    /** ws session id -> v2 account session id; access expiry does not end a live socket. */
+    private final Map<String, String> accountSessions = new ConcurrentHashMap<>();
+    /** Serialize controller replacement and close/revocation cleanup. */
+    private final Object sessionLock = new Object();
+    private final java.util.Set<String> connectedSessions = ConcurrentHashMap.newKeySet();
     /** ws session id -> shared send endpoint (one bounded queue per session). */
     private final Map<String, PlayerEndpoint.WebSocket> endpoints = new ConcurrentHashMap<>();
     /** user id -> room_join failures inside the current window (code guessing). */
@@ -89,8 +99,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                               PlayerLifecycle lifecycle, Rating rating, PkProperties properties,
                               MatchRecordRepository records, SeasonService seasons,
                               AdminState adminState, EventRing events, SessionStats stats,
-                              AdminMetrics metrics) {
+                              AdminMetrics metrics, AccountService accounts) {
         this.users = users;
+        this.accounts = accounts;
         this.matchmaker = matchmaker;
         this.manager = manager;
         this.lifecycle = lifecycle;
@@ -106,7 +117,10 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        this.stats.connected();
+        if (this.connectedSessions.add(session.getId())) {
+            this.stats.connected();
+        }
+        endpointFor(session);
         log.debug("ws connected: {}", session.getId());
     }
 
@@ -139,6 +153,12 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         }
         final String rid = envelope.rid;
         Long userId = this.authenticated.get(session.getId());
+        UserAccount liveAccount = userId == null ? null : userOfSession(session.getId());
+        if (userId != null && (liveAccount == null
+                || !session.getId().equals(this.sessionByUser.get(userId)))) {
+            kickSession(session.getId(), "session revoked");
+            return;
+        }
         switch (envelope.t) {
             case ProtocolCodec.T_PING:
                 endpointFor(session).send(ProtocolCodec.encode(ProtocolCodec.T_PONG, new Object(), rid));
@@ -162,20 +182,21 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 }
                 // The balance field is deliberately ignored: fresh accounts
                 // start from the server-side welcome grant only (P1-3).
-                UserAccount account = this.users.register(register.uuid, register.nickname);
-                if (account.deleted) {
-                    reply(session, rid, ProtocolCodec.T_ERROR, error(403, "account deleted"));
+                UserAccount account;
+                try {
+                    account = this.users.register(register.uuid, register.nickname);
+                } catch (AccountException ex) {
+                    reply(session, rid, ProtocolCodec.T_ERROR, error(ex.status, ex.code));
                     return;
                 }
-                if (account.bannedUntil > System.currentTimeMillis()) {
-                    reply(session, rid, ProtocolCodec.T_ERROR, error(403, "account banned"));
-                    return;
+                synchronized (this.sessionLock) {
+                    if (!bindSession(session, account, account.token, null)) {
+                        return;
+                    }
+                    this.events.emit("AUTH_OK", null,
+                            "user=" + account.id + " session=" + session.getId() + " register");
+                    reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(account, account.token));
                 }
-                this.events.emit("AUTH_OK", null,
-                        "user=" + account.id + " session=" + session.getId() + " register");
-                this.stats.authed();
-                bindSession(session, account);
-                reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(account));
                 return;
             }
             case ProtocolCodec.T_AUTH: {
@@ -187,30 +208,42 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     return;
                 }
                 ProtocolCodec.Auth auth = ProtocolCodec.convert(envelope.d, ProtocolCodec.Auth.class);
-                Optional<UserAccount> account =
-                        auth != null && auth.token != null ? this.users.byToken(auth.token) : Optional.empty();
-                if (account.isEmpty()) {
+                if (auth == null || auth.token == null || auth.token.isBlank()) {
                     reply(session, rid, ProtocolCodec.T_ERROR, error(401, "unknown token"));
                     return;
                 }
-                UserAccount accountGet = account.get();
-                if (accountGet.deleted) {
-                    reply(session, rid, ProtocolCodec.T_ERROR, error(403, "account deleted"));
-                    return;
+                Optional<UserAccount> legacy = this.users.byToken(auth.token);
+                UserAccount accountGet;
+                String accountSessionId = null;
+                if (legacy.isPresent()) {
+                    accountGet = legacy.get();
+                    if (accountGet.bannedUntil > System.currentTimeMillis()) {
+                        reply(session, rid, ProtocolCodec.T_ERROR, error(403, "account banned"));
+                        return;
+                    }
+                } else {
+                    try {
+                        AccountService.Principal principal = this.accounts.authenticate(auth.token);
+                        accountGet = principal.user();
+                        accountSessionId = principal.sessionId();
+                    } catch (AccountException ex) {
+                        reply(session, rid, ProtocolCodec.T_ERROR, error(ex.status, ex.code));
+                        return;
+                    }
                 }
-                if (accountGet.bannedUntil > System.currentTimeMillis()) {
-                    reply(session, rid, ProtocolCodec.T_ERROR, error(403, "account banned"));
-                    return;
-                }
-                this.events.emit("AUTH_OK", null,
-                        "user=" + accountGet.id + " session=" + session.getId());
-                this.stats.authed();
-                bindSession(session, accountGet);
-                reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(accountGet));
-                // Re-attach to a live match after a reconnect (PRD 4.6).
-                MatchRoom room = this.manager.roomFor(accountGet.id);
-                if (room != null) {
-                    room.onReconnect(accountGet.id, endpoint(session));
+                synchronized (this.sessionLock) {
+                    if (!bindSession(session, accountGet, auth.token, accountSessionId)) {
+                        return;
+                    }
+                    this.events.emit("AUTH_OK", null,
+                            "user=" + accountGet.id + " session=" + session.getId());
+                    reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(accountGet, auth.token));
+                    // Re-attach under the replacement lock: an older auth must
+                    // never reconnect over a newer controller or after logout.
+                    MatchRoom room = this.manager.roomFor(accountGet.id);
+                    if (room != null) {
+                        room.onReconnect(accountGet.id, endpoint(session));
+                    }
                 }
                 return;
             }
@@ -221,11 +254,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             reply(session, rid, ProtocolCodec.T_ERROR, error(401, "not authenticated"));
             return;
         }
-        UserAccount account = this.users.byToken(tokenOfSession(userId)).orElse(null);
-        if (account == null) {
-            reply(session, rid, ProtocolCodec.T_ERROR, error(401, "unknown token"));
-            return;
-        }
+        UserAccount account = liveAccount;
         MatchRoom room = this.manager.roomFor(userId);
         switch (envelope.t) {
             case ProtocolCodec.T_MATCH_JOIN: {
@@ -367,6 +396,8 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     MatchRecord record = recent.get(i);
                     boolean asA = record.playerA == userId;
                     ProtocolCodec.HistoryEntry entry = new ProtocolCodec.HistoryEntry();
+                    entry.matchId = record.matchId;
+                    entry.opponentUserId = asA ? record.playerB : record.playerA;
                     entry.ts = record.settledAt;
                     entry.opponent = asA ? record.nicknameB : record.nicknameA;
                     entry.mode = record.mode;
@@ -393,6 +424,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 for (int i = 0; i < top.size(); i++) {
                     UserAccount ranked = top.get(i);
                     ProtocolCodec.TopEntry entry = new ProtocolCodec.TopEntry();
+                    entry.userId = ranked.id;
                     entry.rank = i + 1;
                     entry.nickname = ranked.nickname;
                     entry.elo = ranked.elo;
@@ -422,26 +454,17 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        Long userId = this.authenticated.remove(session.getId());
-        this.stats.disconnected();
-        if (userId != null) {
-            this.stats.deauthed();
+        synchronized (this.sessionLock) {
+            detachSession(session.getId());
+            if (this.connectedSessions.remove(session.getId())) {
+                this.stats.disconnected();
+            }
+            PlayerEndpoint.WebSocket endpoint = this.endpoints.remove(session.getId());
+            if (endpoint != null) {
+                endpoint.shutdown();
+            }
         }
-        PlayerEndpoint.WebSocket endpoint = this.endpoints.remove(session.getId());
-        if (endpoint != null) {
-            endpoint.shutdown();
-        }
-        if (userId == null) {
-            return;
-        }
-        this.sessionByUser.remove(userId, session.getId());
-        this.matchmaker.cancel(userId);
-        this.matchmaker.cancelFriendRoom(userId);
-        MatchRoom room = this.manager.roomFor(userId);
-        if (room != null) {
-            room.onDisconnect(userId);
-        }
-        log.debug("ws closed: {} user {}", session.getId(), userId);
+        log.debug("ws closed: {}", session.getId());
     }
 
     // ------------------------------------------------------------- helpers
@@ -473,28 +496,112 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 ? remote.getAddress().getHostAddress() : "unknown";
     }
 
-    private void bindSession(WebSocketSession session, UserAccount account) {
-        String previousId = this.sessionByUser.put(account.id, session.getId());
-        this.authenticated.put(session.getId(), account.id);
-        if (previousId != null && !previousId.equals(session.getId())) {
-            this.authenticated.remove(previousId);
-            log.info("user {} re-authenticated; previous session kicked", account.id);
+    private boolean bindSession(WebSocketSession session, UserAccount account,
+                                String token, String accountSessionId) {
+        synchronized (this.sessionLock) {
+            if (!session.isOpen() || !this.connectedSessions.contains(session.getId())) {
+                return false;
+            }
+            String previousId = this.sessionByUser.put(account.id, session.getId());
+            if (this.authenticated.put(session.getId(), account.id) == null) {
+                this.stats.authed();
+            }
+            if (accountSessionId == null) {
+                this.legacyTokens.put(session.getId(), token);
+            } else {
+                this.accountSessions.put(session.getId(), accountSessionId);
+            }
+            if (previousId != null && !previousId.equals(session.getId())) {
+                // Waiting queues hold an endpoint; remove the old one, but never
+                // disconnect a live room after its controller has been replaced.
+                this.matchmaker.cancel(account.id);
+                this.matchmaker.cancelFriendRoom(account.id);
+                kickSession(previousId, "session replaced");
+                log.info("user {} re-authenticated; previous session kicked", account.id);
+            }
+            // Logout/migration may commit between authenticate() and binding.
+            // Publish first, then re-read; either this check or AFTER_COMMIT wins.
+            UserAccount current = userOfSession(session.getId());
+            if (current == null || !account.id.equals(current.id)) {
+                kickSession(session.getId(), "session revoked");
+                return false;
+            }
+            return true;
         }
     }
 
-    private String tokenOfSession(long userId) {
-        String token = this.tokenByUser.get(userId);
-        return token != null ? token : "";
+    private UserAccount userOfSession(String socketId) {
+        String accountSessionId = this.accountSessions.get(socketId);
+        if (accountSessionId != null) {
+            return this.accounts.socketUser(accountSessionId).orElse(null);
+        }
+        return this.users.byToken(this.legacyTokens.get(socketId))
+                .filter(account -> account.bannedUntil <= System.currentTimeMillis()).orElse(null);
+    }
+
+    /** All removals are conditional: closing an old socket cannot evict its successor. */
+    private void detachSession(String socketId) {
+        Long userId = this.authenticated.remove(socketId);
+        this.legacyTokens.remove(socketId);
+        this.accountSessions.remove(socketId);
+        if (userId == null) {
+            return;
+        }
+        this.stats.deauthed();
+        if (this.sessionByUser.remove(userId, socketId)) {
+            this.matchmaker.cancel(userId);
+            this.matchmaker.cancelFriendRoom(userId);
+            MatchRoom room = this.manager.roomFor(userId);
+            if (room != null) {
+                room.onDisconnect(userId);
+            }
+            this.joinFailures.remove(userId);
+        }
+    }
+
+    private void kickSession(String socketId, String reason) {
+        synchronized (this.sessionLock) {
+            detachSession(socketId);
+            PlayerEndpoint.WebSocket endpoint = this.endpoints.get(socketId);
+            if (endpoint != null) {
+                endpoint.sendAndClose(ProtocolCodec.encode(ProtocolCodec.T_SESSION_REPLACED,
+                        error(401, reason)), CloseStatus.POLICY_VIOLATION);
+            }
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onSessionRevoked(AccountService.Revoked event) {
+        synchronized (this.sessionLock) {
+            for (Map.Entry<String, String> entry : this.accountSessions.entrySet()) {
+                if (event.sessionId().equals(entry.getValue())) {
+                    kickSession(entry.getKey(), "session revoked");
+                }
+            }
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onLegacyDisabled(AccountService.LegacyDisabled event) {
+        synchronized (this.sessionLock) {
+            for (Map.Entry<String, Long> entry : this.authenticated.entrySet()) {
+                if (entry.getValue() == event.userId()
+                        && this.legacyTokens.containsKey(entry.getKey())) {
+                    kickSession(entry.getKey(), "legacy auth disabled");
+                }
+            }
+        }
     }
 
     private void reply(WebSocketSession session, String rid, String type, Object payload) {
         endpointFor(session).send(ProtocolCodec.encode(type, payload, rid));
     }
 
-    private ProtocolCodec.AuthOk authOk(UserAccount account) {
-        this.tokenByUser.put(account.id, account.token);
+    private ProtocolCodec.AuthOk authOk(UserAccount account, String token) {
         ProtocolCodec.AuthOk ok = new ProtocolCodec.AuthOk();
-        ok.token = account.token;
+        ok.token = token;
+        ok.accountType = account.accountType;
+        ok.avatarValue = account.avatarValue;
         ok.userId = account.id;
         ok.nickname = account.nickname;
         ok.elo = account.elo;

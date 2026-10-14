@@ -6,6 +6,13 @@ plugins {
 // BuildConfig and the APK file name all read from here. The timestamp formats are
 // pinned to Locale.US so artifact names and in-app stamps stay stable on
 // non-English machines.
+def onlineEndpoint = (project.findProperty('onlineEndpoint') ?: 'ws://124.220.35.87:8091/ws').toString()
+def endpointUri = new URI(onlineEndpoint)
+if (!(endpointUri.scheme in ['ws', 'wss']) || !endpointUri.host || endpointUri.rawUserInfo
+        || endpointUri.rawQuery || endpointUri.rawFragment || endpointUri.path != '/ws') {
+    throw new GradleException('onlineEndpoint must be ws[s]://host[:port]/ws without credentials/query/fragment')
+}
+def accountUiTest = project.findProperty('accountUiTest')?.toString() == 'true'
 def appVersionCode = 74
 def appVersionName = '3.6.3'
 def buildTime = new Date()
@@ -31,6 +38,7 @@ android {
         // The build stamp travels inside the package: a renamed or forwarded APK
         // can still be traced back to the build it came from.
         buildConfigField 'String', 'BUILD_TIME', "\"${buildTimeText}\""
+        buildConfigField 'String', 'ONLINE_ENDPOINT', "\"${onlineEndpoint}\""
         manifestPlaceholders = [buildTime: buildTimeText]
         vectorDrawables.useSupportLibrary = true
         // Only languages with real translations are bundled; everything else
@@ -39,6 +47,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            if (accountUiTest) applicationIdSuffix '.accounttest'
+        }
         release {
             // Client hardening P1 (docs/android-client-hardening-design.md §3):
             // R8 shrink/obfuscate + resource shrink. The rules start broad

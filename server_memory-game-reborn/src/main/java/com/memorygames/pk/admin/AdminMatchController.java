@@ -20,7 +20,7 @@ import java.util.Map;
 @RequestMapping("/api/admin/matches")
 public class AdminMatchController {
 
-    public static class SettleBody {
+    public static class SettleBody extends AdminGuard.ReasonBody {
 
         public Boolean refund;
     }
@@ -77,29 +77,38 @@ public class AdminMatchController {
         if (denied != null) {
             return denied;
         }
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
+        }
         MatchRoom room = this.manager.roomById(id);
         if (room == null) {
             return ResponseEntity.notFound().build();
         }
-        boolean refund = body != null && Boolean.TRUE.equals(body.refund);
+        boolean refund = Boolean.TRUE.equals(body.refund);
         boolean applied = room.adminSettle(refund);
-        this.audit.record("MATCH_SETTLE", "id=" + id + " refund=" + refund,
+        this.audit.record("MATCH_SETTLE", "id=" + id + " refund=" + refund + " reason=" + body.reason,
                 this.guard.clientIp(request), applied ? "ok" : "error:already-settled");
         return ResponseEntity.ok(Map.of("applied", applied));
     }
 
     @PostMapping("/{id}/terminate")
-    public ResponseEntity<?> terminate(@PathVariable String id, HttpServletRequest request) {
+    public ResponseEntity<?> terminate(@PathVariable String id, HttpServletRequest request,
+                                      @RequestBody(required = false) AdminGuard.ReasonBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
+        }
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
         MatchRoom room = this.manager.roomById(id);
         if (room == null) {
             return ResponseEntity.notFound().build();
         }
         boolean applied = room.adminTerminate();
-        this.audit.record("MATCH_TERMINATE", "id=" + id,
+        this.audit.record("MATCH_TERMINATE", "id=" + id + " reason=" + body.reason,
                 this.guard.clientIp(request), applied ? "ok" : "error:already-settled");
         return ResponseEntity.ok(Map.of("applied", applied, "voided", true));
     }

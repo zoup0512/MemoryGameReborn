@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_account_title">账户与安全</string>
+    <string name="online_account_busy">请先结束排队、对局、好友房或练习请求。</string>
+    <string name="online_account_balance">在线金币：%1$d</string>
+    <string name="account_guest">游客账号</string>
+    <string name="account_registered">邮箱账号</string>
+    <string name="account_warning">清除应用数据或丢失设备可能丢失游客进度。绑定邮箱后可找回。登录已有账号不合并游客金币或 ELO；离线进度和金币保留在本机。</string>
+    <string name="account_bind">绑定邮箱</string>
+    <string name="account_login">登录已有账号</string>
+    <string name="account_profile">修改昵称 / 内置头像</string>
+    <string name="account_devices">设备与会话</string>
+    <string name="account_logout">退出并创建新游客</string>
+    <string name="account_logout_all">退出全部设备</string>
+    <string name="account_reset">重置密码</string>
+    <string name="account_delete">申请注销账号</string>
+    <string name="account_cancel_delete">撤销待注销</string>
+    <string name="account_email">邮箱</string>
+    <string name="account_password">密码</string>
+    <string name="account_new_password">新密码</string>
+    <string name="account_code">邮箱验证码</string>
+    <string name="account_nickname">昵称</string>
+    <string name="account_send_code">发送验证邮件</string>
+    <string name="account_confirm">确认</string>
+    <string name="account_loading">正在处理…</string>
+    <string name="account_retry">刷新账号资料</string>
+    <string name="account_success">操作成功</string>
+    <string name="account_required">请填写全部必填项。</string>
+    <string name="account_email_invalid">请输入有效邮箱地址。</string>
+    <string name="account_login_warning">游客金币和 ELO 不会合并至所登录账号。旧游客将安全保留供显式恢复，离线数据保持不变。</string>
+    <string name="account_logout_warning">服务端确认撤销会话成功后才更换本机身份。退出将创建新游客，请先绑定邮箱以免丢失游客账号。离线数据不会删除。</string>
+    <string name="account_delete_warning">账号进入 7 天待注销期并终止会话。请在 7 天内用邮箱和密码选择“撤销待注销”。离线数据不会删除。</string>
+    <string name="account_current_device">当前设备</string>
+    <string name="account_revoke">撤销设备会话</string>
+    <string name="account_empty_devices">没有活动设备。</string>
+    <string name="account_forget">仅移除本机已失效身份</string>
+    <string name="account_forget_warning">此操作不代表服务端退出成功。当前身份已经失效或撤销，移除后将创建新游客；未绑定游客可能无法恢复。离线数据不变。</string>
+    <string name="account_recover_guest">恢复安全保留的游客</string>
+    <string name="account_recover_warning">仅使用保存的游客秘密恢复；返回不同用户 ID 会被拒绝。如果刚绑定邮箱，请直接用该邮箱登录。</string>
+    <string name="account_environment">服务环境</string>
+    <string name="account_environment_note">账号需要 WSS/HTTPS。Debug 本地 HTTP 还须服务端配置 PK_AUTH_ALLOW_HTTP=true。不会假设不存在的 TLS 域名。</string>
+    <string name="account_registered_note">已验证邮箱账号可在其他设备登录。在线金币与 ELO 属于当前账号，离线进度保持独立。</string>
+    <string name="account_avatar">头像 %1$d</string>
+    <string name="account_migrate">信任 HTTPS 地址并迁移旧游客</string>
+    <string name="account_migrate_warning">原环境：%1$s\n授权目标：%2$s\n原用户 ID：%3$d\n本次迁移会把旧凭证发送到上述目标。仅在信任其运营方时确认。失败保留旧凭证和原环境；成功保持用户 ID 不变。</string>
+</resources>

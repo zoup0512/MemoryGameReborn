@@ -2,6 +2,7 @@
 .gradle/
 build/
 build_log.txt
+android_memory-game-reborn/release/
 
 # Android Studio / IntelliJ
 .idea/

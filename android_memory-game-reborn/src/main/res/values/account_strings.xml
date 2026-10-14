@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_account_title">Account</string>
+    <string name="online_account_busy">Finish matchmaking, your match, friend room or practice request first.</string>
+    <string name="online_account_balance">Online balance: %1$d</string>
+    <string name="account_guest">Guest account</string>
+    <string name="account_registered">Email account</string>
+    <string name="account_warning">Guest progress can be lost if app data is cleared or the device is lost. Bind an email to recover it. Existing-account login does not merge guest coins or ELO. Offline progress and coins stay on this device.</string>
+    <string name="account_bind">Bind email</string>
+    <string name="account_login">Log in to existing account</string>
+    <string name="account_profile">Edit nickname / built-in avatar</string>
+    <string name="account_devices">Devices and sessions</string>
+    <string name="account_logout">Log out and start a new guest</string>
+    <string name="account_logout_all">Log out all devices</string>
+    <string name="account_reset">Reset password</string>
+    <string name="account_delete">Request account deletion</string>
+    <string name="account_cancel_delete">Cancel pending deletion</string>
+    <string name="account_email">Email</string>
+    <string name="account_password">Password</string>
+    <string name="account_new_password">New password</string>
+    <string name="account_code">Email verification code</string>
+    <string name="account_nickname">Nickname</string>
+    <string name="account_send_code">Send verification email</string>
+    <string name="account_confirm">Confirm</string>
+    <string name="account_loading">Loading…</string>
+    <string name="account_retry">Refresh account</string>
+    <string name="account_success">Done</string>
+    <string name="account_required">Complete all required fields.</string>
+    <string name="account_email_invalid">Enter a valid email address.</string>
+    <string name="account_login_warning">Guest coins and ELO are not merged with the account you log in to. The previous guest is securely retained for explicit recovery. Offline data stays unchanged.</string>
+    <string name="account_logout_warning">The server session must be revoked successfully before local credentials change. You will start a new guest. Bind your guest first to avoid losing access. Offline data is not deleted.</string>
+    <string name="account_delete_warning">Your account enters a 7-day pending deletion period and sessions end. Use Cancel pending deletion with your email and password within 7 days. Offline data is not deleted.</string>
+    <string name="account_current_device">Current device</string>
+    <string name="account_revoke">Revoke device</string>
+    <string name="account_empty_devices">No active devices.</string>
+    <string name="account_forget">Remove expired identity from this device only</string>
+    <string name="account_forget_warning">This does not log out server sessions. The identity is already expired or revoked. Removing it starts a new guest; guest progress may no longer be recoverable. Offline data stays unchanged.</string>
+    <string name="account_recover_guest">Recover retained guest</string>
+    <string name="account_recover_warning">Only the saved guest secret is used. A response with a different user ID is rejected. If you just bound an email, log in with that email instead.</string>
+    <string name="account_environment">Service environment</string>
+    <string name="account_environment_note">Accounts require WSS/HTTPS. Debug local HTTP additionally requires PK_AUTH_ALLOW_HTTP=true on the server. No default TLS domain is assumed.</string>
+    <string name="account_registered_note">Your verified email account can be used on other devices. Online coins and ELO belong to this account; offline progress remains separate.</string>
+    <string name="account_avatar">Avatar %1$d</string>
+    <string name="account_migrate">Trust HTTPS address and migrate old guest</string>
+    <string name="account_migrate_warning">Old environment: %1$s\nTrusted target: %2$s\nOld user ID: %3$d\nYour old credential will be sent to this target for one migration attempt. Only confirm if you trust its operator. Failure retains the old credential and environment; success preserves your user ID.</string>
+</resources>

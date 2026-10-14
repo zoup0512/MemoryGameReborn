@@ -78,7 +78,7 @@ class AdminConfigTest {
         headers.set("Content-Type", "application/json");
 
         // Hot-config: 45s rounds and a 7-coin entry fee.
-        String body = "{\"roundDurationOverrideMs\":45000,\"entryFee\":7}";
+        String body = "{\"roundDurationOverrideMs\":45000,\"entryFee\":7,\"reason\":\"hot config regression\"}";
         ResponseEntity<Map> updated = rest.exchange("/api/admin/config", HttpMethod.PUT,
                 new HttpEntity<>(body, headers), Map.class);
         assertEquals(200, updated.getStatusCode().value());
@@ -125,7 +125,7 @@ class AdminConfigTest {
         } finally {
             // Restore shared-suite defaults for other tests in this context.
             rest.exchange("/api/admin/config", HttpMethod.PUT,
-                    new HttpEntity<>("{\"roundDurationOverrideMs\":2000,\"entryFee\":30}", headers), Map.class);
+                    new HttpEntity<>("{\"roundDurationOverrideMs\":2000,\"entryFee\":30,\"reason\":\"restore regression defaults\"}", headers), Map.class);
         }
     }
 }

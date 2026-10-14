@@ -357,8 +357,8 @@ public class OnlineTopActivity extends AppCompatActivity implements OnlineSessio
     }
 
     private boolean isCurrentUser(TopEntry entry, String currentName) {
-        return entry != null && !TextUtils.isEmpty(currentName) && entry.nickname != null
-                && entry.nickname.trim().equalsIgnoreCase(currentName.trim());
+        OnlineMessages.AuthOk profile=OnlineSession.get().getLastProfile();
+        return entry != null && profile != null && entry.userId > 0 && entry.userId == profile.userId;
     }
 
     private String currentName() {

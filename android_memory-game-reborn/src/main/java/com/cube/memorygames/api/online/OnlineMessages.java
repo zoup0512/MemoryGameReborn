@@ -40,6 +40,7 @@ public final class OnlineMessages {
 
     /** Server -> client message types. */
     public static final String T_AUTH_OK = "auth_ok";
+    public static final String T_SESSION_REPLACED = "session_replaced";
     /** Immediate receipt for a match_join (search watchdog uses it). */
     public static final String T_MATCH_QUEUED = "match_queued";
     public static final String T_MATCH_FOUND = "match_found";
@@ -106,6 +107,8 @@ public final class OnlineMessages {
         public int winCoins;
         public int drawCoins;
         public long userId;
+        public String accountType;
+        public String avatarValue;
         public String nickname;
         public int elo;
         public int rank;
@@ -142,6 +145,8 @@ public final class OnlineMessages {
     }
 
     public static class HistoryEntry {
+        public String matchId;
+        public long opponentUserId;
         public long ts;
         public String opponent;
         public String mode;
@@ -221,6 +226,7 @@ public final class OnlineMessages {
     }
 
     public static class TopEntry {
+        public long userId;
         public int rank;
         public String nickname;
         public int elo;

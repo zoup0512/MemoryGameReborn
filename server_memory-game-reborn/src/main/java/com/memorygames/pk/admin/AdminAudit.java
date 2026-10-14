@@ -23,7 +23,7 @@ public class AdminAudit {
     @Column(nullable = false)
     public String action;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 8192)
     public String paramsJson;
 
     @Column(nullable = false)

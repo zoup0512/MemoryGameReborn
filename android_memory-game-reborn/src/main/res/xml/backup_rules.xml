@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="sharedpref" path="online_identity.xml" />
+    <exclude domain="sharedpref" path="online_secure_identity.xml" />
+    <exclude domain="sharedpref" path="online_legacy_secure.xml" />
+    <exclude domain="sharedpref" path="online_config.xml" />
+    <exclude domain="sharedpref" path="vault_state.xml" />
+</full-backup-content>

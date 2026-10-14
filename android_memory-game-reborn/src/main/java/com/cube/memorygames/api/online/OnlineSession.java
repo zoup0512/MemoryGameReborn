@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 
-import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.api.local.LocalDataManager;
 import com.cube.memorygames.api.online.OnlineMessages.AuthOk;
 import com.cube.memorygames.api.online.OnlineMessages.LevelWin;
@@ -107,6 +106,12 @@ public class OnlineSession {
     private ScoreListener scoreListener;
 
     private volatile int state = STATE_DISCONNECTED;
+    private volatile boolean reconnectBlocked;
+    private boolean v2Connection;
+    private boolean authRefreshAttempted;
+    private boolean queueRequestPending;
+    private long connectionEpoch;
+    private long roomCommandEpoch;
     private volatile AuthOk lastProfile;
     /** Set by match_end, gates the resign retry loop. */
     private volatile boolean matchEndSeen;
@@ -191,6 +196,32 @@ public class OnlineSession {
 
     public int getState() {
         return state;
+    }
+
+    public boolean canChangeAccount() {
+        return matchId == null && state != STATE_MATCH && state != STATE_QUEUE
+                && !pendingQueueRejoin && !queueRequestPending && !friendRoomPending
+                && !practicePending && pendingRoomAck == null;
+    }
+
+    public int getOnlineCoins() {
+        AuthOk profile=lastProfile;
+        return profile == null ? 0 : Math.max(0,profile.balance);
+    }
+
+    public boolean canAutoConnect() {
+        return !reconnectBlocked && (appContext == null || !AccountManager.get(appContext).isBusy());
+    }
+
+    public void resetForAccountChange() {
+        disconnect();
+        reconnectBlocked=false;
+        lastProfile=null;
+        practiceStreak=0;
+        authRefreshAttempted=false;
+        v2Connection=false;
+        Runnable callback=profileCallback;
+        if (callback != null) callback.run();
     }
 
     public boolean isInMatch() {
@@ -318,6 +349,12 @@ public class OnlineSession {
         if (appContext == null) {
             throw new IllegalStateException("OnlineSession.init() not called");
         }
+        if (!canAutoConnect()) return;
+        final String endpoint;
+        try { endpoint=OnlineConfig.getEndpoint(appContext); }
+        catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
+        final long attempt=++connectionEpoch;
+        main.removeCallbacks(reconnectRunnable);
         if (client != null) {
             client.close();
             client = null;
@@ -326,23 +363,30 @@ public class OnlineSession {
         client = new OnlineClient(new OnlineClient.Listener() {
             @Override
             public void onConnected() {
-                authorize();
+                if (attempt == connectionEpoch) authorize();
             }
 
             @Override
             public void onDisconnected(int code, String reason) {
-                handleDisconnected(code, reason);
+                if (attempt == connectionEpoch) handleDisconnected(code, reason);
             }
 
             @Override
             public void onMessage(String json) {
-                handleMessage(json);
+                if (attempt == connectionEpoch) handleMessage(json);
             }
         });
-        client.connect(OnlineConfig.getEndpoint(appContext));
+        client.connect(endpoint);
     }
 
     public synchronized void disconnect() {
+        ++connectionEpoch;
+        ++roomCommandEpoch;
+        pendingQueueRejoin=false;
+        queueRequestPending=false;
+        disconnectedAt=0L;
+        cancelQueuedWatchdog();
+        clearMatchSnapshot();
         matchId = null;
         currentRound = -1;
         roundStartedElapsed = 0L;
@@ -360,22 +404,60 @@ public class OnlineSession {
 
     private void authorize() {
         setState(STATE_AUTHORIZING);
-        String token = OnlineIdentity.getToken(appContext);
-        if (token != null && token.length() > 0) {
-            OnlineMessages.Auth auth = new OnlineMessages.Auth();
-            auth.token = token;
-            send(OnlineMessages.T_AUTH, auth);
-        } else {
-            OnlineMessages.Register register = new OnlineMessages.Register();
-            register.uuid = OnlineIdentity.getOrCreateUuid(appContext);
-            register.nickname = OnlineIdentity.getNickname(appContext);
-            register.balance = getLocalCoins();
-            send(OnlineMessages.T_REGISTER, register);
-        }
+        try {
+            AccountManager manager=AccountManager.get(appContext);
+            if (OnlineConfig.accountsAllowed(appContext) || manager.usesV2()) {
+                v2Connection=true;
+                authorizeAccount(false,false);
+                return;
+            }
+            v2Connection=false;
+            String token=OnlineIdentity.getToken(appContext);
+            if (token != null && !token.isEmpty()) sendAuth(token);
+            else {
+                OnlineMessages.Register register=new OnlineMessages.Register();
+                register.uuid=OnlineIdentity.getOrCreateUuid(appContext);
+                register.nickname=OnlineIdentity.getNickname(appContext);
+                register.balance=0; // Offline coins are never uploaded to the online wallet.
+                send(OnlineMessages.T_REGISTER,register);
+            }
+        } catch (RuntimeException e) { stopAuthorization(e.getMessage()); }
+    }
+
+    private void sendAuth(String token) {
+        OnlineMessages.Auth auth=new OnlineMessages.Auth(); auth.token=token;
+        send(OnlineMessages.T_AUTH,auth);
+    }
+
+    private void authorizeAccount(boolean refresh, boolean reconnect) {
+        final long attempt=connectionEpoch;
+        AccountManager.get(appContext).ensureAccess(refresh,new AccountManager.Callback<String>() {
+            public void onSuccess(String token) {
+                if (attempt != connectionEpoch || reconnectBlocked) return;
+                if (reconnect) connect(); else sendAuth(token);
+            }
+            public void onError(String message) {
+                if (attempt == connectionEpoch) stopAuthorization(message);
+            }
+        });
+    }
+
+    private void stopAuthorization(String message) {
+        reconnectBlocked=true;
+        disconnect();
+        notifyError(401,message == null ? "会话失效，请打开账户中心重新登录" : message);
     }
 
     private void handleDisconnected(int code, String reason) {
-        client = null;
+        if ("session_replaced".equals(reason)) {
+            stopAuthorization("当前在线连接已被另一设备替换，请明确重新登录后再连接");
+            return;
+        }
+        if (reconnectBlocked) return;
+        OnlineClient old=client;
+        client=null;
+        ++connectionEpoch;
+        if (old != null) old.close();
         boolean inMatchFlow = matchId != null || state == STATE_QUEUE
                 || friendRoomPending || practicePending;
         // Every drop enters the same reconnect window (PRD 4.6). An idle
@@ -417,6 +499,7 @@ public class OnlineSession {
     private Runnable queuedWatchdog;
 
     public void startMatchmaking() {
+        if (!canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
         if (this.appContext != null
                 && !com.cube.memorygames.security.IntegritySentinel.isIntact(this.appContext)) {
             // Repackaged build (hardening design §5.1): ranked queue stays
@@ -432,19 +515,14 @@ public class OnlineSession {
             if (state == STATE_QUEUE) {
                 return;
             }
+            queueRequestPending=false;
             setState(STATE_QUEUE);
             send(OnlineMessages.T_MATCH_JOIN, new Object());
             armQueuedWatchdog();
         } else if (state == STATE_DISCONNECTED || state == STATE_CONNECTING || state == STATE_AUTHORIZING) {
-            connect();
-            main.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (state == STATE_IDLE) {
-                        startMatchmaking();
-                    }
-                }
-            }, 4000L);
+            queueRequestPending=true;
+            pendingQueueRejoin=true;
+            if (state == STATE_DISCONNECTED) connect();
         }
     }
 
@@ -487,6 +565,8 @@ public class OnlineSession {
 
     /** Friend rooms (PRD F-12). */
     public void createFriendRoom() {
+        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
+        friendRoomPending=true;
         sendRoomCommand(OnlineMessages.T_ROOM_CREATE, new Object());
     }
 
@@ -496,6 +576,7 @@ public class OnlineSession {
      * mode=PRACTICE on the same socket.
      */
     public void sendBotMatchRequest(String difficulty) {
+        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
         OnlineMessages.BotMatchRequest request = new OnlineMessages.BotMatchRequest();
         request.difficulty = difficulty;
         practicePending = true;
@@ -503,6 +584,7 @@ public class OnlineSession {
     }
 
     public void joinFriendRoom(String code) {
+        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
         OnlineMessages.RoomJoin join = new OnlineMessages.RoomJoin();
         join.code = code;
         friendRoomPending = true;
@@ -523,21 +605,26 @@ public class OnlineSession {
      */
     private void sendRoomCommand(final String type, final Object data) {
         cancelRoomAck();
+        final long command=++roomCommandEpoch;
         OnlineClient c = this.client;
-        if (c != null && c.isConnected()) {
+        if (c != null && c.isConnected() && state == STATE_IDLE) {
             send(type, data);
             scheduleRoomAck(type);
             return;
         }
-        connect();
+        if (state == STATE_DISCONNECTED) connect();
+        final long attempt=connectionEpoch;
         main.postDelayed(new Runnable() {
             @Override
             public void run() {
+                if (attempt != connectionEpoch || command != roomCommandEpoch || reconnectBlocked) return;
                 OnlineClient retry = OnlineSession.this.client;
-                if (retry != null && retry.isConnected()) {
+                if (retry != null && retry.isConnected() && state == STATE_IDLE) {
                     send(type, data);
                     scheduleRoomAck(type);
                 } else {
+                    friendRoomPending=false;
+                    practicePending=false;
                     notifyError(-1, "connection lost");
                 }
             }
@@ -554,11 +641,11 @@ public class OnlineSession {
             @Override
             public void run() {
                 OnlineSession.this.pendingRoomAck = null;
-                if (!OnlineSession.this.friendRoomPending
-                        && !OnlineSession.this.practicePending
-                        && OnlineSession.this.matchId == null
+                if (OnlineSession.this.matchId == null
                         && OnlineSession.this.state != STATE_MATCH
                         && OnlineSession.this.state != STATE_QUEUE) {
+                    friendRoomPending=false;
+                    practicePending=false;
                     notifyError(-1, "no response");
                 }
             }
@@ -592,6 +679,9 @@ public class OnlineSession {
     }
 
     public void cancelMatchmaking() {
+        pendingQueueRejoin=false;
+        queueRequestPending=false;
+        cancelQueuedWatchdog();
         if (state == STATE_QUEUE) {
             send(OnlineMessages.T_MATCH_CANCEL, new Object());
             setState(STATE_IDLE);
@@ -680,6 +770,10 @@ public class OnlineSession {
         if (isMatchScoped(type) && !ownedByCurrentMatch(json)) {
             return;
         }
+        if (OnlineMessages.T_SESSION_REPLACED.equals(type)) {
+            stopAuthorization("当前在线连接已被另一设备替换，请明确重新登录后再连接");
+            return;
+        }
         if (OnlineMessages.T_AUTH_OK.equals(type)) {
             AuthOk ok = OnlineMessages.payloadOf(json, AuthOk.class);
             if (ok != null) {
@@ -699,8 +793,11 @@ public class OnlineSession {
                     } catch (RuntimeException ignored) {
                     }
                 }
-                OnlineIdentity.saveToken(appContext, tokenOf(json), ok.userId);
-                OnlineIdentity.setNickname(appContext, ok.nickname);
+                authRefreshAttempted=false;
+                try {
+                    if (!v2Connection) OnlineIdentity.saveToken(appContext,tokenOf(json),ok.userId);
+                    OnlineIdentity.setNickname(appContext,ok.nickname);
+                } catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
                 if (resumeMatch && this.currentRound < 0) {
@@ -729,9 +826,11 @@ public class OnlineSession {
             int code = err != null ? err.code : 0;
             String message = err != null && err.message != null ? err.message : "unknown";
             if (code == 401) {
-                // Unknown/expired token: drop identity and re-register.
-                OnlineIdentity.clearToken(appContext);
-                authorize();
+                if (v2Connection && !authRefreshAttempted) {
+                    authRefreshAttempted=true;
+                    if (state == STATE_QUEUE) pendingQueueRejoin=true;
+                    authorizeAccount(true,true);
+                } else stopAuthorization(message);
                 return;
             }
             // A rejected room command (404/409) ends the pending pairing;
@@ -740,6 +839,9 @@ public class OnlineSession {
             this.practicePending = false;
             cancelRoomAck();
             cancelQueuedWatchdog();
+            pendingQueueRejoin=false;
+            queueRequestPending=false;
+            if (state == STATE_QUEUE) setState(STATE_IDLE);
             notifyError(code, message);
             return;
         }
@@ -1120,69 +1222,19 @@ public class OnlineSession {
         }
     }
 
-    private int getLocalCoins() {
-        // A tainted local mirror (hardening design §4.3) must not leak
-        // outward — this value is sent in the register payload.
-        if (com.cube.memorygames.security.SecurityMac.isTainted()) {
-            return 0;
-        }
-        try {
-            return MemoryApplicationModel.getInstance().getLocalDataManager().getLocalUser().money;
-        } catch (RuntimeException e) {
-            return 0;
-        }
-    }
-
-    /** Mirrors the live server entry fee into the local coin ledger. */
+    /** Entry debit/refund is server-owned: never infer deltas from an old snapshot after reconnect. */
     private void chargeEntryFee() {
-        if (OnlineDebug.freeEconomy(this.appContext) || this.serverEntryFee <= 0
-                || com.cube.memorygames.security.SecurityMac.isTainted()) {
-            return;
-        }
-        try {
-            LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
-            if (!dm.getLocalUser().unlimitedOnline) {
-                dm.chargeForOnline(this.serverEntryFee);
-                this.localEntryFeeCharged = this.serverEntryFee;
-            }
-        } catch (RuntimeException ignored) {
-        }
+        localEntryFeeCharged=0;
     }
 
-    /** Mirrors an accepted-match cancellation refund into the local ledger. */
     private void refundEntryFeeIfNeeded() {
-        int charged = this.localEntryFeeCharged;
-        if (charged <= 0 || OnlineDebug.freeEconomy(this.appContext)
-                || com.cube.memorygames.security.SecurityMac.isTainted()) {
-            this.localEntryFeeCharged = 0;
-            return;
-        }
-        try {
-            MemoryApplicationModel.getInstance().getLocalDataManager()
-                    .refundForOnline(charged);
-        } catch (RuntimeException ignored) {
-        }
-        this.localEntryFeeCharged = 0;
+        localEntryFeeCharged=0;
     }
 
-    /** Mirrors the authoritative settlement payout into the local coin ledger. */
     private void applySettlement(MatchEnd end) {
-        this.localEntryFeeCharged = 0;
-        if (OnlineDebug.freeEconomy(this.appContext)
-                || com.cube.memorygames.security.SecurityMac.isTainted()) {
-            return;
-        }
-        try {
-            LocalDataManager dm = MemoryApplicationModel.getInstance().getLocalDataManager();
-            if (OnlineSession.RESULT_WIN.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_WIN_ONLINE, end.coinDelta);
-            } else if (OnlineSession.RESULT_DRAW.equals(end.result)) {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_DRAW_LEVEL, end.coinDelta);
-            } else {
-                dm.addCoinsTransaction(LocalDataManager.TYPE_LOSE_ONLINE, end.coinDelta);
-            }
-        } catch (RuntimeException ignored) {
-        }
+        localEntryFeeCharged=0;
+        AuthOk profile=lastProfile;
+        if (profile != null) profile.balance=Math.max(0,end.balance);
     }
 
     /** Reads a non-negative numeric payload field while tolerating older servers. */

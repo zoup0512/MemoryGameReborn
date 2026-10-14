@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * forfeited on restart, which the client tolerates via its reconnect
  * window.
  */
+@org.springframework.scheduling.annotation.EnableScheduling
 @SpringBootApplication
 @EnableConfigurationProperties(PkProperties.class)
 public class PkServerApplication {

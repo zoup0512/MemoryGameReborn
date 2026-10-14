@@ -27,6 +27,10 @@
 -keep class com.cube.memorygames.model.** { *; }
 -keep class com.cube.memorygames.api.online.OnlineMessages { *; }
 -keep class com.cube.memorygames.api.online.OnlineMessages$* { *; }
+# REST and encrypted identity Gson models (including private fields/constructors).
+-keep class com.cube.memorygames.api.online.AccountManager$Identity { *; }
+-keep class com.cube.memorygames.api.online.AccountManager$UserProfile { *; }
+-keep class com.cube.memorygames.api.online.AccountManager$AuthResponse { *; }
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }

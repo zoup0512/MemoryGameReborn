@@ -1,5 +1,6 @@
 package com.memorygames.pk.match;
 
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
@@ -28,6 +29,8 @@ public interface PlayerEndpoint {
         private final WebSocketSession session;
         private final ConcurrentWebSocketSessionDecorator guarded;
         private final Runnable onOverflow;
+        private final java.util.concurrent.atomic.AtomicBoolean closing =
+                new java.util.concurrent.atomic.AtomicBoolean();
         /**
          * Sends must never run on the room/scheduler threads: a half-dead
          * client socket blocks StandardWebSocketSession.sendMessage forever
@@ -62,6 +65,9 @@ public interface PlayerEndpoint {
 
         @Override
         public void send(final String json) {
+            if (this.closing.get()) {
+                return;
+            }
             try {
                 this.sender.execute(new Runnable() {
                     @Override
@@ -102,7 +108,43 @@ public interface PlayerEndpoint {
             return this.session != null && this.session.isOpen();
         }
 
+        /** Deliver the final notification and close on the same bounded sender. */
+        public void sendAndClose(String json, CloseStatus status) {
+            if (!this.closing.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                this.sender.execute(() -> {
+                    try {
+                        if (this.session.isOpen()) {
+                            this.guarded.sendMessage(new TextMessage(json));
+                        }
+                    } catch (IOException | RuntimeException ignored) {
+                    } finally {
+                        try {
+                            this.session.close(status);
+                        } catch (IOException | RuntimeException ignored) {
+                        }
+                        this.sender.shutdown();
+                    }
+                });
+            } catch (RejectedExecutionException full) {
+                if (this.onOverflow != null) {
+                    try {
+                        this.onOverflow.run();
+                    } catch (RuntimeException ignored) {
+                    }
+                }
+                try {
+                    this.session.close(status);
+                } catch (IOException | RuntimeException ignored) {
+                }
+                this.sender.shutdownNow();
+            }
+        }
+
         public void shutdown() {
+            this.closing.set(true);
             this.sender.shutdownNow();
         }
     }

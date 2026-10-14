@@ -26,27 +26,24 @@ import java.util.Map;
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 
-    public static class BalanceBody {
+    public static class BalanceBody extends AdminGuard.ReasonBody {
 
         public Integer delta;
-        public String reason;
     }
 
-    public static class EloBody {
+    public static class EloBody extends AdminGuard.ReasonBody {
 
         public Integer set;
-        public String reason;
     }
 
-    public static class RestrictBody {
+    public static class RestrictBody extends AdminGuard.ReasonBody {
 
         public Integer matches;
     }
 
-    public static class BanBody {
+    public static class BanBody extends AdminGuard.ReasonBody {
 
         public Integer hours;
-        public String reason;
     }
 
     private final AdminGuard guard;
@@ -101,17 +98,23 @@ public class AdminUserController {
 
     @PostMapping("/{id}/balance")
     public ResponseEntity<?> balance(@PathVariable long id, HttpServletRequest request,
-                                     @RequestBody BalanceBody body) {
+                                     @RequestBody(required = false) BalanceBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
         }
-        UserAccount account = this.users.findById(id).orElse(null);
-        if (account == null || body.delta == null) {
-            return ResponseEntity.badRequest().build();
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
-        account = this.service.adjustBalance(account, body.delta,
-                body.reason != null && !body.reason.isBlank() ? body.reason : "unspecified");
+        if (body.delta == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "delta is required"));
+        }
+        UserAccount account = this.users.findById(id).orElse(null);
+        if (account == null) {
+            return ResponseEntity.notFound().build();
+        }
+        account = this.service.adjustBalance(account, body.delta, body.reason);
         this.audit.record("USER_BALANCE",
                 "id=" + id + " delta=" + body.delta + " reason=" + body.reason,
                 this.guard.clientIp(request), "ok");
@@ -120,14 +123,21 @@ public class AdminUserController {
 
     @PostMapping("/{id}/elo")
     public ResponseEntity<?> elo(@PathVariable long id, HttpServletRequest request,
-                                 @RequestBody EloBody body) {
+                                 @RequestBody(required = false) EloBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
         }
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
+        }
+        if (body.set == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "set is required"));
+        }
         UserAccount account = this.users.findById(id).orElse(null);
-        if (account == null || body.set == null) {
-            return ResponseEntity.badRequest().build();
+        if (account == null) {
+            return ResponseEntity.notFound().build();
         }
         account = this.service.setElo(account, body.set);
         this.audit.record("USER_ELO", "id=" + id + " set=" + body.set + " reason=" + body.reason,
@@ -137,65 +147,93 @@ public class AdminUserController {
 
     @PostMapping("/{id}/restrict")
     public ResponseEntity<?> restrict(@PathVariable long id, HttpServletRequest request,
-                                      @RequestBody RestrictBody body) {
+                                      @RequestBody(required = false) RestrictBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
         }
-        UserAccount account = this.users.findById(id).orElse(null);
-        if (account == null || body.matches == null) {
-            return ResponseEntity.badRequest().build();
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
-        account = this.service.setRestriction(account, Math.min(body.matches, 100));
-        this.audit.record("USER_RESTRICT", "id=" + id + " matches=" + body.matches,
+        if (body.matches == null || body.matches < 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "matches must be non-negative"));
+        }
+        UserAccount account = this.users.findById(id).orElse(null);
+        if (account == null) {
+            return ResponseEntity.notFound().build();
+        }
+        int matches = Math.min(body.matches, 100);
+        account = this.service.setRestriction(account, matches);
+        this.audit.record("USER_RESTRICT", "id=" + id + " matches=" + matches + " reason=" + body.reason,
                 this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
     @PostMapping("/{id}/ban")
     public ResponseEntity<?> ban(@PathVariable long id, HttpServletRequest request,
-                                 @RequestBody BanBody body) {
+                                 @RequestBody(required = false) BanBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
         }
-        UserAccount account = this.users.findById(id).orElse(null);
-        if (account == null || body.hours == null) {
-            return ResponseEntity.badRequest().build();
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
-        account = this.service.setBan(account, Math.min(body.hours, 24 * 365));
-        this.audit.record("USER_BAN", "id=" + id + " hours=" + body.hours + " reason=" + body.reason,
+        if (body.hours == null || body.hours <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "hours must be positive"));
+        }
+        UserAccount account = this.users.findById(id).orElse(null);
+        if (account == null) {
+            return ResponseEntity.notFound().build();
+        }
+        int hours = Math.min(body.hours, 24 * 365);
+        account = this.service.setBan(account, hours);
+        this.audit.record("USER_BAN", "id=" + id + " hours=" + hours + " reason=" + body.reason,
                 this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
     @PostMapping("/{id}/unban")
-    public ResponseEntity<?> unban(@PathVariable long id, HttpServletRequest request) {
+    public ResponseEntity<?> unban(@PathVariable long id, HttpServletRequest request,
+                                  @RequestBody(required = false) AdminGuard.ReasonBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
+        }
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
         UserAccount account = this.users.findById(id).orElse(null);
         if (account == null) {
             return ResponseEntity.notFound().build();
         }
         account = this.service.setBan(account, 0);
-        this.audit.record("USER_UNBAN", "id=" + id, this.guard.clientIp(request), "ok");
+        this.audit.record("USER_UNBAN", "id=" + id + " reason=" + body.reason,
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable long id, HttpServletRequest request) {
+    public ResponseEntity<?> delete(@PathVariable long id, HttpServletRequest request,
+                                   @RequestBody(required = false) AdminGuard.ReasonBody body) {
         ResponseEntity<String> denied = this.guard.deny(request);
         if (denied != null) {
             return denied;
+        }
+        ResponseEntity<?> invalid = this.guard.denyReason(body == null ? null : body.reason);
+        if (invalid != null) {
+            return invalid;
         }
         UserAccount account = this.users.findById(id).orElse(null);
         if (account == null) {
             return ResponseEntity.notFound().build();
         }
         account = this.service.markDeleted(account);
-        this.audit.record("USER_DELETE", "id=" + id, this.guard.clientIp(request), "ok");
+        this.audit.record("USER_DELETE", "id=" + id + " reason=" + body.reason,
+                this.guard.clientIp(request), "ok");
         return ResponseEntity.ok(view(account));
     }
 

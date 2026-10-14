@@ -5,6 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application>
         <activity
+            android:name="com.cube.memorygames.api.online.AccountActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+        <activity
             android:name="com.cube.memorygames.MainMenuActivity"
             android:exported="true"
             tools:replace="android:exported" />

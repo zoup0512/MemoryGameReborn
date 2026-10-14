@@ -34,6 +34,14 @@ class AdminRateLimitTest {
     void rapidRequestsGetThrottled() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Admin-Token", "test-admin");
+        headers.set("Content-Type", "application/json");
+        // A config write must count once, not re-enter the guard when returning its view.
+        assertEquals(200, rest.exchange("/api/admin/config", HttpMethod.PUT,
+                new HttpEntity<>("{\"reason\":\"rate limit test\"}", headers), String.class).getStatusCode().value());
+        assertEquals(200, rest.exchange("/api/admin/maintenance", HttpMethod.GET,
+                new HttpEntity<>(headers), String.class).getStatusCode().value());
+        assertEquals(200, rest.exchange("/api/admin/loglevel", HttpMethod.GET,
+                new HttpEntity<>(headers), String.class).getStatusCode().value());
         int throttled = 0;
         for (int i = 0; i < 8; i++) {
             ResponseEntity<String> response = rest.exchange("/api/admin/audit?n=1", HttpMethod.GET,

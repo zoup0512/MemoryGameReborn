@@ -9,6 +9,10 @@ public interface UserRepository extends JpaRepository<UserAccount, Long> {
 
     Optional<UserAccount> findByUuid(String uuid);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select u from UserAccount u where u.uuid = :uuid")
+    Optional<UserAccount> findByUuidForUpdate(@org.springframework.data.repository.query.Param("uuid") String uuid);
+
     Optional<UserAccount> findByToken(String token);
 
     /** Row-level lock for settlement transactions (deadlock-free: callers lock in id order). */
@@ -24,6 +28,9 @@ public interface UserRepository extends JpaRepository<UserAccount, Long> {
     List<UserAccount> findTop5ByOrderByBalanceDesc();
 
     List<UserAccount> findTop20ByOrderByEloDesc();
+
+    List<UserAccount> findTop20ByDeletedFalseAndDeleteRequestedAtAndBannedUntilLessThanEqualOrderByEloDesc(
+            long deleteRequestedAt, long now);
 
     long countByRestrictedMatchesGreaterThan(int matches);
 

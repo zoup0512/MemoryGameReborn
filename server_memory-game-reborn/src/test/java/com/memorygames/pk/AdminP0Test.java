@@ -136,7 +136,7 @@ class AdminP0Test {
             assertTrue(((Number) ((Map<String, Object>) matches.get(0)).get("round")).intValue() >= 0);
 
             ResponseEntity<Map> voided = rest.exchange("/api/admin/matches/" + matchId + "/terminate",
-                    HttpMethod.POST, new HttpEntity<>(admin()), Map.class);
+                    HttpMethod.POST, new HttpEntity<>("{\"reason\":\"void refund regression\"}", admin()), Map.class);
             assertEquals(200, voided.getStatusCode().value());
             assertEquals(true, ((Map<?, ?>) voided.getBody()).get("applied"));
 
@@ -204,7 +204,7 @@ class AdminP0Test {
 
                 // unban -> auth ok again
                 rest.exchange("/api/admin/users/" + userId + "/unban", HttpMethod.POST,
-                        new HttpEntity<>(admin()), Map.class);
+                        new HttpEntity<>("{\"reason\":\"unban regression\"}", admin()), Map.class);
                 TestWsClient e = newClient();
                 try {
                     e.send(ProtocolCodec.T_AUTH, authFrame);
@@ -243,7 +243,7 @@ class AdminP0Test {
             assertNotNull(a.await(ProtocolCodec.T_AUTH_OK, 5000));
 
             rest.exchange("/api/admin/maintenance", HttpMethod.POST,
-                    new HttpEntity<>("{\"enabled\":true,\"message\":\"升级维护中\"}", admin()), Map.class);
+                    new HttpEntity<>("{\"enabled\":true,\"message\":\"升级维护中\",\"reason\":\"maintenance regression\"}", admin()), Map.class);
             try {
                 a.send(ProtocolCodec.T_MATCH_JOIN, new Object());
                 TestWsClient.Frame err = a.await(ProtocolCodec.T_ERROR, 5000);
@@ -252,7 +252,7 @@ class AdminP0Test {
                 assertEquals("升级维护中", err.as(ProtocolCodec.ErrorMsg.class).message);
             } finally {
                 rest.exchange("/api/admin/maintenance", HttpMethod.POST,
-                        new HttpEntity<>("{\"enabled\":false}", admin()), Map.class);
+                        new HttpEntity<>("{\"enabled\":false,\"reason\":\"lift regression maintenance\"}", admin()), Map.class);
             }
             // after lift, queueing works again (bot fallback eventually pairs)
             a.send(ProtocolCodec.T_MATCH_JOIN, new Object());
@@ -270,7 +270,7 @@ class AdminP0Test {
     @Order(5)
     void runtimeLogLevel() {
         ResponseEntity<Map> changed = rest.exchange("/api/admin/loglevel", HttpMethod.POST,
-                new HttpEntity<>("{\"logger\":\"com.memorygames.pk.test\",\"level\":\"DEBUG\"}", admin()),
+                new HttpEntity<>("{\"logger\":\"com.memorygames.pk.test\",\"level\":\"DEBUG\",\"reason\":\"logging regression\"}", admin()),
                 Map.class);
         assertEquals(200, changed.getStatusCode().value());
         assertEquals("DEBUG", ((Map<?, ?>) changed.getBody()).get("level"));

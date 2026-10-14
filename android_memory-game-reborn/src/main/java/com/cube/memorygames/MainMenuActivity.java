@@ -396,7 +396,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
 
     public void updateStatistics() {
         if (!isFinishing()) {
-            this.starsView.setText(String.valueOf(this.localDataManager.getLocalUser().money));
+            this.starsView.setText(String.valueOf(this.mBottomBar.getCurrentTabPosition() == TAB_ONLINE
+                    ? OnlineSession.get().getOnlineCoins() : this.localDataManager.getLocalUser().money));
             this.ratingView.setText(String.valueOf(round((double) this.localDataManager.getLocalUser().rating, 1)));
             if (this.mBottomBar.getCurrentTabPosition() == 0) {
                 this.gameListAdapter.updateStatistics();

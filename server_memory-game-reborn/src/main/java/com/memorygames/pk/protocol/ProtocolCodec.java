@@ -36,6 +36,7 @@ public final class ProtocolCodec {
     public static final String T_PING = "ping";
 
     public static final String T_AUTH_OK = "auth_ok";
+    public static final String T_SESSION_REPLACED = "session_replaced";
     /** Immediate receipt for a match_join (client search watchdog). */
     public static final String T_MATCH_QUEUED = "match_queued";
     public static final String T_MATCH_FOUND = "match_found";
@@ -202,6 +203,7 @@ public final class ProtocolCodec {
     }
 
     public static class TopEntry {
+        public long userId;
         public int rank;
         public String nickname;
         public int elo;
@@ -214,6 +216,8 @@ public final class ProtocolCodec {
 
     public static class AuthOk {
         public String token;
+        public String accountType;
+        public String avatarValue;
         /** Runtime economy snapshot so clients gate/mirror with live values. */
         public int entryFee;
         public int winCoins;
@@ -250,6 +254,8 @@ public final class ProtocolCodec {
     }
 
     public static class HistoryEntry {
+        public String matchId;
+        public long opponentUserId;
         public long ts;
         public String opponent;
         public String mode;

@@ -18,6 +18,12 @@
   `./gradlew test` 含双端全量对局集成测试
 - minSdk 提升至 21（TLS 1.2）；申请权限：INTERNET、ACCESS_NETWORK_STATE
 
+## 游客与注册账号
+
+游客可直接游玩，邮箱验证后在原 `userId` 上升级；金币、ELO与战绩不丢失。新增账号中心提供登录、绑定、设备会话管理、找回密码及注销冷静期。单机数据库仍离线独立，在线金币以服务端为准，不把本地余额导入线上。
+
+新账号需要 HTTPS/WSS 与 SMTP；默认旧游客明文地址继续兼容，不能直接用于密码登录。详见 [账号体系](docs/account-system.md)、[部署与验收](docs/account-system-deployment.md) 和 [实施验收报告](docs/account-system-test-report-2026-10-13.md)。
+
 ## 构建
 
 - Android Gradle Plugin 8.13.2 / Gradle 8.13 / JDK 17

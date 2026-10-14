@@ -16,7 +16,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cube.memorygames.MemoryApplicationModel;
 import com.memory.brain.training.games.R;
 
 import java.util.Locale;
@@ -278,6 +277,16 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         TextView losses = addStat(stats, R.id.online_stat_losses, R.string.online_title_loses);
         TextView draws = addStat(stats, R.id.online_stat_draws, R.string.online_title_draws);
         TextView winRate = addStat(stats, View.generateViewId(), R.string.online_win_rate);
+        TextView account=OnlineUi.secondaryButton(this.context,R.string.online_account_title);
+        LinearLayout.LayoutParams accountParams=new LinearLayout.LayoutParams(-1,dp(52));
+        accountParams.topMargin=dp(12);
+        profileCard.addView(account,accountParams);
+        account.setOnClickListener(v -> {
+            if (AccountManager.get(context).isBusy() || !OnlineSession.get().canChangeAccount()) {
+                Toast.makeText(context,R.string.online_account_busy,Toast.LENGTH_SHORT).show(); return;
+            }
+            context.startActivity(new Intent(context,AccountActivity.class));
+        });
         page.addView(profileCard, OnlineUi.cardParams(this.context));
 
         LinearLayout ranked = OnlineUi.card(this.context);
@@ -432,15 +441,16 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
     }
 
     private void bindDashboard(LobbyHolder holder) {
-        if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) {
+        if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED
+                && OnlineSession.get().canAutoConnect()) {
             OnlineSession.get().init(this.context);
             OnlineSession.get().connect();
         }
         OnlineSession.get().setMatchListener(this.lobbyListener);
         OnlineSession.get().setProfileCallback(this.profileCallback);
 
-        OnlineMessages.AuthOk current = this.profile != null
-                ? this.profile : OnlineSession.get().getLastProfile();
+        OnlineMessages.AuthOk current = OnlineSession.get().getLastProfile();
+        this.profile=current;
         int state = OnlineSession.get().getState();
         holder.status.setText(connectionText(state));
         holder.status.setTextColor(OnlineUi.color(this.context,
@@ -461,6 +471,7 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
             holder.nickname.setSingleLine(true);
             long daysLeft = Math.max(0L,
                     (current.seasonEndsAt - System.currentTimeMillis()) / 86400000L);
+            OnlineUi.applyAvatar(context,holder.avatar,current.avatarValue);
             holder.avatar.rating.setText(String.valueOf(current.elo));
             holder.nickname.setText(current.nickname);
             holder.rank.setText(this.context.getString(R.string.online_profile_rank_line,
@@ -539,13 +550,8 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
                     return;
                 }
                 if (!OnlineDebug.freeEconomy(context)) {
-                    // Economy-tainted local wallet (hardening design §4.3):
-                    // the local balance is not trusted as the entry-fee
-                    // basis; the server stays the authority either way.
-                    int coins = com.cube.memorygames.security.SecurityMac.isTainted()
-                            ? 0
-                            : MemoryApplicationModel.getInstance().getLocalDataManager()
-                                    .getLocalUser().money;
+                    // Online admission only uses the authenticated server balance, not the offline wallet.
+                    int coins = OnlineSession.get().getOnlineCoins();
                     if (coins < OnlineSession.get().getServerEntryFee()) {
                         OnlineDialogs.showNotEnoughCoins(context);
                         return;
@@ -592,7 +598,8 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
                 .setPositiveButton(R.string.ok, new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface dialog, int which) {
-                        OnlineConfig.setEndpoint(context, input.getText().toString().trim());
+                        try { OnlineConfig.setEndpoint(context,input.getText().toString().trim()); requestRefresh(); }
+                        catch(RuntimeException e) { Toast.makeText(context,e.getMessage(),Toast.LENGTH_SHORT).show(); }
                     }
                 })
                 .setNegativeButton(R.string.cancel, null)

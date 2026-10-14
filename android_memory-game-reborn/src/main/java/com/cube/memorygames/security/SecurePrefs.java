@@ -75,6 +75,47 @@ public final class SecurePrefs {
         }
     }
 
+    /** Account credentials fail closed, retaining the original blob on key/decryption failure. */
+    public static String getStrict(Context context, String prefsName, String key) {
+        synchronized (LOCK) {
+            SharedPreferences prefs=context.getSharedPreferences(prefsName,Context.MODE_PRIVATE);
+            String raw=readRaw(prefs,key);
+            if (raw == null) return null;
+            SecretKey aesKey=CryptoVault.aesKey(context);
+            if (aesKey == null) throw new IllegalStateException("安全密钥不可用，原凭证保留");
+            try {
+                if (isBlob(raw)) return decrypt(aesKey,Base64.decode(raw,Base64.DEFAULT));
+                putStrict(context,prefsName,key,raw); // Durable in-place migration of old plaintext.
+                return raw;
+            } catch (Exception e) { throw new IllegalStateException("安全凭证无法读取，原凭证保留，请勿清除数据",e); }
+        }
+    }
+
+    /** New trust records have no plaintext predecessor; accepting one would bypass release endpoint pinning. */
+    public static String getSealedStrict(Context context, String prefsName, String key) {
+        synchronized (LOCK) {
+            String raw=readRaw(context.getSharedPreferences(prefsName,Context.MODE_PRIVATE),key);
+            if (raw != null && !isBlob(raw)) throw new IllegalStateException("服务器信任记录损坏，禁止连接");
+            return getStrict(context,prefsName,key);
+        }
+    }
+
+    public static void putStrict(Context context, String prefsName, String key, String value) {
+        synchronized (LOCK) {
+            SharedPreferences.Editor edit=context.getSharedPreferences(prefsName,Context.MODE_PRIVATE).edit();
+            if (value == null) edit.remove(key);
+            else {
+                SecretKey aesKey=CryptoVault.aesKey(context);
+                if (aesKey == null) throw new IllegalStateException("安全密钥不可用，禁止明文保存凭证");
+                String blob=encrypt(aesKey,value);
+                // Existing offline encrypt() retains its fallback; account callers explicitly reject it.
+                if (blob.equals(value) || !isBlob(blob)) throw new IllegalStateException("凭证加密失败，原凭证保留");
+                edit.putString(key,blob);
+            }
+            if (!edit.commit()) throw new IllegalStateException("安全凭证保存失败，原身份保留");
+        }
+    }
+
     /** Stores a value sealed, or as plaintext when crypto is unavailable. */
     public static void put(Context context, String prefsName, String key, String value) {
         synchronized (LOCK) {

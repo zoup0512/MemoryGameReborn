@@ -26,7 +26,15 @@
 ./gradlew bootJar     # 产物 build/libs/*-boot.jar
 ```
 
-数据库结构由 Flyway 管理（`db/migration/V1..V3`）；已有部署首次启动时自动 baseline。
+数据库结构由 Flyway 管理（`db/migration/V1..V6`）；已有部署首次启动时自动 baseline。V4 新增账号身份与设备会话，V5 新增昵称修改冷却，V6 扩大管理审计字段容量。升级前备份数据库，不修改已执行迁移。
+
+## 游客与邮箱账号
+
+游客与邮箱用户共用永久 `pk_user.id`。邮箱验证后原地升级，保留金币、ELO与战绩；账号切换不合并在线资产。`/api/v2` 提供游客安全恢复、旧 token 迁移、注册、登录、刷新、设备会话管理、找回密码与七天注销冷静期。
+
+账号接口默认要求 HTTPS，包括 loopback。隔离本地验收显式设置 `PK_AUTH_ALLOW_HTTP=true`；生产需要 HTTPS/WSS、`SPRING_MAIL_HOST/PORT/USERNAME/PASSWORD` 与 `PK_AUTH_MAIL_FROM`。没有邮件服务返回 503，不能在默认明文旧游客地址发送账号密码。
+
+见 [账号体系](../docs/account-system.md) 与 [部署和验收](../docs/account-system-deployment.md)。
 
 ## 运维特性
 

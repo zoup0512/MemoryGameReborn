@@ -2,6 +2,8 @@ package com.memorygames.pk.user;
 
 import com.memorygames.pk.config.PkProperties;
 import com.memorygames.pk.rating.Rating;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,21 +20,26 @@ public class UserService {
     private final CoinLedgerRepository ledger;
     private final PkProperties properties;
     private final Rating rating;
+    private final JdbcTemplate db;
+    private final ApplicationEventPublisher events;
 
     public UserService(UserRepository repository, CoinLedgerRepository ledger,
-                       PkProperties properties, Rating rating) {
+                       PkProperties properties, Rating rating, JdbcTemplate db,
+                       ApplicationEventPublisher events) {
         this.repository = repository;
         this.ledger = ledger;
         this.properties = properties;
         this.rating = rating;
+        this.db = db;
+        this.events = events;
     }
 
     /**
      * Guest registration. The balance a client claims is IGNORED (P1-3): a
      * fresh account starts with the server-side welcome grant only, keeping
      * the economy server-authoritative. Re-registering an existing UUID
-     * rotates the token — that is the guest-recovery path, so the gateway
-     * rate-limits registrations instead of requiring the old token.
+     * rotates the token only for an unmigrated legacy guest. UUID is not a
+     * recovery credential once the account has migrated or been upgraded.
      */
     @Transactional
     public UserAccount register(String uuid, String nickname) {
@@ -42,8 +49,22 @@ public class UserService {
         if (nickname.length() > 24) {
             nickname = nickname.substring(0, 24);
         }
-        UserAccount account = this.repository.findByUuid(uuid).orElse(null);
+        UserAccount account = this.repository.findByUuidForUpdate(uuid).orElse(null);
         boolean isNew = account == null;
+        if (!isNew) {
+            if (account.deleted) {
+                throw new AccountException(403, "ACCOUNT_DELETED", "account deleted");
+            }
+            if (account.deleteRequestedAt > 0) {
+                throw new AccountException(403, "ACCOUNT_PENDING_DELETION", "account pending deletion");
+            }
+            if (account.bannedUntil > System.currentTimeMillis()) {
+                throw new AccountException(403, "ACCOUNT_BANNED", "account banned");
+            }
+            if (account.legacyAuthDisabled || !"GUEST".equals(account.accountType)) {
+                throw new AccountException(401, "LEGACY_AUTH_DISABLED", "legacy auth disabled");
+            }
+        }
         if (isNew) {
             account = new UserAccount();
             account.uuid = uuid;
@@ -67,9 +88,15 @@ public class UserService {
         return account;
     }
 
+    /** Resolve an unmigrated legacy owner; the gateway must enforce its current ban. */
     @Transactional(readOnly = true)
     public Optional<UserAccount> byToken(String token) {
-        return this.repository.findByToken(token);
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        return this.repository.findByToken(token).filter(account ->
+                !account.legacyAuthDisabled && "GUEST".equals(account.accountType)
+                        && !account.deleted && account.deleteRequestedAt == 0);
     }
 
     /** Admin/manual balance grant or charge; never negative, capped. */
@@ -123,16 +150,29 @@ public class UserService {
     /** GDPR-style deletion: refuse auth, anonymize, keep match history. */
     @Transactional
     public UserAccount markDeleted(UserAccount account) {
+        account = this.repository.findByIdForUpdate(account.id).orElseThrow();
         account.deleted = true;
-        account.token = "";
+        account.legacyAuthDisabled = true;
+        account.token = AccountService.randomToken();
         account.nickname = "deleted-" + account.id;
+        account.avatarValue = "avatar_1";
         account.updatedAt = System.currentTimeMillis();
-        return this.repository.save(account);
+        UserAccount saved = this.repository.saveAndFlush(account);
+        for (String sessionId : this.db.queryForList(
+                "select id from pk_session where user_id=? and revoked=false", String.class, account.id)) {
+            this.db.update("update pk_session set revoked=true where id=?", sessionId);
+            this.events.publishEvent(new AccountService.Revoked(sessionId));
+        }
+        this.db.update("insert into pk_account_audit(user_id,action,created_at) values(?,?,?)",
+                account.id, "SESSIONS_REVOKED", account.updatedAt);
+        this.events.publishEvent(new AccountService.LegacyDisabled(account.id));
+        return saved;
     }
 
     /** Top-20 leaderboard by ELO (TOP Online board). */
     public java.util.List<UserAccount> topByElo() {
-        return this.repository.findTop20ByOrderByEloDesc();
+        return this.repository.findTop20ByDeletedFalseAndDeleteRequestedAtAndBannedUntilLessThanEqualOrderByEloDesc(
+                0L, System.currentTimeMillis());
     }
 
     public int rankIndex(UserAccount account) {
