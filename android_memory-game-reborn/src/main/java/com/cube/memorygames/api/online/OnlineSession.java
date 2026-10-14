@@ -417,6 +417,12 @@ public class OnlineSession {
     private Runnable queuedWatchdog;
 
     public void startMatchmaking() {
+        if (this.appContext != null
+                && !com.cube.memorygames.security.IntegritySentinel.isIntact(this.appContext)) {
+            // Repackaged build (hardening design §5.1): ranked queue stays
+            // inert — no state change, no error, nothing observable.
+            return;
+        }
         // Stack trace kept deliberately: an intermittent phantom match_join
         // (queue entry appearing around match-exit moments) is still open;
         // the next occurrence will identify the call site. Debug tag only.
@@ -1115,6 +1121,11 @@ public class OnlineSession {
     }
 
     private int getLocalCoins() {
+        // A tainted local mirror (hardening design §4.3) must not leak
+        // outward — this value is sent in the register payload.
+        if (com.cube.memorygames.security.SecurityMac.isTainted()) {
+            return 0;
+        }
         try {
             return MemoryApplicationModel.getInstance().getLocalDataManager().getLocalUser().money;
         } catch (RuntimeException e) {
@@ -1124,7 +1135,8 @@ public class OnlineSession {
 
     /** Mirrors the live server entry fee into the local coin ledger. */
     private void chargeEntryFee() {
-        if (OnlineDebug.freeEconomy(this.appContext) || this.serverEntryFee <= 0) {
+        if (OnlineDebug.freeEconomy(this.appContext) || this.serverEntryFee <= 0
+                || com.cube.memorygames.security.SecurityMac.isTainted()) {
             return;
         }
         try {
@@ -1140,7 +1152,8 @@ public class OnlineSession {
     /** Mirrors an accepted-match cancellation refund into the local ledger. */
     private void refundEntryFeeIfNeeded() {
         int charged = this.localEntryFeeCharged;
-        if (charged <= 0 || OnlineDebug.freeEconomy(this.appContext)) {
+        if (charged <= 0 || OnlineDebug.freeEconomy(this.appContext)
+                || com.cube.memorygames.security.SecurityMac.isTainted()) {
             this.localEntryFeeCharged = 0;
             return;
         }
@@ -1155,7 +1168,8 @@ public class OnlineSession {
     /** Mirrors the authoritative settlement payout into the local coin ledger. */
     private void applySettlement(MatchEnd end) {
         this.localEntryFeeCharged = 0;
-        if (OnlineDebug.freeEconomy(this.appContext)) {
+        if (OnlineDebug.freeEconomy(this.appContext)
+                || com.cube.memorygames.security.SecurityMac.isTainted()) {
             return;
         }
         try {

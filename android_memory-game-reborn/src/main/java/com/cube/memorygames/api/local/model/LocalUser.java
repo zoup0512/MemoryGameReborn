@@ -4,6 +4,7 @@ import android.text.TextUtils;
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
+import com.cube.memorygames.security.SecurityMac;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -57,6 +58,12 @@ public class LocalUser extends Model {
     public Date updatedAt;
     @Column(name = "vip")
     public boolean vip;
+    // Integrity tag over the economy/privilege columns (hardening design
+    // §4.3). Named unremarkably on purpose: a casual DB browser should not
+    // learn from the schema what it protects or that removing it matters —
+    // stripping it is itself flagged via SecurityMac's stamp-once marker.
+    @Column(name = "syncTag")
+    public String syncTag;
 
     public List<String> parseUnlockedContent() {
         List<String> result = new ArrayList();
@@ -89,5 +96,45 @@ public class LocalUser extends Model {
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
         this.updated = true;
+    }
+
+    @Override
+    protected void onBeforePersist() {
+        String tag = SecurityMac.compute(economyPayload());
+        if (tag != null) {
+            this.syncTag = tag;
+            SecurityMac.rememberStamped();
+        }
+    }
+
+    @Override
+    protected void onAfterLoad() {
+        if (this.syncTag == null || this.syncTag.length() == 0) {
+            if (getId() != null && SecurityMac.wasStamped()) {
+                // the row carried a tag before and it is gone: stripped
+                SecurityMac.markTainted();
+            }
+            return;
+        }
+        if (!SecurityMac.verify(economyPayload(), this.syncTag)) {
+            SecurityMac.markTainted();
+        }
+    }
+
+    /**
+     * The protected field set: client-authoritative economy and privilege
+     * columns. Must stay a pure function of the fields — save and load both
+     * derive the tag from it. float fields go through their raw bits so the
+     * string form is locale/format independent.
+     */
+    private String economyPayload() {
+        return "u1|" + this.money
+                + "|" + this.gamesUnlocked
+                + "|" + this.adsRemoved
+                + "|" + this.vip
+                + "|" + this.unlimitedOnline
+                + "|" + (this.unlockedContent == null ? "" : this.unlockedContent)
+                + "|" + Float.floatToIntBits(this.challengeRating)
+                + "|" + this.onlineRank;
     }
 }

@@ -40,7 +40,13 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            // Client hardening P1 (docs/android-client-hardening-design.md §3):
+            // R8 shrink/obfuscate + resource shrink. The rules start broad
+            // because the restored codebase reflects heavily (ActiveAndroid,
+            // Gson DTOs, ButterKnife); tighten only after full regression.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -105,6 +111,155 @@ tasks.register('publishReleaseApk') {
 
 tasks.matching { it.name == 'assembleRelease' }.configureEach {
     finalizedBy 'publishReleaseApk'
+}
+
+// ---- Hardening P3: release certificate anchor -----------------------------
+// (docs/android-client-hardening-design.md 5.1). Rewrites
+// src/main/java/com/cube/memorygames/security/IntegrityAnchor.java with the
+// XOR-split SHA-256 of the release signing certificate so the fingerprint
+// never enters the dex as a literal. Stamp it (first match wins):
+//   gradlew writeIntegrityAnchor "-PintegrityCertSha256=AB:CD:...:EF"
+//   gradlew writeIntegrityAnchor            (release keystore via the
+//                                            signingConfig DSL or
+//                                            android.injected.signing.*)
+// Record the fingerprint for the keystore docs:
+//   gradlew printReleaseCertSha256
+// Without a stamped anchor the sentinel enforces nothing (ANCHORED=false).
+def releaseSigningCertificate = {
+    def signingConfig = android.buildTypes.release.signingConfig
+    def storeFile = null
+    def storePassword = null
+    def keyAlias = null
+    def storeType = null
+    if (signingConfig != null && signingConfig.isSigningReady()) {
+        storeFile = signingConfig.storeFile
+        storePassword = signingConfig.storePassword
+        keyAlias = signingConfig.keyAlias
+        storeType = signingConfig.storeType
+    } else {
+        // AGP CLI-injected signing (android.injected.signing.*) is applied to
+        // the variant, not the buildType DSL — read the injected properties.
+        def injected = project.findProperty('android.injected.signing.store.file')
+        if (injected == null) {
+            return null
+        }
+        storeFile = file(injected)
+        storePassword = project.findProperty('android.injected.signing.store.password')
+        keyAlias = project.findProperty('android.injected.signing.key.alias')
+        storeType = project.findProperty('android.injected.signing.store.type')
+    }
+    def keyStore = java.security.KeyStore.getInstance(
+            storeType ?: java.security.KeyStore.getDefaultType())
+    storeFile.withInputStream { stream ->
+        keyStore.load(stream, (storePassword ?: '').toCharArray())
+    }
+    return keyStore.getCertificate(keyAlias)
+}
+
+def sha256Hex = { byte[] bytes ->
+    java.security.MessageDigest.getInstance('SHA-256')
+            .digest(bytes).collect { String.format('%02X', it) }.join(':')
+}
+
+def bytesToHex = { byte[] bytes ->
+    bytes.collect { String.format('%02X', it) }.join(':')
+}
+
+tasks.register('printReleaseCertSha256') {
+    group = 'security'
+    description = 'Print the SHA-256 fingerprint of the release signing certificate'
+    doLast {
+        def certificate = releaseSigningCertificate()
+        if (certificate == null) {
+            logger.lifecycle('printReleaseCertSha256: no release signing certificate available (unsigned build)')
+            return
+        }
+        logger.lifecycle('release cert SHA-256: ' + sha256Hex(certificate.encoded))
+    }
+}
+
+tasks.register('writeIntegrityAnchor') {
+    group = 'security'
+    description = 'Stamp the release certificate SHA-256 into IntegrityAnchor.java (XOR-split)'
+    doLast {
+        byte[] digest
+        def explicit = project.findProperty('integrityCertSha256')
+        if (explicit != null && explicit.toString().trim().length() > 0) {
+            String hex = explicit.toString().replaceAll('[^0-9a-fA-F]', '')
+            if (hex.length() != 64) {
+                throw new GradleException(
+                        "integrityCertSha256 must be 64 hex chars (32 bytes), got ${hex.length()}")
+            }
+            digest = new byte[32]
+            (0..<32).each { i ->
+                digest[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16)
+            }
+        } else {
+            def certificate = releaseSigningCertificate()
+            if (certificate == null) {
+                throw new GradleException(
+                        'No release signing certificate available. Pass -PintegrityCertSha256=<64 hex chars> ' +
+                        'or run with the release keystore injected; leaving the anchor unconfigured ' +
+                        'disables signature enforcement silently.')
+            }
+            digest = java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded)
+        }
+        def random = new java.security.SecureRandom()
+        int[] partA = new int[32]
+        int[] partB = new int[32]
+        (0..<32).each { i ->
+            int mask = random.nextInt(256)
+            partB[i] = mask
+            partA[i] = (digest[i] & 0xFF) ^ mask
+        }
+        def fmt = { int[] arr ->
+            arr.collect { String.valueOf(it) }
+               .collate(8)
+               .collect { chunk -> chunk.join(', ') }
+               .join(',\n            ')
+        }
+        // ASCII-only template: written via platform encoding on Windows.
+        file('src/main/java/com/cube/memorygames/security/IntegrityAnchor.java').text =
+                '''package com.cube.memorygames.security;
+
+/**
+ * Release certificate anchor. GENERATED FILE - rewritten in place by
+ * `gradlew writeIntegrityAnchor` (see build.gradle); do not hand-edit
+ * the arrays.
+ *
+ * The 32-byte SHA-256 of the release signing certificate never appears as a
+ * literal in the dex: it is stored XOR-split across two random int arrays
+ * and only reassembled inside fingerprint(). With ANCHORED false
+ * the sentinel enforces nothing - that is the state until the maintainer
+ * stamps the real fingerprint (hardening design 5.1).
+ */
+final class IntegrityAnchor {
+
+    static final boolean ANCHORED = true;
+    static final int[] PART_A = new int[] {
+            ''' + fmt(partA) + '''
+    };
+    static final int[] PART_B = new int[] {
+            ''' + fmt(partB) + '''
+    };
+
+    static byte[] fingerprint() {
+        if (!ANCHORED || PART_A.length == 0 || PART_A.length != PART_B.length) {
+            return null;
+        }
+        byte[] out = new byte[PART_A.length];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = (byte) ((PART_A[i] ^ PART_B[i]) & 0xFF);
+        }
+        return out;
+    }
+
+    private IntegrityAnchor() {
+    }
+}
+'''
+        logger.lifecycle('writeIntegrityAnchor: stamped SHA-256 ' + bytesToHex(digest))
+    }
 }
 
 dependencies {

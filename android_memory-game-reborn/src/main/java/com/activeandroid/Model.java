@@ -36,6 +36,7 @@ public abstract class Model {
 
     public final Long save() {
         SQLiteDatabase db = Cache.openDatabase();
+        onBeforePersist();
         ContentValues values = new ContentValues();
         for (Field field : this.mTableInfo.getFields()) {
             String fieldName = this.mTableInfo.getColumnName(field);
@@ -162,9 +163,21 @@ public abstract class Model {
                 }
             }
         }
+        onAfterLoad();
         if (this.mId != null) {
             Cache.addEntity(this);
         }
+    }
+
+    /**
+     * Persist hooks (hardening design §4.3): values are about to be read from
+     * the fields, so models can derive dependent columns here; after a load,
+     * models can verify integrity columns. Both default to no-op.
+     */
+    protected void onBeforePersist() {
+    }
+
+    protected void onAfterLoad() {
     }
 
     protected final <T extends Model> List<T> getMany(Class<T> type, String foreignKey) {

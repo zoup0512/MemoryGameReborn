@@ -33,16 +33,21 @@ public final class OnlineConfig {
     }
 
     public static String getEndpoint(Context context) {
+        // Release builds ignore any stored override: a repackaged/modified
+        // client (or a tampered preferences file) must not be able to steer
+        // the release build at an impostor server. Only debuggable builds
+        // honor the lobby long-press override (hardening design §3.2).
+        boolean debuggable = (context.getApplicationInfo().flags
+                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (!debuggable) {
+            return DEFAULT_ENDPOINT;
+        }
         String override = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getString(KEY_ENDPOINT, null);
         if (override != null && override.length() > 0) {
             return override;
         }
-        // Debuggable builds (sideloaded test APKs) default to the LAN server;
-        // release builds go to production.
-        boolean debuggable = (context.getApplicationInfo().flags
-                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        return debuggable ? LAN_TEST_ENDPOINT : DEFAULT_ENDPOINT;
+        return LAN_TEST_ENDPOINT;
     }
 
     public static void setEndpoint(Context context, String endpoint) {

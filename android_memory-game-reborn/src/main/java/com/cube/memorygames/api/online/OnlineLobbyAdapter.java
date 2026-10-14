@@ -299,6 +299,12 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         ranked.addView(rankedMeta, metaParams);
         TextView play = OnlineUi.primaryButton(this.context, R.string.menuOnlinePlay);
         play.setId(R.id.online_play_button);
+        // Repackaged or debugger-attached builds keep every offline and
+        // practice feature, but ranked stays inert (hardening design §5.1):
+        // plain disabled look, no explanation, no other reaction.
+        if (!com.cube.memorygames.security.IntegritySentinel.runtimeClear(this.context)) {
+            play.setEnabled(false);
+        }
         LinearLayout.LayoutParams fullButton = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, getDimen(R.dimen.online_button_height));
         fullButton.topMargin = dp(14);
@@ -529,9 +535,17 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         holder.play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!com.cube.memorygames.security.IntegritySentinel.isIntact(context)) {
+                    return;
+                }
                 if (!OnlineDebug.freeEconomy(context)) {
-                    int coins = MemoryApplicationModel.getInstance().getLocalDataManager()
-                            .getLocalUser().money;
+                    // Economy-tainted local wallet (hardening design §4.3):
+                    // the local balance is not trusted as the entry-fee
+                    // basis; the server stays the authority either way.
+                    int coins = com.cube.memorygames.security.SecurityMac.isTainted()
+                            ? 0
+                            : MemoryApplicationModel.getInstance().getLocalDataManager()
+                                    .getLocalUser().money;
                     if (coins < OnlineSession.get().getServerEntryFee()) {
                         OnlineDialogs.showNotEnoughCoins(context);
                         return;

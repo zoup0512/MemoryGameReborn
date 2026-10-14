@@ -9,7 +9,7 @@
 
     <application
         android:name="com.cube.memorygames.MemoryApplicationModel"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:usesCleartextTraffic="true"
@@ -23,9 +23,11 @@
         <meta-data
             android:name="AA_DB_NAME"
             android:value="memorygames.db" />
+        <!-- 17: User table gains the syncTag integrity column (hardening
+             design §4.3); see assets/migrations/17.sql -->
         <meta-data
             android:name="AA_DB_VERSION"
-            android:value="16" />
+            android:value="17" />
 
         <!-- Build stamp; the placeholder value is injected by build.gradle's
              manifestPlaceholders. Readable from an installed package with

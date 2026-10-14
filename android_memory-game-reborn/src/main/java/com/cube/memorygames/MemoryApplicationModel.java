@@ -109,6 +109,13 @@ public class MemoryApplicationModel extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         instance = this;
+        // Security context first: LocalDataManager loads (and stamps) the
+        // User row during initializeDB below and needs the app context for
+        // the Keystore-backed integrity keys (hardening design §4).
+        com.cube.memorygames.security.SecurityMac.init(this);
+        // Prime the release-signature check once (hardening design §5.1);
+        // the cached verdict feeds the scattered degradation points.
+        com.cube.memorygames.security.IntegritySentinel.isIntact(this);
         initializeDB();
         SoundUtils.initSounds(getApplicationContext());
         this.localDataManager = new LocalDataManager();

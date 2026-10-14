@@ -1,14 +1,20 @@
 package com.cube.memorygames.api.online;
 
 import android.content.Context;
-
+import com.cube.memorygames.security.SecurePrefs;
 import java.util.UUID;
 
 /**
- * Guest identity for the online PK mode, stored in SharedPreferences so it
- * survives restarts. Deliberately not persisted in the ActiveAndroid SQLite
- * schema: adding columns to the decompiled LocalUser model would require a
- * DB migration on a fragile restored codebase.
+ * Guest identity for the online PK mode. Values survive restarts and are
+ * sealed with SecurePrefs (AES-GCM via AndroidKeyStore, hardening design
+ * §4.2): uuid/token/userId are account-takeover material on rooted devices
+ * and must not sit in plaintext preferences. Deliberately not persisted in
+ * the ActiveAndroid SQLite schema: adding columns to the decompiled LocalUser
+ * model would require a DB migration on a fragile restored codebase.
+ *
+ * Legacy installs: values written by pre-hardening versions are still lying
+ * around as plaintext under the same keys; every read lazily re-seals them,
+ * so identity survives an app update without a dedicated migration step.
  */
 public final class OnlineIdentity {
 
@@ -80,24 +86,28 @@ public final class OnlineIdentity {
     }
 
     private static String defaultNickname() {
-        return "Player" + (int) (Math.random() * 9000.0d + 1000.0d);
+        return "Player" + (int) (Math.random() * 9000.0d + 1000);
     }
 
     private static String getString(Context context, String key) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(key, null);
+        String value = SecurePrefs.get(context, PREFS, key);
+        if (value != null) {
+            // re-seal a plaintext legacy value on first touch
+            SecurePrefs.seal(context, PREFS, key);
+        }
+        return value;
     }
 
     private static void setString(Context context, String key, String value) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(key, value).apply();
+        SecurePrefs.put(context, PREFS, key, value);
     }
 
     private static boolean getBoolean(Context context, String key, boolean def) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, def);
+        String value = getString(context, key);
+        return value != null ? Boolean.parseBoolean(value) : def;
     }
 
     private static void setBoolean(Context context, String key, boolean value) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putBoolean(key, value).apply();
+        setString(context, key, Boolean.toString(value));
     }
 }
