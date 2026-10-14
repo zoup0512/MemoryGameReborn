@@ -6,7 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import java.util.Map;
 
-@RestControllerAdvice(assignableTypes=AccountController.class)
+@RestControllerAdvice(assignableTypes={AccountController.class,com.memorygames.pk.diagnostics.DiagnosticController.class,com.memorygames.pk.diagnostics.AdminDiagnosticController.class})
 public class AccountErrors {
     @ExceptionHandler(AccountException.class) public ResponseEntity<?> account(AccountException ex) { return ResponseEntity.status(ex.status).body(Map.of("code",ex.code,"message",ex.getMessage())); }
     @ExceptionHandler(DataIntegrityViolationException.class) public ResponseEntity<?> conflict() { return ResponseEntity.status(409).body(Map.of("code","ACCOUNT_CONFLICT","message","Account identity already exists")); }

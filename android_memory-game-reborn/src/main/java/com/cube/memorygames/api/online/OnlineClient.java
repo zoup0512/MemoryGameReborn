@@ -1,5 +1,6 @@
 package com.cube.memorygames.api.online;
 
+import com.cube.memorygames.diagnostics.DiagnosticLog;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
@@ -51,6 +52,7 @@ public class OnlineClient {
             WebSocketClient client = ws;
             if (client != null && connected && !closedByUser.get()) {
                 if (OnlineClient.this.awaitingPong) {
+                    DiagnosticLog.event("ws_ping_timeout", "reason", "ping_timeout");
                     connected = false;
                     OnlineClient.this.main.removeCallbacks(pingRunnable);
                     OnlineClient.this.main.post(new Runnable() {
@@ -62,7 +64,8 @@ public class OnlineClient {
                     return;
                 }
                 OnlineClient.this.awaitingPong = true;
-                client.send("{\"v\":1,\"t\":\"ping\",\"d\":{\"ts\":" + System.currentTimeMillis() + "}}");
+                try { client.send("{\"v\":1,\"t\":\"ping\",\"d\":{\"ts\":" + System.currentTimeMillis() + "}}"); }
+                catch (RuntimeException e) { DiagnosticLog.event("ws_send_failed", "reason", e.getClass().getName());throw e; }
                 main.postDelayed(this, PING_INTERVAL_MS);
             }
         }
@@ -77,11 +80,13 @@ public class OnlineClient {
     }
 
     public void connect(final String endpoint) {
+        DiagnosticLog.event("ws_connect");
         closedByUser.set(false);
         URI uri;
         try {
             uri = new URI(endpoint);
         } catch (URISyntaxException e) {
+            DiagnosticLog.event("ws_error", "reason", e.getClass().getName());
             main.post(new Runnable() {
                 @Override
                 public void run() {
@@ -94,6 +99,7 @@ public class OnlineClient {
             @Override
             public void onOpen(ServerHandshake handshake) {
                 connected = true;
+                DiagnosticLog.event("ws_connected");
                 main.post(new Runnable() {
                     @Override
                     public void run() {
@@ -125,6 +131,7 @@ public class OnlineClient {
 
             @Override
             public void onClose(final int code, final String reason, boolean remote) {
+                DiagnosticLog.event("ws_close", "code", code, "remote", remote);
                 connected = false;
                 main.removeCallbacks(pingRunnable);
                 main.post(new Runnable() {
@@ -137,6 +144,7 @@ public class OnlineClient {
 
             @Override
             public void onError(final Exception ex) {
+                DiagnosticLog.event("ws_error", "reason", ex.getClass().getName());
                 // onClose always follows onError on a failed connection.
             }
         };
@@ -145,6 +153,7 @@ public class OnlineClient {
                 SSLSocketFactory factory = SSLContext.getDefault().getSocketFactory();
                 client.setSocketFactory(factory);
             } catch (Exception ignored) {
+                DiagnosticLog.event("ws_error", "reason", ignored.getClass().getName());
                 // minSdk 21: TLS 1.2 is enabled by default; fall back to defaults.
             }
         }
@@ -159,13 +168,16 @@ public class OnlineClient {
                 client.send(json);
                 return true;
             } catch (RuntimeException e) {
+                DiagnosticLog.event("ws_send_failed", "reason", e.getClass().getName());
                 return false;
             }
         }
+        DiagnosticLog.event("ws_send_failed", "reason", "not_connected");
         return false;
     }
 
     public void close() {
+        DiagnosticLog.event("ws_close", "reason", "framework", "remote", false);
         closedByUser.set(true);
         connected = false;
         main.removeCallbacks(pingRunnable);

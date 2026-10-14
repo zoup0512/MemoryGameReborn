@@ -1,5 +1,7 @@
 package com.cube.memorygames.api.online;
 
+import com.cube.memorygames.diagnostics.DiagnosticLog;
+import com.cube.memorygames.diagnostics.DiagnosticSanitizer;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -346,6 +348,7 @@ public class OnlineSession {
     // ---------------------------------------------------------- connection
 
     public synchronized void connect() {
+        diagnostic("session_connect", "epoch", connectionEpoch+1);
         if (appContext == null) {
             throw new IllegalStateException("OnlineSession.init() not called");
         }
@@ -374,19 +377,21 @@ public class OnlineSession {
             @Override
             public void onMessage(String json) {
                 if (attempt == connectionEpoch) handleMessage(json);
+                else diagnostic("frame_dropped", "reason", "stale_epoch", "epoch", attempt);
             }
         });
         client.connect(endpoint);
     }
 
     public synchronized void disconnect() {
+        diagnostic("session_disconnect", "reason", "framework");
         ++connectionEpoch;
         ++roomCommandEpoch;
         pendingQueueRejoin=false;
         queueRequestPending=false;
         disconnectedAt=0L;
         cancelQueuedWatchdog();
-        clearMatchSnapshot();
+        clearMatchSnapshot("framework");
         matchId = null;
         currentRound = -1;
         roundStartedElapsed = 0L;
@@ -479,16 +484,18 @@ public class OnlineSession {
         if (elapsed < RECONNECT_WINDOW_MS) {
             long delay = Math.min(RECONNECT_BASE_MS << Math.min(reconnectAttempt, 4), RECONNECT_MAX_MS);
             reconnectAttempt++;
+            diagnostic("session_reconnect", "attempt", reconnectAttempt, "delayMs", delay);
             setState(STATE_DISCONNECTED);
             main.postDelayed(reconnectRunnable, delay);
             return;
         }
+        diagnostic("reconnect_exhausted", "reason", "reconnect_window");
         // Window expired: an accepted match that never started was refunded
         // by the server; a running match was forfeited. Mirror only the former.
         if (this.matchId != null && this.currentRound < 0) {
             refundEntryFeeIfNeeded();
         }
-        clearMatchSnapshot();
+        clearMatchSnapshot("reconnect_window");
         disconnectedAt = 0L;
         setState(STATE_DISCONNECTED);
     }
@@ -543,6 +550,7 @@ public class OnlineSession {
                 if (OnlineSession.this.state != STATE_QUEUE || OnlineSession.this.matchId != null) {
                     return;
                 }
+                diagnostic("queue_timeout", "reason", "queue_ack");
                 android.util.Log.d("OnlinePK", "join unacknowledged — zombie socket, reconnecting");
                 OnlineSession.this.pendingQueueRejoin = true;
                 OnlineClient dead = OnlineSession.this.client;
@@ -646,6 +654,7 @@ public class OnlineSession {
                         && OnlineSession.this.state != STATE_QUEUE) {
                     friendRoomPending=false;
                     practicePending=false;
+                    diagnostic("room_timeout", "reason", "room_ack");
                     notifyError(-1, "no response");
                 }
             }
@@ -713,6 +722,7 @@ public class OnlineSession {
      * game's own round timer has expired; reports the final round score.
      */
     public void onRoundFinished(int score) {
+        diagnostic("round_complete", "score", score);
         if (matchId == null || currentRound < 0 || roundReported) {
             return;
         }
@@ -725,6 +735,7 @@ public class OnlineSession {
 
     /** Called when the player confirms leaving an online match (forfeit). */
     public void resign() {
+        diagnostic("resign", "reason", "user_resign");
         if (this.matchId != null) {
             this.resigningMatchId = this.matchId;
             this.resignRetries = RESIGN_RETRY_MAX;
@@ -739,6 +750,7 @@ public class OnlineSession {
      * so the resign is re-sent until match_end confirms the settlement.
      */
     private void sendResign(final String targetMatchId) {
+        diagnostic("resign_send", "attempt", RESIGN_RETRY_MAX-resignRetries);
         OnlineClient c = client;
         android.util.Log.d("OnlinePK", "sendResign matchId=" + targetMatchId
                 + " connected=" + (c != null && c.isConnected())
@@ -762,12 +774,15 @@ public class OnlineSession {
     private void handleMessage(String json) {
         String type = OnlineMessages.typeOf(json);
         if (type == null) {
+            diagnostic("frame_dropped", "reason", "bad_type");
             return;
         }
+        if (DiagnosticSanitizer.businessType(type)) diagnosticFrame(json, type);
         // Match-scoped frames carry the owning matchId; anything addressed to
         // a match we are not in (e.g. an orphan room from a server-side
         // double-queue) must be dropped before it corrupts our state.
         if (isMatchScoped(type) && !ownedByCurrentMatch(json)) {
+            diagnostic("frame_dropped", "reason", "wrong_match");
             return;
         }
         if (OnlineMessages.T_SESSION_REPLACED.equals(type)) {
@@ -860,6 +875,7 @@ public class OnlineSession {
             // idle lobby client).
             if (this.state != STATE_QUEUE && this.matchId == null
                     && !this.friendRoomPending && !this.practicePending) {
+                diagnostic("frame_dropped", "reason", "unexpected_match");
                 return;
             }
             android.util.Log.d("OnlinePK", "match_found handling, state=" + state);
@@ -904,6 +920,7 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_MATCH_CANCELLED.equals(type)) {
+            diagnostic("match_cancelled", "reason", "match_cancelled");
             boolean cancelledAcceptedMatch = this.matchId != null;
             String cancelledMode = this.practiceMode ? MODE_PRACTICE
                     : this.friendMode ? MODE_FRIEND : MODE_RANKED;
@@ -911,7 +928,7 @@ public class OnlineSession {
             if (cancelledAcceptedMatch) {
                 refundEntryFeeIfNeeded();
             }
-            clearMatchSnapshot();
+            clearMatchSnapshot("match_cancelled");
             this.friendRoomPending = false;
             this.practicePending = false;
             cancelRoomAck();
@@ -991,6 +1008,7 @@ public class OnlineSession {
         if (OnlineMessages.T_MATCH_END.equals(type)) {
             MatchEnd end = OnlineMessages.payloadOf(json, MatchEnd.class);
             if (end != null) {
+                diagnostic("match_end", "score", end.myScore);
                 cancelAcceptFallback();
                 applySettlement(end);
                 this.matchEndSeen = true;
@@ -1067,6 +1085,29 @@ public class OnlineSession {
         }
     }
 
+    private void diagnostic(String event, Object... extra) {
+        try {
+            String game=null;
+            if (rounds!=null && currentRound>=1 && currentRound<=rounds.length && rounds[currentRound-1]!=null) game=rounds[currentRound-1].gameId;
+            Object[] fields=new Object[10+extra.length];
+            fields[0]="matchId";fields[1]=matchId;fields[2]="round";fields[3]=currentRound;
+            fields[4]="gameId";fields[5]=game;fields[6]="state";fields[7]=state;
+            fields[8]="mode";fields[9]=practiceMode ? MODE_PRACTICE : friendMode ? MODE_FRIEND : MODE_RANKED;
+            System.arraycopy(extra,0,fields,10,extra.length);DiagnosticLog.event(event,fields);
+        } catch(RuntimeException ignored) { }
+    }
+
+    private void diagnosticFrame(String json,String type) {
+        try {
+            com.google.gson.JsonObject root=new com.google.gson.JsonParser().parse(json).getAsJsonObject();
+            com.google.gson.JsonObject d=root.has("d") && root.get("d").isJsonObject() ? root.get("d").getAsJsonObject() : new com.google.gson.JsonObject();
+            String match=d.has("matchId") && d.get("matchId").isJsonPrimitive() ? d.get("matchId").getAsString() : matchId;
+            String game=d.has("gameId") && d.get("gameId").isJsonPrimitive() ? d.get("gameId").getAsString() : null;
+            int round=d.has("round") && d.get("round").isJsonPrimitive() ? d.get("round").getAsInt() : currentRound;
+            DiagnosticLog.event("frame_received","reason",type,"matchId",match,"round",round,"gameId",game,"state",state);
+        } catch(RuntimeException ignored) { }
+    }
+
     private static boolean isMatchScoped(String type) {
         return OnlineMessages.T_ROUND_START.equals(type)
                 || OnlineMessages.T_OPPONENT_SCORE.equals(type)
@@ -1095,6 +1136,7 @@ public class OnlineSession {
 
     private void setState(int newState) {
         if (state != newState) {
+            diagnostic("session_state", "from", state, "to", newState);
             state = newState;
             if (listener != null) {
                 try {
@@ -1147,8 +1189,9 @@ public class OnlineSession {
                 }
                 String mode = OnlineSession.this.practiceMode ? MODE_PRACTICE
                         : OnlineSession.this.friendMode ? MODE_FRIEND : MODE_RANKED;
+                diagnostic("accept_timeout", "reason", "accept_gate");
                 refundEntryFeeIfNeeded();
-                clearMatchSnapshot();
+                clearMatchSnapshot("accept_gate");
                 setState(STATE_IDLE);
                 MatchListener target = OnlineSession.this.listener;
                 if (target != null) {
@@ -1170,7 +1213,8 @@ public class OnlineSession {
         this.acceptDeadlineElapsed = 0L;
     }
 
-    private void clearMatchSnapshot() {
+    private void clearMatchSnapshot(String reason) {
+        diagnostic("snapshot_clear", "reason", reason);
         cancelAcceptFallback();
         this.matchId = null;
         this.opponent = null;
@@ -1207,6 +1251,7 @@ public class OnlineSession {
     }
 
     private void notifyError(int code, String message) {
+        diagnostic("frame_received", "reason", "error", "code", code);
         if (listener != null) {
             try {
                 listener.onError(code, message);
@@ -1218,8 +1263,8 @@ public class OnlineSession {
     private void send(String type, Object data) {
         OnlineClient c = client;
         if (c != null) {
-            c.send(OnlineMessages.envelope(type, data));
-        }
+            if (!c.send(OnlineMessages.envelope(type, data))) diagnostic("session_send_failed", "reason", DiagnosticSanitizer.businessType(type) ? type : "send");
+        } else diagnostic("session_send_failed", "reason", "not_connected");
     }
 
     /** Entry debit/refund is server-owned: never infer deltas from an old snapshot after reconnect. */

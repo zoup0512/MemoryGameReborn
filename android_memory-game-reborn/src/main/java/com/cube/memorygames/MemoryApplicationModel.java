@@ -109,6 +109,7 @@ public class MemoryApplicationModel extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         instance = this;
+        com.cube.memorygames.diagnostics.DiagnosticLog.init(this);
         // Security context first: LocalDataManager loads (and stamps) the
         // User row during initializeDB below and needs the app context for
         // the Keystore-backed integrity keys (hardening design §4).

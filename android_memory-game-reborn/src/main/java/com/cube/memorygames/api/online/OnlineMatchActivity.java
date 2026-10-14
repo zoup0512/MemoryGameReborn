@@ -1,5 +1,6 @@
 package com.cube.memorygames.api.online;
 
+import com.cube.memorygames.diagnostics.DiagnosticLog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -127,6 +128,19 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean roundLaunchScheduled;
     private int launchedRound = -1;
+    private String diagnosticMatchId;
+    private String finishReason="framework";
+
+    private void diagnostic(String event,Object... extra) {
+        try {
+            String live=OnlineSession.get().getMatchId();if(live!=null)diagnosticMatchId=live;
+            Object[] fields=new Object[extra.length+4];
+            System.arraycopy(extra,0,fields,0,extra.length);
+            fields[extra.length]="matchId";fields[extra.length+1]=diagnosticMatchId;
+            fields[extra.length+2]="round";fields[extra.length+3]=launchedRound;
+            DiagnosticLog.event(event,fields);
+        } catch(RuntimeException ignored) { }
+    }
 
     /**
      * The original HeaderFragment pulse: a position walks 0..5 and each of
@@ -166,6 +180,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        diagnostic("match_create","reason",savedInstanceState==null?"create":"recreate","stack",DiagnosticLog.callerStack());
         OnlineSession.get().init(getApplicationContext());
         setContentView(buildView());
         OnlineSession.get().setMatchListener(this);
@@ -179,6 +194,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     protected void onDestroy() {
+        diagnostic("match_destroy","reason",isChangingConfigurations()?"configuration":isFinishing()?finishReason:"destroy","stack",DiagnosticLog.callerStack());
         this.handler.removeCallbacksAndMessages(null);
         // Clear only our own registration: returning to the lobby re-registers
         // the adapter in onResume, which runs BEFORE this onDestroy — an
@@ -191,7 +207,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void finish() {
-        android.util.Log.d("OnlinePK", "finish() called", new IllegalStateException("trace"));
+        diagnostic("match_finish","reason",finishReason,"stack",DiagnosticLog.callerStack());
         super.finish();
     }
 
@@ -199,6 +215,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     public void onBackPressed() {
         OnlineSession session = OnlineSession.get();
         if (session.isInMatch()) {
+            diagnostic("exit_dialog","reason","exit_confirm");
             new AlertDialog.Builder(this)
                     .setMessage(session.isPracticeMode()
                             // Practice has no bet to lose; keep the forfeit warning honest.
@@ -206,12 +223,15 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                             : R.string.dialog_lose_bet)
                     .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
+                            diagnostic("exit_cancel","reason","exit_cancel");
                             dialog.cancel();
                         }
                     })
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
+                            diagnostic("exit_confirm","reason","user_resign");
+                            finishReason="user_resign";
                             OnlineSession.get().resign();
                             OnlineMatchActivity.this.finish();
                         }
@@ -219,6 +239,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                     .show();
             return;
         }
+        finishReason="back_no_match";
         session.cancelMatchmaking();
         super.onBackPressed();
     }
@@ -1114,6 +1135,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.bottomButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                finishReason="search_cancel";
                 OnlineSession.get().cancelMatchmaking();
                 finish();
             }
@@ -1296,6 +1318,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.acceptWaiting = false;
         GameInfo info = Games.get().getGameBiId(start.gameId);
         if (info == null) {
+            diagnostic("unknown_game","gameId",start.gameId,"reason","unknown_game");
+            finishReason="unknown_game";
             Toast.makeText(this, R.string.online_error_connection, Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -1319,6 +1343,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             Intent tutorial = new Intent(this,
                     com.cube.memorygames.activity.OnlineGameTutorialActivity.class);
             tutorial.putExtra(MainMenuActivity.EXTRA_GAME_INFO, info);
+            diagnostic("tutorial_launch","gameId",start.gameId,"round",start.round);
             startActivityForResult(tutorial, REQUEST_TUTORIAL);
             return;
         }
@@ -1369,6 +1394,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     private void startGameActivity(RoundStart start, GameInfo info) {
         if (isFinishing() || OnlineSession.get().getMatchId() == null) {
+            diagnostic("frame_dropped","reason","launch_cancelled");
             // The match settled/cancelled while a launch was pending.
             return;
         }
@@ -1378,6 +1404,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         intent.putExtra(OnlineSession.EXTRA_ONLINE_GAME, true);
         intent.putExtra(OnlineSession.EXTRA_ONLINE_SEED, roundSeed(start.round));
         intent.putExtra(OnlineSession.EXTRA_ONLINE_ROUND, start.round);
+        diagnostic("game_launch","gameId",start.gameId,"round",start.round);
         startActivityForResult(intent, REQUEST_ROUND);
         overridePendingTransition(R.anim.slide_to_left, R.anim.no_change);
     }
@@ -1392,6 +1419,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        diagnostic("game_return","attempt",requestCode,"code",resultCode);
         if (requestCode == REQUEST_TUTORIAL) {
             if (this.pendingTutorialStart != null && this.pendingTutorialInfo != null) {
                 android.content.SharedPreferences prefs =
@@ -1430,11 +1458,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onMatchFound(MatchFound match) {
+        diagnosticMatchId=match.matchId;
         showMatchUi();
     }
 
     @Override
     public void onMatchCancelled(boolean acceptedMatch, String mode) {
+        diagnostic("match_cancelled","mode",mode,"reason","match_cancelled");
         if (!acceptedMatch || isFinishing()) {
             return;
         }
@@ -1443,6 +1473,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             OnlineSession.get().startMatchmaking();
             showSearchUi();
         } else {
+            finishReason="match_cancelled";
             finish();
         }
     }
@@ -1472,6 +1503,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onMatchEnd(MatchEnd end) {
+        diagnosticMatchId=end.matchId;
+        diagnostic("match_end","score",end.myScore);
         this.handler.removeCallbacksAndMessages(null);
         this.roundLaunchScheduled = false;
         this.launchedRound = -1;

@@ -389,6 +389,18 @@ public final class AccountManager {
             return result;
         },callback);
     }
+    /** Diagnostics are non-destructive and may only reuse an already authenticated identity. */
+    public void uploadDiagnostics(String expectedBase, JsonObject data, Callback<JsonObject> callback) {
+        final boolean destructive=false;
+        submit(destructive, () -> {
+            com.cube.memorygames.diagnostics.DiagnosticUploadPolicy.requireHttps(expectedBase);
+            if (!expectedBase.equals(base())) throw new IllegalStateException("诊断服务环境已变化，请重新确认");
+            Identity value=load();
+            if (value == null || value.auth == null || value.requiresLogin)
+                throw new IllegalStateException("请先进入在线大厅建立游客或登录账号，再上传日志");
+            return authenticatedRequest("POST", "/diagnostics/uploads", data);
+        }, callback);
+    }
     public static JsonObject body(String... pairs) {
         JsonObject json=new JsonObject(); for(int i=0;i<pairs.length;i+=2) json.addProperty(pairs[i],pairs[i+1]); return json;
     }

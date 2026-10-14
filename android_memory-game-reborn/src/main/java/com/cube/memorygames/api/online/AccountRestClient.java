@@ -15,6 +15,11 @@ final class AccountRestClient {
     JsonObject request(String base, String method, String path, JsonObject body, String token) throws Exception {
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
             throw new IllegalStateException("账号网络请求不能在主线程执行");
+        if ("/diagnostics/uploads".equals(path)) {
+            com.cube.memorygames.diagnostics.DiagnosticUploadPolicy.requireHttps(base);
+            if (body == null || gson.toJson(body).getBytes("UTF-8").length > 256*1024)
+                throw new IllegalStateException("诊断请求过大");
+        }
         HttpURLConnection connection = (HttpURLConnection) new URL(base + path).openConnection();
         connection.setInstanceFollowRedirects(false);
         connection.setConnectTimeout(10000); connection.setReadTimeout(15000);

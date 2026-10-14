@@ -179,6 +179,18 @@ public class MatchRoom {
                     this.seats[0].user != null ? this.seats[0].user.id : null,
                     this.seats[1].user != null ? this.seats[1].user.id : null,
                     isPracticeMode() ? 0 : this.terms.entryFee());
+            StringBuilder plan = new StringBuilder();
+            for (int r = 0; r < this.rounds.size(); r++) {
+                GameCatalog.ProtocolRound round = this.rounds.get(r);
+                if (r > 0) {
+                    plan.append(',');
+                }
+                plan.append(r + 1).append(':').append(round.gameId)
+                        .append(':').append(round.durationMs).append(':').append(round.seed);
+            }
+            this.events.emit("MATCH_CREATED", this.matchId,
+                    "a=" + userIds()[0] + " b=" + userIds()[1] + " bot=" + this.seats[1].isBot
+                            + " mode=" + this.mode + " rounds=" + this.rounds.size() + " plan=" + plan);
             this.metrics.matchesStarted.incrementAndGet();
             for (int i = 0; i < 2; i++) {
                 sendTo(i, ProtocolCodec.T_MATCH_FOUND, buildMatchFound(i));
@@ -192,7 +204,7 @@ public class MatchRoom {
                 this.acceptDeadlineTask = this.scheduler.schedule(new Runnable() {
                     @Override
                     public void run() {
-                        cancelUnaccepted();
+                        cancelUnaccepted("accept_timeout");
                     }
                 }, this.properties.getTiming().getAcceptTimeoutMs(), TimeUnit.MILLISECONDS);
             }
@@ -207,8 +219,13 @@ public class MatchRoom {
         synchronized (this) {
             int index = seatIndex(userId);
             if (index < 0 || this.settledOnce.get() || this.currentRound > 0) {
+                this.events.emit("MATCH_START", this.matchId,
+                        "user=" + userId + " round=" + this.currentRound + " accepted=false reason="
+                                + (index < 0 ? "unknown_user" : this.settledOnce.get() ? "settled" : "round_mismatch"));
                 return;
             }
+            this.events.emit("MATCH_START", this.matchId,
+                    "user=" + userId + " accepted=true reason=" + (this.seats[index].accepted ? "duplicate" : "ok"));
             this.seats[index].accepted = true;
             if (this.seats[0].accepted && this.seats[1].accepted) {
                 if (this.acceptDeadlineTask != null) {
@@ -234,23 +251,24 @@ public class MatchRoom {
      * (instance ACTIVE->ABORTED + REFUND ledger rows in one transaction),
      * so a replay or restart race can never double-refund.
      */
-    private void cancelUnaccepted() {
+    private void cancelUnaccepted(String reason) {
         synchronized (this) {
             if (this.settledOnce.get() || this.currentRound > 0) {
                 return;
             }
             this.settledOnce.set(true);
+            this.events.emit("MATCH_NOT_ACCEPTED", this.matchId,
+                    "reason=" + reason + " acceptedA=" + this.seats[0].accepted
+                            + " acceptedB=" + this.seats[1].accepted);
         }
-        this.events.emit("MATCH_NOT_ACCEPTED", this.matchId, "");
-        log.info("match {} cancelled: start not accepted", this.matchId);
         Runnable abort = new Runnable() {
             @Override
             public void run() {
                 try {
                     MatchRoom.this.settlement.abortMatch(MatchRoom.this.matchId);
                 } catch (RuntimeException e) {
-                    log.error("abort of unaccepted match {} failed: {}",
-                            MatchRoom.this.matchId, e.getMessage());
+                    MatchRoom.this.events.emit("ABORT_FAILED", MatchRoom.this.matchId,
+                            "reason=" + reason + " class=" + e.getClass().getName());
                 }
                 // Release the seats BEFORE the cancellation frame reaches
                 // the client (immediate re-queue must CAS cleanly).
@@ -321,6 +339,10 @@ public class MatchRoom {
     private void roundStart(int roundNumber) {
         synchronized (this) {
             if (this.settledOnce.get() || roundNumber != this.currentRound + 1) {
+                this.events.emit("ROUND_START", this.matchId,
+                        "round=" + roundNumber + " current=" + this.currentRound
+                                + " accepted=false reason="
+                                + (this.settledOnce.get() ? "settled" : "round_mismatch"));
                 return;
             }
             this.currentRound = roundNumber;
@@ -356,7 +378,9 @@ public class MatchRoom {
             this.roundDeadlineAt = this.gameplayDeadlineAt
                     + this.properties.getTiming().getRoundGraceMs();
             this.events.emit("ROUND_START", this.matchId,
-                    "round=" + roundNumber + " game=" + round.gameId + " dur=" + round.durationMs);
+                    "round=" + roundNumber + " game=" + round.gameId + " dur=" + round.durationMs
+                            + " accepted=true reason=ok acceptedA=" + this.seats[0].accepted
+                            + " acceptedB=" + this.seats[1].accepted);
             this.roundDeadlineTask = this.scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
@@ -385,7 +409,7 @@ public class MatchRoom {
             if (now > this.gameplayDeadlineAt + this.properties.getTiming().getScoreAcceptGraceMs()) {
                 this.metrics.anomalies.incrementAndGet();
                 this.events.emit("LEVEL_WIN_REJECTED", this.matchId,
-                        "user=" + userId + " level=" + msg.level + " late");
+                        "user=" + userId + " round=" + msg.round + " level=" + msg.level + " reason=late");
                 return;
             }
             // Wrong answers advance the level without scoring, so reported
@@ -406,8 +430,8 @@ public class MatchRoom {
                 seat.anomalies++;
                 this.metrics.anomalies.incrementAndGet();
                 this.events.emit("LEVEL_WIN_REJECTED", this.matchId,
-                        "user=" + userId + " level=" + msg.level
-                                + (sequenceOk ? " interval" : " sequence"));
+                        "user=" + userId + " round=" + msg.round + " level=" + msg.level
+                                + (sequenceOk ? " reason=interval" : " reason=sequence"));
                 if (seat.anomalies > MAX_ANOMALIES) {
                     seat.frozen = true;
                     log.warn("match {} user {}: score stream frozen after {} anomalies",
@@ -431,8 +455,16 @@ public class MatchRoom {
         synchronized (this) {
             int index = seatIndex(userId);
             if (index < 0 || this.settledOnce.get() || msg.round != this.currentRound) {
+                this.events.emit("ROUND_COMPLETE", this.matchId,
+                        "user=" + userId + " round=" + msg.round + " current=" + this.currentRound
+                                + " accepted=false reason=" + (index < 0 ? "unknown_user"
+                                : this.settledOnce.get() ? "settled" : "round_mismatch"));
                 return;
             }
+            // Duplicate completes remain accepted exactly as before; diagnose, do not fix behaviour.
+            this.events.emit("ROUND_COMPLETE", this.matchId,
+                    "user=" + userId + " round=" + msg.round + " current=" + this.currentRound
+                            + " accepted=true reason=" + (this.seats[index].roundDone ? "duplicate" : "ok"));
             this.seats[index].roundDone = true;
             if (this.seats[0].roundDone && this.seats[1].roundDone) {
                 endRound(false);
@@ -450,6 +482,11 @@ public class MatchRoom {
                 this.roundDeadlineTask = null;
             }
             stopBotBrain();
+            this.events.emit("ROUND_END", this.matchId,
+                    "round=" + this.currentRound + " forced=" + forced
+                            + " reason=" + (forced ? "deadline" : "both_complete")
+                            + " doneA=" + this.seats[0].roundDone + " doneB=" + this.seats[1].roundDone
+                            + " scores=" + totalScore(0) + "/" + totalScore(1));
             for (int i = 0; i < 2; i++) {
                 ProtocolCodec.RoundEnd end = new ProtocolCodec.RoundEnd();
                 end.matchId = this.matchId;
@@ -464,7 +501,7 @@ public class MatchRoom {
                 scheduleRoundStart(this.currentRound + 1, this.properties.getTiming().getRoundIntermissionMs());
             } else {
                 // Natural completion: decide by total score (-1), never by seat.
-                settle(-1, false);
+                settle(-1, false, "rounds_complete");
             }
         }
     }
@@ -528,7 +565,7 @@ public class MatchRoom {
             }
         }
         this.events.emit("ADMIN_SETTLE", this.matchId, "refund=" + refund);
-        settle(-1, false);
+        settle(-1, false, "admin_settle");
         return true;
     }
 
@@ -539,7 +576,7 @@ public class MatchRoom {
         }
         this.adminVoided = true;
         this.events.emit("ADMIN_TERMINATE", this.matchId, "");
-        settle(-1, true);
+        settle(-1, true, "admin_terminate");
         return true;
     }
 
@@ -551,12 +588,13 @@ public class MatchRoom {
             if (index < 0 || this.settledOnce.get()) {
                 return;
             }
+            this.events.emit("RESIGN", this.matchId, "user=" + userId + " round=" + this.currentRound);
             if (this.currentRound == 0) {
                 // Leaving during the START gate costs nothing.
-                cancelUnaccepted();
+                cancelUnaccepted("resign");
                 return;
             }
-            settle(1 - index, true);
+            settle(1 - index, true, "resign");
         }
     }
 
@@ -567,6 +605,9 @@ public class MatchRoom {
                 return;
             }
             Seat seat = this.seats[index];
+            this.events.emit("DISCONNECT", this.matchId,
+                    "user=" + userId + " round=" + this.currentRound
+                            + " windowMs=" + this.properties.getTiming().getReconnectWindowMs());
             seat.disconnected = true;
             sendTo(1 - index, ProtocolCodec.T_OPPONENT_DISCONNECTED, new Object());
             if (seat.forfeitTask != null) {
@@ -578,7 +619,7 @@ public class MatchRoom {
                 public void run() {
                     synchronized (MatchRoom.this) {
                         if (!settledOnce.get() && seats[loser].disconnected) {
-                            settle(1 - loser, true);
+                            settle(1 - loser, true, "disconnect_timeout");
                         }
                     }
                 }
@@ -593,6 +634,8 @@ public class MatchRoom {
                 return;
             }
             Seat seat = this.seats[index];
+            this.events.emit("RECONNECT", this.matchId,
+                    "user=" + userId + " round=" + this.currentRound + " disconnected=" + seat.disconnected);
             seat.endpoint = endpoint;
             if (seat.disconnected) {
                 seat.disconnected = false;
@@ -651,10 +694,17 @@ public class MatchRoom {
     private static final long SETTLE_RETRY_DELAY_MS = 2000L;
 
     /** winnerIndex 0/1, or -1 for a score-based result (including draws). */
-    private void settle(int winnerIndex, boolean forfeit) {
+    private String settlementReason;
+
+    private void settle(int winnerIndex, boolean forfeit, String reason) {
         if (!this.settledOnce.compareAndSet(false, true)) {
             return;
         }
+        this.settlementReason = reason;
+        this.events.emit("SETTLE_TRIGGER", this.matchId,
+                "round=" + this.currentRound + " reason=" + reason
+                        + " winner=" + winnerIndex + " forfeit=" + forfeit
+                        + " a=" + userIds()[0] + " b=" + userIds()[1]);
         if (this.roundDeadlineTask != null) {
             this.roundDeadlineTask.cancel(false);
         }
@@ -801,7 +851,7 @@ public class MatchRoom {
                 }
             });
         } catch (RuntimeException saturated) {
-            retrySettlementLater(pending, attempt, "db pool saturated: " + saturated.getMessage());
+            retrySettlementLater(pending, attempt, "db_pool", saturated);
         }
     }
 
@@ -810,23 +860,21 @@ public class MatchRoom {
         try {
             result = this.settlement.settle(pending.command);
         } catch (RuntimeException e) {
-            retrySettlementLater(pending, attempt, e.getMessage());
+            retrySettlementLater(pending, attempt, "transaction", e);
             return;
         }
         deliverSettlement(pending, result);
     }
 
-    private void retrySettlementLater(PendingSettlement pending, int attempt, String reason) {
+    private void retrySettlementLater(PendingSettlement pending, int attempt, String reason, Throwable failure) {
+        String detail = "attempt=" + (attempt + 1) + " reason=" + reason
+                + " class=" + failure.getClass().getName();
         if (attempt >= MAX_SETTLE_ATTEMPTS || this.scheduler.isShutdown()) {
-            log.error("match {} settlement failed after {} attempts ({}); room dropped unsettled",
-                    this.matchId, attempt + 1, reason);
             this.metrics.settlementFailures.incrementAndGet();
-            this.events.emit("SETTLE_FAILED", this.matchId, "attempts=" + (attempt + 1));
+            this.events.emit("SETTLE_FAILED", this.matchId, detail + " attempts=" + (attempt + 1));
             return;
         }
-        log.warn("match {} settlement attempt {} failed ({}); retrying",
-                this.matchId, attempt + 1, reason);
-        this.events.emit("SETTLE_RETRY", this.matchId, "attempt=" + (attempt + 1));
+        this.events.emit("SETTLE_RETRY", this.matchId, detail);
         try {
             this.scheduler.schedule(new Runnable() {
                 @Override
@@ -835,24 +883,22 @@ public class MatchRoom {
                 }
             }, SETTLE_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
         } catch (RuntimeException rejected) {
-            log.error("match {} settlement retry rejected; room dropped unsettled", this.matchId);
             this.metrics.settlementFailures.incrementAndGet();
-            this.events.emit("SETTLE_FAILED", this.matchId, "scheduler rejected");
+            this.events.emit("SETTLE_FAILED", this.matchId,
+                    "reason=scheduler_rejected class=" + rejected.getClass().getName());
         }
     }
 
     /** Builds and sends the match_end frames AFTER the transaction committed. */
     private void deliverSettlement(PendingSettlement pending, SettlementService.Result result) {
         SettlementService.Command command = pending.command;
-        log.info("match {} settled: mode={} forfeit={} voided={} scores {}/{} replayed={}",
-                this.matchId, this.mode, pending.forfeit,
-                command.voided, command.seats[0].score, command.seats[1].score,
-                result.alreadySettled);
         this.metrics.matchesSettled.incrementAndGet();
         this.events.emit("SETTLED", this.matchId,
                 "mode=" + this.mode
                         + " forfeit=" + pending.forfeit + " voided=" + command.voided
-                        + " scores=" + command.seats[0].score + "/" + command.seats[1].score);
+                        + " scores=" + command.seats[0].score + "/" + command.seats[1].score
+                        + " round=" + this.currentRound + " reason=" + this.settlementReason
+                        + " replayed=" + result.alreadySettled);
         // Release the seats BEFORE the clients learn the match ended: the
         // moment a client reacts to match_end by queueing again, its
         // lifecycle claim must already be free or the CAS will 409 it.
@@ -886,7 +932,7 @@ public class MatchRoom {
             try {
                 this.seasons.activeSeason(); // cheap rollover check on every settle
             } catch (RuntimeException e) {
-                log.warn("season check failed: {}", e.getMessage());
+                this.events.emit("SEASON_CHECK_FAILED", this.matchId, "class=" + e.getClass().getName());
             }
         }
     }
@@ -1079,7 +1125,9 @@ public class MatchRoom {
             try {
                 endpoint.send(ProtocolCodec.encode(type, payload));
             } catch (RuntimeException e) {
-                log.warn("send to seat {} failed: {}", index, e.getMessage());
+                this.events.emit("SEND_FAILED", this.matchId,
+                        "seat=" + index + " user=" + userIds()[index] + " frame=" + EventRing.safeFrameType(type)
+                                + " class=" + e.getClass().getName());
             }
         }
     }

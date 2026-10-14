@@ -32,15 +32,34 @@ public class AccountApiGuard extends OncePerRequestFilter {
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
         if(!request.getRequestURI().startsWith("/api/v2/")) { chain.doFilter(request,response); return; }
         String ip=request.getRemoteAddr(); // Never parse untrusted forwarding headers.
-        if(!allowHttp&&!request.isSecure()) { fail(response,403,"HTTPS_REQUIRED"); return; }
-        if(request.getContentLengthLong()>16384) { fail(response,400,"INVALID_INPUT"); return; }
         response.setHeader("Cache-Control","no-store");
+        if(!allowHttp&&!request.isSecure()) { fail(response,403,"HTTPS_REQUIRED"); return; }
         String path=request.getRequestURI();
+        boolean upload="POST".equals(request.getMethod()) && "/api/v2/diagnostics/uploads".equals(path);
+        int maxBytes=upload?256*1024:16384;
+        if(upload) {
+            String encoding=request.getHeader("Content-Encoding");
+            if(encoding!=null && !encoding.isBlank() && !"identity".equalsIgnoreCase(encoding.trim())) { fail(response,415,"UNSUPPORTED_MEDIA_TYPE"); return; }
+            try {
+                org.springframework.http.MediaType type=org.springframework.http.MediaType.parseMediaType(request.getContentType());
+                if(!"application".equalsIgnoreCase(type.getType()) || !"json".equalsIgnoreCase(type.getSubtype()) ||
+                        (type.getCharset()!=null && !java.nio.charset.StandardCharsets.UTF_8.equals(type.getCharset()))) { fail(response,415,"UNSUPPORTED_MEDIA_TYPE"); return; }
+            } catch(IllegalArgumentException ex) { fail(response,415,"UNSUPPORTED_MEDIA_TYPE"); return; }
+        }
+        if(request.getContentLengthLong()>maxBytes) { fail(response,upload?413:400,upload?"PAYLOAD_TOO_LARGE":"INVALID_INPUT"); return; }
         int limit=path.contains("email-verification")||path.contains("password-reset/request")?5:path.contains("/auth/guest")?20:path.contains("/auth/login")||path.contains("/auth/delete-cancel")?10:120;
         if(!acquire(ip+":"+path,limit)||!acquire(ip+":all",300)) { fail(response,429,"RATE_LIMITED"); return; }
-        if (request.getContentType()!=null && request.getContentType().startsWith("application/json")) {
-            byte[] bytes=request.getInputStream().readNBytes(16385);
-            if(bytes.length>16384) { fail(response,400,"INVALID_INPUT"); return; }
+        // Bound the actual stream even without Content-Length, and for non-JSON v2 requests.
+        {
+            byte[] bytes=request.getInputStream().readNBytes(maxBytes+1);
+            if(bytes.length>maxBytes) { fail(response,upload?413:400,upload?"PAYLOAD_TOO_LARGE":"INVALID_INPUT"); return; }
+            if(upload) {
+                try { java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+                        .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                        .decode(java.nio.ByteBuffer.wrap(bytes)); }
+                catch(java.nio.charset.CharacterCodingException ex) { fail(response,400,"INVALID_INPUT"); return; }
+            }
             jakarta.servlet.http.HttpServletRequestWrapper bounded=new jakarta.servlet.http.HttpServletRequestWrapper(request) {
                 @Override public jakarta.servlet.ServletInputStream getInputStream() {
                     java.io.ByteArrayInputStream input=new java.io.ByteArrayInputStream(bytes);
@@ -54,6 +73,6 @@ public class AccountApiGuard extends OncePerRequestFilter {
                 @Override public java.io.BufferedReader getReader() { return new java.io.BufferedReader(new java.io.InputStreamReader(getInputStream(),java.nio.charset.StandardCharsets.UTF_8)); }
             };
             chain.doFilter(bounded,response);
-        } else chain.doFilter(request,response);
+        }
     }
 }

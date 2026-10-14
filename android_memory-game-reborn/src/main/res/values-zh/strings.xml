@@ -1,4 +1,9 @@
 <resources>
+    <string name="diagnostics_upload">上传诊断日志</string>
+    <string name="diagnostics_preparing">正在冻结日志快照，尚未上传</string>
+    <string name="diagnostics_send">通过 HTTPS 上传</string>
+    <string name="diagnostics_success">上传成功 · 反馈编号</string>
+    <string name="diagnostics_confirmation">日志实际范围：%1$s — %2$s\nUTF-8 正文：%3$d 字节，共 %4$d 条\n\n包含连接与状态事件、真实对局 ID、回合和游戏 ID、分数及有界代码栈帧。不含凭证、安装 ID、邮箱、昵称、密码和完整协议。服务端会将上传关联到当前已有的在线身份。\n\nHTTPS 目的地：\n%5$s\n\n取消不会上传任何数据。失败保留同一冻结快照及上传编号供重试；新增日志继续留在本地。</string>
     <string name="messenger_send_button_text">发送</string>
     <string name="all_games">全部游戏</string>
     <string name="all_games_text">全部游戏</string>

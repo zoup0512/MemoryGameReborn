@@ -93,7 +93,7 @@ function harness({ origin = 'https://example.test', route, initialSession = fals
     const node = new Element(tag); node.id = id;
     roots.push(node); fixed.set(id, node);
   }
-  const nav = ['overview', 'matches', 'users', 'config', 'ops'].map((name) => {
+  const nav = ['overview', 'matches', 'users', 'config', 'ops', 'diagnostics'].map((name) => {
     const node = new Element('button'); node.dataset.page = name; roots.push(node); return node;
   });
   fixed.get('auto-refresh').checked = true;
@@ -208,6 +208,45 @@ function harness({ origin = 'https://example.test', route, initialSession = fals
 }
 const writes = (h) => h.calls.filter((call) => call.options.method !== 'GET' && !call.url.startsWith('/api/admin/auth/'));
 const body = (call) => JSON.parse(call.options.body);
+
+test('diagnostics filters, metadata list, on-demand text-only body, no polling and logout clearing', async () => {
+  const id = '1f8389ce-49c0-4f56-83ae-76286749b173';
+  const h = harness({ initialSession: true, route(url) {
+    if (url.startsWith('/api/admin/diagnostics?')) return { data: { reports: [
+      { id, userId: 42, matchId: 'abcdef123456', appVersion: '1.2.3', buildTime: '2026-10-14', bytes: 120, receivedAt: 1800000000000 }
+    ] } };
+    if (url === `/api/admin/diagnostics/${id}`) return { data: { id, userId: 42, matchId: 'abcdef123456', content: attack } };
+  } });
+  await h.flush(); await h.go('diagnostics');
+  assert.equal(h.calls.filter((c) => c.url === `/api/admin/diagnostics/${id}`).length, 0);
+  assert.ok(!h.byId('content').textContent.includes(attack));
+  await h.input('diagnostic-user', '42'); await h.input('diagnostic-match', 'abcdef123456');
+  const form = h.byId('content').children.find((n) => n.tagName === 'FORM');
+  await form.dispatch('submit'); await h.flush();
+  assert.ok(h.calls.some((c) => c.url === '/api/admin/diagnostics?limit=20&userId=42&matchId=abcdef123456'));
+  await h.clickLabel('查看正文');
+  const pre = h.all().find((n) => n.tagName === 'PRE' && n.className === 'mono diagnostic-content');
+  assert.ok(pre); assert.equal(pre.textContent, attack); assert.equal(pre.children.length, 0);
+  const count = h.calls.filter((c) => c.url.startsWith('/api/admin/diagnostics')).length;
+  h.advance(16000); await h.tick();
+  assert.equal(h.calls.filter((c) => c.url.startsWith('/api/admin/diagnostics')).length, count);
+  await h.byId('logout').click(); await h.flush();
+  assert.equal(h.byId('content').textContent, ''); assert.equal(h.byId('app').hidden, true);
+});
+
+test('late diagnostic detail cannot reveal body after logout', async () => {
+  const id = '1f8389ce-49c0-4f56-83ae-76286749b173';
+  let resolveDetail;
+  const h = harness({ initialSession: true, route(url) {
+    if (url.startsWith('/api/admin/diagnostics?')) return { data: { reports: [{ id, userId: 42 }] } };
+    if (url === `/api/admin/diagnostics/${id}`) return new Promise((resolve) => { resolveDetail = resolve; });
+  } });
+  await h.flush(); await h.go('diagnostics'); await h.clickLabel('查看正文');
+  assert.equal(typeof resolveDetail, 'function');
+  await h.byId('logout').click(); await h.flush();
+  resolveDetail({ data: { id, content: attack } }); await h.flush();
+  assert.equal(h.byId('content').textContent, ''); assert.equal(h.byId('app').hidden, true);
+});
 
 test('ships CSP-compatible script and real DOM IDs, no executable HTML/storage/token URL', () => {
   assert.doesNotMatch(source, /\b(?:eval|Function)\s*\(|innerHTML|outerHTML|insertAdjacentHTML|document\.write|localStorage|sessionStorage|document\.cookie|X-Admin-Token|PK_ADMIN_SESSION/);

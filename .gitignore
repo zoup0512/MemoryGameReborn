@@ -23,6 +23,7 @@ android_memory-game-reborn/tools/*.xml
 android_memory-game-reborn/tools/errors.txt
 android_memory-game-reborn/tools/cp.txt
 server_memory-game-reborn/deploy/pk-server.log
+server_memory-game-reborn/logs/
 
 # Python caches
 __pycache__/

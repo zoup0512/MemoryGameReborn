@@ -51,6 +51,11 @@ pk:
     login-rate-limit: ${PK_ADMIN_LOGIN_RATE_LIMIT:5}
     trust-forwarded-headers: ${PK_ADMIN_TRUST_FORWARDED_HEADERS:false}
 
+  diagnostics:
+    # Up to ~192 MiB report content at the default capacity; no unbounded storage.
+    max-reports: ${PK_DIAGNOSTICS_MAX_REPORTS:1000}
+    cleanup-delay-ms: 3600000
+
   round-duration-override-ms: 0
   economy:
     entry-fee: 30
@@ -72,6 +77,13 @@ pk:
     reconnect-window-ms: 90000
 
 logging:
+  file:
+    name: ${PK_LOG_FILE:./logs/memorygames-pk.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 14
+      total-size-cap: 200MB
   level:
     com.memorygames.pk: INFO
 

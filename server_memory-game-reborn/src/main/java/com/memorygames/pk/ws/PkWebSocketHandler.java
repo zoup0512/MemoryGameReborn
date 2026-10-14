@@ -78,6 +78,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final java.util.Set<String> connectedSessions = ConcurrentHashMap.newKeySet();
     /** ws session id -> shared send endpoint (one bounded queue per session). */
     private final Map<String, PlayerEndpoint.WebSocket> endpoints = new ConcurrentHashMap<>();
+    /** Diagnostic identity retained until a kicked socket's close callback. */
+    private record SocketContext(long userId, String matchId) { }
+    private final Map<String, SocketContext> closingContexts = new ConcurrentHashMap<>();
     /** user id -> room_join failures inside the current window (code guessing). */
     private final Map<Long, int[]> joinFailures = new ConcurrentHashMap<>();
 
@@ -88,11 +91,24 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     private PlayerEndpoint.WebSocket endpointFor(WebSocketSession session) {
         return this.endpoints.computeIfAbsent(session.getId(),
-                id -> new PlayerEndpoint.WebSocket(session, () -> {
-                    PkWebSocketHandler.this.metrics.sendOverflow.incrementAndGet();
-                    PkWebSocketHandler.this.events.emit("SEND_OVERFLOW", null,
-                            "session=" + id);
-                }));
+                id -> new PlayerEndpoint.WebSocket(session,
+                        () -> this.metrics.sendOverflow.incrementAndGet(),
+                        this.events, () -> matchForSession(id)));
+    }
+
+    private String matchForSession(String socketId) {
+        Long userId = this.authenticated.get(socketId);
+        MatchRoom room = userId == null ? null : this.manager.roomFor(userId);
+        SocketContext closing = this.closingContexts.get(socketId);
+        return room != null ? room.matchId : closing == null ? null : closing.matchId();
+    }
+
+    private void socketEvent(String type, String socketId, String detail) {
+        Long userId = this.authenticated.get(socketId);
+        SocketContext closing = this.closingContexts.get(socketId);
+        this.events.emit(type, matchForSession(socketId),
+                "user=" + (userId != null ? userId : closing == null ? -1 : closing.userId())
+                        + " session=" + EventRing.safeIdentifier(socketId) + " " + detail);
     }
 
     public PkWebSocketHandler(UserService users, Matchmaker matchmaker, MatchManager manager,
@@ -121,19 +137,21 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             this.stats.connected();
         }
         endpointFor(session);
-        log.debug("ws connected: {}", session.getId());
+        socketEvent("WS_CONNECTED", session.getId(), "");
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         if (message.getPayloadLength() > MAX_FRAME_BYTES) {
-            log.warn("oversized frame ({} bytes) from session {}; closing",
-                    message.getPayloadLength(), session.getId());
+            socketEvent("WS_KICK", session.getId(),
+                    "reason=oversized_frame closeCode=" + CloseStatus.POLICY_VIOLATION.getCode());
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
         if (!this.messagesPerSession.tryAcquire(session.getId())) {
             // A flood from one session must never reach the room engine.
+            socketEvent("WS_KICK", session.getId(),
+                    "reason=message_rate_limit closeCode=" + CloseStatus.POLICY_VIOLATION.getCode());
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
@@ -193,8 +211,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     if (!bindSession(session, account, account.token, null)) {
                         return;
                     }
-                    this.events.emit("AUTH_OK", null,
-                            "user=" + account.id + " session=" + session.getId() + " register");
+                    socketEvent("AUTH_OK", session.getId(), "frame=register");
                     reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(account, account.token));
                 }
                 return;
@@ -235,8 +252,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     if (!bindSession(session, accountGet, auth.token, accountSessionId)) {
                         return;
                     }
-                    this.events.emit("AUTH_OK", null,
-                            "user=" + accountGet.id + " session=" + session.getId());
+                    socketEvent("AUTH_OK", session.getId(), "frame=auth");
                     reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(accountGet, auth.token));
                     // Re-attach under the replacement lock: an older auth must
                     // never reconnect over a newer controller or after logout.
@@ -455,6 +471,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         synchronized (this.sessionLock) {
+            // Close reason is arbitrary remote input: record only the numeric code.
+            socketEvent("WS_CLOSED", session.getId(), "closeCode=" + status.getCode());
+            this.closingContexts.remove(session.getId());
             detachSession(session.getId());
             if (this.connectedSessions.remove(session.getId())) {
                 this.stats.disconnected();
@@ -464,7 +483,14 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 endpoint.shutdown();
             }
         }
-        log.debug("ws closed: {}", session.getId());
+    }
+
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        socketEvent("WS_TRANSPORT_ERROR", session.getId(),
+                "class=" + exception.getClass().getName());
+        // Keep TextWebSocketHandler's existing transport-error behaviour.
+        super.handleTransportError(session, exception);
     }
 
     // ------------------------------------------------------------- helpers
@@ -561,6 +587,18 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     private void kickSession(String socketId, String reason) {
         synchronized (this.sessionLock) {
+            String staticReason = switch (reason) {
+                case "session replaced" -> "session_replaced";
+                case "session revoked" -> "session_revoked";
+                case "legacy auth disabled" -> "legacy_auth_disabled";
+                default -> "policy_violation";
+            };
+            Long userId = this.authenticated.get(socketId);
+            if (userId != null) {
+                this.closingContexts.put(socketId, new SocketContext(userId, matchForSession(socketId)));
+            }
+            socketEvent("WS_KICK", socketId, "reason=" + staticReason
+                    + " closeCode=" + CloseStatus.POLICY_VIOLATION.getCode());
             detachSession(socketId);
             PlayerEndpoint.WebSocket endpoint = this.endpoints.get(socketId);
             if (endpoint != null) {

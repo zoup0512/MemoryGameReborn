@@ -166,6 +166,7 @@ public class Matchmaker {
             } while (roomCodeTaken(code));
             this.friendRooms.add(new FriendRoom(code, host, endpoint));
         }
+        this.events.emit("ROOM_CREATED", null, "host=" + host.id + " code=" + code);
         return code;
     }
 
@@ -195,9 +196,13 @@ public class Matchmaker {
             this.friendRooms.remove(room);
         }
         try {
-            this.manager.createRoom(room.host, room.hostEndpoint, guest, endpoint, null, true);
+            MatchRoom match = this.manager.createRoom(room.host, room.hostEndpoint, guest, endpoint, null, true);
+            // Log only after creation succeeds; use the stored server code, not the join input.
+            this.events.emit("ROOM_JOINED", match.matchId,
+                    "code=" + room.code + " host=" + room.host.id + " guest=" + guest.id);
         } catch (RuntimeException e) {
-            log.error("friend room launch failed: {}", e.getMessage());
+            this.events.emit("ROOM_LAUNCH_FAILED", null,
+                    "host=" + room.host.id + " guest=" + guest.id + " class=" + e.getClass().getName());
             this.lifecycle.release(room.host.id);
             this.lifecycle.release(guest.id);
             return JoinResult.NO_SUCH_ROOM;
@@ -294,7 +299,7 @@ public class Matchmaker {
             this.metrics.pairings.incrementAndGet();
             this.metrics.queueWaitTotalMs.addAndGet(wait);
             this.events.emit("PAIRED", null, "a=" + pair[0].user.id + " b=" + pair[1].user.id
-                    + " waited=" + wait + "ms");
+                    + " waited=" + wait);
             this.manager.launchRoom(new Runnable() {
                 @Override
                 public void run() {
@@ -302,8 +307,9 @@ public class Matchmaker {
                         Matchmaker.this.manager.createRoom(pair[0].user, pair[0].endpoint,
                                 pair[1].user, pair[1].endpoint, null);
                     } catch (RuntimeException e) {
-                        log.error("paired room launch failed for {}/{}: {}",
-                                pair[0].user.id, pair[1].user.id, e.getMessage());
+                        Matchmaker.this.events.emit("PAIRED_LAUNCH_FAILED", null,
+                                "a=" + pair[0].user.id + " b=" + pair[1].user.id
+                                        + " class=" + e.getClass().getName());
                         Matchmaker.this.lifecycle.release(pair[0].user.id);
                         Matchmaker.this.lifecycle.release(pair[1].user.id);
                     }
@@ -315,7 +321,7 @@ public class Matchmaker {
             this.metrics.botFallbacks.incrementAndGet();
             this.metrics.queueWaitTotalMs.addAndGet(wait);
             this.events.emit("BOT_FALLBACK", null,
-                    "user=" + alone.user.id + " waited=" + wait + "ms");
+                    "user=" + alone.user.id + " waited=" + wait);
             if (!this.manager.acceptingMatches()) {
                 this.lifecycle.release(alone.user.id);
                 continue;
@@ -329,7 +335,8 @@ public class Matchmaker {
                     try {
                         Matchmaker.this.manager.createRoom(alone.user, alone.endpoint, null, null, botName);
                     } catch (RuntimeException e) {
-                        log.error("bot fallback launch failed for {}: {}", alone.user.id, e.getMessage());
+                        Matchmaker.this.events.emit("BOT_LAUNCH_FAILED", null,
+                                "user=" + alone.user.id + " class=" + e.getClass().getName());
                         Matchmaker.this.lifecycle.release(alone.user.id);
                     }
                 }

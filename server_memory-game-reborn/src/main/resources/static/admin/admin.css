@@ -89,6 +89,8 @@ tr:last-child td { border: 0; }
 pre { margin: 12px 0 0; max-height: 360px; overflow: auto; }
 .search-form { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
 .search-form .grow { flex: 1; min-width: 180px; }
+.diagnostic-content { max-height: 600px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.diagnostic-filters { margin-bottom: 18px; }
 .search-form input { max-width: 600px; }
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
 .field .hint { margin-top: 4px; }

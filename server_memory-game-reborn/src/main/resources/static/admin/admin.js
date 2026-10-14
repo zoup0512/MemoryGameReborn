@@ -15,7 +15,8 @@
     matches: ['对局与匹配', '活动对局快照与事件；回合 0 表示未开始。剩余时间含服务端宽限，以采样为准。'],
     users: ['用户管理', '仅支持昵称或完整 UUID 搜索，最多 20 条；不提供用户删除或账号管理。'],
     config: ['运行配置', '读取当前运行值；写入后重新读取，实际值以服务端钳制结果为准。'],
-    ops: ['事件与运维', '维护状态、进程日志级别及近期事件/审计。运行变更重启后恢复配置文件值。']
+    ops: ['事件与运维', '维护状态、进程日志级别及近期事件/审计。运行变更重启后恢复配置文件值。'],
+    diagnostics: ['客户端诊断', '保留 14 日的脱敏事件报告。列表只含元数据，正文按需读取；此页不自动刷新。']
   };
   const safeTransport = window.location.protocol === 'https:' ||
     (window.location.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname));
@@ -37,6 +38,9 @@
   let userQuery = '';
   let selectedUser = null;
   let selectedMatch = null;
+  let diagnosticUser = '';
+  let diagnosticMatch = '';
+  let selectedDiagnostic = null;
   let loggerName = 'ROOT';
   let action = null;
   let returnFocus = null;
@@ -172,6 +176,9 @@
     selectedUser = null;
     selectedMatch = null;
     userQuery = '';
+    diagnosticUser = '';
+    diagnosticMatch = '';
+    selectedDiagnostic = null;
     loggerName = 'ROOT';
     if (ui['action-dialog'].open) ui['action-dialog'].close();
     clear(ui['action-fields']);
@@ -421,6 +428,33 @@
     }
     box.append(actions);
     lines(panel(root, '最近 20 条战绩（服务端已格式化；不补造缺失字段）'), (detail.recentMatches || []).slice(0, 20));
+  }
+  function renderDiagnostics(data, detail, missing) {
+    const root = ui.content;
+    const form = el('form', undefined, 'search-form diagnostic-filters');
+    const user = field(form, { label: '用户 ID（可选）', type: 'text', maxLength: 18 }, diagnosticUser, 'diagnostic-user');
+    const matchId = field(form, { label: '真实对局 ID（可选）', type: 'text', maxLength: 80 }, diagnosticMatch, 'diagnostic-match');
+    const submit = el('button', '查询诊断');
+    submit.type = 'submit'; form.append(submit); root.append(form);
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (loading || submitting) return;
+      const raw = user.value.trim();
+      if (raw && !/^[1-9]\d{0,17}$/.test(raw)) { notice('用户 ID 须为正整数。', true); return; }
+      diagnosticUser = raw; diagnosticMatch = matchId.value.trim(); selectedDiagnostic = null;
+      editing = false; user.blur(); matchId.blur(); load();
+    });
+    const list = panel(root, '诊断列表（最多 20 条，不含正文）');
+    table(list, ['接收时间', '用户 ID', '对局 ID', '版本 / 构建', '正文 UTF-8 字节', '查看'],
+      (data.reports || []).map((r) => [time(r.receivedAt), r.userId, r.matchId,
+        `${text(r.appVersion)} / ${text(r.buildTime)}`, number(r.bytes),
+        button('查看正文', () => { selectedDiagnostic = String(r.id); load(); })]));
+    if (missing) panel(root, '所选报告已过期或不存在');
+    if (!detail) return;
+    const box = panel(root, '诊断正文（按需读取，不自动刷新）');
+    kv(box, [['报告 ID', detail.id], ['上传 ID', detail.uploadId], ['用户 ID', detail.userId],
+      ['对局 ID', detail.matchId], ['开始 / 结束', `${time(detail.startedAt)} / ${time(detail.endedAt)}`]]);
+    box.append(el('pre', detail.content, 'mono diagnostic-content'));
   }
   function userAction(u, kind) {
     const specs = {
@@ -766,6 +800,18 @@
           catch (error) { if (error.status !== 404) throw error; missing = true; report(error); }
         }
         render = () => renderUsers(data, detail, missing);
+      } else if (targetPage === 'diagnostics') {
+        const filters = `userId=${encodeURIComponent(diagnosticUser)}&matchId=${encodeURIComponent(diagnosticMatch)}`;
+        // Omit empty optional parameters rather than sending invalid match IDs.
+        const query = filters.split('&').filter((part) => !part.endsWith('=')).join('&');
+        const data = await api(`/diagnostics?limit=20${query ? `&${query}` : ''}`, { scope: s });
+        let detail = null;
+        let missing = false;
+        if (selectedDiagnostic !== null) {
+          try { detail = await api(`/diagnostics/${encodeURIComponent(selectedDiagnostic)}`, { scope: s, expected404: true }); }
+          catch (error) { if (error.status !== 404) throw error; missing = true; report(error); }
+        }
+        render = () => renderDiagnostics(data, detail, missing);
       } else if (targetPage === 'config') {
         const data = await api('/config', { scope: s });
         render = () => renderConfig(data);
@@ -782,7 +828,9 @@
       clear(ui.content);
       render();
       if (focusWasInContent) ui.refresh.focus();
-      ui['sample-time'].textContent = `最近完成采样：${time(Date.now())}；仅当前页每 15 秒刷新。隐藏、对话框、聚焦输入、未提交编辑及冷却期间暂停。`;
+      ui['sample-time'].textContent = targetPage === 'diagnostics'
+        ? `最近读取：${time(Date.now())}；诊断正文仅手动读取，此页不自动刷新。`
+        : `最近完成采样：${time(Date.now())}；仅当前页每 15 秒刷新。隐藏、对话框、聚焦输入、未提交编辑及冷却期间暂停。`;
     } catch (error) {
       if (current(s)) report(error);
     } finally {
@@ -919,7 +967,7 @@
     if (expired()) return;
     const active = document.activeElement;
     const focusedInput = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
-    if (authenticated && ui['auto-refresh'].checked && !document.hidden && !focusedInput &&
+    if (authenticated && page !== 'diagnostics' && ui['auto-refresh'].checked && !document.hidden && !focusedInput &&
       !editing && !loading && !submitting && !ui['action-dialog'].open && !cooling()) load();
   }, 15000);
   restoreSession();

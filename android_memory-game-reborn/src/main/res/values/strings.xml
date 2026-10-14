@@ -1,4 +1,9 @@
 <resources><string name="messenger_send_button_text">Send</string>
+    <string name="diagnostics_upload">Upload diagnostic logs</string>
+    <string name="diagnostics_preparing">Preparing a frozen log snapshot; nothing uploaded yet</string>
+    <string name="diagnostics_send">Upload over HTTPS</string>
+    <string name="diagnostics_success">Logs uploaded · reference ID</string>
+    <string name="diagnostics_confirmation">Actual log range: %1$s — %2$s\nUTF-8 content: %3$d bytes · %4$d records\n\nContains connection/state events, real match IDs, round/game IDs, scores and bounded code stack frames. Excludes credentials, installation IDs, email, nickname, passwords and full protocol messages. Server associates this upload with your existing online identity.\n\nHTTPS destination:\n%5$s\n\nCancel uploads nothing. A failed upload retains this same frozen snapshot and upload ID for retry. New logs remain local.</string>
     <string name="all_games">All Games</string>
     <string name="all_games_text">all games</string>
     <string name="already_shared">Thanks. You already shared our game</string>

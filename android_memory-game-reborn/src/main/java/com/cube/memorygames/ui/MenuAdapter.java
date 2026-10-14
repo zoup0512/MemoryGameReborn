@@ -111,6 +111,11 @@ public class MenuAdapter extends Adapter<ViewHolder> {
                 MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity, TrophiesActivity.class));
             }
         }));
+        this.items.add(new MenuItem(android.R.drawable.ic_menu_upload, R.string.diagnostics_upload, new OnClickListener() {
+            public void onClick(View view) {
+                com.cube.memorygames.diagnostics.DiagnosticUploadUi.show(MenuAdapter.this.mainMenuActivity);
+            }
+        }));
         this.items.add(Integer.valueOf(0));
         this.items.add(new MenuItem(R.drawable.ic_reward, R.string.rank, new OnClickListener() {
             public void onClick(View view) {

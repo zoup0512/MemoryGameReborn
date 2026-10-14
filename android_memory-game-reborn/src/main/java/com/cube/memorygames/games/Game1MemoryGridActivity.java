@@ -1405,11 +1405,16 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         }
     }
 
+    protected void diagnosticOnline(String event) {
+        try {com.cube.memorygames.diagnostics.DiagnosticLog.event(event,"matchId",OnlineSession.get().getMatchId(),"round",OnlineSession.get().getCurrentRound(),"gameId",gameInfo==null?null:gameInfo.getId(),"score",onlineScore);}catch(RuntimeException ignored){}
+    }
+
     protected void openMainMenu() {
         if (this.isOnlineGame) {
             // Leaving an online round mid-play forfeits the match; the exit
             // paths of every game funnel through here (backPressClickListener).
             killOnlineTimer();
+            diagnosticOnline("game_back_confirm");
             OnlineSession.get().resign();
             SoundUtils.stopBackgroundSound();
             finish();
@@ -1454,10 +1459,12 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     private void showOnlineBackPressDialog() {
+        diagnosticOnline("game_back_dialog");
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage((int) R.string.dialog_lose_bet);
         builder.setNegativeButton((int) R.string.cancel, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
+                diagnosticOnline("game_back_cancel");
                 dialog.cancel();
             }
         });
@@ -1474,6 +1481,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void showOnlineReplayDialog() {
+        diagnosticOnline("game_round_finished");
         // Online PK: the round timer ran out. Report the final score and
         // return to OnlineMatchActivity, which shows the intermission board
         // until the server broadcast round_end / match_end.

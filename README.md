@@ -24,6 +24,10 @@
 
 新账号需要 HTTPS/WSS 与 SMTP；默认旧游客明文地址继续兼容，不能直接用于密码登录。详见 [账号体系](docs/account-system.md)、[部署与验收](docs/account-system-deployment.md) 和 [实施验收报告](docs/account-system-test-report-2026-10-13.md)。
 
+## 对局诊断
+
+客户端在“我的”页面提供手动上传诊断日志，服务器记录可关联的回合、连接与退出事件，管理员可按报告编号查看上传记录。日志有容量、保留期和脱敏限制，详见 [诊断日志与上传](docs/diagnostic-logging.md)。安装新客户端并部署新服务端后生效，不能补回旧版本缺失的日志。
+
 ## 构建
 
 - Android Gradle Plugin 8.13.2 / Gradle 8.13 / JDK 17

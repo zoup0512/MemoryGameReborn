@@ -29,6 +29,32 @@ public interface PlayerEndpoint {
         private final WebSocketSession session;
         private final ConcurrentWebSocketSessionDecorator guarded;
         private final Runnable onOverflow;
+        private final com.memorygames.pk.admin.EventRing events;
+        private final java.util.function.Supplier<String> matchId;
+        private static final com.memorygames.pk.admin.EventRing FALLBACK_EVENTS =
+                new com.memorygames.pk.admin.EventRing();
+
+        /** Extract only allowlisted metadata on failure; never log the JSON or exception message. */
+        private void diagnostic(String type, String json, Throwable failure) {
+            com.memorygames.pk.protocol.ProtocolCodec.Envelope envelope =
+                    com.memorygames.pk.protocol.ProtocolCodec.parse(json);
+            String frame = com.memorygames.pk.admin.EventRing.safeFrameType(
+                    envelope == null ? null : envelope.t);
+            String match = null;
+            if (envelope != null && envelope.d instanceof java.util.Map<?, ?>) {
+                Object value = ((java.util.Map<?, ?>) envelope.d).get("matchId");
+                if (value instanceof String && ((String) value).matches("[a-f0-9]{12}")) {
+                    match = (String) value;
+                }
+            }
+            if (match == null) {
+                match = this.matchId.get();
+            }
+            this.events.emit(type, match,
+                    "session=" + com.memorygames.pk.admin.EventRing.safeIdentifier(this.session.getId())
+                            + " frame=" + frame
+                            + " class=" + failure.getClass().getName());
+        }
         private final java.util.concurrent.atomic.AtomicBoolean closing =
                 new java.util.concurrent.atomic.AtomicBoolean();
         /**
@@ -56,6 +82,14 @@ public interface PlayerEndpoint {
         }
 
         public WebSocket(WebSocketSession session, Runnable onOverflow) {
+            this(session, onOverflow, FALLBACK_EVENTS, () -> null);
+        }
+
+        public WebSocket(WebSocketSession session, Runnable onOverflow,
+                         com.memorygames.pk.admin.EventRing events,
+                         java.util.function.Supplier<String> matchId) {
+            this.events = events;
+            this.matchId = matchId;
             this.session = session;
             this.guarded = new ConcurrentWebSocketSessionDecorator(session,
                     SEND_TIME_LIMIT_MS, SEND_BUFFER_LIMIT_BYTES);
@@ -77,28 +111,33 @@ public interface PlayerEndpoint {
                                 WebSocket.this.guarded.sendMessage(new TextMessage(json));
                             }
                         } catch (IOException | IllegalStateException e) {
+                            diagnostic("SEND_FAILED", json, e);
                             // Force the disconnect path: a session that cannot
                             // be written (or blew the send-time limit) must be
                             // closed so the room forfeits it.
                             try {
                                 WebSocket.this.session.close();
                             } catch (IOException | RuntimeException ignored) {
+                                diagnostic("SEND_CLOSE_FAILED", json, ignored);
                             }
                         }
                     }
                 });
             } catch (RejectedExecutionException full) {
+                diagnostic("SEND_OVERFLOW", json, full);
                 // Queue full or executor stopped: a stuck consumer, not a
                 // burst we can absorb — drop the connection (P1-4).
                 if (this.onOverflow != null) {
                     try {
                         this.onOverflow.run();
                     } catch (RuntimeException ignored) {
+                        diagnostic("SEND_CALLBACK_FAILED", json, ignored);
                     }
                 }
                 try {
                     this.session.close();
                 } catch (IOException | RuntimeException ignored) {
+                    diagnostic("SEND_CLOSE_FAILED", json, ignored);
                 }
             }
         }
@@ -120,24 +159,29 @@ public interface PlayerEndpoint {
                             this.guarded.sendMessage(new TextMessage(json));
                         }
                     } catch (IOException | RuntimeException ignored) {
+                        diagnostic("SEND_FAILED", json, ignored);
                     } finally {
                         try {
                             this.session.close(status);
                         } catch (IOException | RuntimeException ignored) {
+                    diagnostic("SEND_CLOSE_FAILED", json, ignored);
                         }
                         this.sender.shutdown();
                     }
                 });
             } catch (RejectedExecutionException full) {
+                diagnostic("SEND_OVERFLOW", json, full);
                 if (this.onOverflow != null) {
                     try {
                         this.onOverflow.run();
                     } catch (RuntimeException ignored) {
+                        diagnostic("SEND_CALLBACK_FAILED", json, ignored);
                     }
                 }
                 try {
                     this.session.close(status);
                 } catch (IOException | RuntimeException ignored) {
+                    diagnostic("SEND_CLOSE_FAILED", json, ignored);
                 }
                 this.sender.shutdownNow();
             }
