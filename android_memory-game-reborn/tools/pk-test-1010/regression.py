@@ -21,6 +21,7 @@ Prerequisites (run outside, e.g. from the session runbook):
     the Online tab
 """
 import json
+import os
 import queue
 import re
 import sys
@@ -48,7 +49,7 @@ LBL_RESIGN_DIALOG = ("lose your bet", "失去押注")
 LBL_RESIGN_YES = ("YES", "好")
 LBL_CREATE_ROOM = ("Create room", "创建房间")
 LBL_PLAY_ONLINE = ("Play Online", "在线对战")
-LBL_LOBBY = ("Play vs Bot", "对战机器人")
+LBL_LOBBY = ("Play vs Bot", "人机对战", "对战机器人")
 
 # Installed debug applicationId (guest identity lives in its shared_prefs).
 PKG = "com.memory.brain.training.games"
@@ -57,11 +58,52 @@ RESULTS = []
 probe_uid = None
 
 
+def _node_visible(dump, text):
+    for m in re.finditer(r'<node[^>]*?text="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',
+                         dump):
+        if m.group(1) == text and int(m.group(4)) > int(m.group(2)) and int(m.group(5)) > int(m.group(3)):
+            return True
+    return False
+
+
+_PHONE_NICK_CACHE = None
+
+
 def phone_nickname():
-    """The phone's persisted guest nickname, read from its shared_prefs."""
+    """The phone's server nickname.
+
+    Current builds seal credentials at rest, so the prefs value may be
+    ciphertext; fall back to the nickname the lobby renders for the
+    signed-in user, then restore a scroll position with the entry
+    buttons visible (later steps tap them). Later calls reuse the first
+    result: once a match starts the lobby is no longer on screen."""
+    global _PHONE_NICK_CACHE
+    if _PHONE_NICK_CACHE:
+        return _PHONE_NICK_CACHE
     xml = ui.sh("shell", "run-as", PKG, "cat", "shared_prefs/online_identity.xml")
     match = re.search(r'name="nickname">([^<]+)<', xml)
-    return match.group(1) if match else None
+    value = match.group(1) if match else None
+    if value and len(value) <= 24 and "=" not in value:
+        _PHONE_NICK_CACHE = value
+        return value
+    for _ in range(3):
+        ui.sh("shell", "input", "swipe", "360", "400", "360", "1300", "250")
+    dump = ui.dump()
+    name = None
+    for tag in re.findall(r'<node[^>]*>', dump):
+        if "online_profile_line" in tag:
+            text = re.search(r'text="([^"]*)"', tag)
+            if text and text.group(1):
+                name = text.group(1)
+                break
+    for _ in range(6):
+        if (_node_visible(dump, "在线对战") and _node_visible(dump, "人机对战")
+                and _node_visible(dump, "创建房间")):
+            break
+        ui.sh("shell", "input", "swipe", "360", "1150", "360", "700", "250")
+        dump = ui.dump()
+    _PHONE_NICK_CACHE = name
+    return name
 
 
 def check(name, ok, detail=""):
@@ -81,7 +123,12 @@ def phone_wait(text, timeout=15.0):
 
 
 def http_base(url):
-    base = url.replace("ws://", "http://", 1)
+    # PK_ADMIN_BASE lets cloud runs keep the admin API off the public internet
+    # (the TLS vhost proxies only /api/v2 and /ws); point it at an SSH tunnel.
+    override = os.environ.get("PK_ADMIN_BASE")
+    if override:
+        return override.rstrip("/")
+    base = url.replace("wss://", "https://", 1).replace("ws://", "http://", 1)
     return base[:-3] if base.endswith("/ws") else base
 
 
@@ -96,8 +143,11 @@ def settled_events(url, token):
 
 
 def set_config(url, token, patch):
+    # The admin console contract requires a non-blank reason on every mutation.
+    body = dict(patch)
+    body.setdefault("reason", "pk regression suite")
     req = urllib.request.Request(http_base(url).rstrip("/") + "/api/admin/config",
-                                 data=json.dumps(patch).encode(),
+                                 data=json.dumps(body).encode(),
                                  headers={"X-Admin-Token": token, "Content-Type": "application/json"},
                                  method="PUT")
     with urllib.request.urlopen(req, timeout=10) as resp:
@@ -122,6 +172,8 @@ def room_code_from_dump(xml):
 
 def admin_user_id(url, token, nickname):
     """Resolve a user id by exact nickname via the admin user search."""
+    if not nickname:
+        return None
     req = urllib.request.Request(
         http_base(url).rstrip("/") + "/api/admin/users?q=" + urllib.parse.quote(nickname),
         headers={"X-Admin-Token": token})
@@ -344,13 +396,21 @@ def s2_resign_mirror(url, token, probe):
     # mid-transition lets the launching game activity steal the dialog.
     time.sleep(7)
     end = None
-    for attempt in range(2):
+    for attempt in range(3):
         ui.sh("shell", "input", "keyevent", "4")  # back -> resign dialog
-        time.sleep(1.5)
-        if ui.find(ui.dump(), LBL_RESIGN_DIALOG) is None:
+        # Poll: a single dump right after BACK can miss the animating dialog,
+        # and a second BACK would then cancel it instead of confirming.
+        dialog = None
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            dialog = ui.find(ui.dump(), LBL_RESIGN_DIALOG)
+            if dialog:
+                break
+            time.sleep(0.8)
+        if dialog is None:
             continue
         tap_text(LBL_RESIGN_YES)
-        end = probe.await_("match_end", 15)
+        end = probe.await_("match_end", 25)
         if end:
             break
     check("S2 probe collects forfeit W", end and end["result"] == "W",

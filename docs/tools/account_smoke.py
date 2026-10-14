@@ -1,8 +1,13 @@
-"""Local-only HTTP/SMTP account acceptance test; never prints credentials.
+"""HTTP/SMTP account acceptance test; never prints credentials.
 
-Start the server with its development HTTP override and SMTP at 127.0.0.1:2526,
-then run: python docs/tools/account_smoke.py --base-url http://127.0.0.1:18081
-The SMTP receiver is an in-process test fixture, not a production mail server.
+Default (loopback only): start the server with its development HTTP override
+and SMTP at 127.0.0.1:2526, then run:
+  python docs/tools/account_smoke.py --base-url http://127.0.0.1:18081
+
+Remote mode (own deployment only): with --allow-remote-account-tests the run
+creates real throwaway accounts on that server; pair it with --mail-command
+that prints the deployment's mail-sink log, e.g.
+  --mail-command "ssh root@host tail -n 80 /root/memorygames-pk/mail-sink.log"
 """
 import argparse
 from contextlib import closing
@@ -11,6 +16,7 @@ import json
 import re
 import secrets
 import socketserver
+import subprocess
 import threading
 import time
 import urllib.error
@@ -49,6 +55,26 @@ class Mailbox:
 
 
 MAILBOX = Mailbox()
+
+
+class CommandMailbox:
+    """Reads verification codes from a deployment's mail-sink log over SSH."""
+
+    def __init__(self, command):
+        self.command = command
+
+    def code(self, recipient, after):
+        deadline = time.monotonic() + 20
+        while True:
+            output = subprocess.run(self.command, shell=True, capture_output=True,
+                                    text=True, timeout=30).stdout
+            lines = [line for line in output.splitlines()
+                     if recipient.lower() in line.lower() and "CODE=" in line]
+            if lines:
+                return lines[-1].rsplit("CODE=", 1)[1].strip()
+            if time.monotonic() >= deadline:
+                raise AssertionError("No verification email for the test recipient in the mail-sink log")
+            time.sleep(1)
 
 
 class SmtpHandler(socketserver.StreamRequestHandler):
@@ -97,10 +123,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:18081")
     parser.add_argument("--smtp-port", type=int, default=2526)
+    parser.add_argument("--allow-remote-account-tests", action="store_true",
+                        help="Create throwaway accounts on a non-loopback deployment (own servers only)")
+    parser.add_argument("--mail-command",
+                        help="Shell command printing the deployment mail-sink log (required for remote runs)")
     options = parser.parse_args()
     parsed = urllib.parse.urlparse(options.base_url)
-    if parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
-        parser.error("This test creates accounts and accepts email; only loopback is allowed")
+    loopback = parsed.hostname in ("127.0.0.1", "localhost", "::1")
+    if not loopback and not options.allow_remote_account_tests:
+        parser.error("This test creates accounts; only loopback is allowed without --allow-remote-account-tests")
+    if not loopback and not options.mail_command:
+        parser.error("Remote runs need --mail-command to read verification codes from the deployment's mail sink")
     urllib.request.install_opener(urllib.request.build_opener(urllib.request.ProxyHandler({})))
     root = options.base_url.rstrip("/") + "/api/v2"
     checks = []
@@ -116,9 +149,12 @@ def main():
         assert response["d"]["token"] == token, "WebSocket returned a legacy credential"
         return connection
 
-    smtp = SmtpServer(("127.0.0.1", options.smtp_port), SmtpHandler)
-    thread = threading.Thread(target=smtp.serve_forever, daemon=True)
-    thread.start()
+    mailbox = CommandMailbox(options.mail_command) if options.mail_command else MAILBOX
+    smtp = None
+    if not options.mail_command:
+        smtp = SmtpServer(("127.0.0.1", options.smtp_port), SmtpHandler)
+        thread = threading.Thread(target=smtp.serve_forever, daemon=True)
+        thread.start()
 
     def request(method, path, data=None, token=None, expected=200):
         body = None if data is None else json.dumps(data).encode("utf-8")
@@ -167,7 +203,7 @@ def main():
 
         after = len(MAILBOX.messages)
         request("POST", "/account/email-verification", {"email": address}, guest["accessToken"])
-        code = MAILBOX.code(address, after)
+        code = mailbox.code(address, after)
         request("POST", "/auth/register", {"email": address, "password": password,
                 "verificationCode": "invalid"}, guest["accessToken"], expected=(400, 401, 403))
         still_guest = request("GET", "/me", token=guest["accessToken"])
@@ -212,7 +248,7 @@ def main():
 
         after = len(MAILBOX.messages)
         request("POST", "/auth/password-reset/request", {"email": address})
-        reset_code = MAILBOX.code(address, after)
+        reset_code = mailbox.code(address, after)
         new_password = "B8!" + secrets.token_urlsafe(18)
         request("POST", "/auth/password-reset/confirm", {"email": address,
                 "verificationCode": reset_code, "newPassword": new_password})
@@ -245,8 +281,9 @@ def main():
         passed("logout revocation closes WebSocket")
         print(json.dumps({"ok": True, "checks": checks}, ensure_ascii=False, indent=2))
     finally:
-        smtp.shutdown()
-        smtp.server_close()
+        if smtp is not None:
+            smtp.shutdown()
+            smtp.server_close()
 
 
 if __name__ == "__main__":
