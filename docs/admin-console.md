@@ -5,13 +5,37 @@
 ## 入口与登录
 
 - 页面入口：`/api/admin/console`，静态登录页也可从 `/admin/index.html` 访问。
-- 服务端通过 `PK_ADMIN_TOKEN` 配置管理凭证。凭证未设置时，管理数据接口关闭。
-- 在页面输入 Token 后，控制台通过 `GET /api/admin/dashboard` 验证访问权限。
-- Token 仅保存在页面内存；不写入 URL、Cookie 或 Web Storage，不提供“记住密码”。退出或刷新页面后需要重新输入。
-- 页面壳和静态资源公开，但不包含玩家数据或凭证；每个管理 API 仍检查 `X-Admin-Token`。
-- 玩家账号或邮箱登录不能代替管理 Token。
+- 网页使用固定管理员密码，服务端通过 `PK_ADMIN_PASSWORD_HASH` 读取 bcrypt 哈希，不保存明文密码。未配置或哈希无效时网页登录关闭（503），没有默认密码。
+- 登录成功后，服务器签发随机、不透明会话，使用 `PK_ADMIN_SESSION` Cookie：`HttpOnly`、`SameSite=Strict`、`Path=/api/admin`、host-only；HTTPS 时设置 `Secure`。
+- 默认有效期 8 小时，配置 `PK_ADMIN_SESSION_TTL_SECONDS` 可调整。有效期固定、不无限续期；刷新页面通过会话检查恢复登录，无需再输入密码。
+- 会话存于服务端内存，只保存会话标识的摘要，支持过期清理、容量限制及主动撤销。服务器重启后会话失效，但密码哈希配置不变，重新输入同一密码即可。
+- 退出管理会请求服务器撤销当前会话并清除 Cookie；网页离开或刷新不会主动注销。退出请求网络失败时页面清空视图并提示撤销未确认，不能宣称服务端已退出。
+- 密码输入提交后清空，不写入 URL 或 Web Storage。CSRF 凭证仅在页面内存，写操作使用 `X-Admin-CSRF`；浏览器不能读取 HttpOnly 会话 Cookie。
+- 玩家账号或邮箱登录不能代替管理员密码；第一期仍是单管理员，没有新建管理员或找回密码功能。
+- `PK_ADMIN_TOKEN` / `X-Admin-Token` 保留给自动化工具，与网页登录独立。未配置 Token 不妨碍已配置密码的网页登录；没有密码则仍可使用已配置的自动化 Token。请求显式带 Token 时优先校验，错误 Token 不回退到 Cookie。
 
-生产必须使用 HTTPS，并通过反向代理配合 IP 白名单、VPN 或内网隔离管理路径。不要将管理 Token 发给玩家。反向代理需要同时放行 `/api/admin/console`、`/admin/**` 和授权访问的 `/api/admin/**`；不要开放宽泛跨域策略。响应限制脚本、样式和请求来源为同源，禁止被嵌入框架。
+生产必须使用 HTTPS，并通过反向代理配合 IP 白名单、VPN 或内网隔离管理路径。反向代理需要放行 `/api/admin/console`、`/admin/**`、`/api/admin/auth/**` 和授权访问的管理 API；保持同源 Host，不开放宽泛跨域策略。响应限制脚本、样式和请求来源为同源，禁止被嵌入框架。
+
+远程明文 HTTP 禁止密码登录和会话访问；本机 HTTP 仅在客户端地址与 Host 均为 loopback 时例外。若由可信 HTTPS 反代终结 TLS，显式设置 `pk.admin.trust-forwarded-headers=true`（环境变量 `PK_ADMIN_TRUST_FORWARDED_HEADERS=true`），并确保只有可信代理能直连服务，代理清理客户端伪造的转发头并设置 `X-Forwarded-Proto: https`。默认不接受任意转发头；不要以该开关代替网络隔离。
+
+### 一次性设置固定密码
+
+在交互终端从服务端目录运行：
+
+```bash
+JAVA_HOME=F:/jdk17 python tools/admin-password-hash.py
+```
+
+工具通过隐藏输入要求输入两次密码，建议至少 12 个字符，bcrypt 最多接受 72 个 UTF-8 字节；不会接受命令行密码参数或将明文写入文件。输出仅为 bcrypt 哈希。Windows 可在真正的 PowerShell/CMD 交互终端运行；没有 Console 的自动化执行器会被安全拒绝。
+
+将生成的哈希放到服务的受限环境配置里：
+
+```bash
+# 单引号保护 bcrypt 中的 $，这里是占位值而非可用哈希。
+export PK_ADMIN_PASSWORD_HASH='<工具生成的 bcrypt 哈希>'
+```
+
+对于 systemd，使用权限受限的 `EnvironmentFile` 并保持相同值；对于 Compose，使用受限 `.env` 或外部环境，bcrypt 值必须避免 `$` 插值（`.env` 使用单引号包裹），不要把密码/哈希提交仓库。提供哈希配置后正常重启即可使用固定密码。修改密码需要重新生成哈希并重启，会撤销全部内存会话；这不要求更换自动化 Token。
 
 ## 第一期页面
 
@@ -58,6 +82,21 @@
 
 ## API 变更与兼容说明
 
+网页认证接口：
+
+```text
+POST /api/admin/auth/login   {"password":"..."}
+GET  /api/admin/auth/session
+  -> {"authenticated":true,"csrfToken":"...","expiresAt":"ISO-8601 时间"}
+
+POST /api/admin/auth/logout  Header: X-Admin-CSRF
+  -> {"authenticated":false}
+```
+
+登录与会话访问要求同源；提供 Origin 或 Fetch-Metadata 时严格校验。登录成功设置 HttpOnly Cookie，会话检查不返回密码或自动化 Token。密码错误与会话失效为 401，密码未配置为 503；CSRF/跨源/不安全传输拒绝为 403。密码输入不得超过 72 个 UTF-8 字节，登录按 IP 独立限流（默认 5 次/分钟），超限返回 429。
+
+Cookie 会话的管理写操作必须同时带 `X-Admin-CSRF`；旧 `X-Admin-Token` 自动化调用不要求会话 CSRF。缺少认证的旧管理 API 继续 404 隐藏；失效 Cookie 为 401。管理写操作理由与数值校验不变。
+
 新增只读接口：
 
 ```text
@@ -100,15 +139,16 @@ GET /api/admin/loglevel?logger=ROOT
 JAVA_HOME=F:/jdk17 ./gradlew test bootJar
 node --test src/test/js/admin-console.test.cjs
 
-# 单独启动本机临时验收实例，使用内存数据库，不连接线上。
-PK_ADMIN_TOKEN=local-admin-check JAVA_HOME=F:/jdk17 ./gradlew bootRun \
+# 先在交互终端用上述工具生成哈希并 export PK_ADMIN_PASSWORD_HASH。
+# 再启动本机临时验收实例，使用内存数据库，不连接线上。
+JAVA_HOME=F:/jdk17 ./gradlew bootRun \
   --args='--server.address=127.0.0.1 --server.port=18091'
 ```
 
-打开 `http://127.0.0.1:18091/api/admin/console`，输入本地 Token。loopback HTTP 仅用于本机验收；非 loopback 的 HTTP 页面不允许提交管理凭证。
+打开 `http://127.0.0.1:18091/api/admin/console`，输入自己设置的固定管理员密码。loopback HTTP 仅用于本机验收；非 loopback 的 HTTP 页面不允许提交密码。真实管理员密码不会由开发脚本自动生成、打印或写入仓库。
 
-验收重点：错误 Token、不带 Token 的数据请求、登录与退出、空列表、真实用户详情、理由必填、取消操作、调币后的服务端回读、配置差异与钳制值回读、维护状态回显、logger 继承/未知状态、限流冷却、背景暂停刷新、文本注入安全和窄屏布局。
+验收重点：错误密码、未配置密码、同源与 CSRF 拒绝、登录后刷新自动恢复、会话过期与退出撤销、服务重启后使用同一密码重新登录、Token 自动化兼容、空列表、真实用户详情、理由必填、取消操作、回读、限流冷却、背景暂停刷新、文本注入安全和窄屏布局。
 
 `pgTest` 需要 Docker，本机无 Docker 时单独说明未执行，不用 H2 结果替代 PostgreSQL 并发验收。
 
-本次实现与验证记录见 [2026-10-13 管理控制台验收](admin-console-test-report-2026-10-13.md)。
+基础页面验证见 [2026-10-13 管理控制台验收](admin-console-test-report-2026-10-13.md)，当前密码登录与会话验证见 [2026-10-14 管理认证验收](admin-password-session-test-report-2026-10-14.md)。

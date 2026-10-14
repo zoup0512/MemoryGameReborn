@@ -15,18 +15,18 @@
     <h1 id="login-title">服务端管理</h1>
     <p class="muted">仅限管理员。请通过 HTTPS 或本机访问。</p>
     <form id="login-form">
-      <label for="admin-token">管理 Token</label>
-      <input id="admin-token" type="password" autocomplete="off" required maxlength="4096" spellcheck="false">
-      <p class="hint">Token 仅保存在当前页面内存，刷新或退出后需要重新输入。玩家账号不能用于管理登录。</p>
+      <label for="admin-password">管理员密码</label>
+      <input id="admin-password" name="password" type="password" autocomplete="current-password" required maxlength="72" spellcheck="false">
+      <p class="hint">使用固定管理员密码。登录会话默认有效 8 小时，刷新网页无需重复登录；服务重启后重新输入同一密码。玩家账号不能用于管理登录。</p>
       <button id="login-submit" type="submit" class="primary">进入控制台</button>
       <p id="login-error" class="error" role="alert"></p>
     </form>
-    <p class="hint">管理接口未启用或凭证错误时均返回 404。此页面本身不包含业务数据。</p>
+    <p class="hint">网页密码由服务端配置，未配置时无法登录。自动化管理 Token 与网页密码独立，此页面本身不包含业务数据。</p>
   </section>
   <div id="app" hidden>
     <header class="topbar">
       <div class="brand"><span class="brand-mark small" aria-hidden="true">M</span><div>MemoryGameReborn<span class="brand-caption">服务端管理</span></div></div>
-      <div class="toolbar"><span id="origin" class="muted"></span><button id="logout" type="button">退出管理</button></div>
+      <div class="toolbar"><span id="origin" class="muted"></span><span id="session-status" class="muted" role="status"></span><button id="logout" type="button">退出管理</button></div>
     </header>
     <div class="shell">
       <aside class="sidebar">

@@ -4,8 +4,8 @@
 
   const $ = (id) => document.getElementById(id);
   const ui = {};
-  for (const id of ['login', 'login-form', 'admin-token', 'login-submit', 'login-error',
-    'app', 'origin', 'logout', 'page-title', 'page-description', 'auto-refresh',
+  for (const id of ['login', 'login-form', 'admin-password', 'login-submit', 'login-error',
+    'app', 'origin', 'logout', 'session-status', 'page-title', 'page-description', 'auto-refresh',
     'refresh', 'sample-time', 'notice', 'content', 'action-dialog', 'action-form',
     'action-title', 'action-impact', 'action-fields', 'action-reason', 'action-error',
     'action-submit', 'dialog-close', 'dialog-cancel']) ui[id] = $(id);
@@ -19,8 +19,11 @@
   };
   const safeTransport = window.location.protocol === 'https:' ||
     (window.location.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname));
-  const transportWarning = '拒绝通过远程明文 HTTP 输入或发送管理 Token。请使用 HTTPS 或本机 localhost / 127.0.0.1 / [::1]。';
-  let token = ''; // Deliberately private to this closure; never URL/storage/DOM after login.
+  const transportWarning = '拒绝通过远程明文 HTTP 输入或发送管理员密码。请使用 HTTPS 或本机 localhost / 127.0.0.1 / [::1]。';
+  let authenticated = false;
+  let csrfToken = ''; // Session proof stays in this closure, never storage/URL/DOM.
+  let expiresAt = 0;
+  let restoreBlocked = false; // Local logout must not automatically restore an unconfirmed cookie.
   let session = 0;
   let page = 'overview';
   let revision = 0;
@@ -40,7 +43,14 @@
   const controllers = new Map();
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const scope = () => ({ session, revision });
-  const current = (s) => s.session === session && s.revision === revision && !!token;
+  const current = (s) => s.session === session && s.revision === revision && authenticated;
+  function expired() {
+    if (authenticated && Date.now() >= expiresAt) {
+      clearSession('管理会话已过期，请重新登录。');
+      return true;
+    }
+    return false;
+  }
 
   class ApiError extends Error {
     constructor(message, status = 0) { super(message); this.status = status; }
@@ -146,12 +156,15 @@
   function abortReads() {
     for (const [controller, method] of controllers) if (method === 'GET') controller.abort();
   }
-  function logout(message = '') {
-    token = '';
+  function clearSession(message = '') {
+    authenticated = false;
+    csrfToken = '';
+    expiresAt = 0;
     session++;
     revision++;
     for (const controller of controllers.keys()) controller.abort();
     controllers.clear();
+    queue = Promise.resolve();
     action = null;
     submitting = false;
     loading = false;
@@ -168,7 +181,10 @@
     ui['action-title'].textContent = '';
     ui['action-impact'].textContent = '';
     ui['sample-time'].textContent = '';
-    ui['admin-token'].value = '';
+    ui['session-status'].textContent = '';
+    nav.forEach((node) => { node.disabled = false; });
+    ui.refresh.disabled = false;
+    ui['admin-password'].value = '';
     ui['login-error'].textContent = safeTransport ? message : transportWarning;
     ui['login-submit'].disabled = !safeTransport;
     ui['action-submit'].disabled = false;
@@ -176,32 +192,36 @@
     ui.login.hidden = false;
     ui.content.setAttribute('aria-busy', 'false');
     notice('');
-    ui['admin-token'].focus();
+    ui['admin-password'].focus();
   }
   function cooling() { return Date.now() < cooldownUntil; }
   function cooldownMessage() {
     return `请求已冷却，约 ${Math.ceil((cooldownUntil - Date.now()) / 1000)} 秒后可手动重试；自动刷新已暂停。写操作不会自动重试。`;
   }
-  async function wire(path, method, body, s, login = false) {
-    if (s.session !== session || (!login && !current(s))) throw new StaleRequest();
-    if (cooling()) throw new ApiError(cooldownMessage(), 429);
+  async function wire(path, method, body, s, auth = false, proof = csrfToken) {
+    if (!auth && expired()) throw new StaleRequest();
+    if (s.session !== session || (!auth && !current(s))) throw new StaleRequest();
+    if (cooling() && path !== '/auth/logout') throw new ApiError(cooldownMessage(), 429);
     await delay(Math.max(0, nextRequestAt - Date.now()));
-    if (s.session !== session || (!login && !current(s))) throw new StaleRequest();
-    if (cooling()) throw new ApiError(cooldownMessage(), 429);
+    if (!auth && expired()) throw new StaleRequest();
+    if (s.session !== session || (!auth && !current(s))) throw new StaleRequest();
+    if (cooling() && path !== '/auth/logout') throw new ApiError(cooldownMessage(), 429);
     nextRequestAt = Date.now() + 1100; // Serialize and pace below the default 60/min/IP budget.
     const controller = new AbortController();
     controllers.set(controller, method);
     let timedOut = false;
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 12000);
     try {
-      const headers = { 'X-Admin-Token': token, Accept: 'application/json' };
+      const headers = { Accept: 'application/json' };
+      if (method !== 'GET' && path !== '/auth/login') headers['X-Admin-CSRF'] = proof;
       if (body !== undefined) headers['Content-Type'] = 'application/json';
       const response = await fetch(`/api/admin${path}`, {
         method, headers, body: body === undefined ? undefined : JSON.stringify(body),
-        credentials: 'omit', mode: 'same-origin', cache: 'no-store', redirect: 'error',
+        credentials: 'same-origin', mode: 'same-origin', cache: 'no-store', redirect: 'error',
         signal: controller.signal
       });
-      if (s.session !== session || (!login && !current(s))) throw new StaleRequest();
+      if (!auth && expired()) throw new StaleRequest();
+      if (s.session !== session || (!auth && !current(s))) throw new StaleRequest();
       if (response.status === 429) {
         const retry = response.headers.get('Retry-After');
         const seconds = retry && /^\d+(\.\d+)?$/.test(retry) ? Number(retry) * 1000 : Date.parse(retry || '') - Date.now();
@@ -210,7 +230,8 @@
         throw new ApiError(cooldownMessage(), 429);
       }
       const raw = await response.text();
-      if (s.session !== session || (!login && !current(s))) throw new StaleRequest();
+      if (!auth && expired()) throw new StaleRequest();
+      if (s.session !== session || (!auth && !current(s))) throw new StaleRequest();
       let data = null;
       try { data = raw ? JSON.parse(raw) : null; } catch (_) {
         if (response.ok) throw new ApiError('服务端返回的不是有效 JSON。请检查部署或代理。');
@@ -218,15 +239,21 @@
       if (!response.ok) {
         const extra = data && typeof data.error === 'string' ? ` ${data.error.slice(0, 500)}` : '';
         const messages = {
-          400: '请求未被接受，请核对输入。', 401: '管理凭证失效。', 403: '管理访问被拒绝。',
-          404: login ? 'Token 错误或管理接口未启用（404）。' : '对象不存在、已结束或接口不可用（404）。',
-          409: '状态发生冲突，请刷新核对。', 500: '服务端处理失败。', 501: '当前服务端不支持此操作。'
+          400: '请求未被接受，请核对输入。',
+          401: path === '/auth/login' ? '管理员密码错误。' : '管理会话已过期或已退出，请重新登录。',
+          403: 'CSRF 校验或来源检查失败。请重新加载页面核对会话，必要时重新登录；写操作不会自动重试。',
+          404: auth ? '管理登录接口未启用或不可用（404）。' : '对象不存在、已结束或接口不可用（404）。',
+          409: '状态发生冲突，请刷新核对。', 500: '服务端处理失败。', 501: '当前服务端不支持此操作。',
+          503: '管理员密码未配置或配置无效，管理登录暂不可用（503）。'
         };
         throw new ApiError((messages[response.status] || `请求失败（HTTP ${response.status}）。`) + extra, response.status);
       }
+      if (path === '/auth/logout' && response.status !== 204 && (!data || data.authenticated !== false)) {
+        throw new ApiError('服务端未确认会话已退出。');
+      }
       return data;
     } catch (error) {
-      if (s.session !== session || (!login && !current(s))) throw new StaleRequest();
+      if (s.session !== session || (!auth && !current(s))) throw new StaleRequest();
       if (error instanceof ApiError || error instanceof StaleRequest) throw error;
       const suffix = method === 'GET' ? '' : ' 写请求结果未知，请先读取状态/审计核对，不要直接重复提交。';
       throw new ApiError((timedOut ? '请求超时。' : error.name === 'AbortError' ? '请求已取消。' : '网络请求失败。') + suffix);
@@ -240,22 +267,23 @@
     const method = options.method || 'GET';
     const job = async () => {
       try {
-        return await wire(path, method, options.body, s, options.login);
+        return await wire(path, method, options.body, s, options.auth);
       } catch (error) {
-        if (!options.login && current(s)) {
-          if ([401, 403].includes(error.status) || (error.status === 404 && path === '/dashboard')) {
-            logout('管理凭证失效或接口已禁用，请重新登录。');
+        if (!options.auth && current(s)) {
+          if (error.status === 401) {
+            clearSession('管理会话已过期或已退出，请重新登录。');
             throw new StaleRequest();
           }
-          // A user/match/logger 404 is NOT proof of expired credentials. At most
-          // one extra dashboard probe/minute, and never during rate cooldown.
-          if (error.status === 404 && !options.expected404 && !cooling() && Date.now() - lastAuthProbeAt >= 60000) {
+          // Missing objects are not authentication failures. A throttled session
+          // check may invalidate the UI, but never replays the failed operation.
+          if ((error.status === 403 || (error.status === 404 && !options.expected404)) &&
+            !cooling() && Date.now() - lastAuthProbeAt >= 60000) {
             lastAuthProbeAt = Date.now();
-            try { await wire('/dashboard', 'GET', undefined, s); }
+            try { acceptSession(await wire('/auth/session', 'GET', undefined, s, true)); }
             catch (probe) {
               if (!current(s)) throw new StaleRequest();
-              if ([401, 403, 404].includes(probe.status)) {
-                logout('管理凭证失效或接口已禁用，请重新登录。');
+              if ([401, 403, 502].includes(probe.status)) {
+                clearSession(`${error.status === 403 ? error.message : '管理会话已过期。'} 请重新登录。`);
                 throw new StaleRequest();
               }
               if (probe.status === 429) throw probe;
@@ -597,7 +625,7 @@
   }
 
   function openAction(spec) {
-    if (submitting || loading) return;
+    if (expired() || !authenticated || submitting || loading) return;
     action = { ...spec, scope: scope(), fields: {}, stage: 'input' };
     returnFocus = document.activeElement;
     ui['action-title'].textContent = spec.title;
@@ -652,7 +680,7 @@
   ui['dialog-cancel'].addEventListener('click', closeAction);
   ui['action-form'].addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!action || submitting || action.stage === 'failed') return;
+    if (expired() || !action || submitting || action.stage === 'failed') return;
     const pending = action;
     if (!current(pending.scope)) { closeAction(); return; }
     try {
@@ -706,8 +734,8 @@
     }
   });
 
-  async function load(cachedDashboard) {
-    if (!token || loading || submitting || ui['action-dialog'].open) return;
+  async function load() {
+    if (expired() || !authenticated || loading || submitting || ui['action-dialog'].open) return;
     if (editing) { notice('存在未提交输入。请先提交查询、预览变更或放弃编辑，再刷新。'); return; }
     if (cooling()) { notice(cooldownMessage(), true); return; }
     const s = scope();
@@ -718,7 +746,7 @@
     try {
       let render;
       if (targetPage === 'overview') {
-        const data = cachedDashboard || await api('/dashboard', { scope: s });
+        const data = await api('/dashboard', { scope: s });
         render = () => overview(data);
       } else if (targetPage === 'matches') {
         const data = await api('/matches', { scope: s });
@@ -766,7 +794,7 @@
     }
   }
   function navigate(target) {
-    if (!pages[target] || submitting || ui['action-dialog'].open) return;
+    if (expired() || !authenticated || !pages[target] || submitting || ui['action-dialog'].open) return;
     if (editing) {
       notice('存在未提交输入，请先提交查询或放弃编辑。', true);
       return;
@@ -788,57 +816,111 @@
     load();
   }
   nav.forEach((node) => node.addEventListener('click', () => navigate(node.dataset.page)));
-  ui.logout.addEventListener('click', () => logout());
+  ui.logout.addEventListener('click', async () => {
+    if (!authenticated) return;
+    const proof = csrfToken;
+    restoreBlocked = true;
+    clearSession('正在退出管理会话…');
+    const s = scope();
+    ui['login-submit'].disabled = true;
+    try {
+      // Do not wait for a superseded business request or keep its UI visible.
+      await wire('/auth/logout', 'POST', undefined, s, true, proof);
+      if (s.session === session) ui['login-error'].textContent = '已退出管理会话。';
+    } catch (error) {
+      if (s.session === session) ui['login-error'].textContent = `本页已清除管理信息，但服务端会话退出未确认。${error.message} 刷新后原会话可能仍有效；请手动重新登录或核对退出状态。`;
+    } finally {
+      if (s.session === session) ui['login-submit'].disabled = !safeTransport;
+    }
+  });
   ui.refresh.addEventListener('click', () => load());
   ui.content.addEventListener('input', () => { editing = true; });
   ui.content.addEventListener('change', () => { editing = true; });
+  function acceptSession(data) {
+    const expiry = data && typeof data.expiresAt === 'string' ? Date.parse(data.expiresAt) : NaN;
+    if (!data || data.authenticated !== true || typeof data.csrfToken !== 'string' || !data.csrfToken ||
+      !Number.isFinite(expiry) || expiry <= Date.now()) throw new ApiError('服务端管理会话无效或已过期，请重新登录。', 502);
+    authenticated = true;
+    csrfToken = data.csrfToken;
+    expiresAt = expiry;
+    ui['session-status'].textContent = `会话有效至 ${time(data.expiresAt)}（本地时间）`;
+  }
+  async function enterSession(data) {
+    acceptSession(data);
+    ui['login-error'].textContent = '';
+    ui.login.hidden = true;
+    ui.app.hidden = false;
+    ui.refresh.focus();
+    page = 'overview';
+    editing = false;
+    ui['page-title'].textContent = pages.overview[0];
+    ui['page-description'].textContent = pages.overview[1];
+    nav.forEach((node) => {
+      if (node.dataset.page === 'overview') node.setAttribute('aria-current', 'page');
+      else node.removeAttribute('aria-current');
+    });
+    await load();
+  }
+  async function restoreSession() {
+    if (!safeTransport || restoreBlocked) return;
+    clearSession('正在检查管理会话…');
+    const s = scope();
+    ui['login-submit'].disabled = true;
+    try {
+      const data = await api('/auth/session', { scope: s, auth: true });
+      if (s.session !== session) return;
+      await enterSession(data);
+    } catch (error) {
+      if (s.session === session) clearSession(error.status === 401 ? '' : error.message);
+    } finally {
+      if (s.session === session) ui['login-submit'].disabled = false;
+    }
+  }
   ui['login-form'].addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!safeTransport) {
-      ui['admin-token'].value = '';
+      ui['admin-password'].value = '';
       ui['login-error'].textContent = transportWarning;
       return;
     }
     if (ui['login-submit'].disabled) return;
-    const value = ui['admin-token'].value.trim();
-    ui['admin-token'].value = '';
-    if (!value) { ui['login-error'].textContent = '请输入管理 Token。'; return; }
-    token = value;
+    const password = ui['admin-password'].value; // Whitespace is part of the password.
+    ui['admin-password'].value = '';
+    if (!password) { ui['login-error'].textContent = '请输入管理员密码。'; return; }
+    if (new TextEncoder().encode(password).length > 72) {
+      ui['login-error'].textContent = '管理员密码不能超过 72 个 UTF-8 字节。';
+      return;
+    }
     session++;
-    const loginSession = session;
+    const s = scope();
     ui['login-submit'].disabled = true;
     ui['login-error'].textContent = '';
     try {
-      const dashboard = await api('/dashboard', { scope: scope(), login: true });
-      if (loginSession !== session) return;
-      ui.login.hidden = true;
-      ui.app.hidden = false;
-      ui.refresh.focus();
-      page = 'overview';
-      editing = false;
-      ui['page-title'].textContent = pages.overview[0];
-      ui['page-description'].textContent = pages.overview[1];
-      nav.forEach((node) => {
-        if (node.dataset.page === 'overview') node.setAttribute('aria-current', 'page');
-        else node.removeAttribute('aria-current');
-      });
-      await load(dashboard); // Reuse login validation data; do not double-fetch dashboard.
+      const data = await api('/auth/login', { method: 'POST', body: { password }, scope: s, auth: true });
+      if (s.session !== session) return;
+      restoreBlocked = false;
+      await enterSession(data);
     } catch (error) {
-      if (loginSession === session) logout(error.message);
+      if (s.session === session) clearSession(error.message);
     } finally {
-      if (loginSession === session) ui['login-submit'].disabled = false;
+      if (s.session === session) ui['login-submit'].disabled = false;
     }
   });
   ui.origin.textContent = window.location.origin;
-  ui['admin-token'].disabled = !safeTransport;
+  ui['admin-password'].disabled = !safeTransport;
   ui['login-submit'].disabled = !safeTransport;
   if (!safeTransport) ui['login-error'].textContent = transportWarning;
   ui['action-reason'].maxLength = 500;
-  window.addEventListener('pagehide', () => logout());
+  window.addEventListener('pagehide', () => clearSession(restoreBlocked
+    ? '本页已清除管理信息；服务端会话退出状态请手动核对，刷新后原会话可能仍有效。'
+    : ''));
+  window.addEventListener('pageshow', (event) => { if (event.persisted && !restoreBlocked) restoreSession(); });
   setInterval(() => {
+    if (expired()) return;
     const active = document.activeElement;
     const focusedInput = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
-    if (token && ui['auto-refresh'].checked && !document.hidden && !focusedInput &&
+    if (authenticated && ui['auto-refresh'].checked && !document.hidden && !focusedInput &&
       !editing && !loading && !submitting && !ui['action-dialog'].open && !cooling()) load();
   }, 15000);
+  restoreSession();
 })();

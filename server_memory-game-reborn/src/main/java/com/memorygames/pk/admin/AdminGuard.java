@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Shared admin-plane guard: static token (empty token hides the whole
- * surface with 404) plus a per-IP token bucket. Controllers call
+ * Shared admin-plane guard: automation token or browser session,
+ * plus a per-IP token bucket. Controllers call
  * {@link #deny(HttpServletRequest)} first and return its response when
  * non-null.
  */
@@ -20,6 +20,7 @@ public class AdminGuard {
 
     private final String adminToken;
     private final int ratePerMinute;
+    private final AdminSessionService sessions;
     /**
      * X-Forwarded-For is only honoured when the service sits behind a
      * trusted proxy (P2-5): a directly exposed instance would otherwise let
@@ -32,7 +33,9 @@ public class AdminGuard {
 
     public AdminGuard(@Value("${pk.admin-token:}") String adminToken,
                       @Value("${pk.admin-rate-limit:60}") int ratePerMinute,
-                      @Value("${pk.admin.trust-forwarded-headers:false}") boolean trustForwardedHeaders) {
+                      @Value("${pk.admin.trust-forwarded-headers:false}") boolean trustForwardedHeaders,
+                      AdminSessionService sessions) {
+        this.sessions = sessions;
         this.adminToken = adminToken == null ? "" : adminToken.trim();
         this.ratePerMinute = Math.max(1, ratePerMinute);
         this.trustForwardedHeaders = trustForwardedHeaders;
@@ -40,12 +43,25 @@ public class AdminGuard {
 
     /** @return null when allowed, otherwise the error response to return. */
     public ResponseEntity<String> deny(HttpServletRequest request) {
-        if (this.adminToken.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
         String provided = request.getHeader("X-Admin-Token");
-        if (!this.adminToken.equals(provided)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (provided != null) {
+            // Explicit automation credentials always win; wrong/empty headers never fall back to cookies.
+            if (this.adminToken.isEmpty() || !AdminSessionService.constantEquals(this.adminToken, provided)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } else {
+            AdminSessionService.Session session = sessions.find(request);
+            if (session == null) {
+                return ResponseEntity.status(sessions.hasCookie(request) ? HttpStatus.UNAUTHORIZED : HttpStatus.NOT_FOUND).build();
+            }
+            if (!sessions.transportAllowed(request) || !sessions.sameOrigin(request)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            String method = request.getMethod();
+            if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("OPTIONS")
+                    && !sessions.csrfOk(request, session)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
         }
         if (!rateOk(clientIp(request))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();

@@ -53,11 +53,19 @@ docker compose up -d   # app + postgres 16；环境变量 PK_DB_PASSWORD、PK_AD
 ## 运行时配置（管理 API）
 
 端点 GET/PUT /api/admin/config（请求头 X-Admin-Token；docker-compose 经 PK_ADMIN_TOKEN 环境变量设置，
-不设置则端点禁用）。可热调：回合时长覆盖、入场费、胜/平金币、礼金、Bot 等待、回宽限/间歇、
+不设置则 Token 访问禁用，但可另配置密码通过网页会话访问）。可热调：回合时长覆盖、入场费、胜/平金币、礼金、Bot 等待、回宽限/间歇、
 起局延迟等，免重启即时生效（数值有钳制，变更写审计日志）。已开局对局沿用开局时的
 `MatchTerms` 快照，退款/结算不受热配置影响。客户端回合时长完全由服务端驱动
 （round_start.durationMs），auth_ok 下发经济参数——release 构建完全服从服务端配置，debug 构建
 免金币且可本地兜底时长。
+
+### 管理网页与固定密码
+
+访问 `/api/admin/console`，使用固定管理员密码登录。先在交互终端运行 `JAVA_HOME=F:/jdk17 python tools/admin-password-hash.py`，将输出的 bcrypt 哈希配置到 `PK_ADMIN_PASSWORD_HASH`；没有默认密码，不保存明文密码。网页登录会话默认有效 8 小时，刷新自动恢复；重启使会话失效，重新输入同一密码即可。退出会撤销服务器会话。生产必须配置 HTTPS 与管理网络隔离。
+
+`PK_ADMIN_TOKEN` 仍供自动化工具使用，不作为网页密码；两种凭证独立。网页通过 HttpOnly/SameSite Cookie 与 CSRF 防护访问管理 API。所有管理写操作要求非空白 `reason`，既有回归工具继续用 Token。
+
+使用、Cookie 安全、可信反代、密码哈希生成和部署配置见 [管理控制台](../docs/admin-console.md)。
 
 ### 管理端点（P0 已实现）
 

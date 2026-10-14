@@ -40,6 +40,15 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
 }
 
+// Print paths only. The wrapper must launch Java in the user's terminal so
+// Console.readPassword stays masked; JavaExec cannot provide a real console.
+tasks.register('printAdminPasswordHashClasspath') {
+    dependsOn tasks.named('classes')
+    doLast {
+        logger.quiet(sourceSets.main.runtimeClasspath.asPath)
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform {
         excludeTags 'docker'

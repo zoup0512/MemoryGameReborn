@@ -36,7 +36,8 @@ const match = { matchId: 'm /?&', mode: 'RANKED', round: 2, totalRounds: 3, roun
   seats: [{ userId: 42, nickname: attack, bot: false, disconnected: false, roundScore: 3, totalScore: 5 },
     { userId: -1, nickname: 'Bot', bot: true, disconnected: true, roundScore: 2, totalScore: 4 }] };
 
-function harness({ origin = 'https://example.test', route } = {}) {
+const sessionData = { authenticated: true, csrfToken: 'session-csrf-secret', expiresAt: '2027-01-15T10:00:00Z' };
+function harness({ origin = 'https://example.test', route, initialSession = false } = {}) {
   let now = 1800000000000;
   let timerId = 0;
   let inFlight = 0;
@@ -88,7 +89,7 @@ function harness({ origin = 'https://example.test', route } = {}) {
   const fixed = new Map();
   for (const [, id] of html.matchAll(/\bid="([^"]+)"/g)) {
     const tag = /form$/.test(id) ? 'form' : id === 'action-dialog' ? 'dialog'
-      : id === 'admin-token' ? 'input' : id === 'action-reason' ? 'textarea' : 'div';
+      : id === 'admin-password' ? 'input' : id === 'action-reason' ? 'textarea' : 'div';
     const node = new Element(tag); node.id = id;
     roots.push(node); fixed.set(id, node);
   }
@@ -105,13 +106,21 @@ function harness({ origin = 'https://example.test', route } = {}) {
     getElementById: (id) => all().find((node) => node.id === id) || null,
     querySelectorAll: (selector) => { assert.equal(selector, '[data-page]'); return nav; }
   };
+  Object.defineProperty(document, 'cookie', { get() { throw new Error('HttpOnly session must not be read by JavaScript'); },
+    set() { throw new Error('Session cookie must only be set by the server'); } });
   const currentConfig = clone(config);
   let maintenance = { enabled: false, message: 'Normal' };
   let log = { logger: 'ROOT', configuredLevel: null, effectiveLevel: 'INFO' };
+  let cookieSession = initialSession;
   function defaults(url, options) {
     const parsed = new URL(url, origin);
     const api = parsed.pathname;
     const body = options.body ? JSON.parse(options.body) : null;
+    if (api === '/api/admin/auth/session') return cookieSession ? { data: sessionData } : { status: 401 };
+    if (api === '/api/admin/auth/login') { cookieSession = true; return { data: sessionData }; }
+    if (api === '/api/admin/auth/logout') { cookieSession = false; return { data: { authenticated: false } }; }
+    if (!cookieSession) return { status: 401 };
+    if (options.method !== 'GET' && options.headers['X-Admin-CSRF'] !== sessionData.csrfToken) return { status: 403 };
     if (api === '/api/admin/dashboard') return { data: dashboard };
     if (api === '/api/admin/config') {
       if (body) {
@@ -144,7 +153,7 @@ function harness({ origin = 'https://example.test', route } = {}) {
   }
   const context = vm.createContext({
     document, window: { location: new URL(origin), addEventListener: (name, fn) => windowEvents.set(name, fn) },
-    AbortController,
+    AbortController, TextEncoder,
     Date: class extends Date { static now() { return now; } },
     setTimeout(fn, ms) {
       const id = ++timerId;
@@ -175,7 +184,7 @@ function harness({ origin = 'https://example.test', route } = {}) {
     assert.ok(node, `Missing button ${label}`); await node.click(); await flush(); return node;
   };
   const input = async (id, value) => { const node = byId(id); node.value = String(value); await node.dispatch('input'); };
-  const login = async () => { byId('admin-token').value = 'secret-token'; await byId('login-form').dispatch('submit'); await flush(); };
+  const login = async (password = 'secret-password') => { await flush(); byId('admin-password').value = password; await byId('login-form').dispatch('submit'); await flush(); };
   const go = async (name) => { await nav.find((n) => n.dataset.page === name).click(); await flush(); };
   const submitConfig = async () => {
     const form = byId('content').children.find((n) => n.tagName === 'FORM');
@@ -193,23 +202,31 @@ function harness({ origin = 'https://example.test', route } = {}) {
     maxFlight: () => maxFlight, advance: (ms) => { now += ms; },
     tick: async () => { intervals[0].fn(); await flush(); },
     timeout: () => { for (const [id, timer] of timers) if (timer.ms === 12000) { timers.delete(id); timer.fn(); } },
-    pagehide: () => windowEvents.get('pagehide')() };
+    pagehide: () => windowEvents.get('pagehide')(),
+    pageshow: async (persisted = true) => { windowEvents.get('pageshow')({ persisted }); await flush(); },
+    revokeCookie: () => { cookieSession = false; } };
 }
-const writes = (h) => h.calls.filter((call) => call.options.method !== 'GET');
+const writes = (h) => h.calls.filter((call) => call.options.method !== 'GET' && !call.url.startsWith('/api/admin/auth/'));
 const body = (call) => JSON.parse(call.options.body);
 
 test('ships CSP-compatible script and real DOM IDs, no executable HTML/storage/token URL', () => {
-  assert.doesNotMatch(source, /\b(?:eval|Function)\s*\(|innerHTML|outerHTML|insertAdjacentHTML|document\.write|localStorage|sessionStorage/);
+  assert.doesNotMatch(source, /\b(?:eval|Function)\s*\(|innerHTML|outerHTML|insertAdjacentHTML|document\.write|localStorage|sessionStorage|document\.cookie|X-Admin-Token|PK_ADMIN_SESSION/);
+  assert.match(html, /id="admin-password"/);
+  assert.match(html, /autocomplete="current-password"/);
+  assert.match(html, /maxlength="72"/);
+  assert.match(html, /id="session-status"/);
+  assert.doesNotMatch(html, /admin-token/);
   const h = harness();
-  assert.equal(h.context.token, undefined);
+  for (const name of ['token', 'password', 'csrfToken', 'authenticated', 'expiresAt']) assert.equal(h.context[name], undefined);
   assert.equal(h.context.pwned, undefined);
   assert.equal(h.byId('action-reason').maxLength, 500);
 });
 
-test('login reuses dashboard, formats durations, safely renders hostile data and same-origin requests', async () => {
+test('password login loads dashboard once, safely renders hostile data and same-origin requests', async () => {
   const h = harness(); await h.login();
-  assert.equal(h.calls.length, 1);
-  assert.equal(h.byId('admin-token').value, '');
+  assert.equal(h.calls.length, 3);
+  assert.equal(h.calls.filter((call) => call.url === '/api/admin/dashboard').length, 1);
+  assert.equal(h.byId('admin-password').value, '');
   assert.equal(h.byId('app').hidden, false);
   assert.match(h.byId('content').textContent, /1\.25 秒/);
   assert.ok(h.byId('content').textContent.includes(attack));
@@ -217,10 +234,11 @@ test('login reuses dashboard, formats durations, safely renders hostile data and
   assert.match(h.byId('content').textContent, /不是去重/);
   assert.equal(h.all().filter((node) => ['SCRIPT', 'IMG'].includes(node.tagName)).length, 0);
   for (const { url, options } of h.calls) {
-    assert.equal(options.credentials, 'omit'); assert.equal(options.mode, 'same-origin');
+    assert.equal(options.credentials, 'same-origin'); assert.equal(options.mode, 'same-origin');
     assert.equal(options.redirect, 'error'); assert.equal(options.cache, 'no-store');
-    assert.equal(options.headers['X-Admin-Token'], 'secret-token');
-    assert.ok(url.startsWith('/api/admin/')); assert.ok(!url.includes('secret-token'));
+    assert.equal(options.headers['X-Admin-Token'], undefined);
+    assert.equal(options.headers['X-Admin-CSRF'], undefined);
+    assert.ok(url.startsWith('/api/admin/')); assert.ok(!url.includes('secret-password'));
     assert.ok(options.signal instanceof AbortSignal);
   }
 });
@@ -228,20 +246,20 @@ test('login reuses dashboard, formats durations, safely renders hostile data and
 test('remote HTTP refuses credential input/submit; HTTPS and exact loopbacks work', async () => {
   for (const origin of ['http://example.test', 'http://localhost.evil.test', 'http://192.168.1.2']) {
     const h = harness({ origin }); await h.login();
-    assert.equal(h.byId('admin-token').disabled, true);
+    assert.equal(h.byId('admin-password').disabled, true);
     assert.equal(h.byId('login-submit').disabled, true);
     assert.equal(h.calls.length, 0); assert.match(h.byId('login-error').textContent, /HTTPS/);
   }
   for (const origin of ['https://example.test', 'http://localhost', 'http://127.0.0.1', 'http://[::1]']) {
-    const h = harness({ origin }); await h.login(); assert.equal(h.calls.length, 1);
+    const h = harness({ origin }); await h.login(); assert.equal(h.calls.length, 3);
   }
 });
 
-test('login 404 gives disabled/token explanation; empty API error bodies do not crash', async () => {
+test('login 404 gives unavailable interface explanation; empty API error bodies do not crash', async () => {
   const h = harness({ route: () => ({ status: 404 }) }); await h.login();
   assert.equal(h.byId('app').hidden, true);
-  assert.match(h.byId('login-error').textContent, /Token 错误或管理接口未启用/);
-  assert.equal(h.byId('admin-token').value, '');
+  assert.match(h.byId('login-error').textContent, /管理登录接口未启用或不可用/);
+  assert.equal(h.byId('admin-password').value, '');
 });
 
 test('config renders every field, correct units/ranges; unchanged zero override sends nothing', async () => {
@@ -352,25 +370,25 @@ test('match settlement refund remains distinct from terminate void, and DTO seat
   assert.ok(writes(h).at(-1).url.endsWith('/terminate'));
 });
 
-test('user/match missing 404 is not logout, dashboard confirmation probes are throttled', async () => {
+test('user/match missing 404 is not logout, session confirmation probes are throttled', async () => {
   const h = harness({ route: (url) => url === '/api/admin/users/42' ? { status: 404 } : undefined });
   await h.login(); await h.go('users'); await h.clickLabel('详情');
   assert.equal(h.byId('app').hidden, false); assert.match(h.byId('notice').textContent, /404/);
-  assert.equal(h.calls.filter((call) => call.url === '/api/admin/dashboard').length, 2);
+  assert.equal(h.calls.filter((call) => call.url === '/api/admin/auth/session').length, 2);
   await h.byId('refresh').click(); await h.flush();
-  assert.equal(h.calls.filter((call) => call.url === '/api/admin/dashboard').length, 2);
+  assert.equal(h.calls.filter((call) => call.url === '/api/admin/auth/session').length, 2);
 });
 
 test('dashboard invalidation clears session/business DOM; late signed-out response cannot return', async () => {
   let release;
   const h = harness({ route: (url) => url === '/api/admin/config' ? new Promise((resolve) => { release = resolve; }) : undefined });
   await h.login(); await h.go('config'); assert.ok(release);
-  await h.byId('logout').click();
-  release({ data: config }); await h.flush();
+  const logout = h.byId('logout').click(); await h.flush();
+  release({ data: config }); await logout; await h.flush();
   assert.equal(h.byId('app').hidden, true); assert.equal(h.byId('content').textContent, '');
   for (const id of ['action-fields', 'action-title', 'action-impact', 'sample-time']) assert.equal(h.byId(id).textContent, '');
   const n = h.calls.length; await h.tick(); assert.equal(h.calls.length, n);
-  const expired = harness({ route: (url, options, { calls }) => url === '/api/admin/dashboard' && calls.length > 1 ? { status: 404 } : undefined });
+  const expired = harness({ route: (url, options, { calls }) => url === '/api/admin/dashboard' && calls.filter((call) => call.url === url).length > 1 ? { status: 401 } : undefined });
   await expired.login(); await expired.byId('refresh').click(); await expired.flush();
   assert.equal(expired.byId('app').hidden, true); assert.match(expired.byId('login-error').textContent, /重新登录/);
 });
@@ -400,8 +418,8 @@ test('429 cooldown is at least 60 seconds, disables auto refresh and avoids retr
 
 test('auto refresh only current page; hidden/input/edit/dialog pause and editable values survive response', async () => {
   const h = harness(); await h.login(); h.byId('refresh').focus();
-  await h.tick(); assert.equal(h.calls.length, 2);
-  h.document.hidden = true; await h.tick(); assert.equal(h.calls.length, 2);
+  await h.tick(); assert.equal(h.calls.length, 4);
+  h.document.hidden = true; await h.tick(); assert.equal(h.calls.length, 4);
   h.document.hidden = false; await h.go('config'); const n = h.calls.length;
   h.byId('config-entryFee').focus(); await h.tick(); assert.equal(h.calls.length, n);
   await h.input('config-entryFee', 6); h.byId('refresh').focus(); await h.tick(); assert.equal(h.calls.length, n);
@@ -461,7 +479,7 @@ test('a refresh response arriving during typing does not overwrite the draft', a
 test('mutation timeout warns unknown result, prevents double submit and never retries', async () => {
   let writeStarted = false;
   const h = harness({ route: (url, options) => {
-    if (options.method === 'POST') {
+    if (options.method === 'POST' && !url.startsWith('/api/admin/auth/')) {
       writeStarted = true;
       return new Promise((resolve, reject) => {
         options.signal.addEventListener('abort', () => { const error = new Error('aborted'); error.name = 'AbortError'; reject(error); });
@@ -477,4 +495,214 @@ test('mutation timeout warns unknown result, prevents double submit and never re
   assert.match(h.byId('notice').textContent, /请求超时/); assert.match(h.byId('notice').textContent, /结果未知/);
   assert.equal(h.byId('action-submit').disabled, true);
   await h.byId('action-form').dispatch('submit'); await h.tick(); assert.equal(writes(h).length, 1);
+});
+
+test('startup restores a valid cookie before dashboard, displays local ISO expiry and never requests password', async () => {
+  const h = harness({ initialSession: true });
+  assert.equal(h.byId('login-submit').disabled, true);
+  assert.match(h.byId('login-error').textContent, /正在检查/);
+  await h.flush();
+  assert.deepEqual(h.calls.map((call) => call.url), ['/api/admin/auth/session', '/api/admin/dashboard']);
+  assert.equal(h.byId('app').hidden, false);
+  assert.equal(h.byId('admin-password').value, '');
+  assert.match(h.byId('session-status').textContent, /会话有效至.*本地时间/);
+  assert.ok(!h.all().some((node) => node.textContent.includes(sessionData.csrfToken)));
+  assert.ok(h.calls.every((call) => call.options.method === 'GET' && call.options.headers['X-Admin-CSRF'] === undefined));
+});
+
+test('startup 401 is silent; malformed session, 503 and network failure remain visible with retry enabled', async () => {
+  const h = harness(); await h.flush();
+  assert.equal(h.byId('login-error').textContent, '');
+  assert.equal(h.byId('login-submit').disabled, false);
+  assert.equal(h.byId('app').hidden, true);
+  for (const result of [{ status: 503 }, { data: { ...sessionData, expiresAt: 1800000000100 } },
+    { data: { ...sessionData, expiresAt: '2020-01-01T00:00:00Z' } }, { data: { authenticated: true } }]) {
+    const failed = harness({ route: () => result }); await failed.flush();
+    assert.equal(failed.byId('app').hidden, true);
+    assert.equal(failed.byId('login-submit').disabled, false);
+    assert.ok(failed.byId('login-error').textContent);
+    assert.equal(failed.calls.length, 1);
+  }
+  const failed = harness({ route: () => { throw new Error('offline'); } }); await failed.flush();
+  assert.match(failed.byId('login-error').textContent, /网络请求失败/);
+  assert.equal(failed.byId('login-submit').disabled, false);
+});
+
+test('wrong password is explicit, auth 403 does not retry, unconfigured password and 429 are explained', async () => {
+  for (const [status, message] of [[401, /密码错误/], [403, /CSRF.*重新加载/], [503, /密码未配置/], [429, /冷却/]]) {
+    const h = harness({ route: (url) => url.endsWith('/auth/login') ? { status } : undefined });
+    await h.login();
+    assert.match(h.byId('login-error').textContent, message);
+    assert.equal(h.byId('app').hidden, true);
+    assert.equal(h.byId('admin-password').value, '');
+    assert.equal(h.calls.filter((call) => call.url.endsWith('/auth/login')).length, 1);
+    assert.equal(h.calls.filter((call) => call.url.endsWith('/auth/session')).length, 1);
+    if (status === 429) { await h.login(); assert.equal(h.calls.length, 2); }
+  }
+});
+
+test('password is untrimmed with UTF-8 byte limit, including multi-byte and surrogate characters', async () => {
+  const h = harness(); await h.flush();
+  for (const password of ['', '中'.repeat(25), '😀'.repeat(19), 'a'.repeat(73)]) {
+    await h.login(password); assert.equal(h.calls.length, 1);
+    assert.equal(h.byId('admin-password').value, '');
+  }
+  await h.login('  中密碼  ');
+  assert.deepEqual(body(h.calls.find((call) => call.url.endsWith('/auth/login'))), { password: '  中密碼  ' });
+  for (const password of ['中'.repeat(24), '😀'.repeat(18), ' '.repeat(72)]) {
+    const valid = harness(); await valid.login(password);
+    assert.equal(valid.byId('app').hidden, false);
+    assert.equal(body(valid.calls.find((call) => call.url.endsWith('/auth/login'))).password, password);
+  }
+});
+
+test('business mutations send memory CSRF; all GET and password login requests omit it', async () => {
+  const h = harness(); await h.login(); await h.go('users'); await h.clickLabel('详情'); await h.clickLabel('解除封禁');
+  await h.confirm();
+  assert.equal(writes(h).length, 1);
+  assert.equal(writes(h)[0].options.headers['X-Admin-CSRF'], sessionData.csrfToken);
+  for (const call of h.calls) {
+    assert.equal(call.options.credentials, 'same-origin');
+    assert.equal(call.options.headers['X-Admin-Token'], undefined);
+    if (call.options.method === 'GET' || call.url.endsWith('/auth/login')) assert.equal(call.options.headers['X-Admin-CSRF'], undefined);
+    assert.ok(!call.url.includes(sessionData.csrfToken));
+  }
+});
+
+test('server logout sends CSRF and accepts 200 or 204; local clearing survives late responses', async () => {
+  for (const status of [200, 204]) {
+    const h = harness({ route: (url, options, { defaults }) => {
+      if (url.endsWith('/auth/logout')) { defaults(url, options); return { status, data: status === 200 ? { authenticated: false } : undefined }; }
+    } });
+    await h.login(); await h.byId('logout').click(); await h.flush();
+    const call = h.calls.at(-1);
+    assert.equal(call.url, '/api/admin/auth/logout');
+    assert.equal(call.options.method, 'POST');
+    assert.equal(call.options.headers['X-Admin-CSRF'], sessionData.csrfToken);
+    assert.equal(call.options.body, undefined);
+    assert.equal(h.byId('app').hidden, true);
+    assert.equal(h.byId('session-status').textContent, '');
+    assert.match(h.byId('login-error').textContent, /^已退出/);
+    const n = h.calls.length; await h.tick(); await h.pageshow(); assert.equal(h.calls.length, n);
+  }
+});
+
+test('logout failure clears UI, never claims revoked, blocks automatic restore and allows manual login', async () => {
+  let release;
+  const h = harness({ route: (url) => url.endsWith('/auth/logout') ? new Promise((resolve, reject) => { release = () => reject(new Error('offline')); }) : undefined });
+  await h.login();
+  const pending = h.byId('logout').click(); await h.flush();
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('content').textContent, '');
+  assert.equal(h.byId('login-submit').disabled, true);
+  await h.byId('logout').click(); await h.login();
+  assert.equal(h.calls.filter((call) => call.url.endsWith('/auth/login')).length, 1);
+  assert.equal(h.calls.filter((call) => call.url.endsWith('/auth/logout')).length, 1);
+  release(); await pending; await h.flush();
+  assert.match(h.byId('login-error').textContent, /退出未确认.*刷新后原会话可能仍有效/);
+  assert.equal(h.byId('login-submit').disabled, false);
+  const n = h.calls.length; await h.tick(); h.pagehide(); await h.pageshow(); assert.equal(h.calls.length, n);
+  assert.match(h.byId('login-error').textContent, /退出状态请手动核对/);
+  await h.login(); assert.equal(h.byId('app').hidden, false);
+});
+
+test('logout still calls server during business 429 cooldown and reports rejection honestly', async () => {
+  const h = harness({ route: (url) => url.endsWith('/matches') || url.endsWith('/auth/logout') ? { status: 429 } : undefined });
+  await h.login(); await h.go('matches'); await h.byId('logout').click(); await h.flush();
+  assert.equal(h.calls.at(-1).url, '/api/admin/auth/logout');
+  assert.equal(h.byId('app').hidden, true);
+  assert.match(h.byId('login-error').textContent, /退出未确认.*冷却/);
+});
+
+test('pagehide never logs out the server; BFCache pageshow rechecks cookie before showing business data', async () => {
+  const h = harness(); await h.login(); const n = h.calls.length;
+  h.pagehide(); await h.flush();
+  assert.equal(h.calls.length, n);
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('content').textContent, '');
+  assert.equal(h.byId('session-status').textContent, '');
+  await h.pageshow(false); assert.equal(h.calls.length, n);
+  await h.pageshow(); assert.deepEqual(h.calls.slice(n).map((call) => call.url), ['/api/admin/auth/session', '/api/admin/dashboard']);
+  assert.equal(h.byId('app').hidden, false);
+  h.pagehide(); h.revokeCookie(); await h.pageshow();
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('login-error').textContent, '');
+  assert.equal(h.calls.at(-1).url, '/api/admin/auth/session');
+});
+
+test('session expiry clears UI even when automatic refresh is off and prevents navigation or mutation', async () => {
+  const h = harness(); await h.login(); h.byId('auto-refresh').checked = false;
+  h.advance(Date.parse(sessionData.expiresAt) - 1800000000000 + 1);
+  const n = h.calls.length; await h.go('users'); await h.tick();
+  assert.equal(h.calls.length, n);
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('content').textContent, '');
+  assert.match(h.byId('login-error').textContent, /会话已过期/);
+});
+
+test('business 404 validates session rather than interpreting object missing as logout', async () => {
+  const h = harness({ route: (url, options, { calls }) => url === '/api/admin/dashboard' && calls.filter((call) => call.url === url).length > 1 ? { status: 404 } : undefined });
+  await h.login(); h.revokeCookie(); await h.byId('refresh').click(); await h.flush();
+  assert.equal(h.calls.at(-1).url, '/api/admin/auth/session');
+  assert.equal(h.byId('app').hidden, true);
+  assert.match(h.byId('login-error').textContent, /重新登录/);
+  const valid = harness({ route: (url) => url.endsWith('/users/42') ? { status: 404 } : undefined });
+  await valid.login(); await valid.go('users'); await valid.clickLabel('详情');
+  assert.equal(valid.byId('app').hidden, false);
+});
+
+test('business 403 checks session and warns reload without logging out a valid cookie or replaying writes', async () => {
+  const h = harness({ route: (url) => url.endsWith('/unban') ? { status: 403 } : undefined });
+  await h.login(); await h.go('users'); await h.clickLabel('详情'); await h.clickLabel('解除封禁'); await h.confirm();
+  assert.equal(writes(h).length, 1);
+  assert.equal(h.calls.at(-1).url, '/api/admin/auth/session');
+  assert.equal(h.byId('app').hidden, false);
+  assert.match(h.byId('action-error').textContent, /CSRF.*重新加载.*不会自动重试/);
+  assert.equal(h.byId('action-submit').disabled, true);
+  await h.byId('action-form').dispatch('submit'); assert.equal(writes(h).length, 1);
+});
+
+test('logout can revoke immediately while startup dashboard is pending, and malformed logout success stays unconfirmed', async () => {
+  let release;
+  const h = harness({ initialSession: true, route: (url) => url.endsWith('/dashboard') ? new Promise((resolve) => { release = resolve; }) : undefined });
+  await h.flush(); assert.ok(release); assert.equal(h.byId('app').hidden, false);
+  const pending = h.byId('logout').click(); await h.flush();
+  assert.equal(h.calls.at(-1).url, '/api/admin/auth/logout');
+  assert.equal(h.byId('app').hidden, true);
+  release({ data: dashboard }); await pending; await h.flush();
+  assert.equal(h.byId('content').textContent, '');
+  const invalid = harness({ route: (url) => url.endsWith('/auth/logout') ? { data: { authenticated: true } } : undefined });
+  await invalid.login(); await invalid.byId('logout').click(); await invalid.flush();
+  assert.match(invalid.byId('login-error').textContent, /退出未确认.*未确认会话已退出/);
+});
+
+test('a business response after session deadline cannot repopulate UI', async () => {
+  let release;
+  const h = harness({ route: (url) => url.endsWith('/config') ? new Promise((resolve) => { release = resolve; }) : undefined });
+  await h.login(); await h.go('config'); assert.ok(release);
+  h.advance(Date.parse(sessionData.expiresAt) - 1800000000000 + 1);
+  release({ data: config }); await h.flush();
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('content').textContent, '');
+  assert.match(h.byId('login-error').textContent, /会话已过期/);
+});
+
+test('a malformed session verification clears business UI rather than retaining an invalid proof', async () => {
+  const h = harness({ route: (url, options, { calls }) => {
+    if (url.endsWith('/users/42')) return { status: 404 };
+    if (url.endsWith('/auth/session') && calls.filter((call) => call.url === url).length > 1) return { data: { authenticated: true } };
+  } });
+  await h.login(); await h.go('users'); await h.clickLabel('详情');
+  assert.equal(h.byId('app').hidden, true);
+  assert.match(h.byId('login-error').textContent, /重新登录/);
+});
+
+test('stale startup session response after pagehide never reveals dashboard or stores authentication', async () => {
+  let release;
+  const h = harness({ route: (url) => url.endsWith('/auth/session') ? new Promise((resolve) => { release = resolve; }) : undefined });
+  await h.flush(); h.pagehide(); release({ data: sessionData }); await h.flush();
+  assert.equal(h.calls.length, 1);
+  assert.equal(h.byId('app').hidden, true);
+  assert.equal(h.byId('content').textContent, '');
+  assert.equal(h.byId('login-submit').disabled, false);
 });
