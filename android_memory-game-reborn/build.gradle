@@ -46,11 +46,64 @@ android {
         resourceConfigurations += ['en', 'de', 'es', 'fr', 'pt', 'ru', 'uk', 'zh']
     }
 
+    // ---- Release signing: local keystore.properties (hardening design 3.3) ----
+    // The release keystore never enters the repository. This gitignored file
+    // (created from keystore.properties.example) is what makes a plain
+    // assembleRelease produce a signed package, and what lets
+    // writeIntegrityAnchor / printReleaseCertSha256 read the release
+    // certificate. Absent -> the build still succeeds but yields an
+    // -unsigned package. The file is read as UTF-8 so non-ASCII keystore
+    // paths survive.
+    def keystorePropertiesFile = file('keystore.properties')
+    def keystoreProperties = new Properties()
+    if (keystorePropertiesFile.exists()) {
+        def keystorePropertiesText = keystorePropertiesFile.getText('UTF-8')
+        if (keystorePropertiesText.startsWith('\uFEFF')) {
+            keystorePropertiesText = keystorePropertiesText.substring(1)
+        }
+        keystoreProperties.load(new StringReader(keystorePropertiesText))
+        def missingKeys = ['storeFile', 'storePassword', 'keyAlias']
+                .findAll { !keystoreProperties.getProperty(it) }
+        if (!missingKeys.isEmpty()) {
+            throw new GradleException("keystore.properties is incomplete: missing ${missingKeys.join(', ')} " +
+                    '(see keystore.properties.example)')
+        }
+        def keystoreFile = file(keystoreProperties.getProperty('storeFile'))
+        if (!keystoreFile.exists()) {
+            throw new GradleException("keystore.properties storeFile not found: ${keystoreFile}")
+        }
+        if (project.findProperty('android.injected.signing.store.file') != null) {
+            throw new GradleException('Signing configured twice: keystore.properties and ' +
+                    'android.injected.signing.* are both present. Keep exactly one source, or the ' +
+                    'integrity anchor would not match the signing certificate.')
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties.getProperty('storeFile'))
+                storePassword keystoreProperties.getProperty('storePassword')
+                keyAlias keystoreProperties.getProperty('keyAlias')
+                // Empty keyPassword falls back to storePassword (AGP default).
+                if (keystoreProperties.getProperty('keyPassword')) {
+                    keyPassword keystoreProperties.getProperty('keyPassword')
+                }
+                // Empty storeType lets the toolchain pick (PKCS12 for modern
+                // keytool keystores); legacy .jks files must set jks here.
+                if (keystoreProperties.getProperty('storeType')) {
+                    storeType keystoreProperties.getProperty('storeType')
+                }
+            }
+        }
+    }
+
     buildTypes {
         debug {
             if (accountUiTest) applicationIdSuffix '.accounttest'
         }
         release {
+            signingConfig signingConfigs.release
             // Client hardening P1 (docs/android-client-hardening-design.md §3):
             // R8 shrink/obfuscate + resource shrink. The rules start broad
             // because the restored codebase reflects heavily (ActiveAndroid,

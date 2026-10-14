@@ -136,6 +136,7 @@
     <string name="login_title">Bitte geben Sie Ihren Benutzernamen</string>
     <string name="maximum_level">Höchststand</string>
     <string name="menu">Menü</string>
+    <string name="tab_profile">Ich</string>
     <string name="menuOnlineHistory">Geschichte</string>
     <string name="menuOnlinePlay">Online spielen</string>
     <string name="menuOnlineTop">Online Rating</string>

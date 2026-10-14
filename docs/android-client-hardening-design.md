@@ -2,11 +2,13 @@
 
 更新日期：2026-10-14
 状态：**P1/P2/P3 已实施并在真机验证**（2026-10-14，Huawei BKL-AL20 / Android 9；见 §9.4 审查修正、§9.5 真机测试记录、§9.6 迁移引擎 P0 修复）；P3+ NDK 哨兵未实施，按需追加。
-发布注意：**签名指纹锚点尚未登记**（本机构建为 unsigned，keystore 在维护者处）。首次出正式签名包前执行：
+发布注意：**指纹锚点已登记（2026-10-14）**，登记值见 §3.3；本机 keystore `C:/jks/android.jks` 已配置在 `keystore.properties`（不入库）。出正式签名包直接跑 `android_memory-game-reborn\build-release.bat`（见下）。手动路径：
 ```
 gradlew writeIntegrityAnchor "-PintegrityCertSha256=<release证书SHA-256，64位hex>"
 ```
 或注入 release keystore 后直接 `gradlew writeIntegrityAnchor`（指纹可用 `gradlew printReleaseCertSha256` 打印）。未登记时签名哨兵不生效（其余各层照常工作）。
+
+一键出包（2026-10-14 加）：keystore 配置在 `android_memory-game-reborn/keystore.properties`（格式见同目录 `keystore.properties.example`，该文件不入库），执行 `android_memory-game-reborn\build-release.bat` 即可 —— 脚本按「登记锚点 → `assembleRelease` → 校验 `release/` 收到签名包并打印证书 SHA-256 → 还原 `IntegrityAnchor.java` 占位」的顺序执行，`--keep-anchor` 可保留登记后的锚点文件。`keystore.properties` 存在时 `assembleRelease` 本身就是签名包（签名配置由该文件驱动，密码不经命令行）；它与 `android.injected.signing.*` 同时存在会直接报错，避免锚点与签名证书不一致。登记后的指纹请连同 keystore 一并归档。
 范围：仅安卓客户端自身（`android_memory-game-reborn`）。API 服务端安全、传输链路安全不在本方案范围内（`ws://` 明文传输是已知的独立风险，另行处理）。
 约束：不引入商业加固（360 加固、腾讯乐固、爱加密等）、不引入 ollvm 等第三方保护工具链；优先使用平台自带能力（R8、AndroidKeyStore、javax.crypto），新增依赖仅限构建工具链本身（NDK 可选）。
 
@@ -161,8 +163,10 @@ buildTypes {
 
 ### 3.3 签名密钥管理（为 P3 铺路）
 
-- release keystore 继续不入库（现状注入式签名）。补充要求：keystore 文件 + 密码离线保管（密码管理器/离线介质），丢失无法热更新签名校验。
+- release keystore 继续不入库。本机路径 `C:/jks/android.jks`（本工程用 `keystore.properties` 引用，该文件在 .gitignore），别名 `key0`，keystore 文件 + 密码仍须离线备份——丢失即无法继续用同一证书出包与热更新签名校验。
 - **登记 release 证书 SHA-256**（`keytool -list -v`），该指纹是 P3 签名哨兵的校验锚点。
+  **已登记（2026-10-14）**：`F0:42:58:E2:20:39:5E:8A:D2:39:60:34:66:ED:18:C3:F7:11:50:B6:87:9B:64:9B:21:A9:ED:8A:69:A3:1E:D7`
+  （`L=Hang Zhou, CN=NS`，有效期至 2050-12-12，与 2026-10-13 已签名发行包同一证书；`gradlew printReleaseCertSha256` 可随时复核）。换 keystore 后必须重跑 `writeIntegrityAnchor`，否则哨兵会把自家新包判为重打包。
 
 ### 3.4 P1 验收标准
 
@@ -332,7 +336,7 @@ boolean intact = IntegritySentinel.isReleaseSignature(context);
 
 ### 9.3 待办（移交）
 
-1. **登记指纹锚点**（见文首命令）后出正式签名包——未登记则签名哨兵不生效。
+1. **登记指纹锚点**后出正式签名包——未登记则签名哨兵不生效。现成路径：填好 `keystore.properties` 后跑 `build-release.bat`（文首"一键出包"），或按文首两条 gradlew 命令手动执行。
 2. **真机回归**（本机无设备）：重点 R8 首开全量回归（在线 PK 双端对局、关卡/难度/挑战/图表/字体），DB v16→17 升级安装 + API 21/22 真机各一台，重签包排位入口置灰确认。回归基线：`docs/online-pk-full-regression-*.md`。
 3. `proguard-dict.txt` 建议随大版本重生成（防字典被针对性还原工具沉淀）。
 

@@ -138,6 +138,7 @@ You won't see any of it again!"</string>
 Nickname"</string>
     <string name="maximum_level">Maximum level</string>
     <string name="menu">Menu</string>
+    <string name="tab_profile">Me</string>
     <string name="menu_online_play_bot">Play vs Bot</string>
     <string name="menuOnlineHistory">History</string>
     <string name="menuOnlinePlay">Play Online</string>

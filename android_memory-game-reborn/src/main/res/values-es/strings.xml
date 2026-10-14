@@ -136,6 +136,7 @@
     <string name="login_title">Por favor mete tu Apodo</string>
     <string name="maximum_level">Nivel máximo</string>
     <string name="menu">Menú</string>
+    <string name="tab_profile">Yo</string>
     <string name="menuOnlineHistory">Historial</string>
     <string name="menuOnlinePlay">Jugar en línea</string>
     <string name="menuOnlineTop">Rango en línea</string>

@@ -9,6 +9,9 @@ android_memory-game-reborn/release/
 *.iml
 local.properties
 
+# Android release signing (keystore stays offline; see keystore.properties.example)
+android_memory-game-reborn/keystore.properties
+
 # OS
 Thumbs.db
 .DS_Store

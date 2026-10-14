@@ -138,6 +138,7 @@
     <string name="login_title">Будь-ласка, введіть свій Nickname</string>
     <string name="maximum_level">Максимальний рівень</string>
     <string name="menu">Меню</string>
+    <string name="tab_profile">Я</string>
     <string name="menuOnlineHistory">Історія</string>
     <string name="menuOnlinePlay">Грати Онлайн</string>
     <string name="menuOnlineTop">Онлайн Рейтинг</string>

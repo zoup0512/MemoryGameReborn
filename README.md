@@ -32,6 +32,12 @@
 - `gradlew assembleRelease` 结束后会把已签名的 release APK 复制到 `android_memory-game-reborn/release/`
   （未签名的 `-unsigned` 包只留在 `build/` 里）。编译时间戳同时写入 `BuildConfig.BUILD_TIME` 与清单
   `com.memory.brain.training.games.build_time`，安装包被改名或转发后仍能确认它出自哪次构建
+- 出正式签名包（首次配置见 `android_memory-game-reborn/keystore.properties.example`，该
+  `keystore.properties` 不入库）：在 `android_memory-game-reborn/` 下执行 `build-release.bat`。
+  脚本先登记签名指纹锚点（`writeIntegrityAnchor`）、再打签名包、校验产物落在 `release/`、打印证书
+  SHA-256（用于留存），最后把 `IntegrityAnchor.java` 还原为仓库中的占位版本。没有
+  `keystore.properties` 时不要直接用 `assembleRelease` 当发行包：产物是 unsigned，且签名哨兵未生效。
+  加固设计与发布注意见 [客户端加固设计](docs/android-client-hardening-design.md)
 - 支持库沿用原版 `com.android.support:26.1.0`（未迁移 AndroidX），依赖从 Google Maven / Maven Central 下载
 
 ## 目录说明

@@ -137,6 +137,7 @@
  Nickname"</string>
     <string name="maximum_level">Niveau Maximal</string>
     <string name="menu">Menu</string>
+    <string name="tab_profile">Moi</string>
     <string name="menuOnlineHistory">Histoire</string>
     <string name="menuOnlinePlay">Jouer En Ligne</string>
     <string name="menuOnlineTop">Grade En Ligne</string>
