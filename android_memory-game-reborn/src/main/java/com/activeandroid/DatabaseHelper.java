@@ -134,51 +134,30 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
         return migrationExecuted;
     }
 
-    /* JADX WARNING: inconsistent code. */
-    /* Code decompiled incorrectly, please refer to instructions dump. */
-    private void executeSqlScript(android.database.sqlite.SQLiteDatabase r6, java.lang.String r7) {
-        /*
-        r5 = this;
-        r1 = 0;
-        r2 = com.activeandroid.Cache.getContext();	 Catch:{ IOException -> 0x0035 }
-        r2 = r2.getAssets();	 Catch:{ IOException -> 0x0035 }
-        r3 = new java.lang.StringBuilder;	 Catch:{ IOException -> 0x0035 }
-        r3.<init>();	 Catch:{ IOException -> 0x0035 }
-        r4 = "migrations/";
-        r3 = r3.append(r4);	 Catch:{ IOException -> 0x0035 }
-        r3 = r3.append(r7);	 Catch:{ IOException -> 0x0035 }
-        r3 = r3.toString();	 Catch:{ IOException -> 0x0035 }
-        r1 = r2.open(r3);	 Catch:{ IOException -> 0x0035 }
-        r2 = "delimited";
-        r3 = r5.mSqlParser;	 Catch:{ IOException -> 0x0035 }
-        r2 = r2.equalsIgnoreCase(r3);	 Catch:{ IOException -> 0x0035 }
-        if (r2 == 0) goto L_0x0031;
-    L_0x002a:
-        r5.executeDelimitedSqlScript(r6, r1);	 Catch:{ IOException -> 0x0035 }
-    L_0x002d:
-        com.activeandroid.util.IOUtils.closeQuietly(r1);
-    L_0x0030:
-        return;
-    L_0x0031:
-        r5.executeLegacySqlScript(r6, r1);	 Catch:{ IOException -> 0x0035 }
-        goto L_0x002d;
-    L_0x0035:
-        r0 = move-exception;
-        r2 = new java.lang.StringBuilder;	 Catch:{ all -> 0x0050 }
-        r2.<init>();	 Catch:{ all -> 0x0050 }
-        r3 = "Failed to execute ";
-        r2 = r2.append(r3);	 Catch:{ all -> 0x0050 }
-        r2 = r2.append(r7);	 Catch:{ all -> 0x0050 }
-        r2 = r2.toString();	 Catch:{ all -> 0x0050 }
-        com.activeandroid.util.Log.e(r2, r0);	 Catch:{ all -> 0x0050 }
-        com.activeandroid.util.IOUtils.closeQuietly(r1);
-        goto L_0x0030;
-    L_0x0050:
-        r2 = move-exception;
-        com.activeandroid.util.IOUtils.closeQuietly(r1);
-        throw r2;
-        */
-        throw new UnsupportedOperationException("Method not decompiled: com.activeandroid.DatabaseHelper.executeSqlScript(android.database.sqlite.SQLiteDatabase, java.lang.String):void");
+    /**
+     * Restored implementation. The decompiled source carried a JADX stub here
+     * ("Method not decompiled" / UnsupportedOperationException), which made
+     * every migration a silent no-op: the throw was swallowed, the enclosing
+     * transaction was poisoned and rolled back, and the schema never changed.
+     * The two helpers below (executeDelimitedSqlScript / executeLegacySqlScript)
+     * were intact, so the original logic could be restored faithfully from the
+     * stub's own bytecode comments. The hardening DB v17 change (User.syncTag)
+     * depends on this actually running on upgrade installs.
+     */
+    private void executeSqlScript(SQLiteDatabase db, String file) {
+        InputStream stream = null;
+        try {
+            stream = Cache.getContext().getAssets().open(MIGRATION_PATH + "/" + file);
+            if ("delimited".equalsIgnoreCase(this.mSqlParser)) {
+                executeDelimitedSqlScript(db, stream);
+            } else {
+                executeLegacySqlScript(db, stream);
+            }
+        } catch (IOException e) {
+            Log.e("Failed to execute " + file, e);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
     }
 
     private void executeDelimitedSqlScript(SQLiteDatabase db, InputStream stream) throws IOException {
