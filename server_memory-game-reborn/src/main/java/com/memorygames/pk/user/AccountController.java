@@ -25,6 +25,7 @@ public class AccountController {
     @PostMapping("/auth/password-reset/request") public Object resetRequest(@RequestBody Request r) { accounts.resetRequest(r.email); return Map.of("ok",true); }
     @PostMapping("/auth/password-reset/confirm") public Object resetConfirm(@RequestBody Request r) { accounts.resetConfirm(r.email,r.verificationCode,r.newPassword); return Map.of("ok",true); }
     @GetMapping("/me") public Object me(HttpServletRequest request) { return accounts.view(current(request).user()); }
+    @GetMapping("/me/profile") public Object profileInfo(HttpServletRequest request) { return accounts.view(current(request).user()); }
     @PatchMapping("/me/profile") public Object profile(@RequestBody Request r,HttpServletRequest request) { return accounts.profile(current(request),r.nickname,r.avatarValue); }
     @GetMapping("/me/devices") public Object devices(HttpServletRequest request) { return accounts.devices(current(request)); }
     @DeleteMapping("/me/devices/{deviceId}") public Object remove(@PathVariable String deviceId,HttpServletRequest request) { accounts.removeDevice(current(request),deviceId); return Map.of("ok",true); }

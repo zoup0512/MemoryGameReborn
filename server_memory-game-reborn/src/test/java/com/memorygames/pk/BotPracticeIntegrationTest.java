@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the full match settles with zero ELO, tier coins and no entry fee, and the
  * daily reward cap zeroes later wins without touching the settlement itself.
  */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class BotPracticeIntegrationTest {

@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Tag("docker")
 @Testcontainers(disabledWithoutDocker = true)
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest
 @org.springframework.test.context.TestPropertySource(properties = "pk.economy.welcome-coins=100")
 class PgConcurrencyTest {

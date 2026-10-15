@@ -51,6 +51,20 @@ pk:
     login-rate-limit: ${PK_ADMIN_LOGIN_RATE_LIMIT:5}
     trust-forwarded-headers: ${PK_ADMIN_TRUST_FORWARDED_HEADERS:false}
 
+  nickname:
+    # Disabled means custom nicknames fail closed; server-generated names remain available.
+    mode: ${PK_NICKNAME_MODERATION_MODE:disabled}
+    tencent-secret-id: ${PK_TENCENT_SECRET_ID:}
+    tencent-secret-key: ${PK_TENCENT_SECRET_KEY:}
+    tencent-session-token: ${PK_TENCENT_SESSION_TOKEN:}
+    tencent-region: ${PK_TENCENT_TMS_REGION:ap-guangzhou}
+    tencent-biz-type: ${PK_TENCENT_TMS_BIZ_TYPE:}
+    audit-hmac-key: ${PK_NICKNAME_AUDIT_HMAC_KEY:}
+    timeout-ms: ${PK_NICKNAME_TIMEOUT_MS:3000}
+    max-concurrent: ${PK_NICKNAME_MAX_CONCURRENT:8}
+    global-per-minute: ${PK_NICKNAME_GLOBAL_PER_MINUTE:60}
+    subject-per-minute: ${PK_NICKNAME_SUBJECT_PER_MINUTE:5}
+
   diagnostics:
     # Up to ~192 MiB report content at the default capacity; no unbounded storage.
     max-reports: ${PK_DIAGNOSTICS_MAX_REPORTS:1000}

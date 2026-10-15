@@ -202,16 +202,7 @@ final class OnlineUi {
     }
 
     static void applyAvatar(Context context, AvatarBlock avatar, String value) {
-        int index=0;
-        if (value != null && value.matches("avatar_([1-9]|1[0-2])"))
-            index=Integer.parseInt(value.substring(7))-1;
-        int[] palette={0xff5c6bc0,0xff26a69a,0xffef5350,0xffffa726,0xffab47bc,0xff42a5f5,
-                0xff66bb6a,0xffec407a,0xff7e57c2,0xff78909c,0xff8d6e63,0xff00acc1};
-        GradientDrawable background=new GradientDrawable();
-        background.setShape(GradientDrawable.OVAL); background.setColor(palette[index]);
-        avatar.image.setBackground(background);
-        avatar.image.setColorFilter(Color.WHITE);
-        avatar.image.setContentDescription(context.getString(R.string.account_avatar,index+1));
+        AvatarCatalog.apply(context,avatar.image,value);
     }
 
     static TextView menuButton(Context context, Typeface ignored, int textRes) {

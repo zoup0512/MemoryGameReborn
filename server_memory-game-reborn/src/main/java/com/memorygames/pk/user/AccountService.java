@@ -18,7 +18,7 @@ import java.util.*;
 public class AccountService {
     public record Revoked(String sessionId) {}
     public record Principal(UserAccount user, String sessionId, String deviceId) {}
-    public record UserView(long userId,String accountType,String nickname,String avatarValue,int elo,int balance,int wins,int losses,int draws,String email,boolean emailVerified) {}
+    public record UserView(long userId,String accountType,String nickname,String avatarValue,int elo,int balance,int wins,int losses,int draws,String email,boolean emailVerified,long nextNicknameChangeAt) {}
     public record AuthResponse(String accessToken,String refreshToken,long accessExpiresAt,long refreshExpiresAt,String sessionId,UserView user) {}
     private static final SecureRandom RANDOM=new SecureRandom();
     private final JdbcTemplate db;
@@ -29,8 +29,11 @@ public class AccountService {
     private final ApplicationEventPublisher events;
     private final BCryptPasswordEncoder passwords=new BCryptPasswordEncoder(12);
     private final String dummyHash=new BCryptPasswordEncoder(12).encode("non-user-password");
-    public AccountService(JdbcTemplate db,UserRepository repository,UserService users,PlayerLifecycle lifecycle,VerificationMailer mailer,ApplicationEventPublisher events) {
+    private final NicknameService nicknames;
+    private final org.springframework.transaction.support.TransactionTemplate transactions;
+    public AccountService(JdbcTemplate db,UserRepository repository,UserService users,PlayerLifecycle lifecycle,VerificationMailer mailer,ApplicationEventPublisher events,NicknameService nicknames,org.springframework.transaction.PlatformTransactionManager manager) {
         this.db=db; this.repository=repository; this.users=users; this.lifecycle=lifecycle; this.mailer=mailer; this.events=events;
+        this.nicknames=nicknames; this.transactions=new org.springframework.transaction.support.TransactionTemplate(manager);
     }
     public static String randomToken() { byte[] bytes=new byte[32]; RANDOM.nextBytes(bytes); return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes); }
     public static String hash(String text) {
@@ -49,10 +52,7 @@ public class AccountService {
         text(value,8,72); if(value.getBytes(StandardCharsets.UTF_8).length>72) throw error(400,"INVALID_PASSWORD");
     }
     public static String nickname(String value) {
-        String name=value==null ? "Player" : value.strip();
-        int count=name.codePointCount(0,name.length());
-        if(count<2 || count>16 || name.codePoints().anyMatch(c -> Character.isISOControl(c) || Character.getType(c)==Character.FORMAT || Character.getType(c)==Character.UNASSIGNED)) throw error(400,"INVALID_NICKNAME");
-        return name;
+        return NicknameService.normalize(value);
     }
     private Map<String,Object> one(String sql,Object... args) { List<Map<String,Object>> rows=db.queryForList(sql,args); return rows.isEmpty()?null:rows.get(0); }
     private static long number(Map<String,Object> row,String name) { return ((Number)row.get(name)).longValue(); }
@@ -80,16 +80,24 @@ public class AccountService {
     private void audit(long id,String action) { db.update("insert into pk_account_audit(user_id,action,created_at) values(?,?,?)",id,action,System.currentTimeMillis()); }
     public UserView view(UserAccount u) {
         Map<String,Object> i=one("select * from pk_identity where user_id=?",u.id);
-        return new UserView(u.id,u.accountType,u.nickname,u.avatarValue,u.elo,u.balance,u.wins,u.losses,u.draws,i==null?null:(String)i.get("email"),i!=null&&flag(i,"email_verified"));
+        return new UserView(u.id,u.accountType,u.nickname,u.avatarValue,u.elo,u.balance,u.wins,u.losses,u.draws,i==null?null:(String)i.get("email"),i!=null&&flag(i,"email_verified"),u.nicknameChangedAt==0?0:u.nicknameChangedAt+NicknameService.COOLDOWN_MS);
     }
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public AuthResponse guest(String installation,String secret,String name,String device) {
         text(installation,1,128); text(secret,32,256);
-        // Client must supply a CSPRNG secret; SHA-256 never persists the credential itself.
         if(!secret.matches("[A-Za-z0-9_-]{32,256}")) throw error(400,"INVALID_GUEST_SECRET");
+        if(device!=null && !device.isBlank()) text(device.strip(),1,80);
+        String context="guest:"+installation;
+        boolean exists=one("select user_id from pk_identity where installation_id=?",installation)!=null;
+        NicknameService.Approval approval=!exists && name!=null?nicknames.review(context,0,context,name):null;
+        return transactions.execute(status -> guestCommit(installation,secret,name,device,context,approval));
+    }
+    private AuthResponse guestCommit(String installation,String secret,String name,String device,String context,NicknameService.Approval approval) {
+        // Re-resolve identity only after moderation; concurrent recovery must not create or rename another identity.
         Map<String,Object> identity=one("select * from pk_identity where installation_id=?",installation);
         UserAccount u;
         if(identity==null) {
-            u=users.register(UUID.randomUUID().toString(),nickname(name));
+            u=users.registerApproved(UUID.randomUUID().toString(),name,context,approval);
             u.legacyAuthDisabled=true; repository.saveAndFlush(u);
             db.update("insert into pk_identity(user_id,installation_id,guest_secret_hash,email_verified) values(?,?,?,false)",u.id,installation,hash(secret));
             audit(u.id,"GUEST_CREATED");
@@ -237,16 +245,26 @@ public class AccountService {
         UserAccount u=lock(number(i,"user_id")); verify(u.id,e,"RESET",code);
         db.update("update pk_identity set password_hash=? where user_id=?",passwords.encode(pwd),u.id); revokeAll(u.id); audit(u.id,"PASSWORD_RESET");
     }
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public UserView profile(Principal p,String name,String avatar) {
-        UserAccount u=currentLocked(p);
-        String nextName=name==null?u.nickname:nickname(name);
         if(avatar!=null && !avatar.matches("avatar_([1-9]|1[0-2])")) throw error(400,"INVALID_AVATAR");
-        if(!nextName.equals(u.nickname)) {
-            if(u.nicknameChangedAt>0 && System.currentTimeMillis()-u.nicknameChangedAt<604800000L) throw error(429,"NICKNAME_COOLDOWN");
-            u.nickname=nextName; u.nicknameChangedAt=System.currentTimeMillis();
-        }
-        if(avatar!=null) u.avatarValue=avatar;
-        u.updatedAt=System.currentTimeMillis(); repository.save(u); return view(u);
+        String nextName=name==null?null:nickname(name);
+        UserAccount snapshot=transactions.execute(s -> {
+            UserAccount u=currentLocked(p);
+            if(nextName!=null && !nextName.equals(u.nickname)) NicknameService.checkCooldown(u);
+            return u;
+        });
+        boolean change=nextName!=null && !nextName.equals(snapshot.nickname);
+        String subject="user:"+snapshot.id;
+        String context=p.sessionId+":"+snapshot.nicknameChangedAt+":"+nicknames.digest(snapshot.nickname);
+        NicknameService.Approval approval=change?nicknames.review(subject,snapshot.id,context,nextName):null;
+        return transactions.execute(s -> {
+            UserAccount u=currentLocked(p); // revocation, expiry, ban, deletion checked again under row lock
+            if(!u.nickname.equals(snapshot.nickname) || u.nicknameChangedAt!=snapshot.nicknameChangedAt) throw error(409,"PROFILE_CHANGED");
+            if(change) nicknames.apply(u,subject,context,nextName,approval,true);
+            if(avatar!=null) u.avatarValue=avatar;
+            u.updatedAt=System.currentTimeMillis(); repository.saveAndFlush(u); return view(u);
+        });
     }
     public Map<String,Object> devices(Principal p) {
         List<Map<String,Object>> result=new ArrayList<>();
@@ -279,7 +297,7 @@ public class AccountService {
         for(Map<String,Object> row:db.queryForList("select id from pk_user where deleted=false and delete_after>0 and delete_after<=?",System.currentTimeMillis())) {
             UserAccount u=lock(number(row,"id"));
             if(u.deleteAfter==0 || u.deleteAfter>System.currentTimeMillis()) continue;
-            revokeAll(u.id); u.deleted=true; u.nickname="deleted-"+u.id; u.avatarValue="avatar_1"; u.uuid="deleted-"+u.id; u.token=randomToken(); u.legacyAuthDisabled=true; repository.saveAndFlush(u);
+            revokeAll(u.id); u.deleted=true; nicknames.anonymize(u); u.avatarValue="avatar_1"; u.uuid="deleted-"+u.id; u.token=randomToken(); u.legacyAuthDisabled=true; repository.saveAndFlush(u);
             db.update("update pk_identity set email=null,password_hash=null,installation_id=null,guest_secret_hash=null,email_verified=false where user_id=?",u.id);
             db.update("update pk_device set device_name='Deleted device',installation_id=id where user_id=?",u.id);
             db.update("delete from pk_verification where user_id=?",u.id);

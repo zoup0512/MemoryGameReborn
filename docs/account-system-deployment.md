@@ -11,6 +11,8 @@
 - 服务端 API 默认拒绝明文 HTTP。`PK_AUTH_ALLOW_HTTP=true` 仅用于隔离的本地验收，不能在公网生产开启。
 - 不记录 Authorization、refresh token、guestSecret、验证码和密码；反代也不能把这些数据写访问日志。
 - 已配置服务端与 SMTP 连接、读写超时。
+- 若开放自定义昵称，已按 [昵称机器审核](nickname-moderation.md) 配置外部审核服务，完成拒绝、需复核、超时及鉴权失败验收。未配置时只能使用服务端安全默认昵称，自定义改名必须明确失败；禁止上线临时“全部通过”审核实现。
+- 接入第三方审核前完成隐私政策及供应商数据处理评估；只提交必要昵称文本，不提交账号邮箱、令牌或设备秘密。
 
 ## 2. TLS
 
@@ -122,6 +124,8 @@ F:/jdk17/bin/java -jar server_memory-game-reborn/build/libs/<boot-jar>.jar \
 # 需要 Python 3 与 websocket-client（现有 PK 工具通常已使用它）。
 # 若系统配置 HTTP_PROXY，请设置 NO_PROXY=127.0.0.1,localhost,::1。
 python docs/tools/account_smoke.py --base-url http://127.0.0.1:18081
+# 在未配置外部审核的隔离服务上，专门验证昵称与旧 WS 防绕过：
+python docs/tools/nickname_smoke.py --base-url http://127.0.0.1:18081
 ```
 
 此脚本仅允许 loopback，启动临时 SMTP 接收验证码，真实验证：
@@ -132,11 +136,14 @@ python docs/tools/account_smoke.py --base-url http://127.0.0.1:18081
 - 升级后原游客秘密不能恢复正式账号。
 - 登录密码校验。
 - refresh 轮换、旧 token 重放撤销整个会话。
-- 昵称、头像和设备列表。
+- 默认安全昵称、头像和设备列表。
+- 默认未配置审核时改名返回 503、保留原昵称及头像；单独更换头像仍能保存。
 - 全设备退出。
 - 密码重置。
 - 删除申请、即时会话撤销和取消申请。
 - 单设备退出。
+
+脚本默认检查审核缺配置的 fail-closed 行为。只有在隔离验收环境配置真实审核服务后，才使用 `--expect-nickname-approval` 验证 `SmokeUpdated` 的实际审核和保存；此模式会将测试昵称提交给配置的审核供应商，不应在未经数据处理授权的环境运行。拒绝、需复核与超时等结果由服务端自动化测试中的受控审核桩验证，不向生产提供放行模式。
 
 脚本创建的账号和邮件仅属于本地测试。不可将该脚本改成连接真实生产环境来做破坏性账号流程验收。
 

@@ -123,6 +123,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:18081")
     parser.add_argument("--smtp-port", type=int, default=2526)
+    parser.add_argument("--expect-nickname-approval", action="store_true",
+                        help="Expect configured machine moderation to approve the test nickname; "
+                             "otherwise verify the default fail-closed behavior")
     parser.add_argument("--allow-remote-account-tests", action="store_true",
                         help="Create throwaway accounts on a non-loopback deployment (own servers only)")
     parser.add_argument("--mail-command",
@@ -185,8 +188,11 @@ def main():
     address = "smoke-" + secrets.token_hex(8) + "@example.com"
     try:
         guest_body = {"installationId": installation, "guestSecret": secret,
-                      "nickname": "SmokeGuest", "deviceName": "Local acceptance test"}
+                      "deviceName": "Local acceptance test"}
         guest = request("POST", "/auth/guest", guest_body, expected=(200, 201))
+        initial_nickname = guest["user"]["nickname"]
+        assert 2 <= len(initial_nickname) <= 16
+        assert not re.fullmatch(r"Player\d*", initial_nickname, re.IGNORECASE)
         user_id = guest["user"]["userId"]
         balance = guest["user"]["balance"]
         assert guest["user"]["accountType"] == "GUEST"
@@ -234,10 +240,24 @@ def main():
         passed("login and refresh replay revokes token family")
 
         logged = request("POST", "/auth/login", login_body)
-        profile = request("PATCH", "/me/profile", {"nickname": "SmokeUpdated", "avatarValue": "avatar_2"},
-                          logged["accessToken"])
+        if options.expect_nickname_approval:
+            request("PATCH", "/me/profile", {"nickname": "SmokeUpdated", "avatarValue": "avatar_2"},
+                    logged["accessToken"])
+            me = request("GET", "/me", token=logged["accessToken"])
+            assert me["nickname"] == "SmokeUpdated" and me["avatarValue"] == "avatar_2"
+            passed("configured machine moderation approves profile update")
+        else:
+            unavailable = request("PATCH", "/me/profile",
+                                  {"nickname": "SmokeUpdated", "avatarValue": "avatar_2"},
+                                  logged["accessToken"], expected=503)
+            assert unavailable["code"] == "NICKNAME_MODERATION_UNAVAILABLE"
+            me = request("GET", "/me", token=logged["accessToken"])
+            assert me["nickname"] == initial_nickname and me["avatarValue"] == "avatar_1"
+            passed("unconfigured moderation fails closed without partial profile update")
+        request("PATCH", "/me/profile", {"avatarValue": "avatar_3"}, logged["accessToken"])
         me = request("GET", "/me", token=logged["accessToken"])
-        assert me["nickname"] == "SmokeUpdated" and me["avatarValue"] == "avatar_2"
+        assert me["avatarValue"] == "avatar_3"
+        passed("avatar-only save does not require nickname moderation")
         devices = request("GET", "/me/devices", token=logged["accessToken"])["devices"]
         assert any(item["current"] for item in devices)
         passed("profile and device list")

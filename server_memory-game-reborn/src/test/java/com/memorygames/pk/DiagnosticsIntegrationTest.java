@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** Offline, unique H2 database; real Flyway V1-V7 and Hibernate validation, no deployed credentials. */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:diagnostics-v7;DB_CLOSE_DELAY=-1",
         "spring.flyway.enabled=true","spring.jpa.hibernate.ddl-auto=validate","pk.auth.allow-http=false",
         "pk.admin-token=diagnostics-fixture-admin","pk.admin-rate-limit=10000","pk.diagnostics.max-reports=12",

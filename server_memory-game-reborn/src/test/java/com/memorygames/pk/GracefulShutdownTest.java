@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * so a deploy restart can no longer swallow the coins. Own context: the
  * manager's scheduler does not survive the test.
  */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

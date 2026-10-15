@@ -8,6 +8,10 @@ spring:
       ddl-auto: create-drop
 
 pk:
+  nickname:
+    # Regression fixtures share application contexts; rate-limit behavior has dedicated unit tests.
+    global-per-minute: 10000
+    subject-per-minute: 100
   season:
     duration-ms: 3600000
   anti-cheat:
