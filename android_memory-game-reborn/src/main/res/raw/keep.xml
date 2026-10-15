@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resource-shrinker keep list.
+     MemoryApplicationModel.getAllCellDrawableIds() reads R.drawable field
+     names (prefix "icg_") reflectively; without this the shrinker drops the
+     images the reflection points at and Count'em All (Game5) comes up empty
+     or crashes (release-only regression, 2026-10-15). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/icg_*" />

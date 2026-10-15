@@ -257,10 +257,17 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
         }
         List<Integer> allCellDrawableIds = MemoryApplicationModel.getInstance().getAllCellDrawableIds();
         List<Integer> drawableIdsToUse = new ArrayList();
-        for (int i = 0; i < numberOfImagesToUse; i++) {
-            drawableIdsToUse.add(allCellDrawableIds.get(GameRandom.nextInt(allCellDrawableIds.size() - 1)));
+        // This list is filled reflectively and can degrade to 0-1 entries (a
+        // release build once shipped with the R.drawable field names renamed
+        // away); a bound < 1 in nextInt throws and takes the whole app down.
+        for (int i = 0; i < numberOfImagesToUse && !allCellDrawableIds.isEmpty(); i++) {
+            int index = allCellDrawableIds.size() > 1
+                    ? GameRandom.nextInt(allCellDrawableIds.size() - 1) : 0;
+            drawableIdsToUse.add(allCellDrawableIds.get(index));
         }
-        this.grid.setDrawableIdsToUse(drawableIdsToUse);
+        if (!drawableIdsToUse.isEmpty()) {
+            this.grid.setDrawableIdsToUse(drawableIdsToUse);
+        }
         this.grid.buildGrid();
         this.grid.hideAllCells();
         this.stateTimer.start();

@@ -177,6 +177,77 @@ tasks.matching { it.name == 'assembleRelease' }.configureEach {
     finalizedBy 'publishReleaseApk'
 }
 
+// ---- Release regression guard: reflective icg_ drawables ------------------
+// MemoryApplicationModel.getAllCellDrawableIds() reads R.drawable field NAMES
+// (prefix "icg_") via reflection, and Game5CountAllActivity.startLevel()
+// crashed mid-match on 2026-10-15 because the first signed release shipped
+// with those names renamed away (empty list -> nextInt(-1)). Fail the build
+// when the packaged release APK no longer carries the names or the images,
+// instead of shipping a client that dies inside Count'em All.
+tasks.register('verifyReflectionKeep') {
+    group = 'verification'
+    description = 'Fail if the release APK lost the reflective icg_ drawable names or images'
+    doLast {
+        def apkDir = file("$buildDir/outputs/apk/release")
+        def signed = (apkDir.listFiles() ?: []).findAll {
+            it.name.endsWith('.apk') && !it.name.contains('-unsigned')
+        }
+        if (signed.isEmpty()) {
+            logger.lifecycle('verifyReflectionKeep: no signed release APK in build/ - skipped')
+            return
+        }
+        def apk = signed.max { it.lastModified() }
+        def countBytes = { byte[] data, byte[] pattern ->
+            int found = 0
+            int from = 0
+            while (from <= data.length - pattern.length) {
+                int at = -1
+                for (int i = from; i <= data.length - pattern.length; i++) {
+                    boolean hit = true
+                    for (int j = 0; j < pattern.length; j++) {
+                        if (data[i + j] != pattern[j]) { hit = false; break }
+                    }
+                    if (hit) { at = i; break }
+                }
+                if (at < 0) { break }
+                found++
+                from = at + 1
+            }
+            return found
+        }
+        def pattern = 'icg_'.getBytes('UTF-8')
+        def zip = new java.util.zip.ZipFile(apk)
+        try {
+            int dexHits = 0
+            zip.entries().each { entry ->
+                if (entry.name.endsWith('.dex')) {
+                    dexHits += countBytes(zip.getInputStream(entry).bytes, pattern)
+                }
+            }
+            int arscHits = countBytes(zip.getInputStream(zip.getEntry('resources.arsc')).bytes, pattern)
+            logger.lifecycle("verifyReflectionKeep: ${apk.name} dex=${dexHits} arsc=${arscHits}")
+            if (dexHits < 50) {
+                throw new GradleException("Release dex lost the reflectively read R.drawable "
+                        + "'icg_' field names (found ${dexHits}, need >= 50). "
+                        + "MemoryApplicationModel.getAllCellDrawableIds() would be empty and "
+                        + "Game5CountAllActivity would crash mid-match; keep the R\$drawable rule "
+                        + 'in proguard-rules.pro.')
+            }
+            if (arscHits < 50) {
+                // A healthy build reports ~94 (one arsc name entry per icg_
+                // drawable); a shrunk/degenerate resource table drops far below.
+                throw new GradleException("Release resources lost icg_ cell images (found "
+                        + "${arscHits}, need >= 50); check tools:keep in res/raw/keep.xml.")
+            }
+        } finally {
+            zip.close()
+        }
+    }
+}
+tasks.matching { it.name == 'assembleRelease' }.configureEach {
+    finalizedBy 'verifyReflectionKeep'
+}
+
 // ---- Hardening P3: release certificate anchor -----------------------------
 // (docs/android-client-hardening-design.md 5.1). Rewrites
 // src/main/java/com/cube/memorygames/security/IntegrityAnchor.java with the

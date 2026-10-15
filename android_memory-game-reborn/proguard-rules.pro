@@ -35,6 +35,15 @@
     @com.google.gson.annotations.SerializedName <fields>;
 }
 
+# ---- Reflective R.drawable access ----
+# MemoryApplicationModel.getAllCellDrawableIds() collects R.drawable fields
+# whose NAME contains "icg_" via reflection; R8 renaming them away empties the
+# list and Game5CountAllActivity.startLevel() crashed mid-match on 2026-10-15
+# (release-only; debug builds keep field names). Keep the names.
+-keepclassmembers class com.memory.brain.training.games.R$drawable {
+    public static <fields>;
+}
+
 # ---- ActiveAndroid (vendored source; no AAR rules travel with it) ----
 -keep class com.activeandroid.** { *; }
 -dontwarn com.activeandroid.**
