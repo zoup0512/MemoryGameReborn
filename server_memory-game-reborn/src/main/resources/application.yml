@@ -85,6 +85,7 @@ pk:
   timing:
     match-found-delay-ms: 3000
     round-intermission-ms: 6000
+    practice-round-intermission-ms: ${PK_PRACTICE_ROUND_INTERMISSION_MS:2000}
     round-grace-ms: 10000
     score-accept-grace-ms: 2000
     bot-wait-ms: 15000

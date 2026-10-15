@@ -91,13 +91,17 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private boolean acceptWaiting;
     private RoundStart pendingTutorialStart;
     private GameInfo pendingTutorialInfo;
+    private int pendingTutorialRequestCode = -1;
     private TimerView gameListTimer;
     // Intermission card between rounds (dialog_online_progress.xml).
     private View intermissionBoard;
     private TextView interTitle;
     private TextView interGameNumber;
     private TextView interScore;
-    private TimerView interTimer;
+    private TextView interStatus;
+    private TextView interNextGame;
+    private boolean intermissionVisible;
+    private boolean activityStarted;
     private LinearLayout waitingCard;
     private LinearLayout card;
     // Search board.
@@ -175,6 +179,18 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         }
     };
 
+    private final Runnable intermissionTick = new Runnable() {
+        @Override
+        public void run() {
+            if (!intermissionVisible || !activityStarted || isFinishing()
+                    || OnlineSession.get().getMatchId() == null) {
+                return;
+            }
+            updateIntermissionStatus();
+            handler.postDelayed(this, 250L);
+        }
+    };
+
     // ------------------------------------------------------------- lifecycle
 
     @Override
@@ -186,10 +202,30 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         OnlineSession.get().setMatchListener(this);
         if (OnlineSession.get().isInMatch()) {
             showMatchUi();
+            if (OnlineSession.get().getLastRoundEnd() != null) {
+                showIntermissionUi();
+            }
         } else {
             showSearchUi();
             OnlineSession.get().startMatchmaking();
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        this.activityStarted = true;
+        if (this.intermissionVisible) {
+            this.handler.removeCallbacks(this.intermissionTick);
+            this.intermissionTick.run();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        this.activityStarted = false;
+        this.handler.removeCallbacks(this.intermissionTick);
+        super.onStop();
     }
 
     @Override
@@ -889,12 +925,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         return score;
     }
 
-    /**
-     * The between-rounds intermission card: the original
-     * dialog_online_progress.xml inflated as a board - "Game finished",
-     * "Your Score: x", "Game n/total" and the 100dip countdown disc riding
-     * the rest of the round while the opponent may still be playing.
-     */
+    /** Round completion feedback stays visible until the server starts the next round. */
     private void showIntermissionUi() {
         if (this.intermissionBoard == null) {
             LinearLayout board = OnlineUi.card(this);
@@ -925,19 +956,21 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             gameParams.topMargin = dp(12);
             board.addView(this.interGameNumber, gameParams);
 
-            TextView waiting = OnlineUi.body(this, R.string.online_waiting_subtitle);
-            waiting.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams waitingParams = new LinearLayout.LayoutParams(
+            this.interNextGame = OnlineUi.text(this, "", 18.0f,
+                    R.color.online_text_primary, OnlineUi.medium(this));
+            this.interNextGame.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams nextParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            waitingParams.topMargin = dp(7);
-            board.addView(waiting, waitingParams);
+            nextParams.topMargin = dp(20);
+            board.addView(this.interNextGame, nextParams);
 
-            this.interTimer = new TimerView(this);
-            LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(dp(112), dp(112));
-            timerParams.gravity = Gravity.CENTER_HORIZONTAL;
-            timerParams.topMargin = dp(20);
-            timerParams.bottomMargin = dp(4);
-            board.addView(this.interTimer, timerParams);
+            this.interStatus = OnlineUi.body(this, R.string.online_round_confirming);
+            this.interStatus.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            statusParams.topMargin = dp(10);
+            statusParams.bottomMargin = dp(12);
+            board.addView(this.interStatus, statusParams);
             this.intermissionBoard = board;
         }
         this.interTitle.setText(R.string.game_finished);
@@ -949,12 +982,41 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.interScore.setText(String.format(Locale.US, "%s: %d",
                 getString(R.string.your_score), OnlineSession.get().getMyScore()));
         showScrollableBoard(this.intermissionBoard, ViewGroup.LayoutParams.MATCH_PARENT);
-        long remaining = OnlineSession.get().roundRemainingMs();
-        if (remaining >= 1000L) {
-            this.interTimer.setVisibility(View.VISIBLE);
-            this.interTimer.showTimer((int) remaining, true);
+        this.bottomBar.setVisibility(View.GONE);
+        this.intermissionVisible = true;
+        updateIntermissionStatus();
+        this.handler.removeCallbacks(this.intermissionTick);
+        if (this.activityStarted) {
+            this.handler.postDelayed(this.intermissionTick, 250L);
+        }
+    }
+
+    private void updateIntermissionStatus() {
+        OnlineSession session = OnlineSession.get();
+        RoundEnd end = session.getLastRoundEnd();
+        OnlineMessages.RoundDesc[] rounds = session.getRounds();
+        int round = end != null ? end.round : session.getCurrentRound();
+        String nextGameId = end != null ? end.nextGameId : null;
+        if (nextGameId == null && rounds != null && round > 0 && round < rounds.length) {
+            nextGameId = rounds[round].gameId;
+        }
+        GameInfo nextGame = nextGameId == null ? null : Games.get().getGameBiId(nextGameId);
+        this.interNextGame.setVisibility(nextGame == null ? View.GONE : View.VISIBLE);
+        if (nextGame != null) {
+            this.interNextGame.setText(getString(R.string.online_round_next_game,
+                    getString(nextGame.getGameNameRes())));
+        }
+        if (end == null) {
+            this.interStatus.setText(R.string.online_round_confirming);
+        } else if (rounds != null && round >= rounds.length) {
+            this.interStatus.setText(R.string.online_match_settling);
+        } else if (session.hasIntermissionCountdown()) {
+            long seconds = RoundIntermission.secondsRemaining(session.intermissionRemainingMs());
+            this.interStatus.setText(seconds > 0L
+                    ? getString(R.string.online_round_starts_in, seconds)
+                    : getString(R.string.online_round_waiting_start));
         } else {
-            this.interTimer.setVisibility(View.GONE);
+            this.interStatus.setText(R.string.online_round_waiting_start);
         }
     }
 
@@ -1021,7 +1083,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (OnlineSession.get().getMatchId() != null) {
+                if (canLaunchRound(start)) {
                     startGameActivity(start, info);
                 }
             }
@@ -1077,6 +1139,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
      * would be clipped out of the view tree — scrolling keeps it reachable.
      */
     private void showScrollableBoard(View board, int width) {
+        this.intermissionVisible = false;
+        this.handler.removeCallbacks(this.intermissionTick);
         this.content.removeAllViews();
         // Cached boards (e.g. the intermission card) keep their old wrapper
         // as parent after removeAllViews; re-adding them without detaching
@@ -1300,6 +1364,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     // ---------------------------------------------------------- round launch
 
     private void launchRound(final RoundStart start) {
+        this.intermissionVisible = false;
+        this.handler.removeCallbacks(this.intermissionTick);
         this.acceptWaiting = false;
         GameInfo info = Games.get().getGameBiId(start.gameId);
         if (info == null) {
@@ -1329,7 +1395,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                     com.cube.memorygames.activity.OnlineGameTutorialActivity.class);
             tutorial.putExtra(MainMenuActivity.EXTRA_GAME_INFO, info);
             diagnostic("tutorial_launch","gameId",start.gameId,"round",start.round);
-            startActivityForResult(tutorial, REQUEST_TUTORIAL);
+            this.pendingTutorialRequestCode = REQUEST_TUTORIAL + start.round;
+            startActivityForResult(tutorial, this.pendingTutorialRequestCode);
             return;
         }
         if (start.round == 1) {
@@ -1344,10 +1411,16 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.handler.postDelayed(new Runnable() {
             @Override
             public void run() {
+                if (!canLaunchRound(start)) {
+                    return;
+                }
                 statusView.setText("2");
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
+                        if (!canLaunchRound(start)) {
+                            return;
+                        }
                         statusView.setText("1");
                         handler.postDelayed(new Runnable() {
                             @Override
@@ -1377,8 +1450,16 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                 .getInt(PREF_TUTORIAL_SHOW + info.getId(), 0) < TUTORIAL_COUNT;
     }
 
+    private boolean canLaunchRound(RoundStart start) {
+        OnlineSession session = OnlineSession.get();
+        return !isFinishing() && this.roundLaunchScheduled && start != null
+                && this.launchedRound == start.round
+                && RoundIntermission.canLaunch(start, session.getMatchId(),
+                        session.getCurrentRound(), session.getLastRoundEnd());
+    }
+
     private void startGameActivity(RoundStart start, GameInfo info) {
-        if (isFinishing() || OnlineSession.get().getMatchId() == null) {
+        if (!canLaunchRound(start)) {
             diagnostic("frame_dropped","reason","launch_cancelled");
             // The match settled/cancelled while a launch was pending.
             return;
@@ -1405,7 +1486,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         diagnostic("game_return","attempt",requestCode,"code",resultCode);
-        if (requestCode == REQUEST_TUTORIAL) {
+        if (requestCode == this.pendingTutorialRequestCode) {
+            this.pendingTutorialRequestCode = -1;
             if (this.pendingTutorialStart != null && this.pendingTutorialInfo != null) {
                 android.content.SharedPreferences prefs =
                         android.preference.PreferenceManager.getDefaultSharedPreferences(this);
@@ -1424,7 +1506,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             // Skip the waiting board when the match already settled while the
             // round activity was in front — showSettlementUi ran earlier and
             // must not be overwritten (real-device race, 2026-10-03).
-            if (OnlineSession.get().getMatchId() == null) {
+            if (OnlineSession.get().getMatchId() == null || this.roundLaunchScheduled) {
                 return;
             }
             showIntermissionUi();
@@ -1480,9 +1562,18 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     public void onRoundEnd(RoundEnd round) {
         this.scoreView.setText(String.format(Locale.US, "%d : %d", round.myScore, round.oppScore));
-        if (this.interScore != null) {
-            this.interScore.setText(String.format(Locale.US, "%s: %d",
-                    getString(R.string.your_score), round.myScore));
+        if (this.launchedRound <= round.round) {
+            this.roundLaunchScheduled = false;
+            if (this.pendingTutorialStart != null && this.pendingTutorialStart.round <= round.round) {
+                int requestCode = this.pendingTutorialRequestCode;
+                this.pendingTutorialStart = null;
+                this.pendingTutorialInfo = null;
+                this.pendingTutorialRequestCode = -1;
+                if (requestCode >= 0) {
+                    finishActivity(requestCode);
+                }
+            }
+            showIntermissionUi();
         }
     }
 
@@ -1493,6 +1584,13 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.handler.removeCallbacksAndMessages(null);
         this.roundLaunchScheduled = false;
         this.launchedRound = -1;
+        int tutorialRequestCode = this.pendingTutorialRequestCode;
+        this.pendingTutorialRequestCode = -1;
+        this.pendingTutorialStart = null;
+        this.pendingTutorialInfo = null;
+        if (tutorialRequestCode >= 0) {
+            finishActivity(tutorialRequestCode);
+        }
         showSettlementUi(end);
     }
 

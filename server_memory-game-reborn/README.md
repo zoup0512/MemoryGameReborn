@@ -84,4 +84,7 @@ debug 构建可在 Online 大厅长按标题改为其他地址（如内网 `ws:/
 - 信封 `{"v":1,"t":"<type>","d":{...},"rid":"..."}`：版本不符返回 400；未知类型返回 405 而非静默丢弃
 - `rid`（可选请求关联 id）：命令可携带，即时应答（auth_ok/match_queued/room_created/error 等）原样回显，供客户端安全重试
 - 注册忽略客户端申报余额，新账户只从服务端礼金开始；重连 `round_start.durationMs` 为当前轮剩余时间
-- 计分截止为 回合时长 + `pk.timing.score-accept-grace-ms`（默认 2s），迟到 level_win 不计分
+- 正式游戏时间从 `round_start` 起算，客户端开场倒数包含在 `durationMs` 内。Bot 到正式截止立即停止并完成；真人 `level_win` 保留 `pk.timing.score-accept-grace-ms`（默认 2s）的网络容差，不提供额外游戏时间；回合结束后不再接受计分。
+- 双方完成即可结束；真人提前 `round_complete` 不会截短 Bot 的正式时间，缺失完成消息仍由 `round-grace-ms` 兜底。重复完成/旧截止任务不会重复结束或安排下一轮。
+- 仅 PRACTICE 人机的轮间等待使用 `pk.timing.practice-round-intermission-ms`，默认 2000ms，可用 `PK_PRACTICE_ROUND_INTERMISSION_MS` 覆盖；真人对战及 RANKED 自动补位 Bot 保持 `round-intermission-ms`（默认 6000ms）。
+- `round_end` 新增可选 `nextRoundStartsAt`（下一轮绝对服务器毫秒时间，最后轮为 0）、`serverNow`（发送时服务器毫秒时间）及 `nextGameId`（最后轮省略）。客户端只显示倒数，正式开局仍等待 `round_start`；间歇重连重发相同目标时间的 `round_end` 并刷新 `serverNow`，不会重启旧游戏。

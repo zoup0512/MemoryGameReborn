@@ -58,6 +58,8 @@ public class PkProperties {
         private long matchFoundDelayMs = 3000;
         /** Gap between round_end and the next round_start. */
         private long roundIntermissionMs = 6000;
+        /** Practice-vs-bot only; ranked fallback bots retain the normal gap. */
+        private long practiceRoundIntermissionMs = 2000;
         /** Extra time after a round's duration before the server force-ends it. */
         private long roundGraceMs = 10000;
         /**
@@ -78,6 +80,8 @@ public class PkProperties {
         public void setMatchFoundDelayMs(long v) { this.matchFoundDelayMs = v; }
         public long getRoundIntermissionMs() { return roundIntermissionMs; }
         public void setRoundIntermissionMs(long v) { this.roundIntermissionMs = v; }
+        public long getPracticeRoundIntermissionMs() { return practiceRoundIntermissionMs; }
+        public void setPracticeRoundIntermissionMs(long v) { this.practiceRoundIntermissionMs = v; }
         public long getAcceptTimeoutMs() { return acceptTimeoutMs; }
         public void setAcceptTimeoutMs(long v) { this.acceptTimeoutMs = v; }
         public long getRoundGraceMs() { return roundGraceMs; }

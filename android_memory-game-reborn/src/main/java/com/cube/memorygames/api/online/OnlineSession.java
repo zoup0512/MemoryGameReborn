@@ -151,6 +151,7 @@ public class OnlineSession {
     private boolean friendMode;
     /** True while the running match is an explicit practice duel (vs bot). */
     private volatile boolean practiceMode;
+    private final RoundIntermission intermission = new RoundIntermission();
     private OnlineMessages.RoundDesc[] rounds;
     private volatile int currentRound = -1;
     private int myScore;
@@ -295,6 +296,18 @@ public class OnlineSession {
             return 0L;
         }
         return Math.max(0L, duration - (SystemClock.elapsedRealtime() - roundStartedElapsed));
+    }
+
+    public RoundEnd getLastRoundEnd() {
+        return intermission.getRoundEnd();
+    }
+
+    public long intermissionRemainingMs() {
+        return intermission.remainingMs(SystemClock.elapsedRealtime());
+    }
+
+    public boolean hasIntermissionCountdown() {
+        return intermission.hasCountdown();
     }
 
     public int getServerEntryFee() {
@@ -720,7 +733,7 @@ public class OnlineSession {
         android.util.Log.d("OnlinePK", "reportLevelWin round=" + currentRound
                 + " level=" + level + " score=" + totalScore
                 + " matchId=" + (matchId == null ? "null" : matchId));
-        if (matchId == null || currentRound < 0) {
+        if (matchId == null || currentRound < 0 || roundReported) {
             return;
         }
         // Live HUD value: completed rounds total plus the running round score.
@@ -911,6 +924,7 @@ public class OnlineSession {
                     this.serverRoundDurationMs = found.rounds[0].durationMs;
                 }
                 this.currentRound = -1;
+                this.intermission.clear();
                 this.roundStartedElapsed = 0L;
                 this.myScore = 0;
                 this.myCompletedScore = 0;
@@ -963,6 +977,16 @@ public class OnlineSession {
         if (OnlineMessages.T_ROUND_START.equals(type)) {
             RoundStart start = OnlineMessages.payloadOf(json, RoundStart.class);
             if (start != null) {
+                // Bind legacy untagged frames now so delayed launches retain their owning match.
+                if (start.matchId == null) {
+                    start.matchId = this.matchId;
+                }
+                RoundEnd ended = intermission.getRoundEnd();
+                if (start.round < currentRound || (ended != null && start.round <= ended.round)) {
+                    diagnostic("frame_dropped", "reason", "stale_round_start");
+                    return;
+                }
+                intermission.clear();
                 cancelAcceptFallback();
                 boolean resumeSameRound = this.currentRound == start.round
                         && this.roundStartedElapsed > 0L;
@@ -999,7 +1023,10 @@ public class OnlineSession {
         }
         if (OnlineMessages.T_ROUND_END.equals(type)) {
             RoundEnd end = OnlineMessages.payloadOf(json, RoundEnd.class);
-            if (end != null) {
+            if (intermission.accept(end, currentRound, SystemClock.elapsedRealtime())) {
+                cancelAcceptFallback();
+                this.currentRound = end.round;
+                this.roundReported = true;
                 this.myScore = end.myScore;
                 this.oppScore = end.oppScore;
                 this.myCompletedScore = end.myScore;
@@ -1036,6 +1063,7 @@ public class OnlineSession {
                 this.friendMode = false;
                 this.practiceMode = false;
                 this.currentRound = -1;
+                this.intermission.clear();
                 this.roundStartedElapsed = 0L;
                 this.serverRoundDurationMs = 0L;
                 this.localEntryFeeCharged = 0;
@@ -1240,6 +1268,7 @@ public class OnlineSession {
         this.friendMode = false;
         this.practiceMode = false;
         this.currentRound = -1;
+        this.intermission.clear();
         this.roundStartedElapsed = 0L;
         this.serverRoundDurationMs = 0L;
         this.myScore = 0;

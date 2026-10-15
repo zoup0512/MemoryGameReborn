@@ -170,6 +170,13 @@ public final class ProtocolCodec {
         public int round;
         public int myScore;
         public int oppScore;
+        /** Optional for wire compatibility; epoch milliseconds, 0 on the final round. */
+        public Long nextRoundStartsAt;
+        /** Server epoch milliseconds at this send (refreshed on reconnect). */
+        public Long serverNow;
+        /** Omitted when there is no next round. */
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public String nextGameId;
     }
 
     /** result: "W" win, "L" loss, "D" draw. */

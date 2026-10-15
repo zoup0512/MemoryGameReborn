@@ -193,6 +193,10 @@ public final class OnlineMessages {
         public int round;
         public int myScore;
         public int oppScore;
+        /** Optional on older servers; zero means no announced next round. */
+        public long nextRoundStartsAt;
+        public long serverNow;
+        public String nextGameId;
     }
 
     /** result: "W" win, "L" loss, "D" draw. */

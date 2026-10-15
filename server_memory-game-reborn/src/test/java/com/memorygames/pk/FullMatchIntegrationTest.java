@@ -139,6 +139,19 @@ class FullMatchIntegrationTest {
                 ProtocolCodec.RoundEnd reA = endA.as(ProtocolCodec.RoundEnd.class);
                 assertEquals(totalA, reA.myScore, "round_end carries cumulative totals");
                 assertEquals(0, reA.oppScore);
+                ProtocolCodec.RoundEnd reB = endB.as(ProtocolCodec.RoundEnd.class);
+                assertNotNull(reA.serverNow);
+                assertEquals(reA.nextRoundStartsAt, reB.nextRoundStartsAt,
+                        "both clients receive the exact same scheduled target");
+                if (round < 5) {
+                    assertTrue(reA.nextRoundStartsAt > reA.serverNow
+                                    && reA.nextRoundStartsAt - reA.serverNow <= 300L,
+                            "human intermission retains the test profile's original configuration");
+                    assertEquals(matchA.rounds[round].gameId, reA.nextGameId);
+                } else {
+                    assertEquals(0L, reA.nextRoundStartsAt);
+                    assertNull(reA.nextGameId);
+                }
             }
 
             TestWsClient.Frame matchEndA = a.await(ProtocolCodec.T_MATCH_END, 15000);
