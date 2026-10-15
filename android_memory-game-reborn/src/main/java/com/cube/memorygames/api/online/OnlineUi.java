@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -220,7 +221,7 @@ final class OnlineUi {
 
     static TextView primaryButton(Context context, int textRes) {
         TextView button = actionButton(context, textRes);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(ContextCompat.getColorStateList(context, R.color.dialog_primary_text));
         button.setBackgroundResource(R.drawable.online_primary_button);
         return button;
     }
@@ -240,11 +241,23 @@ final class OnlineUi {
     }
 
     private static TextView actionButton(Context context, int textRes) {
-        TextView button = text(context, context.getString(textRes), 17.0f,
-                R.color.online_text_primary, medium(context));
+        Button button = new Button(context);
+        button.setText(textRes);
+        button.setTextSize(17.0f);
+        button.setTextColor(color(context, R.color.online_text_primary));
+        button.setTypeface(medium(context));
+        button.setAllCaps(false);
+        button.setLineSpacing(0.0f, 1.08f);
         button.setGravity(Gravity.CENTER);
+        button.setMinWidth(0);
+        button.setMinimumWidth(0);
         button.setMinHeight(dim(context, R.dimen.online_button_height));
-        button.setPadding(dp(context, 18), 0, dp(context, 18), 0);
+        button.setMinimumHeight(dim(context, R.dimen.online_button_height));
+        // Keep our existing selector (including its disabled state), not the platform tint.
+        button.setBackgroundTintList(null);
+        button.setStateListAnimator(null);
+        button.setElevation(0f);
+        button.setPadding(dp(context, 18), dp(context, 10), dp(context, 18), dp(context, 10));
         button.setClickable(true);
         button.setFocusable(true);
         return button;

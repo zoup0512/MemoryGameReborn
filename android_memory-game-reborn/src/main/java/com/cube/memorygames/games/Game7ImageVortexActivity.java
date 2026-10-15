@@ -1,12 +1,9 @@
 package com.cube.memorygames.games;
 
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.CountDownTimer;
 import android.os.Handler;
-import android.support.v7.app.AlertDialog.Builder;
 import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
@@ -352,20 +349,5 @@ public class Game7ImageVortexActivity extends Game1MemoryGridActivity {
         super.onBackPressed();
     }
 
-    private void showOnlineBackPressDialog() {
-        Builder builder = new Builder(this);
-        builder.setMessage((int) R.string.dialog_lose_bet);
-        builder.setNegativeButton((int) R.string.cancel, new OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-        builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Game7ImageVortexActivity.this.openMainMenu();
-                dialog.dismiss();
-            }
-        });
-        builder.show();
-    }
+
 }

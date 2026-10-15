@@ -216,27 +216,12 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         OnlineSession session = OnlineSession.get();
         if (session.isInMatch()) {
             diagnostic("exit_dialog","reason","exit_confirm");
-            new AlertDialog.Builder(this)
-                    .setMessage(session.isPracticeMode()
-                            // Practice has no bet to lose; keep the forfeit warning honest.
-                            ? R.string.online_quit_practice
-                            : R.string.dialog_lose_bet)
-                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            diagnostic("exit_cancel","reason","exit_cancel");
-                            dialog.cancel();
-                        }
-                    })
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            diagnostic("exit_confirm","reason","user_resign");
-                            finishReason="user_resign";
-                            OnlineSession.get().resign();
-                            OnlineMatchActivity.this.finish();
-                        }
-                    })
-                    .show();
+            com.cube.memorygames.ui.DialogUi.showOnlineExit(this, () -> {
+                diagnostic("exit_confirm","reason","user_resign");
+                finishReason="user_resign";
+                OnlineSession.get().resign();
+                finish();
+            }, () -> diagnostic("exit_cancel","reason","exit_cancel"));
             return;
         }
         finishReason="back_no_match";

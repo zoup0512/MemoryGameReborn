@@ -41,9 +41,10 @@ public class PauseDialog extends AppCompatDialog {
     TextView tutorialButton;
 
     public PauseDialog(Activity activity, GameInfo gameInfo, View.OnClickListener exitClickListener, View.OnClickListener replayClickListener, OnDismissListener onDismissListener) {
-        super(activity, R.style.GdxTheme);
-        setContentView((int) R.layout.dialog_pause);
-        setCancelable(false);
+        super(activity, R.style.AppDialogTheme);
+        DialogUi.setContent(this, R.layout.dialog_pause);
+        setCancelable(true);
+        setCanceledOnTouchOutside(false);
         ButterKnife.bind((Dialog) this);
         setOnDismissListener(onDismissListener);
         this.activity = activity;
@@ -57,6 +58,40 @@ public class PauseDialog extends AppCompatDialog {
         this.tutorialButton.setTypeface(typeFaceRoboto);
         this.exitButton.setTypeface(typeFaceRoboto);
         this.sound.setChecked(SoundUtils.isPlaySound(activity));
+        configureActionRow(R.id.resumeContainer, this.resumeButton);
+        configureActionRow(R.id.replayContainer, this.replayButton);
+        configureActionRow(R.id.tutorialContainer, this.tutorialButton);
+        configureActionRow(R.id.exitContainer, this.exitButton);
+        updateSoundDescription();
+    }
+
+    private void configureActionRow(int id, TextView label) {
+        View row = findViewById(id);
+        row.setContentDescription(label.getText());
+        row.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, android.view.accessibility.AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName(android.widget.Button.class.getName());
+            }
+        });
+    }
+
+    private void updateSoundDescription() {
+        View row = findViewById(R.id.panel_pause);
+        row.setContentDescription(getContext().getString(this.sound.isChecked()
+                ? R.string.dg_sound_on : R.string.dg_sound_off));
+        row.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, android.view.accessibility.AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName(android.widget.Button.class.getName());
+                info.setCheckable(true);
+                info.setChecked(PauseDialog.this.sound.isChecked());
+            }
+        });
+        ((TextView) findViewById(R.id.dg_sound_label)).setText(this.sound.isChecked()
+                ? R.string.dg_sound_on : R.string.dg_sound_off);
     }
 
     @OnClick({R.id.panel_pause})
@@ -69,6 +104,7 @@ public class PauseDialog extends AppCompatDialog {
             application.logEvent(getClass().getSimpleName(), MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_SOUND_OFF);
         }
         SoundUtils.setPlaySound(getContext(), this.sound.isChecked());
+        updateSoundDescription();
     }
 
     @OnClick({R.id.tutorialContainer})

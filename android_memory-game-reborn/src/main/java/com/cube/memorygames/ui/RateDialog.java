@@ -16,17 +16,22 @@ import com.memory.brain.training.games.R;
 
 public class RateDialog extends Dialog {
     private static final int PLUS_CLICKED_FROM_DIALOG = 1001;
-    Button buttonNo = ((Button) findViewById(R.id.dialog_button_no));
-    Button buttonYes = ((Button) findViewById(R.id.dialog_button_yes));
-    ImageView lionImage = ((ImageView) findViewById(R.id.lionImage));
-    PlusOneButton mPlusOneButton = ((PlusOneButton) findViewById(R.id.plus_one_button));
-    TextView title = ((TextView) findViewById(R.id.dialog_text));
-    TextView title2 = ((TextView) findViewById(R.id.dialog_text2));
+    Button buttonNo;
+    Button buttonYes;
+    ImageView lionImage;
+    PlusOneButton mPlusOneButton;
+    TextView title;
+    TextView title2;
 
     public RateDialog(final Context context, int titleText, int buttonYesText, int buttonNoText, boolean showPlusButton, int lionImageRes, final View.OnClickListener listenerYes, final View.OnClickListener listenerNo) {
         super(context);
-        requestWindowFeature(1);
-        setContentView(R.layout.dialog_feedback);
+        DialogUi.setContent(this, R.layout.dialog_feedback);
+        this.buttonNo = (Button) findViewById(R.id.dialog_button_no);
+        this.buttonYes = (Button) findViewById(R.id.dialog_button_yes);
+        this.lionImage = (ImageView) findViewById(R.id.lionImage);
+        this.mPlusOneButton = (PlusOneButton) findViewById(R.id.plus_one_button);
+        this.title = (TextView) findViewById(R.id.dialog_text);
+        this.title2 = (TextView) findViewById(R.id.dialog_text2);
         Typeface typeFaceRobotoRegular = Typeface.createFromAsset(context.getAssets(), "Roboto-Regular.ttf");
         this.title.setTypeface(typeFaceRobotoRegular);
         this.buttonNo.setTypeface(typeFaceRobotoRegular);

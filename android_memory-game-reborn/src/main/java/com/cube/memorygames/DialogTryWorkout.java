@@ -2,8 +2,6 @@ package com.cube.memorygames;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatDialog;
 import android.view.View;
@@ -13,6 +11,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.memory.brain.training.games.R;
+import com.cube.memorygames.ui.DialogUi;
 
 public class DialogTryWorkout extends AppCompatDialog {
     public static final int STARTS_COUNT = 3;
@@ -23,22 +22,24 @@ public class DialogTryWorkout extends AppCompatDialog {
     Button nCancelButton;
 
     public DialogTryWorkout(Activity activity, View.OnClickListener confirmListener) {
-        super(activity, R.style.GdxTheme);
-        setContentView((int) R.layout.dialog_try_workout);
+        super(activity, R.style.AppDialogTheme);
+        DialogUi.setContent(this, R.layout.dialog_try_workout);
         ButterKnife.bind((Dialog) this);
-        getWindow().setBackgroundDrawableResource(R.color.dark_transparent);
-        getWindow().clearFlags(2);
         this.mConfirmListener = confirmListener;
-        setOnDismissListener(new OnDismissListener() {
-            public void onDismiss(DialogInterface dialogInterface) {
-                PreferenceManager.getDefaultSharedPreferences(DialogTryWorkout.this.getContext()).edit().putBoolean(DialogTryWorkout.TRY_WORKOUT_DIALOG_SHOW_KEY, false).apply();
-            }
-        });
     }
 
     @OnClick({R.id.dialog_try_workout_confirm_button})
     public void onConfirmClick() {
-        this.mConfirmListener.onClick(null);
+        dismiss();
+        if (this.mConfirmListener != null) {
+            this.mConfirmListener.onClick(null);
+        }
+    }
+
+    @OnClick(R.id.dg_workout_never)
+    public void onNeverClick() {
+        PreferenceManager.getDefaultSharedPreferences(getContext()).edit()
+                .putBoolean(TRY_WORKOUT_DIALOG_SHOW_KEY, false).apply();
         dismiss();
     }
 

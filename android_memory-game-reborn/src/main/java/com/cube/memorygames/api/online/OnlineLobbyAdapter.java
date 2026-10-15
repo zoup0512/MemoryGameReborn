@@ -592,7 +592,7 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         final EditText input = new EditText(this.context);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         input.setText(OnlineConfig.getEndpoint(this.context));
-        new AlertDialog.Builder(this.context)
+        com.cube.memorygames.ui.DialogUi.builder(this.context)
                 .setTitle("PK server endpoint")
                 .setView(input)
                 .setPositiveButton(R.string.ok, new android.content.DialogInterface.OnClickListener() {

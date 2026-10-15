@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="count_choose_answer">请选择刚才看到的图案数量。</string>
+    <string name="count_correct_feedback">正确！答案是 %1$d。</string>
+    <string name="count_wrong_feedback">错误，正确答案是 %1$d。</string>
+    <string name="count_wrong_choice">%1$s，错误答案</string>
+    <string name="count_sound_on">声音：开启</string>
+    <string name="count_sound_off">声音：关闭</string>
+    <string name="count_sound_on_action">声音已开启，点按关闭声音。</string>
+    <string name="count_sound_off_action">声音已关闭，点按开启声音。</string>
+</resources>

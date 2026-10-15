@@ -355,12 +355,10 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         private GameInfo selectedSuggestedGame;
 
         public TimeoutDialog(Context context) {
-            super(context);
-            setCancelable(false);
-            getWindow().setBackgroundDrawableResource(17170445);
-            requestWindowFeature(1);
-            getWindow().clearFlags(2);
-            setContentView(R.layout.dialog_timeout);
+            super(context, R.style.AppDialogTheme);
+            com.cube.memorygames.ui.DialogUi.setContent(this, R.layout.dialog_timeout);
+            setCancelable(true);
+            setCanceledOnTouchOutside(false);
             ButterKnife.bind((Dialog) this);
             Typeface typeFaceRoboto = Typeface.createFromAsset(Game1MemoryGridActivity.this.getAssets(), "Roboto-Light.ttf");
             this.failDialogTitle.setTypeface(Typeface.createFromAsset(Game1MemoryGridActivity.this.getAssets(), "Roboto-Regular.ttf"));
@@ -1191,7 +1189,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                     Game1MemoryGridActivity.this.panelPause.setVisibility(0);
                     Game1MemoryGridActivity.this.startNextLevel();
                 }
-            }).show();
+            }).setAchievementLevel(nextLevel).show();
         }
         this.grid.disableAllCells();
         SoundUtils.playSound(this, SOUND.WIN);
@@ -1263,7 +1261,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                             public void onDismiss(DialogInterface dialogInterface) {
                                 Game1MemoryGridActivity.this.takeLife();
                             }
-                        }).show();
+                        }).setAchievementLevel(nextLevel).show();
                     }
                 }
             }
@@ -1350,6 +1348,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                 Game1MemoryGridActivity.this.challengeReplayClickListener.onClick(null);
             }
         });
+        this.challengeResultDialog.setGoalScore(calculateGoalScore());
         this.challengeOpenDialogClickListener.onClick(null);
     }
 
@@ -1387,7 +1386,14 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     private void setCurrentLevel() {
-        String atCurrentLevelText = getString(R.string.at_current_level_placeholder, new Object[]{Integer.valueOf(this.progression.getLevelNumber())});
+        int level = Math.max(1, this.progression.getLevelNumber());
+        ((TextView) this.timeoutDialog.findViewById(R.id.dialog_result_level))
+                .setText(getString(R.string.dialog_result_level, level));
+        Map<String, LocalGameStats> statistics = this.localDataManager.getLocalGameStats();
+        LocalGameStats history = statistics == null ? null : statistics.get(this.gameInfo.getId());
+        int bestReached = history == null ? level : Math.max(level, history.maxLevel);
+        ((TextView) this.timeoutDialog.findViewById(R.id.dialog_result_best))
+                .setText(getString(R.string.dialog_result_best, bestReached));
     }
 
     public void onStatisticUpdated() {
@@ -1458,23 +1464,10 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         showAdsIfNeeded(24);
     }
 
-    private void showOnlineBackPressDialog() {
+    protected final void showOnlineBackPressDialog() {
         diagnosticOnline("game_back_dialog");
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage((int) R.string.dialog_lose_bet);
-        builder.setNegativeButton((int) R.string.cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                diagnosticOnline("game_back_cancel");
-                dialog.cancel();
-            }
-        });
-        builder.setPositiveButton((int) R.string.ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Game1MemoryGridActivity.this.openMainMenu();
-                dialog.dismiss();
-            }
-        });
-        builder.show();
+        com.cube.memorygames.ui.DialogUi.showOnlineExit(this, this::openMainMenu,
+                () -> diagnosticOnline("game_back_cancel"));
     }
 
     protected void clearWrongCells() {
@@ -1525,7 +1518,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                     Game1MemoryGridActivity.this.panelPause.setVisibility(4);
                     Game1MemoryGridActivity.this.timeoutDialog.show();
                 }
-            }).show();
+            }).setAchievementLevel(nextLevel).show();
         }
         if (isTimeOut) {
             SoundUtils.playSound(this, SOUND.FAIL);

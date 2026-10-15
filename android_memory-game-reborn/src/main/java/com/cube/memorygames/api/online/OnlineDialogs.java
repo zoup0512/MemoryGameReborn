@@ -20,7 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.cube.memorygames.ui.TimerView;
+import android.os.CountDownTimer;
+import android.os.SystemClock;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.Button;
+
+import com.cube.memorygames.ui.DialogUi;
 import com.memory.brain.training.games.R;
 
 import java.util.Locale;
@@ -52,8 +57,8 @@ public final class OnlineDialogs {
         LinearLayout card = dialogCard(context, true);
 
         TextView title = OnlineUi.text(context,
-                context.getString(R.string.not_enough_coins), 20.0f,
-                R.color.online_text_primary, OnlineUi.medium(context));
+                context.getString(R.string.dialog_online_coins_title), 20.0f,
+                R.color.dialog_text, OnlineUi.medium(context));
         title.setGravity(Gravity.CENTER);
         card.addView(title, matchWrap());
 
@@ -87,57 +92,64 @@ public final class OnlineDialogs {
         LinearLayout card = dialogCard(context, true);
 
         TextView title = OnlineUi.text(context, context.getString(R.string.online_room_code_prefix),
-                18.0f, R.color.online_text_primary, OnlineUi.medium(context));
+                18.0f, R.color.dialog_text, OnlineUi.medium(context));
         title.setGravity(Gravity.CENTER);
         card.addView(title, matchWrap());
 
-        TextView hint = OnlineUi.body(context, R.string.online_room_copy_hint);
+        TextView hint = OnlineUi.text(context, context.getString(R.string.dialog_online_copy_hint),
+                15.0f, R.color.dialog_text_secondary, OnlineUi.regular(context));
         hint.setGravity(Gravity.CENTER);
         hint.setPadding(0, dp(context, 6), 0, 0);
         card.addView(hint, matchWrap());
 
         LinearLayout codeCard = new LinearLayout(context);
         codeCard.setGravity(Gravity.CENTER);
-        codeCard.setBackgroundResource(R.drawable.online_card_background);
+        codeCard.setBackgroundColor(OnlineUi.color(context, R.color.dialog_surface));
         codeCard.setPadding(dp(context, 16), dp(context, 14), dp(context, 16), dp(context, 14));
         LinearLayout.LayoutParams codeCardParams = matchWrap();
         codeCardParams.topMargin = dp(context, 18);
         card.addView(codeCard, codeCardParams);
 
-        TextView codeView = OnlineUi.text(context, spacedCode(code), 34.0f,
-                R.color.online_accent, OnlineUi.bold(context));
+        final String roomCode = code == null ? "" : code;
+        TextView codeView = OnlineUi.text(context, spacedCode(roomCode), 34.0f,
+                R.color.dialog_primary, OnlineUi.bold(context));
         codeView.setGravity(Gravity.CENTER);
-        codeView.setLetterSpacing(0.08f);
-        codeView.setContentDescription(code);
+        codeView.setContentDescription(context.getString(R.string.dialog_online_code_label)
+                + " " + spacedCode(roomCode));
+        codeView.setTextIsSelectable(true);
+        codeView.setSaveEnabled(false);
         codeCard.addView(codeView, matchWrap());
+
+        TextView copy = OnlineUi.secondaryButton(context, R.string.dialog_online_copy_code);
+        copy.setOnClickListener(v -> DialogUi.copy(context,
+                context.getString(R.string.dialog_online_code_label), roomCode));
+        LinearLayout.LayoutParams copyParams = matchWrap();
+        copyParams.topMargin = dp(context, 12);
+        card.addView(copy, copyParams);
 
         TextView waiting = OnlineUi.text(context,
                 context.getString(R.string.online_room_waiting), 15.0f,
-                R.color.online_text_secondary, OnlineUi.regular(context));
+                R.color.dialog_text_secondary, OnlineUi.regular(context));
         waiting.setGravity(Gravity.CENTER);
         waiting.setPadding(0, dp(context, 18), 0, 0);
         card.addView(waiting, matchWrap());
 
-        long remaining = ROOM_TTL_MS
-                - (android.os.SystemClock.elapsedRealtime() - createdElapsed);
-        if (remaining >= 1000L) {
-            TimerView timer = new TimerView(context);
-            LinearLayout.LayoutParams timerParams = new LinearLayout.LayoutParams(
-                    dp(context, 92), dp(context, 92));
-            timerParams.gravity = Gravity.CENTER_HORIZONTAL;
-            timerParams.topMargin = dp(context, 16);
-            card.addView(timer, timerParams);
-            timer.showTimer((int) remaining, true);
-        }
-
-        TextView expires = OnlineUi.text(context,
-                context.getString(R.string.online_room_expires), 12.0f,
-                R.color.online_text_secondary, OnlineUi.regular(context));
+        // Derive every tick from the original monotonic creation time, never a fresh ten minutes.
+        final long deadline = createdElapsed + ROOM_TTL_MS;
+        final TextView expires = OnlineUi.text(context, "", 15.0f,
+                R.color.dialog_text_secondary, OnlineUi.regular(context));
         expires.setGravity(Gravity.CENTER);
         expires.setPadding(0, dp(context, 10), 0, 0);
         card.addView(expires, matchWrap());
+        updateExpiry(context, expires, deadline);
+        final CountDownTimer countdown = new CountDownTimer(
+                Math.max(1L, deadline - SystemClock.elapsedRealtime()), 1000L) {
+            @Override public void onTick(long ignored) { updateExpiry(context, expires, deadline); }
+            @Override public void onFinish() { updateExpiry(context, expires, deadline); }
+        };
+        dialog.setOnDismissListener(ignored -> countdown.cancel());
 
-        TextView cancel = OnlineUi.secondaryButton(context, R.string.cancel);
+        TextView cancel = OnlineUi.secondaryButton(context, R.string.dialog_online_leave_room);
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -155,6 +167,7 @@ public final class OnlineDialogs {
         dialog.setCancelable(false);
         dialog.show();
         fullScreen(dialog);
+        countdown.start();
         return dialog;
     }
 
@@ -164,7 +177,7 @@ public final class OnlineDialogs {
         LinearLayout card = dialogCard(context, false);
 
         TextView title = OnlineUi.text(context, context.getString(R.string.online_enter_code),
-                20.0f, R.color.online_text_primary, OnlineUi.medium(context));
+                20.0f, R.color.dialog_text, OnlineUi.medium(context));
         title.setGravity(Gravity.CENTER);
         card.addView(title, matchWrap());
 
@@ -173,28 +186,40 @@ public final class OnlineDialogs {
         hint.setPadding(0, dp(context, 6), 0, 0);
         card.addView(hint, matchWrap());
 
+        TextView label = OnlineUi.text(context,
+                context.getString(R.string.dialog_online_code_label), 15.0f,
+                R.color.dialog_text, OnlineUi.medium(context));
+        label.setPadding(0, dp(context, 16), 0, dp(context, 4));
+        card.addView(label, matchWrap());
         final EditText input = new EditText(context);
+        input.setId(View.generateViewId());
+        label.setLabelFor(input.getId());
+        input.setSaveEnabled(false);
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
         input.setTypeface(OnlineUi.medium(context));
         input.setTextSize(28.0f);
-        input.setTextColor(OnlineUi.color(context, R.color.online_text_primary));
-        input.setHintTextColor(OnlineUi.color(context, R.color.online_text_secondary));
+        input.setTextColor(OnlineUi.color(context, R.color.dialog_text));
+        input.setHintTextColor(OnlineUi.color(context, R.color.dialog_text_secondary));
         input.setGravity(Gravity.CENTER);
         input.setSingleLine(true);
         input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        input.setBackgroundResource(R.drawable.online_input_background);
+        GradientDrawable inputBackground = OnlineUi.roundedBackground(context,
+                R.color.dialog_surface, 12);
+        inputBackground.setStroke(dp(context, 1), OnlineUi.color(context, R.color.dialog_text_secondary));
+        input.setBackground(inputBackground);
         input.setPadding(dp(context, 16), 0, dp(context, 16), 0);
         input.setMinHeight(dp(context, 56));
         LinearLayout.LayoutParams inputParams = matchWrap();
-        inputParams.topMargin = dp(context, 18);
+        inputParams.topMargin = dp(context, 4);
         card.addView(input, inputParams);
 
         final TextView error = OnlineUi.text(context,
                 context.getString(R.string.online_room_invalid), 13.0f,
-                R.color.online_danger, OnlineUi.medium(context));
+                R.color.dialog_danger, OnlineUi.medium(context));
         error.setGravity(Gravity.CENTER);
         error.setPadding(0, dp(context, 8), 0, 0);
+        error.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         error.setVisibility(View.INVISIBLE);
         card.addView(error, matchWrap());
 
@@ -218,7 +243,8 @@ public final class OnlineDialogs {
         cancelParams.rightMargin = dp(context, 6);
         row.addView(cancel, cancelParams);
 
-        final TextView join = OnlineUi.primaryButton(context, R.string.ok);
+        final TextView join = OnlineUi.primaryButton(context, R.string.dialog_online_join);
+        final boolean[] submitted = {false};
         LinearLayout.LayoutParams joinParams = new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
         joinParams.leftMargin = dp(context, 6);
@@ -227,12 +253,17 @@ public final class OnlineDialogs {
         final View.OnClickListener submit = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (submitted[0]) return;
                 String code = input.getText().toString().trim();
                 if (!code.matches("\\d{4}")) {
                     error.setVisibility(View.VISIBLE);
+                    input.setError(context.getString(R.string.online_room_invalid));
                     input.requestFocus();
+                    error.announceForAccessibility(error.getText());
                     return;
                 }
+                submitted[0] = true;
+                join.setEnabled(false);
                 hideKeyboard(context, input);
                 dialog.dismiss();
                 if (listener != null) {
@@ -259,6 +290,7 @@ public final class OnlineDialogs {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                input.setError(null);
                 if (error.getVisibility() == View.VISIBLE) {
                     error.setVisibility(View.INVISIBLE);
                 }
@@ -298,7 +330,7 @@ public final class OnlineDialogs {
         LinearLayout card = dialogCard(context, false);
 
         TextView title = OnlineUi.text(context, context.getString(R.string.online_bot_pick),
-                20.0f, R.color.online_text_primary, OnlineUi.medium(context));
+                20.0f, R.color.dialog_text, OnlineUi.medium(context));
         title.setGravity(Gravity.CENTER);
         card.addView(title, matchWrap());
 
@@ -320,7 +352,7 @@ public final class OnlineDialogs {
 
         LinearLayout tierList = new LinearLayout(context);
         tierList.setOrientation(LinearLayout.VERTICAL);
-        tierList.setBackgroundResource(R.drawable.online_card_background);
+        tierList.setBackgroundColor(OnlineUi.color(context, R.color.dialog_surface));
         LinearLayout.LayoutParams listParams = matchWrap();
         listParams.topMargin = dp(context, 16);
         card.addView(tierList, listParams);
@@ -349,15 +381,15 @@ public final class OnlineDialogs {
             row.addView(labels, new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
-            TextView name = OnlineUi.text(context, tierDisplayName(tier.id), 17.0f,
-                    R.color.online_text_primary, OnlineUi.medium(context));
+            TextView name = OnlineUi.text(context, tierDisplayName(context, tier.id), 17.0f,
+                    R.color.dialog_text, OnlineUi.medium(context));
             labels.addView(name, matchWrap());
 
             TextView info = OnlineUi.text(context,
                     String.format(Locale.US,
                             context.getString(R.string.online_bot_reward),
                             tier.elo, tier.winCoins),
-                    13.0f, R.color.online_text_secondary, OnlineUi.regular(context));
+                    13.0f, R.color.dialog_text_secondary, OnlineUi.regular(context));
             info.setPadding(0, dp(context, 2), 0, 0);
             labels.addView(info, matchWrap());
 
@@ -376,8 +408,18 @@ public final class OnlineDialogs {
                     }
                 }
             });
+            row.setContentDescription(name.getText() + ", " + info.getText());
+            badge.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            labels.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+            action.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            row.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                @Override public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                    super.onInitializeAccessibilityNodeInfo(host, info);
+                    info.setClassName(Button.class.getName());
+                }
+            });
             tierList.addView(row, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 64)));
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
             if (i < tiers.length - 1) {
                 LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
@@ -440,21 +482,36 @@ public final class OnlineDialogs {
         if ("MASTER".equalsIgnoreCase(id)) {
             return OnlineUi.color(context, R.color.online_rank_master);
         }
-        return OnlineUi.color(context, R.color.online_text_secondary);
+        return OnlineUi.color(context, R.color.dialog_text_secondary);
     }
 
-    private static String tierDisplayName(String id) {
-        if (id == null || id.length() == 0) {
-            return "?";
+    private static String tierDisplayName(Context context, String id) {
+        int label = R.string.dialog_online_tier_unknown;
+        if ("BRONZE".equalsIgnoreCase(id)) label = R.string.dialog_online_tier_bronze;
+        else if ("SILVER".equalsIgnoreCase(id)) label = R.string.dialog_online_tier_silver;
+        else if ("GOLD".equalsIgnoreCase(id)) label = R.string.dialog_online_tier_gold;
+        else if ("DIAMOND".equalsIgnoreCase(id)) label = R.string.dialog_online_tier_diamond;
+        else if ("MASTER".equalsIgnoreCase(id)) label = R.string.dialog_online_tier_master;
+        return context.getString(label);
+    }
+
+    private static void updateExpiry(Context context, TextView expires, long deadline) {
+        long remaining = Math.max(0L, deadline - SystemClock.elapsedRealtime());
+        if (remaining == 0L) {
+            expires.setText(R.string.dialog_online_expired);
+        } else {
+            long seconds = (remaining + 999L) / 1000L;
+            expires.setText(context.getString(R.string.dialog_online_expires_remaining,
+                    String.format(Locale.getDefault(), "%d:%02d", seconds / 60L, seconds % 60L)));
         }
-        return id.charAt(0) + id.substring(1).toLowerCase(Locale.US);
     }
 
     private static Dialog baseDialog(Context context) {
-        Dialog dialog = new Dialog(context);
+        Dialog dialog = new Dialog(context, R.style.AppDialogTheme);
         dialog.getWindow().setBackgroundDrawableResource(WINDOW_BG_ORIGINAL);
         dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         WindowManager.LayoutParams params = dialog.getWindow().getAttributes();
         params.dimAmount = 0.45f;
         dialog.getWindow().setAttributes(params);
@@ -464,6 +521,8 @@ public final class OnlineDialogs {
     private static LinearLayout dialogCard(Context context, boolean emphasis) {
         LinearLayout card = emphasis ? OnlineUi.emphasisCard(context) : OnlineUi.card(context);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setBackground(OnlineUi.roundedBackground(context, R.color.dialog_surface, 20));
+        card.setPadding(dp(context, 24), dp(context, 24), dp(context, 24), dp(context, 24));
         return card;
     }
 

@@ -3,11 +3,12 @@ package com.cube.memorygames.games;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnShowListener;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.RelativeLayout.LayoutParams;
@@ -18,11 +19,13 @@ import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.SoundUtils;
 import com.cube.memorygames.SoundUtils.SOUND;
 import com.cube.memorygames.games.Game1MemoryGridActivity.ReadyFlowState;
+import com.cube.memorygames.logic.CountAnswerOptions;
 import com.cube.memorygames.logic.GameFlowState;
 import com.cube.memorygames.logic.GameFlowStateTimer;
 import com.cube.memorygames.logic.GameProgression5;
 import com.cube.memorygames.logic.GameRandom;
 import com.cube.memorygames.ui.CountAllGrid;
+import com.cube.memorygames.ui.DialogUi;
 import com.github.florent37.viewanimator.ViewAnimator;
 import com.memory.brain.training.games.R;
 import com.mopub.volley.DefaultRetryPolicy;
@@ -32,12 +35,13 @@ import java.util.List;
 public class Game5CountAllActivity extends Game1MemoryGridActivity {
     private OnClickListener cellButtonClickListener = new OnClickListener() {
         public void onClick(View v) {
+            if (Game5CountAllActivity.this.dialog == null
+                    || Game5CountAllActivity.this.dialog.answerLocked) {
+                return;
+            }
+            boolean correct = Game5CountAllActivity.this.dialog.showAnswerFeedback((TextView) v);
             Game5CountAllActivity.this.disablePausePanel();
-            if (((TextView) v).getText().equals(new Integer(Game5CountAllActivity.this.currentWinCells).toString())) {
-                Game5CountAllActivity.this.dialog.button1.setClickable(false);
-                Game5CountAllActivity.this.dialog.button2.setClickable(false);
-                Game5CountAllActivity.this.dialog.button3.setClickable(false);
-                Game5CountAllActivity.this.dialog.button4.setClickable(false);
+            if (correct) {
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button1).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button2).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button3).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
@@ -57,22 +61,6 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             SoundUtils.playSound(Game5CountAllActivity.this, SOUND.FAIL);
             Game5CountAllActivity.this.grid.disableAllCells();
             Game5CountAllActivity.this.grid.showChallengeCells();
-            if (Game5CountAllActivity.this.dialog.button1.getText().equals(new Integer(Game5CountAllActivity.this.currentWinCells).toString())) {
-                Game5CountAllActivity.this.dialog.button1.setBackgroundResource(R.drawable.button_count_win_background);
-            }
-            if (Game5CountAllActivity.this.dialog.button2.getText().equals(new Integer(Game5CountAllActivity.this.currentWinCells).toString())) {
-                Game5CountAllActivity.this.dialog.button2.setBackgroundResource(R.drawable.button_count_win_background);
-            }
-            if (Game5CountAllActivity.this.dialog.button3.getText().equals(new Integer(Game5CountAllActivity.this.currentWinCells).toString())) {
-                Game5CountAllActivity.this.dialog.button3.setBackgroundResource(R.drawable.button_count_win_background);
-            }
-            if (Game5CountAllActivity.this.dialog.button4.getText().equals(new Integer(Game5CountAllActivity.this.currentWinCells).toString())) {
-                Game5CountAllActivity.this.dialog.button4.setBackgroundResource(R.drawable.button_count_win_background);
-            }
-            Game5CountAllActivity.this.dialog.button1.setClickable(false);
-            Game5CountAllActivity.this.dialog.button2.setClickable(false);
-            Game5CountAllActivity.this.dialog.button3.setClickable(false);
-            Game5CountAllActivity.this.dialog.button4.setClickable(false);
             Handler handler = new Handler();
             Game5CountAllActivity.this.timerContainer.setVisibility(0);
             Game5CountAllActivity.this.textLevelReady.setText("");
@@ -112,16 +100,17 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
         @BindView(R.id.panel_pause)
         View panelPause;
         private int rightAnswer;
+        private boolean answerLocked;
+        private TextView feedback;
         @BindView(R.id.title)
         TextView title;
 
         public CellsCountDialog(Context context) {
-            super(context, R.style.GdxTheme);
+            super(context, R.style.AppDialogTheme);
             setCancelable(false);
-            getWindow().setBackgroundDrawableResource(17170445);
-            getWindow().requestFeature(1);
-            setContentView(R.layout.dialog_game5);
+            DialogUi.setContent(this, R.layout.dialog_game5);
             ButterKnife.bind((Object) this, (Dialog) this);
+            this.feedback = (TextView) findViewById(R.id.count_answer_feedback);
             Typeface typeFaceRoboto = Typeface.createFromAsset(Game5CountAllActivity.this.getAssets(), "Roboto-Light.ttf");
             this.button1.setOnClickListener(Game5CountAllActivity.this.cellButtonClickListener);
             this.button2.setOnClickListener(Game5CountAllActivity.this.cellButtonClickListener);
@@ -135,11 +124,25 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             this.title.setText(Game5CountAllActivity.this.getString(R.string.game5_dialog_text));
             this.panelPause.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    Game5CountAllActivity.this.soundClick();
+                    // The inherited offline soundClick opens PauseDialog instead.
+                    // This control is always sound-only; it must never stop a timer.
+                    if (Game5CountAllActivity.this.isOnlineGame) {
+                        Game5CountAllActivity.this.soundClick();
+                    } else {
+                        boolean enabled = !SoundUtils.isPlaySound(getContext());
+                        Game5CountAllActivity.this.application.logEvent(Game5CountAllActivity.this,
+                                MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL,
+                                enabled ? MemoryApplicationModel.ANALYTICS_EVENT_SOUND_ON
+                                        : MemoryApplicationModel.ANALYTICS_EVENT_SOUND_OFF);
+                        SoundUtils.setPlaySound(getContext(), enabled);
+                    }
+                    updateSoundState();
+                    panelPause.announceForAccessibility(((TextView) panelPause).getText());
                 }
             });
             setOnShowListener(new DialogInterface.OnShowListener() {
                 public void onShow(DialogInterface dialog) {
+                    CellsCountDialog.this.updateSoundState();
                     ViewAnimator.animate(CellsCountDialog.this.button1).scale(0.0f, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT).duration(200).start();
                     ViewAnimator.animate(CellsCountDialog.this.button2).scale(0.0f, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT).duration(200).start();
                     ViewAnimator.animate(CellsCountDialog.this.button3).scale(0.0f, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT).duration(200).start();
@@ -148,32 +151,98 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             });
         }
 
-        public void setRightAnswer(int rightAnswer) {
-            this.rightAnswer = rightAnswer;
-            int rightAnswerPosition = rightAnswer - 1;
-            if (rightAnswer > 3) {
-                rightAnswerPosition = GameRandom.nextInt(3);
-            }
-            int[] answers = new int[4];
-            for (int i = 0; i < answers.length; i++) {
-                if (i == rightAnswerPosition) {
-                    answers[i] = rightAnswer;
-                } else {
-                    answers[i] = (i - rightAnswerPosition) + rightAnswer;
+        private TextView[] answerButtons() {
+            return new TextView[]{this.button1, this.button2, this.button3, this.button4};
+        }
+
+        private void updateSoundState() {
+            boolean enabled = SoundUtils.isPlaySound(getContext());
+            TextView soundButton = (TextView) this.panelPause;
+            soundButton.setText(enabled ? R.string.count_sound_on : R.string.count_sound_off);
+            soundButton.setCompoundDrawablesWithIntrinsicBounds(enabled
+                    ? android.R.drawable.ic_lock_silent_mode_off
+                    : android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
+            soundButton.setContentDescription(getContext().getString(enabled
+                    ? R.string.count_sound_on_action : R.string.count_sound_off_action));
+        }
+
+        private boolean showAnswerFeedback(TextView selected) {
+            this.answerLocked = true;
+            String correctValue = Integer.toString(this.rightAnswer);
+            boolean correct = correctValue.contentEquals(selected.getText());
+            String selectedValue = selected.getText().toString();
+            for (TextView button : answerButtons()) {
+                button.setClickable(false);
+                if (correctValue.contentEquals(button.getText())) {
+                    button.setBackgroundResource(R.drawable.dialog_primary_button);
+                    button.setTextColor(ContextCompat.getColor(getContext(), R.color.dialog_surface));
+                    button.setContentDescription(getContext().getString(
+                            R.string.count_correct_feedback, this.rightAnswer));
                 }
             }
-            this.button1.setText(answers[0] + "");
-            this.button2.setText(answers[1] + "");
-            this.button3.setText(answers[2] + "");
-            this.button4.setText(answers[3] + "");
-            this.button1.setClickable(true);
-            this.button2.setClickable(true);
-            this.button3.setClickable(true);
-            this.button4.setClickable(true);
-            this.button1.setBackgroundResource(R.drawable.button_count);
-            this.button2.setBackgroundResource(R.drawable.button_count);
-            this.button3.setBackgroundResource(R.drawable.button_count);
-            this.button4.setBackgroundResource(R.drawable.button_count);
+            if (!correct) {
+                selected.setTextColor(ContextCompat.getColor(getContext(), R.color.dialog_danger));
+                selected.setContentDescription(getContext().getString(
+                        R.string.count_wrong_choice, selectedValue));
+            }
+            this.feedback.setText(getContext().getString(correct
+                    ? R.string.count_correct_feedback : R.string.count_wrong_feedback, this.rightAnswer));
+            this.feedback.setTextColor(ContextCompat.getColor(getContext(), correct
+                    ? R.color.dialog_primary : R.color.dialog_danger));
+            // A visible result, not only a color change, with one explicit announcement.
+            this.feedback.announceForAccessibility(this.feedback.getText());
+            return correct;
+        }
+
+        @Override
+        public void onWindowFocusChanged(boolean hasFocus) {
+            super.onWindowFocusChanged(hasFocus);
+            if (hasFocus) {
+                // PauseDialog can change the shared sound preference while above us.
+                updateSoundState();
+            }
+        }
+
+        @Override
+        public boolean onKeyUp(int keyCode, KeyEvent event) {
+            // A non-cancelable Dialog otherwise swallows hardware Back without
+            // reaching onBackPressed on older Android versions.
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                if (!event.isCanceled()) {
+                    onBackPressed();
+                }
+                return true;
+            }
+            return super.onKeyUp(keyCode, event);
+        }
+
+        @Override
+        public void onBackPressed() {
+            if (this.answerLocked || Game5CountAllActivity.this.isFinishing()) {
+                return;
+            }
+            if (Game5CountAllActivity.this.isOnlineGame) {
+                Game5CountAllActivity.this.onBackPressed();
+            } else {
+                // Preserve the existing pause limit, resume/retry and exit handling.
+                Game5CountAllActivity.this.soundClick();
+            }
+        }
+
+        public void setRightAnswer(int rightAnswer) {
+            int[] answers = CountAnswerOptions.generate(rightAnswer);
+            this.rightAnswer = rightAnswer;
+            this.answerLocked = false;
+            this.feedback.setText(R.string.count_choose_answer);
+            this.feedback.setTextColor(ContextCompat.getColor(getContext(), R.color.dialog_text_secondary));
+            TextView[] buttons = answerButtons();
+            for (int i = 0; i < buttons.length; i++) {
+                buttons[i].setText(Integer.toString(answers[i]));
+                buttons[i].setContentDescription(null);
+                buttons[i].setClickable(true);
+                buttons[i].setBackgroundResource(R.drawable.dialog_secondary_button);
+                buttons[i].setTextColor(ContextCompat.getColorStateList(getContext(), R.color.dialog_secondary_text));
+            }
         }
     }
 

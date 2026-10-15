@@ -128,16 +128,11 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             String buyGameId = "game" + (Integer.parseInt(gameId) + 1);
             if (!gameInfo.hasLock() || localUser.parseUnlockedContent().contains(buyGameId) || localUser.vip || localUser.gamesUnlocked) {
                 MainMenuActivity.this.launchGame(gameInfo);
-            } else if (MainMenuActivity.this.localDataManager.getLocalUser().money >= gameInfo.getStarsToUnlock()) {
+            } else {
                 MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_UNLOCK, MemoryApplicationModel.ANALYTICS_EVENT_TRY_UNLOCK_GAME_PREFIX + gameInfo.getId());
-                new UnlockDialog(MainMenuActivity.this, new OnClickListener() {
+                new UnlockDialog(MainMenuActivity.this, gameInfo, new OnClickListener() {
                     public void onClick(View view) {
                         MainMenuActivity.this.unlockGame(gameInfo, v);
-                    }
-                }).show();
-            } else {
-                new UnlockDialog(MainMenuActivity.this, new OnClickListener() {
-                    public void onClick(View view) {
                     }
                 }).show();
             }
@@ -152,22 +147,24 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         @BindView(R.id.ok)
         TextView ok;
 
-        public UnlockDialog(Context context, final View.OnClickListener onClickListener) {
+        private final GameInfo gameInfo;
+
+        public UnlockDialog(Context context, GameInfo gameInfo, final View.OnClickListener onClickListener) {
             super(context);
-            setCancelable(false);
-            getWindow().setBackgroundDrawableResource(17170445);
-            getWindow().requestFeature(1);
-            setContentView(R.layout.dialog_unlock);
+            this.gameInfo = gameInfo;
+            com.cube.memorygames.ui.DialogUi.setContent(this, R.layout.dialog_unlock);
             ButterKnife.bind((Object) this, (Dialog) this);
-            Typeface typefaceLight = Typeface.createFromAsset(MainMenuActivity.this.getAssets(), "Roboto-Light.ttf");
-            this.ok.setTypeface(typefaceLight);
-            this.cancel.setTypeface(typefaceLight);
-            this.message.setTypeface(typefaceLight, 2);
-            this.message.setText(MainMenuActivity.this.getString(R.string.dialog_unlock_title));
+            updateUnlockState();
             this.ok.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
+                    // The balance may have changed since this dialog was opened.
+                    if (!UnlockDialog.this.updateUnlockState()) {
+                        return;
+                    }
                     UnlockDialog.this.dismiss();
-                    onClickListener.onClick(null);
+                    if (onClickListener != null) {
+                        onClickListener.onClick(v);
+                    }
                 }
             });
             this.cancel.setOnClickListener(new View.OnClickListener() {
@@ -175,6 +172,29 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                     UnlockDialog.this.dismiss();
                 }
             });
+        }
+
+        private boolean updateUnlockState() {
+            int price = this.gameInfo.getStarsToUnlock();
+            int money = MainMenuActivity.this.localDataManager.getLocalUser().money;
+            this.message.setText(getContext().getString(R.string.dg_unlock_details,
+                    getContext().getString(this.gameInfo.getGameNameRes()), price, money));
+            boolean affordable = money >= price;
+            TextView reason = (TextView) findViewById(R.id.dg_unlock_reason);
+            reason.setVisibility(affordable ? View.GONE : View.VISIBLE);
+            if (!affordable) {
+                reason.setText(getContext().getString(R.string.dg_unlock_insufficient, price - money));
+            }
+            this.ok.setText(getContext().getString(R.string.dg_unlock_confirm, price));
+            this.ok.setEnabled(affordable);
+            this.ok.setAlpha(affordable ? 1.0f : 0.5f);
+            return affordable;
+        }
+
+        @Override
+        protected void onStart() {
+            super.onStart();
+            updateUnlockState();
         }
     }
 
@@ -432,6 +452,12 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     }
 
     private void unlockGame(GameInfo gameInfo, View view) {
+        String unlockedId = "game" + (Integer.parseInt(gameInfo.getId()) + 1);
+        LocalUser user = this.localDataManager.getLocalUser();
+        if (user.money < gameInfo.getStarsToUnlock() || user.parseUnlockedContent().contains(unlockedId)
+                || user.vip || user.gamesUnlocked) {
+            return;
+        }
         if (!(view == null || view.getParent() == null)) {
             View lockView = ((ViewGroup) view.getParent()).findViewById(R.id.lock_container);
             if (lockView != null) {

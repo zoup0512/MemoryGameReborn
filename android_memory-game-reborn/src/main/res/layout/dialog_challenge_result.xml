@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:orientation="vertical" android:id="@id/dialog_content" android:background="@drawable/drawable_state_cell_empty" android:paddingLeft="16.0dip" android:paddingTop="32.0dip" android:paddingRight="16.0dip" android:paddingBottom="32.0dip" android:layout_width="300.0dip" android:layout_height="wrap_content"
-  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
-    <TextView android:textSize="24.0sp" android:textColor="@android:color/black" android:gravity="center" android:layout_gravity="center" android:id="@id/gameName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16.0dip" android:text="Paper Plans" />
-    <TextView android:textSize="18.0sp" android:textColor="@color/workout_games_title_color" android:gravity="center" android:layout_gravity="center" android:id="@id/score" android:paddingBottom="8.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="19" />
-    <LinearLayout android:layout_gravity="center" android:orientation="horizontal" android:padding="4.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content">
-        <ImageView android:id="@id/star1" android:layout_width="32.0dip" android:layout_height="32.0dip" android:layout_margin="4.0dip" android:tint="@color/grid_correct" app:srcCompat="@drawable/ic_star" />
-        <ImageView android:id="@id/star2" android:layout_width="32.0dip" android:layout_height="32.0dip" android:layout_margin="4.0dip" android:tint="@color/grid_correct" app:srcCompat="@drawable/ic_star" />
-        <ImageView android:id="@id/star3" android:layout_width="32.0dip" android:layout_height="32.0dip" android:layout_margin="4.0dip" android:tint="@color/grid_correct" app:srcCompat="@drawable/ic_star" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@id/dialog_content" android:orientation="vertical"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <TextView style="@style/AppDialogBody" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/dg_challenge_result_title" android:textColor="@color/dialog_text_secondary" />
+    <TextView android:id="@id/gameName" style="@style/AppDialogTitle" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="4dp" />
+    <TextView android:id="@id/score" style="@style/AppDialogBody" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="16dp" />
+    <TextView android:id="@+id/dg_challenge_goal" style="@style/AppDialogBody" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="4dp" android:visibility="gone" />
+    <TextView android:id="@+id/dg_challenge_difference" style="@style/AppDialogBody" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="4dp" android:visibility="gone" />
+    <LinearLayout android:orientation="horizontal" android:gravity="center"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+        android:importantForAccessibility="noHideDescendants">
+        <ImageView android:id="@id/star1" android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
+        <ImageView android:id="@id/star2" android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
+        <ImageView android:id="@id/star3" android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
     </LinearLayout>
-    <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dip">
-        <TextView android:textSize="16.0sp" android:textColor="@android:color/white" android:gravity="center" android:layout_gravity="center" android:id="@id/home" android:background="@drawable/button_play" android:paddingLeft="16.0dip" android:paddingTop="8.0dip" android:paddingRight="16.0dip" android:paddingBottom="8.0dip" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_marginRight="4.0dip" android:text="@string/home" android:layout_weight="0.5" android:textAllCaps="true" />
-        <TextView android:textSize="16.0sp" android:textColor="@android:color/white" android:gravity="center" android:layout_gravity="center" android:id="@id/next" android:background="@drawable/button_play" android:paddingLeft="16.0dip" android:paddingTop="8.0dip" android:paddingRight="16.0dip" android:paddingBottom="8.0dip" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:text="@string/next_level" android:layout_weight="0.5" android:textAllCaps="true" />
-    </LinearLayout>
+    <TextView android:id="@+id/dg_challenge_stars" style="@style/AppDialogBody"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" />
+    <Button android:id="@id/next" style="@style/AppDialogPrimaryButton" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="@string/dg_challenge_next" />
+    <Button android:id="@id/home" style="@style/AppDialogSecondaryButton" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/dg_challenge_home" />
 </LinearLayout>

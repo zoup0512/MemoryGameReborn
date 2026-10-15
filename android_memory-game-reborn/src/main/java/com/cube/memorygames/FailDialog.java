@@ -2,36 +2,25 @@ package com.cube.memorygames;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
-import android.os.Handler;
 import android.view.View;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.cube.memorygames.ui.TimerView;
+import com.cube.memorygames.ui.DialogUi;
 import com.memory.brain.training.games.R;
 
 public class FailDialog extends Dialog {
-    private static final int DELAY = 5000;
-    private OnDialogClickListener buyClickListener;
-    @BindView(R.id.buyImage)
-    View buyImage;
-    @BindView(R.id.buyText)
-    TextView buyText;
-    private OnDialogClickListener exitCLickListener;
-    Handler handler;
-    private OnDialogClickListener restartClickListener;
-    @BindView(R.id.restartContainer)
-    View restartContainer;
-    private Runnable runnable = new Runnable() {
-        public void run() {
-            FailDialog.this.onBackPressed();
-        }
-    };
-    @BindView(R.id.timerView)
-    TimerView timerView;
+    private static final int CONTINUE_COST = 30;
+    private static final int MAX_CONTINUES = 7;
+    private final int continuesUsed;
+    private final OnDialogClickListener buyClickListener;
+    private final OnDialogClickListener exitCLickListener;
+    private final OnDialogClickListener restartClickListener;
+    @BindView(R.id.buyImage) View buyImage;
+    @BindView(R.id.buyText) TextView buyText;
+    @BindView(R.id.dg_balance) TextView balance;
+    @BindView(R.id.dg_continue_reason) TextView reason;
 
     public interface OnDialogClickListener {
         void onDialogClick(Dialog dialog);
@@ -39,56 +28,62 @@ public class FailDialog extends Dialog {
 
     public FailDialog(Activity activity, int buyStarsClickedCountCount, OnDialogClickListener buyClickListener, OnDialogClickListener restartClickListener, OnDialogClickListener exitCLickListener) {
         super(activity);
+        this.continuesUsed = Math.max(0, buyStarsClickedCountCount);
         this.buyClickListener = buyClickListener;
         this.restartClickListener = restartClickListener;
         this.exitCLickListener = exitCLickListener;
-        getWindow().setBackgroundDrawableResource(17170445);
-        getWindow().requestFeature(1);
-        getWindow().clearFlags(2);
-        setCancelable(false);
-        setContentView(R.layout.dialog_fail);
+        setCancelable(true);
+        setCanceledOnTouchOutside(false);
+        DialogUi.setContent(this, R.layout.dialog_fail);
         ButterKnife.bind((Dialog) this);
-        this.timerView.showTimer(DELAY, true);
-        this.handler = new Handler();
-        this.handler.postDelayed(this.runnable, 5000);
-        this.buyText.setText("30 " + getContext().getString(R.string.coins));
-        if (buyStarsClickedCountCount >= 7) {
-            this.buyImage.setEnabled(false);
+        this.buyText.setText(getContext().getString(R.string.dg_continue_cost, CONTINUE_COST));
+        updateContinueState();
+    }
+
+    private boolean updateContinueState() {
+        int money = MemoryApplicationModel.getInstance().getLocalDataManager().getLocalUser().money;
+        this.balance.setText(getContext().getString(R.string.dg_balance, money));
+        boolean available = this.continuesUsed < MAX_CONTINUES && money >= CONTINUE_COST;
+        this.buyImage.setEnabled(available);
+        this.buyImage.setAlpha(available ? 1.0f : 0.5f);
+        if (this.continuesUsed >= MAX_CONTINUES) {
+            this.reason.setText(getContext().getString(R.string.dg_continue_limit, MAX_CONTINUES));
+        } else if (money < CONTINUE_COST) {
+            this.reason.setText(getContext().getString(R.string.dg_continue_insufficient, CONTINUE_COST - money, MAX_CONTINUES - this.continuesUsed));
         } else {
-            this.buyImage.setEnabled(true);
+            this.reason.setText(getContext().getString(R.string.dg_continue_remaining, MAX_CONTINUES - this.continuesUsed, MAX_CONTINUES));
         }
-        setOnDismissListener(new OnDismissListener() {
-            public void onDismiss(DialogInterface dialog) {
-                FailDialog.this.handler.removeCallbacks(FailDialog.this.runnable);
-            }
-        });
+        return available;
     }
 
-    public void dismiss() {
-        this.handler.removeCallbacks(this.runnable);
-        try {
-            super.dismiss();
-        } catch (Exception e) {
-        }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        updateContinueState();
     }
 
+    @Override
     public void onBackPressed() {
+        endGameClick();
+    }
+
+    @OnClick(R.id.dg_end_game)
+    void endGameClick() {
         if (this.exitCLickListener != null) {
             this.exitCLickListener.onDialogClick(this);
         }
     }
 
-    @OnClick({R.id.restartImage})
+    @OnClick(R.id.restartImage)
     void restartContainerClick() {
         if (this.restartClickListener != null) {
             this.restartClickListener.onDialogClick(this);
         }
     }
 
-    @OnClick({R.id.buyImage})
+    @OnClick(R.id.buyImage)
     void buyContainerClick() {
-        if (this.buyClickListener != null) {
-            this.handler.removeCallbacks(this.runnable);
+        if (updateContinueState() && this.buyClickListener != null) {
             this.buyClickListener.onDialogClick(this);
         }
     }

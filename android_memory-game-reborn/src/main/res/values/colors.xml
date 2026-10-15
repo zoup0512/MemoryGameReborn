@@ -122,8 +122,8 @@
     <color name="online_page">#FFF4F9FE</color>
     <color name="online_surface">#FFFFFFFF</color>
     <color name="online_surface_alt">#FFE8F5FD</color>
-    <color name="online_primary">#FF079DDA</color>
-    <color name="online_primary_pressed">#FF087CAF</color>
+    <color name="online_primary">#FF087CAF</color>
+    <color name="online_primary_pressed">#FF06628C</color>
     <color name="online_primary_disabled">#FF9FD7EC</color>
     <color name="online_primary_soft">#FFDDF3FC</color>
     <color name="online_accent">#FF4A5BC7</color>

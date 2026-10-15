@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="count_choose_answer">Choose the number of objects you saw.</string>
+    <string name="count_correct_feedback">Correct! The answer is %1$d.</string>
+    <string name="count_wrong_feedback">Incorrect. The correct answer is %1$d.</string>
+    <string name="count_wrong_choice">%1$s, incorrect answer</string>
+    <string name="count_sound_on">Sound: On</string>
+    <string name="count_sound_off">Sound: Off</string>
+    <string name="count_sound_on_action">Sound is on. Tap to turn sound off.</string>
+    <string name="count_sound_off_action">Sound is off. Tap to turn sound on.</string>
+</resources>

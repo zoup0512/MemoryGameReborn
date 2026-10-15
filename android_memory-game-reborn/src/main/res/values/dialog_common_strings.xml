@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="dialog_exit_practice_title">Leave this practice?</string>
+    <string name="dialog_exit_match_title">Leave this match?</string>
+    <string name="dialog_exit_practice_body">Leaving ends this practice as a forfeit. No coins will be deducted.</string>
+    <string name="dialog_exit_match_body">Leaving counts as a forfeit. In a ranked match, your entry stake will be lost.</string>
+    <string name="dialog_exit_practice">Leave practice</string>
+    <string name="dialog_exit_match">Leave match</string>
+    <string name="dialog_continue_practice">Keep practicing</string>
+    <string name="dialog_continue_match">Keep playing</string>
+    <string name="dialog_copied">Copied</string>
+    <string name="dialog_result_level">Level reached: %1$d</string>
+    <string name="dialog_result_best">Best level: %1$d</string>
+    <string name="dialog_result_replay">Play again</string>
+    <string name="dialog_result_menu">Back to games</string>
+    <string name="dialog_result_suggestion">Try another game</string>
+</resources>

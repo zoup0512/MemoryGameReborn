@@ -1,9 +1,6 @@
 package com.cube.memorygames.games;
 
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.os.Handler;
-import android.support.v7.app.AlertDialog.Builder;
 import android.view.View;
 import android.widget.RelativeLayout.LayoutParams;
 import com.cube.memorygames.MemoryApplicationModel;
@@ -102,22 +99,7 @@ public class Game18PyramidsActivity extends Game1MemoryGridActivity {
         super.onBackPressed();
     }
 
-    private void showOnlineBackPressDialog() {
-        Builder builder = new Builder(this);
-        builder.setMessage((int) R.string.dialog_lose_bet);
-        builder.setNegativeButton((int) R.string.cancel, new OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-        builder.setPositiveButton((int) R.string.ok, new OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Game18PyramidsActivity.this.openMainMenu();
-                dialog.dismiss();
-            }
-        });
-        builder.show();
-    }
+
 
     protected void onDestroy() {
         super.onDestroy();

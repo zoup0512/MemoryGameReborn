@@ -14,11 +14,9 @@ public class WorkoutHelpDialog extends AppCompatDialog {
     View close;
 
     public WorkoutHelpDialog(Activity activity) {
-        super(activity, R.style.GdxTheme);
-        setContentView((int) R.layout.dialog_workout_help);
+        super(activity, R.style.AppDialogTheme);
+        DialogUi.setContent(this, R.layout.dialog_workout_help);
         ButterKnife.bind((Dialog) this);
-        getWindow().setBackgroundDrawableResource(R.color.dark_transparent);
-        getWindow().clearFlags(2);
     }
 
     @OnClick({R.id.close})

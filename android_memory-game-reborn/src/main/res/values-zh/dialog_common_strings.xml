@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dialog_exit_practice_title">退出本次练习？</string>
+    <string name="dialog_exit_match_title">退出本局对战？</string>
+    <string name="dialog_exit_practice_body">退出将按认输结束本次练习，不会扣除金币。</string>
+    <string name="dialog_exit_match_body">退出将按认输结束本局。若为排位对战，将失去本局入场押注。</string>
+    <string name="dialog_exit_practice">退出练习</string>
+    <string name="dialog_exit_match">退出对战</string>
+    <string name="dialog_continue_practice">继续练习</string>
+    <string name="dialog_continue_match">继续对战</string>
+    <string name="dialog_copied">已复制</string>
+    <string name="dialog_result_level">本局到达第 %1$d 关</string>
+    <string name="dialog_result_best">最佳到达第 %1$d 关</string>
+    <string name="dialog_result_replay">再玩一次</string>
+    <string name="dialog_result_menu">返回游戏列表</string>
+    <string name="dialog_result_suggestion">试试其他游戏</string>
+</resources>

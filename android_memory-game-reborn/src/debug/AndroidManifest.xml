@@ -27,5 +27,8 @@
         <activity
             android:name="com.cube.memorygames.DebugSchulteActivity"
             android:exported="true" />
+        <activity
+            android:name="com.cube.memorygames.DebugDialogPreviewActivity"
+            android:exported="true" />
     </application>
 </manifest>
