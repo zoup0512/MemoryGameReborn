@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="online_account_title">Account</string>
+    <string name="online_account_title">Account and security</string>
+    <string name="online_bind_progress">Bind email to protect your progress</string>
+    <string name="online_login_again">Log in again</string>
     <string name="online_account_busy">Finish matchmaking, your match, friend room or practice request first.</string>
     <string name="online_account_balance">Online balance: %1$d</string>
     <string name="account_guest">Guest account</string>

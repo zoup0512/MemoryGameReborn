@@ -25,6 +25,15 @@ import com.memory.brain.training.games.R;
 
 /** Programmatic support-26 account forms, matching OnlineUi cards; no database migrations. */
 public final class AccountActivity extends AppCompatActivity {
+    private static final String EXTRA_PROFILE="profileOnly";
+    private static final String EXTRA_ENTRY="accountEntry";
+    private boolean profileOnly, entryHandled;
+    public static android.content.Intent profileIntent(android.content.Context context) {
+        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_PROFILE,true);
+    }
+    static android.content.Intent entryIntent(android.content.Context context,AccountEntry entry) {
+        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_ENTRY,entry.name());
+    }
     private AccountManager manager;
     private LinearLayout page;
     private TextView status;
@@ -58,9 +67,12 @@ public final class AccountActivity extends AppCompatActivity {
         OnlineSession.get().init(this);
         manager=AccountManager.get(this);
         user=manager.profile();
+        profileOnly=getIntent().getBooleanExtra(EXTRA_PROFILE,false);
+        entryHandled=state!=null && state.getBoolean("entryHandled");
+        loading=true;
         LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(OnlineUi.color(this,R.color.online_page));
-        root.addView(OnlineUi.toolbar(this,R.string.online_account_title,v -> onBackPressed()).view);
+        root.addView(OnlineUi.toolbar(this,profileOnly ? R.string.profile_my : R.string.online_account_title,v -> onBackPressed()).view);
         ScrollView scroll=new ScrollView(this);
         page=OnlineUi.page(this); scroll.addView(page);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1)); setContentView(root);
@@ -70,18 +82,22 @@ public final class AccountActivity extends AppCompatActivity {
             restoredOnline=state.getBoolean("profileOnline");
         }
         render();
-        loading=true;
         manager.cachedProfile(new AccountManager.Callback<AccountManager.UserProfile>() {
             public void onSuccess(AccountManager.UserProfile value) {
                 if(!active())return; loading=false; user=value; render();
-                if(restoredDraft && (restoredOnline ? user!=null && user.userId==profileUserId : user==null)) profileForm();
-                else { restoredDraft=false; if(value!=null) refresh(); }
+                if(restoredDraft && (restoredOnline ? user!=null && user.userId==profileUserId : user==null)) {
+                    entryHandled=true; profileForm();
+                } else {
+                    restoredDraft=false;
+                    if(!openEntry() && value!=null) refresh();
+                }
             }
             public void onError(String message) { restoredDraft=false; fail(message); }
         });
     }
     @Override protected void onSaveInstanceState(Bundle state) {
         super.onSaveInstanceState(state);
+        state.putBoolean("entryHandled",entryHandled);
         if(profileEditing && profileNickname!=null) {
             state.putBoolean("profileEditing",true); state.putString("profileNickname",value(profileNickname));
             state.putString("profileAvatar",profileAvatar); state.putLong("profileUserId",profileUserId);
@@ -93,6 +109,26 @@ public final class AccountActivity extends AppCompatActivity {
         if(loading)return;
         if(profileEditing) { dismissProfile(); return; }
         super.onBackPressed();
+    }
+    private boolean openEntry() {
+        if(entryHandled)return false;
+        entryHandled=true;
+        if(profileOnly) {
+            if(!OnlineSession.get().canChangeAccount() || manager.isBusy()) {
+                status.setText(R.string.online_account_busy); return false;
+            }
+            profileForm(); return true;
+        }
+        if(!OnlineSession.get().canChangeAccount() || manager.isBusy())return false;
+        String entry=getIntent().getStringExtra(EXTRA_ENTRY);
+        if(AccountEntry.LOGIN.name().equals(entry) && OnlineSession.get().requiresAccountLogin()) {
+            confirm(R.string.account_login,R.string.dialog_account_continue_login,R.string.account_login_warning,false,() -> loginForm(false));
+            return true;
+        }
+        if(AccountEntry.BIND_EMAIL.name().equals(entry) && (user==null || user.isGuest()) && !OnlineSession.get().requiresAccountLogin()) {
+            bindForm(); return true;
+        }
+        return false;
     }
     private boolean active() { return !isFinishing() && !isDestroyed(); }
     private TextView text(String value) {
@@ -117,7 +153,7 @@ public final class AccountActivity extends AppCompatActivity {
         if (user != null) {
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
             OnlineUi.applyAvatar(this,avatar,user.avatarValue); card.addView(avatar.view);
-            card.addView(text(getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
+            card.addView(text(profileOnly ? user.nickname : getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
                     + " #" + user.userId + "\n" + user.nickname + "\n" + (user.email == null ? "" : user.email)
                     + "\nELO " + user.elo + " · " + getString(R.string.online_account_balance,user.balance)));
         } else {
@@ -125,9 +161,9 @@ public final class AccountActivity extends AppCompatActivity {
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
             OnlineUi.applyAvatar(this,avatar,old==null ? LocalProfile.avatar(this) : old.avatarValue); card.addView(avatar.view);
             card.addView(text(old==null ? LocalProfile.nickname(this)+"\n"+getString(R.string.profile_local_note)
-                    : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
+                    : profileOnly ? old.nickname : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
         }
-        card.addView(text(getString(user == null || user.isGuest() ? R.string.account_warning : R.string.account_registered_note)));
+        if(!profileOnly)card.addView(text(getString(user == null || user.isGuest() ? R.string.account_warning : R.string.account_registered_note)));
         status=text(loading ? getString(R.string.account_loading) : "");
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         card.addView(status);
@@ -135,7 +171,12 @@ public final class AccountActivity extends AppCompatActivity {
         statusTechnical.setVisibility(View.GONE); card.addView(statusTechnical);
         page.addView(card,OnlineUi.cardParams(this));
         LinearLayout actions=OnlineUi.card(this);
-        action(actions,R.string.account_profile,this::profileForm);
+        if(profileOnly) {
+            action(actions,R.string.account_profile,this::profileForm);
+            action(actions,R.string.account_retry,this::refresh);
+            page.addView(actions,OnlineUi.cardParams(this));
+            return;
+        }
         action(actions,R.string.account_retry,this::refresh);
         if (user == null || user.isGuest()) action(actions,R.string.account_bind,this::bindForm);
         action(actions,R.string.account_login,() -> confirm(R.string.account_login, R.string.dialog_account_continue_login, R.string.account_login_warning, false, () -> loginForm(false)));

@@ -23,12 +23,6 @@ import com.memory.brain.training.games.R;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Local "Menu" tab. The Google Play purchase entries (remove ads / pro /
- * unlock all games / coins), the online profile editing row and the top
- * ranks entry of the original app were removed; trophies stay as a local
- * feature.
- */
 public class MenuAdapter extends Adapter<ViewHolder> {
     public static final String PREF_SKU_DETAILS = "skuDetailsInfo";
     public static final int PRO_COINS_AMOUNT = 1000;
@@ -107,7 +101,7 @@ public class MenuAdapter extends Adapter<ViewHolder> {
         });
     }
     private void openProfile() {
-        mainMenuActivity.startActivity(new Intent(mainMenuActivity,com.cube.memorygames.api.online.AccountActivity.class));
+        mainMenuActivity.startActivity(com.cube.memorygames.api.online.AccountActivity.profileIntent(mainMenuActivity));
     }
 
     public void fillMenuItems() {
@@ -120,15 +114,16 @@ public class MenuAdapter extends Adapter<ViewHolder> {
                 MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity, TrophiesActivity.class));
             }
         }));
-        this.items.add(new MenuItem(android.R.drawable.ic_menu_upload, R.string.diagnostics_upload, new OnClickListener() {
-            public void onClick(View view) {
-                com.cube.memorygames.diagnostics.DiagnosticUploadUi.show(MenuAdapter.this.mainMenuActivity);
-            }
-        }));
-        this.items.add(Integer.valueOf(0));
         this.items.add(new MenuItem(R.drawable.ic_reward, R.string.rank, new OnClickListener() {
             public void onClick(View view) {
                 MenuAdapter.this.mainMenuActivity.topClick();
+            }
+        }));
+        this.items.add(Integer.valueOf(0));
+        this.items.add(new MenuItem(android.R.drawable.ic_menu_preferences, R.string.app_settings_title, new OnClickListener() {
+            public void onClick(View view) {
+                MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity,
+                        com.cube.memorygames.api.online.SettingsActivity.class));
             }
         }));
     }

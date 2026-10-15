@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_settings_title">Settings</string>
+    <string name="app_settings_account_security">Account and security</string>
+    <string name="app_settings_account_security_description">Manage sign-in, account binding, passwords and devices.</string>
+    <string name="app_settings_help_diagnostics">Help and diagnostics</string>
+    <string name="app_settings_help_diagnostics_description">Review diagnostic upload information and share logs to help troubleshoot issues.</string>
+    <string name="app_settings_diagnostics_description">Diagnostic logs can help troubleshoot issues. Tap the button to prepare a local snapshot and review its log range, privacy information and destination. Nothing is uploaded until you explicitly confirm in the next dialog. Cancel uploads nothing.</string>
+</resources>

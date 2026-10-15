@@ -277,15 +277,16 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         TextView losses = addStat(stats, R.id.online_stat_losses, R.string.online_title_loses);
         TextView draws = addStat(stats, R.id.online_stat_draws, R.string.online_title_draws);
         TextView winRate = addStat(stats, View.generateViewId(), R.string.online_win_rate);
-        TextView account=OnlineUi.secondaryButton(this.context,R.string.online_account_title);
-        LinearLayout.LayoutParams accountParams=new LinearLayout.LayoutParams(-1,dp(52));
+        TextView account=OnlineUi.secondaryButton(this.context,R.string.online_bind_progress);
+        LinearLayout.LayoutParams accountParams=new LinearLayout.LayoutParams(-1,-2);
         accountParams.topMargin=dp(12);
         profileCard.addView(account,accountParams);
         account.setOnClickListener(v -> {
             if (AccountManager.get(context).isBusy() || !OnlineSession.get().canChangeAccount()) {
                 Toast.makeText(context,R.string.online_account_busy,Toast.LENGTH_SHORT).show(); return;
             }
-            context.startActivity(new Intent(context,AccountActivity.class));
+            AccountEntry entry=accountEntry();
+            if(entry!=AccountEntry.NONE)context.startActivity(AccountActivity.entryIntent(context,entry));
         });
         page.addView(profileCard, OnlineUi.cardParams(this.context));
 
@@ -391,6 +392,7 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         holder.losses = losses;
         holder.draws = draws;
         holder.winRate = winRate;
+        holder.account = account;
         holder.fee = fee;
         holder.rounds = rounds;
         holder.practiceDetail = practiceDetail;
@@ -440,6 +442,14 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
+    private AccountEntry accountEntry() {
+        AccountManager manager=AccountManager.get(context);
+        AccountManager.UserProfile cached=manager.profile();
+        OnlineMessages.AuthOk current=OnlineSession.get().getLastProfile();
+        return AccountEntry.forState(OnlineSession.get().requiresAccountLogin(),cached!=null ? cached.accountType
+                : current!=null ? current.accountType : null,cached!=null || current!=null);
+    }
+
     private void bindDashboard(LobbyHolder holder) {
         if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED
                 && OnlineSession.get().canAutoConnect()) {
@@ -452,6 +462,9 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         OnlineMessages.AuthOk current = OnlineSession.get().getLastProfile();
         this.profile=current;
         int state = OnlineSession.get().getState();
+        AccountEntry entry=accountEntry();
+        holder.account.setVisibility(entry==AccountEntry.NONE ? View.GONE : View.VISIBLE);
+        holder.account.setText(entry==AccountEntry.LOGIN ? R.string.online_login_again : R.string.online_bind_progress);
         holder.status.setText(connectionText(state));
         holder.status.setTextColor(OnlineUi.color(this.context,
                 state == OnlineSession.STATE_IDLE ? R.color.online_success
@@ -665,6 +678,7 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         TextView losses;
         TextView draws;
         TextView winRate;
+        TextView account;
         TextView fee;
         TextView rounds;
         TextView practiceDetail;

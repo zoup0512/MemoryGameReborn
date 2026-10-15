@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_settings_title">设置</string>
+    <string name="app_settings_account_security">账户与安全</string>
+    <string name="app_settings_account_security_description">管理登录、账户绑定、密码和登录设备。</string>
+    <string name="app_settings_help_diagnostics">帮助与诊断</string>
+    <string name="app_settings_help_diagnostics_description">了解诊断上传说明，按需分享日志以协助排查问题。</string>
+    <string name="app_settings_diagnostics_description">诊断日志可帮助排查问题。点击按钮后会准备本地快照，并展示日志范围、隐私说明和上传目的地。仅在后续弹窗中明确确认后才会上传，取消不会上传任何数据。</string>
+</resources>

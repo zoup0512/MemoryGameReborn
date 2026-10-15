@@ -59,6 +59,14 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name="com.cube.memorygames.api.online.SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.api.online.HelpDiagnosticsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name="com.cube.memorygames.api.online.AccountActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

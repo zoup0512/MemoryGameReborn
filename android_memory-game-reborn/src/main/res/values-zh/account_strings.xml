@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_account_title">账户与安全</string>
+    <string name="online_bind_progress">绑定邮箱，保护游戏进度</string>
+    <string name="online_login_again">重新登录</string>
     <string name="online_account_busy">请先结束排队、对局、好友房或练习请求。</string>
     <string name="online_account_balance">在线金币：%1$d</string>
     <string name="account_guest">游客账号</string>

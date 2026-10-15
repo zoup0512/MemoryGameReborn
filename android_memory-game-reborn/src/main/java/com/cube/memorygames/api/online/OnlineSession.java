@@ -215,6 +215,10 @@ public class OnlineSession {
         return !reconnectBlocked && (appContext == null || !AccountManager.get(appContext).isBusy());
     }
 
+    public boolean requiresAccountLogin() {
+        return reconnectBlocked || (appContext != null && AccountManager.get(appContext).needsLogin());
+    }
+
     public void resetForAccountChange() {
         disconnect();
         reconnectBlocked=false;
