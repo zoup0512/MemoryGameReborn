@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * restart, auth_ok echoes the live economy to clients, and the endpoint is
  * disabled without the admin token.
  */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {

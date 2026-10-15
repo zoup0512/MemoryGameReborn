@@ -12,8 +12,10 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.content.DialogInterface;
 import android.widget.TextView;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -37,6 +39,19 @@ public final class AccountActivity extends AppCompatActivity {
     private EditText[] formFields;
     private int[] formHints;
     private AlertDialog confirmation;
+    private EditText profileNickname;
+    private String profileOriginalNickname, profileOriginalAvatar, profileAvatar;
+    private boolean profileEditing, profileSaving, restoredDraft;
+    private long profileUserId;
+    private String restoredNickname, restoredAvatar;
+    private boolean restoredOnline;
+    private final android.os.Handler cooldownHandler=new android.os.Handler();
+    private final Runnable cooldownTick=new Runnable() { public void run() {
+        if(profileEditing && active()) { updateCooldown(); cooldownHandler.postDelayed(this,1000); }
+    }};
+    private TextView cooldownText, inspiration;
+    private final java.util.List<View> avatarChoices=new java.util.ArrayList<>();
+    private final java.util.List<TextView> avatarChecks=new java.util.ArrayList<>();
     private interface FormAction { void run(EditText[] fields); }
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -45,14 +60,39 @@ public final class AccountActivity extends AppCompatActivity {
         user=manager.profile();
         LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(OnlineUi.color(this,R.color.online_page));
-        root.addView(OnlineUi.toolbar(this,R.string.online_account_title,v -> finish()).view);
+        root.addView(OnlineUi.toolbar(this,R.string.online_account_title,v -> onBackPressed()).view);
         ScrollView scroll=new ScrollView(this);
         page=OnlineUi.page(this); scroll.addView(page);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1)); setContentView(root);
-        render(); refresh();
+        if(state!=null && state.getBoolean("profileEditing")) {
+            restoredDraft=true; restoredNickname=state.getString("profileNickname");
+            restoredAvatar=state.getString("profileAvatar"); profileUserId=state.getLong("profileUserId");
+            restoredOnline=state.getBoolean("profileOnline");
+        }
+        render();
+        loading=true;
+        manager.cachedProfile(new AccountManager.Callback<AccountManager.UserProfile>() {
+            public void onSuccess(AccountManager.UserProfile value) {
+                if(!active())return; loading=false; user=value; render();
+                if(restoredDraft && (restoredOnline ? user!=null && user.userId==profileUserId : user==null)) profileForm();
+                else { restoredDraft=false; if(value!=null) refresh(); }
+            }
+            public void onError(String message) { restoredDraft=false; fail(message); }
+        });
     }
+    @Override protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        if(profileEditing && profileNickname!=null) {
+            state.putBoolean("profileEditing",true); state.putString("profileNickname",value(profileNickname));
+            state.putString("profileAvatar",profileAvatar); state.putLong("profileUserId",profileUserId);
+            state.putBoolean("profileOnline",user!=null);
+        }
+    }
+    @Override protected void onDestroy() { cooldownHandler.removeCallbacksAndMessages(null); super.onDestroy(); }
     @Override public void onBackPressed() {
-        if (!loading) super.onBackPressed();
+        if(loading)return;
+        if(profileEditing) { dismissProfile(); return; }
+        super.onBackPressed();
     }
     private boolean active() { return !isFinishing() && !isDestroyed(); }
     private TextView text(String value) {
@@ -82,7 +122,10 @@ public final class AccountActivity extends AppCompatActivity {
                     + "\nELO " + user.elo + " · " + getString(R.string.online_account_balance,user.balance)));
         } else {
             OnlineMessages.AuthOk old=OnlineSession.get().getLastProfile();
-            card.addView(text(getString(R.string.account_guest) + (old == null ? "" : " #"+old.userId+"\n"+old.nickname)));
+            OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
+            OnlineUi.applyAvatar(this,avatar,old==null ? LocalProfile.avatar(this) : old.avatarValue); card.addView(avatar.view);
+            card.addView(text(old==null ? LocalProfile.nickname(this)+"\n"+getString(R.string.profile_local_note)
+                    : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
         }
         card.addView(text(getString(user == null || user.isGuest() ? R.string.account_warning : R.string.account_registered_note)));
         status=text(loading ? getString(R.string.account_loading) : "");
@@ -92,11 +135,11 @@ public final class AccountActivity extends AppCompatActivity {
         statusTechnical.setVisibility(View.GONE); card.addView(statusTechnical);
         page.addView(card,OnlineUi.cardParams(this));
         LinearLayout actions=OnlineUi.card(this);
+        action(actions,R.string.account_profile,this::profileForm);
         action(actions,R.string.account_retry,this::refresh);
         if (user == null || user.isGuest()) action(actions,R.string.account_bind,this::bindForm);
         action(actions,R.string.account_login,() -> confirm(R.string.account_login, R.string.dialog_account_continue_login, R.string.account_login_warning, false, () -> loginForm(false)));
         if (user != null) {
-            action(actions,R.string.account_profile,this::profileForm);
             action(actions,R.string.account_devices,this::devices);
             action(actions,R.string.account_logout,() -> confirm(R.string.account_logout, R.string.dialog_account_logout, R.string.account_logout_warning, true, () -> logout(false)));
             if (!user.isGuest()) {
@@ -143,7 +186,7 @@ public final class AccountActivity extends AppCompatActivity {
         if (formSend != null) formSend.setEnabled(!busy);
         if (formFields != null) for (EditText field : formFields) field.setEnabled(!busy);
         if (form != null) {
-            form.setCancelable(!busy);
+            form.setCancelable(!busy && !profileEditing);
             form.setCanceledOnTouchOutside(false);
             // setCancelable does not disable AlertDialog button auto-dismissal.
             if (form.getButton(AlertDialog.BUTTON_NEGATIVE) != null)
@@ -155,6 +198,13 @@ public final class AccountActivity extends AppCompatActivity {
         loading=false;
         // Retain persisted identity and recovery actions after failed /me or authentication.
         user=manager.profile();
+        if (profileEditing && profileUserId==0 && user!=null) {
+            profileUserId=user.userId;
+            // Guest creation can precede a rejected PATCH; keep any custom nickname/avatar draft.
+            if (ProfileRules.same(value(profileNickname),LocalProfile.nickname(this))) {
+                profileNickname.setText(user.nickname); profileOriginalNickname=user.nickname;
+            }
+        }
         render();
         String friendly=getString(errorResource(message));
         String code=technicalCode(message);
@@ -167,6 +217,10 @@ public final class AccountActivity extends AppCompatActivity {
             markErrorField(code,friendly);
         }
         setFormLoading(false);
+        if (profileEditing) {
+            profileSaving=false; formSubmit.setText(R.string.profile_save);
+            updateCooldown(); updateAvatarSelection();
+        }
     }
     private void showTechnical(TextView view,String code) {
         if (view == null) return;
@@ -179,6 +233,12 @@ public final class AccountActivity extends AppCompatActivity {
         return code.matches("[A-Z][A-Z0-9_]{2,63}") ? code : "";
     }
     private int errorResource(String message) {
+        // AccountManager already sanitizes moderation results. Preserve those localized
+        // messages rather than turning every rejected/pending review into "unknown".
+        int[] profileErrors={R.string.profile_rejected,R.string.profile_pending,R.string.profile_unavailable,
+                R.string.profile_cooldown_error,R.string.profile_invalid,R.string.profile_response_error,
+                R.string.profile_network_error};
+        for (int resource : profileErrors) if (getString(resource).equals(message)) return resource;
         String code=technicalCode(message);
         switch (code) {
             case "INVALID_CREDENTIALS": return R.string.dialog_account_error_credentials;
@@ -230,10 +290,14 @@ public final class AccountActivity extends AppCompatActivity {
         loading=false; closeForm(); render(); status.setText(R.string.account_success);
     }
     private void closeForm() {
+        if (confirmation != null) confirmation.dismiss();
         if (form != null) form.dismiss();
         clearForm();
     }
     private void clearForm() {
+        cooldownHandler.removeCallbacks(cooldownTick);
+        profileEditing=false; profileSaving=false; profileNickname=null;
+        cooldownText=null; inspiration=null; avatarChoices.clear(); avatarChecks.clear();
         form=null; formError=null; formTechnical=null; formSubmit=null; formSend=null;
         formFields=null; formHints=null;
     }
@@ -443,24 +507,134 @@ public final class AccountActivity extends AppCompatActivity {
         });
     }
     private void profileForm() {
-        EditText[] fields=form(R.string.account_profile,new int[]{R.string.account_nickname},new int[]{InputType.TYPE_CLASS_TEXT},f -> {});
-        fields[0].setText(user.nickname);
-        Spinner avatar=new Spinner(this); String[] values=new String[12], labels=new String[12];
-        for(int i=0;i<12;i++) { values[i]="avatar_"+(i+1); labels[i]=getString(R.string.account_avatar,i+1); }
-        avatar.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels));
-        for(int i=0;i<12;i++)if(values[i].equals(user.avatarValue))avatar.setSelection(i);
-        LinearLayout parent=(LinearLayout)fields[0].getParent();
-        int index=parent.indexOfChild(formError);
-        parent.addView(label(R.string.dialog_account_avatar_label,avatar),index);
-        parent.addView(avatar,index+1,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,48)));
-        avatar.setSaveEnabled(false);
-        formSubmit.setOnClickListener(v -> {
-            if (loading || !validate(fields,new int[]{R.string.account_nickname})) return;
-            start(); manager.request("PATCH","/me/profile",AccountManager.body("nickname",value(fields[0]).trim(),
-                    "avatarValue",values[avatar.getSelectedItemPosition()]),true,true,new AccountManager.Callback<JsonObject>() {
-                public void onSuccess(JsonObject result) { accountChanged(); }
-                public void onError(String message) { fail(message); }
+        closeForm(); profileEditing=true; profileUserId=user==null ? 0 : user.userId;
+        profileOriginalNickname=user==null ? LocalProfile.draft(this) : user.nickname;
+        profileOriginalAvatar=user==null ? LocalProfile.avatar(this) : user.avatarValue;
+        profileAvatar=restoredDraft ? restoredAvatar : profileOriginalAvatar;
+        LinearLayout content=dialogContent();
+        final OnlineUi.AvatarBlock preview=OnlineUi.avatar(this,80,false);
+        OnlineUi.applyAvatar(this,preview,profileAvatar);
+        LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(OnlineUi.dp(this,80),OnlineUi.dp(this,80));
+        previewParams.gravity=Gravity.CENTER_HORIZONTAL; content.addView(preview.view,previewParams);
+        profileNickname=field(content,R.string.account_nickname,InputType.TYPE_CLASS_TEXT);
+        formFields=new EditText[]{profileNickname}; formHints=new int[]{R.string.account_nickname};
+        profileNickname.setText(restoredDraft ? restoredNickname : profileOriginalNickname); restoredDraft=false;
+        profileNickname.setContentDescription(getString(R.string.account_nickname));
+        profileNickname.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
+            public void onTextChanged(CharSequence s,int start,int before,int count) { updateProfileSubmit(); }
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+        content.addView(text(getString(R.string.profile_format)));
+        cooldownText=text(""); content.addView(cooldownText);
+        inspiration=OnlineUi.secondaryButton(this,R.string.profile_inspiration);
+        content.addView(inspiration,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,48)));
+        inspiration.setOnClickListener(v -> { if(!loading)profileNickname.setText(ProfileRules.inspiration(new java.security.SecureRandom())); });
+        content.addView(text(getString(R.string.profile_inspiration_note)));
+        TextView avatarLabel=OnlineUi.text(this,getString(R.string.dialog_account_avatar_label),15,
+                R.color.dialog_text,OnlineUi.medium(this));
+        avatarLabel.setPadding(0,OnlineUi.dp(this,12),0,OnlineUi.dp(this,6)); content.addView(avatarLabel);
+        for(int row=0;row<3;row++) {
+            LinearLayout line=new LinearLayout(this); content.addView(line,new LinearLayout.LayoutParams(-1,-2));
+            for(int col=0;col<4;col++) {
+                final int index=row*4+col;
+                FrameLayout choice=new FrameLayout(this); choice.setPadding(4,4,4,4);
+                ImageView image=new ImageView(this); AvatarCatalog.apply(this,image,AvatarCatalog.value(index));
+                image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                choice.addView(image,new FrameLayout.LayoutParams(-1,-1));
+                TextView check=new TextView(this); check.setText("✓"); check.setTextSize(18);
+                check.setTextColor(android.graphics.Color.WHITE); check.setGravity(Gravity.CENTER);
+                check.setBackgroundResource(R.drawable.online_primary_button);
+                choice.addView(check,new FrameLayout.LayoutParams(OnlineUi.dp(this,24),OnlineUi.dp(this,24),Gravity.RIGHT|Gravity.BOTTOM));
+                choice.setContentDescription(getString(R.string.profile_choose_avatar,AvatarCatalog.label(this,index)));
+                choice.setFocusable(true); choice.setClickable(true);
+                choice.setOnClickListener(v -> { if(loading)return; profileAvatar=AvatarCatalog.value(index);
+                    OnlineUi.applyAvatar(this,preview,profileAvatar); updateAvatarSelection(); });
+                avatarChoices.add(choice); avatarChecks.add(check);
+                line.addView(choice,new LinearLayout.LayoutParams(0,OnlineUi.dp(this,68),1));
+            }
+        }
+        if(user==null) content.addView(text(getString(R.string.profile_online_required)));
+        formError=text(""); formError.setTextColor(OnlineUi.color(this,R.color.dialog_danger));
+        formError.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(formError);
+        formTechnical=text(""); formTechnical.setTextSize(12);
+        formTechnical.setTextColor(OnlineUi.color(this,R.color.dialog_text_secondary));
+        formTechnical.setVisibility(View.GONE); content.addView(formTechnical);
+        formSubmit=OnlineUi.primaryButton(this,R.string.profile_save);
+        content.addView(formSubmit,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,52)));
+        formSubmit.setOnClickListener(v -> saveProfile());
+        if(user==null) {
+            TextView local=OnlineUi.secondaryButton(this,R.string.profile_local_draft);
+            formSend=local; // Disable device-only saving along with all other actions during the PATCH.
+            content.addView(local,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,52)));
+            local.setOnClickListener(v -> {
+                if(loading)return;
+                if(!ProfileRules.validNickname(value(profileNickname))) { formError.setText(R.string.profile_invalid); return; }
+                if(LocalProfile.saveDraft(this,ProfileRules.normalize(value(profileNickname)),profileAvatar)) {
+                    closeForm(); render(); status.setText(R.string.profile_draft_saved);
+                } else formError.setText(R.string.profile_local_failed);
             });
+        }
+        ScrollView scroll=new ScrollView(this); scroll.addView(content);
+        final AlertDialog dialog=DialogUi.builder(this).setTitle(R.string.account_profile).setView(scroll)
+                .setNegativeButton(R.string.cancel,null).create();
+        form=dialog;
+        dialog.setOnDismissListener(d -> { if (form==dialog) clearForm(); });
+        form.setCancelable(false); form.setCanceledOnTouchOutside(false); form.show();
+        form.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(v -> dismissProfile());
+        form.setOnKeyListener((d,key,event) -> {
+            if(key==android.view.KeyEvent.KEYCODE_BACK && event.getAction()==android.view.KeyEvent.ACTION_UP) { dismissProfile(); return true; }
+            return key==android.view.KeyEvent.KEYCODE_BACK;
+        });
+        updateAvatarSelection(); cooldownHandler.post(cooldownTick);
+    }
+    private void updateAvatarSelection() {
+        for(int i=0;i<avatarChoices.size();i++) {
+            boolean selected=ProfileRules.avatarIndex(profileAvatar)==i;
+            avatarChoices.get(i).setSelected(selected); avatarChoices.get(i).setEnabled(!loading);
+            avatarChecks.get(i).setVisibility(selected ? View.VISIBLE : View.GONE);
+        }
+        updateProfileSubmit();
+    }
+    private void updateProfileSubmit() {
+        if(!profileEditing || formSubmit==null || profileNickname==null)return;
+        String change=ProfileRules.nicknameChange(profileOriginalNickname,value(profileNickname));
+        boolean changed=change!=null || !ProfileRules.same(profileAvatar,profileOriginalAvatar);
+        // Before an online identity exists even an untouched draft can be submitted for its FIRST review.
+        formSubmit.setEnabled(!loading && !profileSaving && (user==null || changed));
+    }
+    private void updateCooldown() {
+        if(!profileEditing || profileNickname==null)return;
+        boolean cooling=user!=null && ProfileRules.coolingDown(user.nextNicknameChangeAt,System.currentTimeMillis());
+        profileNickname.setEnabled(!loading && !cooling); inspiration.setEnabled(!loading && !cooling);
+        cooldownText.setText(cooling ? getString(R.string.profile_cooldown,
+                java.text.DateFormat.getDateTimeInstance().format(new java.util.Date(user.nextNicknameChangeAt)))
+                : getString(R.string.profile_cooldown_ready));
+    }
+    private void dismissProfile() {
+        if(loading || !profileEditing || profileNickname==null)return;
+        if(!ProfileRules.same(profileOriginalNickname,value(profileNickname)) || !ProfileRules.same(profileOriginalAvatar,profileAvatar)) {
+            confirm(R.string.account_profile,R.string.profile_discard,R.string.profile_unsaved,true,this::closeForm);
+        } else closeForm();
+    }
+    private void saveProfile() {
+        if(loading || profileSaving)return;
+        final String nickname=ProfileRules.nicknameChange(user==null ? LocalProfile.nickname(this) : user.nickname,value(profileNickname));
+        final String avatar=profileAvatar;
+        boolean changed=nickname!=null;
+        if(changed && !ProfileRules.validNickname(nickname)) { formError.setText(R.string.profile_invalid); return; }
+        if(user!=null && changed && ProfileRules.coolingDown(user.nextNicknameChangeAt,System.currentTimeMillis())) {
+            formError.setText(R.string.profile_cooldown_error); return;
+        }
+        if(!OnlineSession.get().canChangeAccount()) { formError.setText(R.string.online_account_busy); return; }
+        profileSaving=true; start(); formSubmit.setText(R.string.profile_saving); updateCooldown(); updateAvatarSelection();
+        manager.updateProfile(profileUserId,changed ? nickname : null,avatar,new AccountManager.Callback<AccountManager.UserProfile>() {
+            public void onSuccess(AccountManager.UserProfile value) {
+                user=value;
+                if(!active())return;
+                done(); OnlineSession.get().connect();
+            }
+            public void onError(String message) { fail(message); }
         });
     }
     private void deleteForm() {

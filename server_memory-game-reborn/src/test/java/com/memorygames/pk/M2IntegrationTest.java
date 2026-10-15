@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * season rollover with ELO soft reset (F-13) and anti-cheat distribution
  * checks with bot-only restriction.
  */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 // Production-scale anti-cheat floors: with a 200ms test floor the fixed

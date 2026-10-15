@@ -22,16 +22,21 @@ public class UserService {
     private final Rating rating;
     private final JdbcTemplate db;
     private final ApplicationEventPublisher events;
+    private final NicknameService nicknames;
+    private final org.springframework.transaction.support.TransactionTemplate transactions;
 
     public UserService(UserRepository repository, CoinLedgerRepository ledger,
                        PkProperties properties, Rating rating, JdbcTemplate db,
-                       ApplicationEventPublisher events) {
+                       ApplicationEventPublisher events, NicknameService nicknames,
+                       org.springframework.transaction.PlatformTransactionManager manager) {
         this.repository = repository;
         this.ledger = ledger;
         this.properties = properties;
         this.rating = rating;
         this.db = db;
         this.events = events;
+        this.nicknames = nicknames;
+        this.transactions = new org.springframework.transaction.support.TransactionTemplate(manager);
     }
 
     /**
@@ -41,14 +46,17 @@ public class UserService {
      * rotates the token only for an unmigrated legacy guest. UUID is not a
      * recovery credential once the account has migrated or been upgraded.
      */
-    @Transactional
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public UserAccount register(String uuid, String nickname) {
-        if (nickname == null || nickname.isBlank()) {
-            nickname = "Player";
-        }
-        if (nickname.length() > 24) {
-            nickname = nickname.substring(0, 24);
-        }
+        if(uuid==null || uuid.isBlank() || uuid.length()>128) throw new AccountException(400,"INVALID_INPUT","invalid uuid");
+        boolean exists=repository.findByUuid(uuid).isPresent();
+        String context="legacy:"+uuid;
+        NicknameService.Approval approval=!exists && nickname!=null ? nicknames.review(context,0,context,nickname):null;
+        return transactions.execute(status -> registerApproved(uuid,nickname,context,approval));
+    }
+
+    /** Internal creation called only inside the enclosing account transaction after external review. */
+    UserAccount registerApproved(String uuid,String nickname,String context,NicknameService.Approval approval) {
         UserAccount account = this.repository.findByUuidForUpdate(uuid).orElse(null);
         boolean isNew = account == null;
         if (!isNew) {
@@ -78,7 +86,11 @@ public class UserService {
             account.balance = Math.min(this.properties.getEconomy().getWelcomeCoins(), MAX_BALANCE);
             account.createdAt = System.currentTimeMillis();
         }
-        account.nickname = nickname;
+        // UUID recovery is never a rename endpoint, even before the first profile change.
+        if(isNew) {
+            if(nickname==null) nicknames.generate(account);
+            else nicknames.apply(account,context,context,nickname,approval,false);
+        }
         account.token = UUID.randomUUID().toString().replace("-", "");
         account.updatedAt = System.currentTimeMillis();
         account = this.repository.save(account); // assigns the ledger's user id
@@ -102,6 +114,7 @@ public class UserService {
     /** Admin/manual balance grant or charge; never negative, capped. */
     @Transactional
     public UserAccount adjustBalance(UserAccount account, int delta, String reason) {
+        account = this.repository.findByIdForUpdate(account.id).orElseThrow();
         account.balance = Math.max(0, Math.min(account.balance + delta, MAX_BALANCE));
         account.updatedAt = System.currentTimeMillis();
         UserAccount saved = this.repository.save(account);
@@ -125,6 +138,7 @@ public class UserService {
     /** Admin ELO override. */
     @Transactional
     public UserAccount setElo(UserAccount account, int elo) {
+        account = this.repository.findByIdForUpdate(account.id).orElseThrow();
         account.elo = Math.max(100, elo);
         account.updatedAt = System.currentTimeMillis();
         return this.repository.save(account);
@@ -133,6 +147,7 @@ public class UserService {
     /** Bot-only restriction; 0 lifts it. */
     @Transactional
     public UserAccount setRestriction(UserAccount account, int matches) {
+        account = this.repository.findByIdForUpdate(account.id).orElseThrow();
         account.restrictedMatches = Math.max(0, matches);
         account.suspicion = 0;
         account.updatedAt = System.currentTimeMillis();
@@ -142,6 +157,7 @@ public class UserService {
     /** Ban for a number of hours; 0 unbans. */
     @Transactional
     public UserAccount setBan(UserAccount account, int hours) {
+        account = this.repository.findByIdForUpdate(account.id).orElseThrow();
         account.bannedUntil = hours <= 0 ? 0L : System.currentTimeMillis() + hours * 3600000L;
         account.updatedAt = System.currentTimeMillis();
         return this.repository.save(account);
@@ -154,7 +170,7 @@ public class UserService {
         account.deleted = true;
         account.legacyAuthDisabled = true;
         account.token = AccountService.randomToken();
-        account.nickname = "deleted-" + account.id;
+        nicknames.anonymize(account);
         account.avatarValue = "avatar_1";
         account.updatedAt = System.currentTimeMillis();
         UserAccount saved = this.repository.saveAndFlush(account);

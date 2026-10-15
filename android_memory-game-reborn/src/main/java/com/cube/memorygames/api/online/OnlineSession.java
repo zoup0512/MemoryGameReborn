@@ -252,6 +252,17 @@ public class OnlineSession {
         return lastProfile;
     }
 
+    /** Refresh only the existing matching socket snapshot; never invent REST economy/season data. */
+    public void profileUpdated(AccountManager.UserProfile user) {
+        AuthOk current=lastProfile;
+        if(current!=null && current.userId==user.userId) {
+            current.nickname=user.nickname; current.avatarValue=user.avatarValue;
+            current.accountType=user.accountType;
+            Runnable callback=profileCallback; if(callback!=null) callback.run();
+            MatchListener target=listener; if(target!=null) target.onAuthOk(current);
+        }
+    }
+
     /**
      * Authoritative round duration for the running round: the server
      * configures round length at runtime (admin API) and pushes it with
@@ -422,7 +433,8 @@ public class OnlineSession {
             else {
                 OnlineMessages.Register register=new OnlineMessages.Register();
                 register.uuid=OnlineIdentity.getOrCreateUuid(appContext);
-                register.nickname=OnlineIdentity.getNickname(appContext);
+                // New guests use the server's safe generator. Never publish a device-only draft.
+                register.nickname=null;
                 register.balance=0; // Offline coins are never uploaded to the online wallet.
                 send(OnlineMessages.T_REGISTER,register);
             }
@@ -810,8 +822,10 @@ public class OnlineSession {
                 }
                 authRefreshAttempted=false;
                 try {
-                    if (!v2Connection) OnlineIdentity.saveToken(appContext,tokenOf(json),ok.userId);
-                    OnlineIdentity.setNickname(appContext,ok.nickname);
+                    if (!v2Connection) {
+                        OnlineIdentity.saveToken(appContext,tokenOf(json),ok.userId);
+                        OnlineIdentity.setNickname(appContext,ok.nickname);
+                    } // V2 nicknames belong exclusively to the encrypted, per-account profile.
                 } catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);

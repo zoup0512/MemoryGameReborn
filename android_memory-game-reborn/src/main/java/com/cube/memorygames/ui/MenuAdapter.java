@@ -100,12 +100,21 @@ public class MenuAdapter extends Adapter<ViewHolder> {
         this.mainMenuActivity = mainMenuActivity;
         fillMenuItems();
         this.typeface = Typeface.createFromAsset(mainMenuActivity.getAssets(), "Roboto-Light.ttf");
+        com.cube.memorygames.api.online.AccountManager.get(mainMenuActivity).cachedProfile(
+                new com.cube.memorygames.api.online.AccountManager.Callback<com.cube.memorygames.api.online.AccountManager.UserProfile>() {
+            public void onSuccess(com.cube.memorygames.api.online.AccountManager.UserProfile profile) { notifyDataSetChanged(); }
+            public void onError(String message) { /* Do not replace a damaged/foreign identity with a guest. */ }
+        });
+    }
+    private void openProfile() {
+        mainMenuActivity.startActivity(new Intent(mainMenuActivity,com.cube.memorygames.api.online.AccountActivity.class));
     }
 
     public void fillMenuItems() {
         LocalUser localUser = MemoryApplicationModel.getInstance().getLocalDataManager().getLocalUser();
         this.items = new ArrayList();
         this.items.add(localUser);
+        this.items.add(new MenuItem(R.drawable.ic_user_placeholder,R.string.profile_my,view -> openProfile()));
         this.items.add(new MenuItem(R.drawable.ic_reward, R.string.your_trophies, new OnClickListener() {
             public void onClick(View view) {
                 MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity, TrophiesActivity.class));
@@ -155,10 +164,18 @@ public class MenuAdapter extends Adapter<ViewHolder> {
             }
         } else if (getItemViewType(position) == 1) {
             UserViewHolder userViewHolder = (UserViewHolder) holder;
-            LocalUser localUser = (LocalUser) this.items.get(position);
-            userViewHolder.userName.setText(localUser.displayName);
-            userViewHolder.profilePicture.setOnClickListener(null);
-            userViewHolder.profilePicture.setImageResource(R.drawable.ic_user_placeholder);
+            com.cube.memorygames.api.online.AccountManager manager=com.cube.memorygames.api.online.AccountManager.get(mainMenuActivity);
+            com.cube.memorygames.api.online.AccountManager.UserProfile profile=manager.profile();
+            com.cube.memorygames.api.online.OnlineMessages.AuthOk online=com.cube.memorygames.api.online.OnlineSession.get().getLastProfile();
+            String name=profile!=null ? profile.nickname : online!=null ? online.nickname
+                    : com.cube.memorygames.api.online.LocalProfile.nickname(mainMenuActivity);
+            String avatar=profile!=null ? profile.avatarValue : online!=null ? online.avatarValue
+                    : com.cube.memorygames.api.online.LocalProfile.avatar(mainMenuActivity);
+            userViewHolder.userName.setText(name);
+            com.cube.memorygames.api.online.AvatarCatalog.apply(mainMenuActivity,userViewHolder.profilePicture,avatar);
+            userViewHolder.itemView.setContentDescription(mainMenuActivity.getString(R.string.profile_my));
+            userViewHolder.itemView.setOnClickListener(v -> openProfile());
+            userViewHolder.profilePicture.setOnClickListener(v -> openProfile());
         }
     }
 

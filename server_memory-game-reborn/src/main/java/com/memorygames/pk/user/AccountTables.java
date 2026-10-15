@@ -46,6 +46,15 @@ public final class AccountTables {
         @Column(nullable=false) public int attempts;
         @Column(nullable=false) public boolean consumed;
     }
+    @Entity @Table(name="pk_nickname_audit") public static class NicknameAudit {
+        @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id;
+        @Column(nullable=false) public long userId;
+        @Column(nullable=false) public long createdAt;
+        @Column(nullable=false,length=32) public String result;
+        @Column(nullable=false,length=128) public String requestId;
+        @Column(nullable=false,length=64) public String digest;
+        @Column(nullable=false,length=64) public String policyVersion;
+    }
     @Entity @Table(name="pk_account_audit") public static class Audit {
         @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id;
         @Column(nullable=false) public long userId;

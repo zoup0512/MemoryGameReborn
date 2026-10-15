@@ -5,4 +5,4 @@
      images the reflection points at and Count'em All (Game5) comes up empty
      or crashes (release-only regression, 2026-10-15). -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/icg_*" />
+    tools:keep="@drawable/icg_*,@drawable/profile_avatar_*" />

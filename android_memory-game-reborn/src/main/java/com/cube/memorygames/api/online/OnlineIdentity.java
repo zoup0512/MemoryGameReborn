@@ -101,6 +101,10 @@ public final class OnlineIdentity {
     }
 
     public static String getNickname(Context context) {
+        AccountManager manager=AccountManager.get(context);
+        AccountManager.UserProfile profile=manager.profile();
+        if(profile!=null) return profile.nickname;
+        if(manager.usesV2()) return LocalProfile.nickname(context);
         String nickname = getString(context, KEY_NICKNAME);
         if (nickname == null || nickname.length() == 0) {
             nickname = defaultNickname();
@@ -123,7 +127,7 @@ public final class OnlineIdentity {
     }
 
     private static String defaultNickname() {
-        return "Player" + (int) (Math.random() * 9000.0d + 1000);
+        return ProfileRules.inspiration(new java.security.SecureRandom());
     }
 
     private static String getString(Context context, String key) {

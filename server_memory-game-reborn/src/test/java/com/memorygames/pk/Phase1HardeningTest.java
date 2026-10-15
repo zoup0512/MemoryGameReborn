@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * matches from a queued account), reconnect round timers reflecting the
  * REMAINING time, and late level_wins never scoring.
  */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 // A long bot wait keeps the queued account deterministically QUEUED (no
@@ -162,6 +163,7 @@ class Phase1HardeningTest {
 }
 
 /** Register imports no balance (P1-3), so welcome-coins=0 means 402 on join. */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "pk.economy.welcome-coins=0")
@@ -194,6 +196,7 @@ class InsufficientBalanceTest {
 }
 
 /** Late level_wins (past duration + tolerance) must never score (P1-5). */
+@org.springframework.context.annotation.Import(PassingNicknameTestConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "pk.timing.score-accept-grace-ms=200")

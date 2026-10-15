@@ -24,6 +24,9 @@ def main():
     parser.add_argument("--serial", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--package", default="com.memory.brain.training.games.accounttest")
+    parser.add_argument("--expect-nickname-approval", action="store_true",
+                        help="Expect configured machine moderation to approve the test nickname; "
+                             "otherwise verify the default unavailable state and avatar-only save")
     parser.add_argument("--mail-command",
                         help="Shell command printing the deployment mail-sink log (remote runs)")
     options = parser.parse_args()
@@ -148,6 +151,7 @@ def main():
     address = "ui-" + secrets.token_hex(8) + "@example.com"
     password = "UiA9" + secrets.token_hex(12)
     try:
+        click("刷新账号资料")
         current = wait_contains("游客账号")
         old_id = re.search(r"游客账号 #(\d+)", current).group(1)
         screenshot("01-guest")
@@ -167,13 +171,33 @@ def main():
         screenshot("02-registered")
 
         click("修改昵称 / 内置头像")
+        nickname_nodes = [n for n in tree().iter("node") if n.get("class") == "android.widget.EditText"]
+        original_nickname = nickname_nodes[0].get("text")
         clear_field(0)
         fill(0, "UiAccount")
-        click("确认")
-        wait_contains("邮箱账号 #" + old_id)
-        assert "UiAccount" in text(), "Profile update did not reach account summary"
-        checks.append("Android HTTP PATCH profile update")
-        screenshot("03-profile")
+        click("审核并保存")
+        if options.expect_nickname_approval:
+            wait_contains("邮箱账号 #" + old_id)
+            assert "UiAccount" in text(), "Profile update did not reach account summary"
+            checks.append("Android moderated nickname save")
+        else:
+            wait_contains("昵称审核暂不可用")
+            assert "UiAccount" in text(), "Moderation failure discarded the nickname draft"
+            screenshot("03-moderation-unavailable")
+            # Return to the approved value without typing Chinese through adb input.
+            adb("shell", "input", "keyevent", "4")
+            click("放弃修改")
+            click("修改昵称 / 内置头像")
+            nodes = tree()
+            choices = [n for n in nodes.iter("node")
+                       if (n.get("content-desc") or "").startswith("选择头像")]
+            assert len(choices) >= 2, "Preset avatar choices are missing"
+            tap_node(choices[1])
+            click("审核并保存")
+            wait_contains("邮箱账号 #" + old_id)
+            assert original_nickname in text(), "Avatar-only save changed the nickname"
+            checks.append("unavailable moderation preserves draft; avatar-only save succeeds")
+        screenshot("04-profile")
 
         click("设备与会话")
         wait_contains("当前设备")

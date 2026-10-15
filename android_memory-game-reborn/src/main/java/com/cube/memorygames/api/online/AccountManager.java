@@ -18,6 +18,8 @@ public final class AccountManager {
         public String accountType, nickname, avatarValue, email;
         public int elo, balance, wins, losses, draws;
         public boolean emailVerified;
+        /** Server-authoritative epoch milliseconds; zero means no previous nickname change. */
+        public long nextNicknameChangeAt;
         public boolean isGuest() { return "GUEST".equalsIgnoreCase(accountType); }
     }
     public static final class AuthResponse {
@@ -176,7 +178,7 @@ public final class AccountManager {
         boolean migrating=OnlineIdentity.hasLegacy(context);
         if (migrating) request.addProperty("legacyToken", authorizedMigrationTarget == null
                 ? OnlineIdentity.getToken(context) : OnlineIdentity.getMigrationToken(context,authorizedMigrationTarget));
-        else request.addProperty("nickname", OnlineIdentity.getNickname(context));
+        // Omit nickname for a new guest: only the server may generate the public safe default.
         if (migrating && value.legacyUserId <= 0) {
             Identity next=gson.fromJson(gson.toJson(value),Identity.class);
             next.legacyUserId=OnlineIdentity.getUserId(context); persist(next); value=next;
@@ -215,8 +217,8 @@ public final class AccountManager {
                 if (requestEpoch != epoch || !endpoint.equals(OnlineConfig.getEndpoint(context))) throw new IllegalStateException("请求环境已变化，请重试");
                 value=work.run();
             } catch (Exception e) {
-                error=e instanceof AccountError ? ((AccountError)e).code + ": " + e.getMessage()
-                        : e instanceof IllegalStateException ? e.getMessage() : "网络或安全存储失败，原凭证保留，请重试（勿清除应用数据）";
+                error=e instanceof AccountError ? friendlyError((AccountError)e)
+                        : e instanceof IllegalStateException ? e.getMessage() : context.getString(com.memory.brain.training.games.R.string.profile_network_error);
             }
             final T result=value; final String failure=error;
             main.post(() -> {
@@ -271,6 +273,49 @@ public final class AccountManager {
             Identity next=gson.fromJson(gson.toJson(identity), Identity.class); next.auth.user=user; persist(next);
             return user;
         }, callback);
+    }
+    /** Loads encrypted cached profile only. Opening My profile must not create an online guest. */
+    public void cachedProfile(Callback<UserProfile> callback) {
+        submit(false, () -> { load(); return profile(); }, callback);
+    }
+    /** A single atomic profile request; no optimistic cache or second avatar-only request on failure. */
+    public void updateProfile(long expectedUser,String nickname,String avatar,Callback<UserProfile> callback) {
+        if ((nickname!=null && !ProfileRules.validNickname(nickname)) || !ProfileRules.validAvatar(avatar)) {
+            callback.onError(context.getString(com.memory.brain.training.games.R.string.profile_invalid)); return;
+        }
+        submit(true, () -> {
+            ensureBlocking(false);
+            long expected=identity.auth.user.userId;
+            if(expectedUser>0 && !ProfileRules.matchesUser(expectedUser,expected))
+                throw new IllegalStateException(context.getString(com.memory.brain.training.games.R.string.profile_response_error));
+            JsonObject data=body("avatarValue",avatar);
+            if(nickname!=null && !ProfileRules.same(nickname,identity.auth.user.nickname)) data.addProperty("nickname",nickname);
+            JsonObject response=authenticatedRequest("PATCH","/me/profile",data);
+            UserProfile user=gson.fromJson(response,UserProfile.class);
+            if(user==null || !ProfileRules.matchesUser(expected,user.userId) || user.nickname==null
+                    || !ProfileRules.validAvatar(user.avatarValue) || !avatar.equals(user.avatarValue)
+                    || (data.has("nickname") && !nickname.equals(user.nickname)))
+                throw new IllegalStateException(context.getString(com.memory.brain.training.games.R.string.profile_response_error));
+            Identity next=gson.fromJson(gson.toJson(identity),Identity.class); next.auth.user=user;
+            persist(next); return user;
+        },new Callback<UserProfile>() {
+            public void onSuccess(UserProfile value) { OnlineSession.get().profileUpdated(value); callback.onSuccess(value); }
+            public void onError(String message) { callback.onError(message); }
+        });
+    }
+    private String friendlyError(AccountError error) {
+        String kind=ProfileRules.moderationError(error.status,error.code);
+        int resource=0;
+        if("rejected".equals(kind)) resource=com.memory.brain.training.games.R.string.profile_rejected;
+        else if("pending".equals(kind)) resource=com.memory.brain.training.games.R.string.profile_pending;
+        else if("unavailable".equals(kind)) resource=com.memory.brain.training.games.R.string.profile_unavailable;
+        else if("cooldown".equals(kind)) resource=com.memory.brain.training.games.R.string.profile_cooldown_error;
+        else if("invalid".equals(kind)) resource=com.memory.brain.training.games.R.string.profile_invalid;
+        if(resource!=0) return context.getString(resource);
+        // Never echo a moderation service's raw reason or matched words, including unknown new codes.
+        if(error.code!=null && error.code.startsWith("NICKNAME_"))
+            return context.getString(com.memory.brain.training.games.R.string.profile_unavailable);
+        return error.code+": "+error.getMessage();
     }
     public void login(String email, String password, boolean cancelDelete, Callback<UserProfile> callback) {
         submit(true, () -> {
