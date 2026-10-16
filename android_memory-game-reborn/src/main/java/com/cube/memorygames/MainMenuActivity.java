@@ -311,14 +311,15 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             newTab = TAB_ONLINE;
                             MainMenuActivity.this.configureList(true);
                             if (MainMenuActivity.this.onlineAdapter == null) {
-                                MainMenuActivity.this.onlineAdapter = new OnlineLobbyAdapter(MainMenuActivity.this);
+                                MainMenuActivity.this.onlineAdapter = new OnlineLobbyAdapter(MainMenuActivity.this,
+                                        MainMenuActivity.this::updateHeaderStatistics);
                             }
                             MainMenuActivity.this.recyclerView.setAdapter(MainMenuActivity.this.onlineAdapter);
                             MainMenuActivity.this.recyclerView.setBackgroundColor(ContextCompat.getColor(MainMenuActivity.this, R.color.online_page));
                             MainMenuActivity.this.gridSpaceItemDecorator.setSpace(0);
                             MainMenuActivity.this.recyclerView.invalidateItemDecorations();
-                            MainMenuActivity.this.panelHeader.setVisibility(8);
-                            MainMenuActivity.this.divider.setVisibility(8);
+                            MainMenuActivity.this.panelHeader.setVisibility(View.VISIBLE);
+                            MainMenuActivity.this.divider.setVisibility(View.VISIBLE);
                         } else if (menuItemId == R.id.bottomBarMenu) {
                             newTab = TAB_MENU;
                             MainMenuActivity.this.configureList(true);
@@ -346,6 +347,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             sharedPreferences.edit().putBoolean(MainMenuActivity.PREF_BADGE_CHALLENGE_CLICKED, true).apply();
                             MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_TAB_CLICKED);
                         }
+                        MainMenuActivity.this.updateHeaderStatistics();
                         sharedPreferences.edit().putInt(MainMenuActivity.PREF_LAST_TAB_POSITION, newTab).apply();
                     }
                 }).thenAnimate(MainMenuActivity.this.recyclerView).duration((long) 100).fadeIn().andAnimate(MainMenuActivity.this.recyclerView).duration((long) 100).interpolator(new DecelerateInterpolator()).translationY((float) animationPadding, 0.0f).start();
@@ -414,11 +416,17 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         topClick();
     }
 
-    public void updateStatistics() {
+    private void updateHeaderStatistics() {
         if (!isFinishing()) {
             this.starsView.setText(String.valueOf(this.mBottomBar.getCurrentTabPosition() == TAB_ONLINE
                     ? OnlineSession.get().getOnlineCoins() : this.localDataManager.getLocalUser().money));
             this.ratingView.setText(String.valueOf(round((double) this.localDataManager.getLocalUser().rating, 1)));
+        }
+    }
+
+    public void updateStatistics() {
+        if (!isFinishing()) {
+            updateHeaderStatistics();
             if (this.mBottomBar.getCurrentTabPosition() == 0) {
                 this.gameListAdapter.updateStatistics();
             } else if (this.mBottomBar.getCurrentTabPosition() == 2) {
