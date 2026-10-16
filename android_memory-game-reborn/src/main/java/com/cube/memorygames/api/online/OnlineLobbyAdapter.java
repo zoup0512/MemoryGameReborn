@@ -24,6 +24,7 @@ import java.util.Locale;
 public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.LobbyHolder> {
 
     private final Context context;
+    private final Runnable onStatisticsChanged;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private OnlineMessages.AuthOk profile;
     private android.app.Dialog waitingDialog;
@@ -125,8 +126,9 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         }
     };
 
-    public OnlineLobbyAdapter(Context context) {
+    public OnlineLobbyAdapter(Context context, Runnable onStatisticsChanged) {
         this.context = context;
+        this.onStatisticsChanged = onStatisticsChanged;
         OnlineSession.get().setProfileCallback(this.profileCallback);
     }
 
@@ -161,6 +163,7 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
             @Override
             public void run() {
                 refreshPosted = false;
+                onStatisticsChanged.run();
                 notifyDataSetChanged();
             }
         });
