@@ -114,9 +114,10 @@ public class MenuAdapter extends Adapter<ViewHolder> {
                 MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity, TrophiesActivity.class));
             }
         }));
-        this.items.add(new MenuItem(R.drawable.ic_reward, R.string.rank, new OnClickListener() {
+        this.items.add(new MenuItem(R.drawable.ic_crown_new, R.string.rank, new OnClickListener() {
             public void onClick(View view) {
-                MenuAdapter.this.mainMenuActivity.topClick();
+                MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity,
+                        com.cube.memorygames.api.online.OnlineRankingActivity.class));
             }
         }));
         this.items.add(Integer.valueOf(0));

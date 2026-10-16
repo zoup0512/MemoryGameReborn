@@ -71,6 +71,10 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name="com.cube.memorygames.api.online.OnlineRankingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name="com.cube.memorygames.api.online.OnlineHistoryActivity"
             android:screenOrientation="portrait" />
         <activity

@@ -356,25 +356,6 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         friend.addView(friendActions, friendActionsParams);
         page.addView(friend, OnlineUi.cardParams(this.context));
 
-        LinearLayout shortcuts = OnlineUi.card(this.context);
-        shortcuts.addView(OnlineUi.sectionTitle(this.context, R.string.online_shortcuts_title));
-        LinearLayout shortcutActions = new LinearLayout(this.context);
-        shortcutActions.setOrientation(LinearLayout.HORIZONTAL);
-        TextView history = OnlineUi.secondaryButton(this.context, R.string.menuOnlineHistory);
-        history.setId(R.id.online_history_link);
-        LinearLayout.LayoutParams historyParams = new LinearLayout.LayoutParams(
-                0, getDimen(R.dimen.online_button_height), 1.0f);
-        historyParams.rightMargin = dp(6);
-        shortcutActions.addView(history, historyParams);
-        TextView top = OnlineUi.secondaryButton(this.context, R.string.menuOnlineTop);
-        LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
-                0, getDimen(R.dimen.online_button_height), 1.0f);
-        topParams.leftMargin = dp(6);
-        shortcutActions.addView(top, topParams);
-        shortcuts.addView(shortcutActions, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        page.addView(shortcuts, OnlineUi.cardParams(this.context));
-
         LinearLayout rules = OnlineUi.card(this.context);
         rules.addView(OnlineUi.sectionTitle(this.context, R.string.online_rules_title));
         addRule(rules, "1", R.string.online_rule_one);
@@ -400,8 +381,6 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         holder.playBot = playBot;
         holder.createRoom = createRoom;
         holder.joinRoom = joinRoom;
-        holder.history = history;
-        holder.top = top;
         return holder;
     }
 
@@ -530,18 +509,6 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
             @Override
             public void onClick(View v) {
                 showJoinDialog();
-            }
-        });
-        holder.history.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                context.startActivity(new Intent(context, OnlineHistoryActivity.class));
-            }
-        });
-        holder.top.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                context.startActivity(new Intent(context, OnlineTopActivity.class));
             }
         });
         holder.playBot.setOnClickListener(new View.OnClickListener() {
@@ -686,8 +653,6 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         TextView playBot;
         TextView createRoom;
         TextView joinRoom;
-        TextView history;
-        TextView top;
 
         LobbyHolder(View itemView) {
             super(itemView);

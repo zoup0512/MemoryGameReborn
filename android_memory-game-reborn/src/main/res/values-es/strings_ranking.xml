@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_ranking_subtitle">Tu puntuación, clasificación y partidas recientes en un solo lugar.</string>
+    <string name="online_ranking_rating">Puntuación actual</string>
+    <string name="online_ranking_snapshot">Últimos resultados sincronizados</string>
+    <string name="online_ranking_no_profile">Aún no hay resultados sincronizados</string>
+    <string name="online_ranking_no_profile_hint">Abre la clasificación o el historial de partidas para conectarte y cargar tus resultados.</string>
+    <string name="online_ranking_top_title">Clasificación en línea</string>
+    <string name="online_ranking_top_hint">Consulta a los mejores jugadores y compara sus puntuaciones ELO.</string>
+    <string name="online_ranking_history_title">Historial de partidas</string>
+    <string name="online_ranking_history_hint">Revisa tus rivales, puntuaciones y resultados recientes.</string>
+    <string name="online_ranking_season_hint">Las partidas clasificatorias determinan tu rango y puntuación ELO.</string>
+    <string name="online_ranking_tier_unknown">Rango disponible al conectarte</string>
+</resources>

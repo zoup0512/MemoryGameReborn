@@ -189,6 +189,17 @@ Nickname"</string>
     <string name="online_overview_title">Your season</string>
     <string name="online_win_rate">Win rate</string>
     <string name="online_shortcuts_title">Your competition</string>
+    <string name="online_ranking_subtitle">Your rating, leaderboard and recent matches in one place.</string>
+    <string name="online_ranking_rating">Current rating</string>
+    <string name="online_ranking_snapshot">Latest synced results</string>
+    <string name="online_ranking_no_profile">No synced results yet</string>
+    <string name="online_ranking_no_profile_hint">Open the leaderboard or match history to connect and load your results.</string>
+    <string name="online_ranking_top_title">Online leaderboard</string>
+    <string name="online_ranking_top_hint">See the top players and compare ELO ratings.</string>
+    <string name="online_ranking_history_title">Match history</string>
+    <string name="online_ranking_history_hint">Review recent opponents, scores and results.</string>
+    <string name="online_ranking_season_hint">Ranked matches determine your tier and ELO rating.</string>
+    <string name="online_ranking_tier_unknown">Tier available after connecting</string>
     <string name="online_rules_title">How Online works</string>
     <string name="online_rule_one">Choose ranked, practice, or a private room.</string>
     <string name="online_rule_two">Both players face the same games and seed.</string>

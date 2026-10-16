@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_ranking_subtitle">Votre cote, le classement et vos matchs récents au même endroit.</string>
+    <string name="online_ranking_rating">Cote actuelle</string>
+    <string name="online_ranking_snapshot">Derniers résultats synchronisés</string>
+    <string name="online_ranking_no_profile">Aucun résultat synchronisé</string>
+    <string name="online_ranking_no_profile_hint">Ouvrez le classement ou l’historique des matchs pour vous connecter et charger vos résultats.</string>
+    <string name="online_ranking_top_title">Classement en ligne</string>
+    <string name="online_ranking_top_hint">Découvrez les meilleurs joueurs et comparez les cotes ELO.</string>
+    <string name="online_ranking_history_title">Historique des matchs</string>
+    <string name="online_ranking_history_hint">Consultez vos adversaires, scores et résultats récents.</string>
+    <string name="online_ranking_season_hint">Les matchs classés déterminent votre rang et votre cote ELO.</string>
+    <string name="online_ranking_tier_unknown">Rang disponible après connexion</string>
+</resources>
