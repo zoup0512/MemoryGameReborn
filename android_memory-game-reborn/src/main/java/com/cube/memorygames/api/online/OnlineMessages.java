@@ -27,6 +27,7 @@ public final class OnlineMessages {
     public static final String T_ROUND_COMPLETE = "round_complete";
     public static final String T_RESIGN = "resign";
     public static final String T_MATCH_START = "match_start";
+    public static final String T_ROUND_READY = "round_ready";
     public static final String T_OPPONENT_START = "opponent_start";
     public static final String T_TOP_REQUEST = "top_request";
     public static final String T_TOP_RESPONSE = "top_response";
@@ -99,6 +100,15 @@ public final class OnlineMessages {
     public static class RoundComplete {
         public int round;
         public int score;
+    }
+
+    public static class MatchStart {
+        public boolean prepareRounds = true;
+    }
+
+    public static class RoundReady {
+        public String matchId;
+        public int round;
     }
 
     public static class AuthOk {
@@ -180,6 +190,9 @@ public final class OnlineMessages {
         public String gameId;
         public int durationMs;
         public long serverNow;
+        public boolean preparing;
+        /** Local-only: this is a replay of an already running round. */
+        public transient boolean resuming;
     }
 
     public static class OpponentScore {

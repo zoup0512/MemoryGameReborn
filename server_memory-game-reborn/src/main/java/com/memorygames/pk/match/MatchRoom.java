@@ -119,6 +119,9 @@ public class MatchRoom {
     /** Explicit phase guard: duplicate messages and already-dequeued timers are harmless. */
     private boolean roundEnded = true;
     private long nextRoundStartsAt;
+    private boolean prepareRounds;
+    private int preparingRound;
+    private ScheduledFuture<?> preparationDeadlineTask;
     private ScheduledFuture<?> nextRoundStartTask;
     private ScheduledFuture<?> gameplayDeadlineTask;
     private long startedAt = System.currentTimeMillis();
@@ -221,9 +224,13 @@ public class MatchRoom {
      * accepted; idempotent so a reconnecting client can press again safely.
      */
     public void onMatchStart(long userId) {
+        onMatchStart(userId, false);
+    }
+
+    public void onMatchStart(long userId, boolean prepareRounds) {
         synchronized (this) {
             int index = seatIndex(userId);
-            if (index < 0 || this.settledOnce.get() || this.currentRound > 0) {
+            if (index < 0 || this.settledOnce.get() || this.currentRound > 0 || this.preparingRound > 0) {
                 this.events.emit("MATCH_START", this.matchId,
                         "user=" + userId + " round=" + this.currentRound + " accepted=false reason="
                                 + (index < 0 ? "unknown_user" : this.settledOnce.get() ? "settled" : "round_mismatch"));
@@ -231,6 +238,9 @@ public class MatchRoom {
             }
             this.events.emit("MATCH_START", this.matchId,
                     "user=" + userId + " accepted=true reason=" + (this.seats[index].accepted ? "duplicate" : "ok"));
+            if (!this.seats[index].accepted && isPracticeMode() && this.seats[1].isBot) {
+                this.prepareRounds = prepareRounds;
+            }
             this.seats[index].accepted = true;
             if (this.seats[0].accepted && this.seats[1].accepted) {
                 if (this.acceptDeadlineTask != null) {
@@ -258,10 +268,12 @@ public class MatchRoom {
      */
     private void cancelUnaccepted(String reason) {
         synchronized (this) {
-            if (this.settledOnce.get() || this.currentRound > 0) {
+            if (this.settledOnce.get() || this.currentRound > 0
+                    || ("accept_timeout".equals(reason) && this.seats[0].accepted && this.seats[1].accepted)) {
                 return;
             }
             this.settledOnce.set(true);
+            cancelPreparation();
             this.events.emit("MATCH_NOT_ACCEPTED", this.matchId,
                     "reason=" + reason + " acceptedA=" + this.seats[0].accepted
                             + " acceptedB=" + this.seats[1].accepted);
@@ -342,9 +354,72 @@ public class MatchRoom {
         this.nextRoundStartTask = this.scheduler.schedule(new Runnable() {
             @Override
             public void run() {
-                roundStart(roundNumber);
+                prepareOrStartRound(roundNumber);
             }
         }, Math.max(0L, this.nextRoundStartsAt - now()), TimeUnit.MILLISECONDS);
+    }
+
+    private void prepareOrStartRound(int roundNumber) {
+        synchronized (this) {
+            if (this.settledOnce.get() || roundNumber != this.currentRound + 1
+                    || this.preparingRound != 0) {
+                return;
+            }
+            if (!this.prepareRounds) {
+                roundStart(roundNumber);
+                return;
+            }
+            this.nextRoundStartTask = null;
+            this.nextRoundStartsAt = 0L;
+            this.preparingRound = roundNumber;
+            sendRoundPreparation(0);
+            this.events.emit("ROUND_PREPARING", this.matchId, "round=" + roundNumber);
+            this.preparationDeadlineTask = this.scheduler.schedule(() -> {
+                synchronized (MatchRoom.this) {
+                    if (!this.settledOnce.get() && this.preparingRound == roundNumber) {
+                        if (this.currentRound == 0) cancelUnaccepted("preparation_timeout");
+                        else settle(1, true, "preparation_timeout");
+                    }
+                }
+            }, Math.max(1L, this.properties.getTiming().getPracticePreparationTimeoutMs()), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void sendRoundPreparation(int index) {
+        GameCatalog.ProtocolRound round = this.rounds.get(this.preparingRound - 1);
+        ProtocolCodec.RoundStart start = new ProtocolCodec.RoundStart();
+        start.matchId = this.matchId;
+        start.round = this.preparingRound;
+        start.gameId = round.gameId;
+        start.durationMs = round.durationMs;
+        start.serverNow = now();
+        start.preparing = true;
+        sendTo(index, ProtocolCodec.T_ROUND_START, start);
+    }
+
+    public void onRoundReady(long userId, ProtocolCodec.RoundReady ready) {
+        synchronized (this) {
+            if (this.settledOnce.get() || !this.prepareRounds || seatIndex(userId) != 0
+                    || !this.matchId.equals(ready.matchId) || this.preparingRound == 0
+                    || ready.round != this.preparingRound) {
+                return;
+            }
+            int roundNumber = this.preparingRound;
+            this.preparingRound = 0;
+            if (this.preparationDeadlineTask != null) {
+                this.preparationDeadlineTask.cancel(false);
+                this.preparationDeadlineTask = null;
+            }
+            roundStart(roundNumber);
+        }
+    }
+
+    private void cancelPreparation() {
+        this.preparingRound = 0;
+        if (this.preparationDeadlineTask != null) {
+            this.preparationDeadlineTask.cancel(false);
+            this.preparationDeadlineTask = null;
+        }
     }
 
     private void roundStart(int roundNumber) {
@@ -437,6 +512,7 @@ public class MatchRoom {
             long floorMs = this.catalog.minLevelIntervalOf(spec);
             long elapsed = now - this.roundStartedAt;
             boolean sequenceOk = msg.level > seat.lastReportedLevel
+                    && msg.level <= spec.maxLevel()
                     && msg.level <= (elapsed / floorMs) + 3;
             // The first answer of a round is not interval-checked: the server
             // cannot know when the client's challenge reveal ended, and fast
@@ -715,7 +791,9 @@ public class MatchRoom {
             // the end-of-round grace there is nothing to resume — the
             // round_end (or the next round_start) is already in flight.
             long now = now();
-            if (this.currentRound > 0 && this.roundEnded) {
+            if (this.preparingRound > 0) {
+                sendRoundPreparation(index);
+            } else if (this.currentRound > 0 && this.roundEnded) {
                 sendTo(index, ProtocolCodec.T_ROUND_END, buildRoundEnd(index));
             } else if (this.currentRound > 0 && now < this.gameplayDeadlineAt) {
                 GameCatalog.ProtocolRound round = this.rounds.get(this.currentRound - 1);
@@ -765,6 +843,7 @@ public class MatchRoom {
             return;
         }
         this.settlementReason = reason;
+        cancelPreparation();
         this.events.emit("SETTLE_TRIGGER", this.matchId,
                 "round=" + this.currentRound + " reason=" + reason
                         + " winner=" + winnerIndex + " forfeit=" + forfeit
@@ -1031,10 +1110,14 @@ public class MatchRoom {
 
     private void startBotBrain(GameCatalog.GameSpec spec, long durationMs) {
         this.botEpoch++;
-        this.botRandom = new Random(this.matchSeed ^ (this.currentRound * 31L));
+        this.botRandom = newBotRandom();
         this.botMistakesLeft = 0;
         this.seats[1].expectedLevel = 1;
         scheduleBotAnswer(spec, durationMs);
+    }
+
+    Random newBotRandom() {
+        return new Random(this.matchSeed ^ (this.currentRound * 31L));
     }
 
     /**
@@ -1045,6 +1128,10 @@ public class MatchRoom {
      * half (fatigue).
      */
     private void scheduleBotAnswer(GameCatalog.GameSpec spec, long roundDurationMs) {
+        scheduleBotAnswer(spec, roundDurationMs, 0L);
+    }
+
+    private void scheduleBotAnswer(GameCatalog.GameSpec spec, long roundDurationMs, long recoveryMs) {
         final long epoch = this.botEpoch;
         double mu = this.catalog.botLevelIntervalOf(spec) * this.botPaceMultiplier;
         if (this.seats[1].expectedLevel <= 2) {
@@ -1054,7 +1141,7 @@ public class MatchRoom {
         if (elapsed > roundDurationMs / 2) {
             mu *= 1.1d;
         }
-        long delay = truncatedNormal(mu, mu * 0.25d, (long) (0.7d * mu), (long) (1.6d * mu));
+        long delay = recoveryMs + truncatedNormal(mu, mu * 0.25d, (long) (0.7d * mu), (long) (1.6d * mu));
         this.botTasks.add(this.scheduler.schedule(new Runnable() {
             @Override
             public void run() {
@@ -1111,8 +1198,12 @@ public class MatchRoom {
                 accuracy *= 0.3d;
             }
             int level = this.seats[1].expectedLevel;
+            if (level > spec.maxLevel()) {
+                return;
+            }
             this.seats[1].expectedLevel = level + 1;
-            if (this.botRandom.nextDouble() < accuracy) {
+            boolean correct = this.botRandom.nextDouble() < accuracy;
+            if (correct) {
                 this.seats[1].roundScores[this.currentRound - 1] += spec.levelScore(level);
                 ProtocolCodec.OpponentScore score = new ProtocolCodec.OpponentScore();
                 score.matchId = this.matchId;
@@ -1122,8 +1213,8 @@ public class MatchRoom {
             }
             // Chain the next answer while the round can still fit one.
             long elapsed = now() - this.roundStartedAt;
-            if (elapsed < roundDurationMs) {
-                scheduleBotAnswer(spec, roundDurationMs);
+            if (elapsed < roundDurationMs && this.seats[1].expectedLevel <= spec.maxLevel()) {
+                scheduleBotAnswer(spec, roundDurationMs, correct ? 0L : spec.failureDelayMs());
             }
         }
     }

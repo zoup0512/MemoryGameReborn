@@ -131,6 +131,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private TextView bottomButton;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean roundLaunchScheduled;
+    private RoundLaunchGate launchGate = new RoundLaunchGate();
+    private boolean destroyed;
     private int launchedRound = -1;
     private String diagnosticMatchId;
     private String finishReason="framework";
@@ -204,11 +206,57 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             showMatchUi();
             if (OnlineSession.get().getLastRoundEnd() != null) {
                 showIntermissionUi();
+            } else if (OnlineSession.get().isPracticeMode()) {
+                restorePracticeRound();
             }
         } else {
             showSearchUi();
             OnlineSession.get().startMatchmaking();
         }
+    }
+
+    /** Keep the preparation token across in-process recreation, including an open tutorial. */
+    private static final class RetainedRound {
+        RoundLaunchGate gate;
+        RoundStart tutorial;
+        GameInfo info;
+        int requestCode;
+    }
+
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        RetainedRound retained = new RetainedRound();
+        retained.gate = launchGate;
+        retained.tutorial = pendingTutorialStart;
+        retained.info = pendingTutorialInfo;
+        retained.requestCode = pendingTutorialRequestCode;
+        return retained;
+    }
+
+    private void restorePracticeRound() {
+        RoundStart snapshot = OnlineSession.get().getRoundStartForRestore();
+        if (snapshot == null) return;
+        RetainedRound retained = (RetainedRound) getLastCustomNonConfigurationInstance();
+        if (retained != null && RoundIntermission.canLaunch(retained.gate.token(),
+                OnlineSession.get().getMatchId(), snapshot.round, null)) {
+            launchGate = retained.gate;
+            if (!snapshot.preparing) launchGate.accept(snapshot);
+            launchedRound = snapshot.round;
+            if (retained.tutorial != null) {
+                pendingTutorialStart = retained.tutorial;
+                pendingTutorialInfo = retained.info;
+                pendingTutorialRequestCode = retained.requestCode;
+                roundLaunchScheduled = true;
+                return;
+            }
+            if (launchGate.canComplete(launchGate.token())) {
+                // Recreate only the interrupted countdown, never the tutorial.
+                roundLaunchScheduled = true;
+                showGameListOrCountdown(launchGate.token(), Games.get().getGameBiId(snapshot.gameId));
+                return;
+            }
+        }
+        onRoundStart(snapshot);
     }
 
     @Override
@@ -231,6 +279,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     @Override
     protected void onDestroy() {
         diagnostic("match_destroy","reason",isChangingConfigurations()?"configuration":isFinishing()?finishReason:"destroy","stack",DiagnosticLog.callerStack());
+        this.destroyed = true;
+        this.roundLaunchScheduled = false;
         this.handler.removeCallbacksAndMessages(null);
         // Clear only our own registration: returning to the lobby re-registers
         // the adapter in onResume, which runs BEFORE this onDestroy — an
@@ -1084,7 +1134,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             @Override
             public void run() {
                 if (canLaunchRound(start)) {
-                    startGameActivity(start, info);
+                    completeRoundPreparation(start, info);
                 }
             }
         }, GAME_LIST_TIMEOUT_MS);
@@ -1399,6 +1449,10 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             startActivityForResult(tutorial, this.pendingTutorialRequestCode);
             return;
         }
+        showGameListOrCountdown(start, info);
+    }
+
+    private void showGameListOrCountdown(final RoundStart start, final GameInfo info) {
         if (start.round == 1) {
             // Origin opened the match with the full game list and its
             // countdown disc (START_TIMEOUT); later rounds use the 3-2-1.
@@ -1425,7 +1479,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                startGameActivity(start, info);
+                                completeRoundPreparation(start, info);
                             }
                         }, COUNTDOWN_MS / 3);
                     }
@@ -1452,18 +1506,30 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     private boolean canLaunchRound(RoundStart start) {
         OnlineSession session = OnlineSession.get();
-        return !isFinishing() && this.roundLaunchScheduled && start != null
-                && this.launchedRound == start.round
+        return !destroyed && !isFinishing() && this.roundLaunchScheduled && start != null
+                && launchGate.canComplete(start) && this.launchedRound == start.round
                 && RoundIntermission.canLaunch(start, session.getMatchId(),
                         session.getCurrentRound(), session.getLastRoundEnd());
     }
 
-    private void startGameActivity(RoundStart start, GameInfo info) {
-        if (!canLaunchRound(start)) {
-            diagnostic("frame_dropped","reason","launch_cancelled");
-            // The match settled/cancelled while a launch was pending.
-            return;
+    private void completeRoundPreparation(RoundStart start, GameInfo info) {
+        if (!canLaunchRound(start)) return;
+        RoundLaunchGate.Action action = launchGate.complete(start);
+        this.roundLaunchScheduled = false;
+        if (action == RoundLaunchGate.Action.READY) {
+            OnlineSession.get().sendRoundReady(start);
+            this.statusView.setText(R.string.online_round_waiting_start);
+            showScrollableBoard(this.matchBoard, ViewGroup.LayoutParams.MATCH_PARENT);
+        } else if (action == RoundLaunchGate.Action.START) {
+            startGameActivity(launchGate.formalFrame(), info);
         }
+    }
+
+    private void startGameActivity(RoundStart start, GameInfo info) {
+        OnlineSession session = OnlineSession.get();
+        if (destroyed || isFinishing() || !RoundIntermission.canLaunch(start,
+                session.getMatchId(), session.getCurrentRound(), session.getLastRoundEnd())
+                || !launchGate.markLaunched(start)) return;
         this.roundLaunchScheduled = false;
         Intent intent = new Intent(this, Games.get().getGameActivity(info));
         intent.putExtra(MainMenuActivity.EXTRA_GAME_INFO, info);
@@ -1488,7 +1554,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         diagnostic("game_return","attempt",requestCode,"code",resultCode);
         if (requestCode == this.pendingTutorialRequestCode) {
             this.pendingTutorialRequestCode = -1;
-            if (this.pendingTutorialStart != null && this.pendingTutorialInfo != null) {
+            if (this.pendingTutorialStart != null && this.pendingTutorialInfo != null
+                    && canLaunchRound(this.pendingTutorialStart)) {
                 android.content.SharedPreferences prefs =
                         android.preference.PreferenceManager.getDefaultSharedPreferences(this);
                 prefs.edit().putInt(PREF_TUTORIAL_SHOW + this.pendingTutorialInfo.getId(),
@@ -1498,7 +1565,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
                 GameInfo info = this.pendingTutorialInfo;
                 this.pendingTutorialStart = null;
                 this.pendingTutorialInfo = null;
-                startGameActivity(start, info);
+                completeRoundPreparation(start, info);
             }
             return;
         }
@@ -1525,6 +1592,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onMatchFound(MatchFound match) {
+        launchGate.clear();
+        roundLaunchScheduled = false;
+        launchedRound = -1;
         diagnosticMatchId=match.matchId;
         showMatchUi();
     }
@@ -1535,6 +1605,14 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         if (!acceptedMatch || isFinishing()) {
             return;
         }
+        launchGate.clear();
+        roundLaunchScheduled = false;
+        launchedRound = -1;
+        int tutorialRequest = pendingTutorialRequestCode;
+        pendingTutorialRequestCode = -1;
+        pendingTutorialStart = null;
+        pendingTutorialInfo = null;
+        if (tutorialRequest >= 0) finishActivity(tutorialRequest);
         Toast.makeText(this, R.string.toast_game_not_accepted, Toast.LENGTH_SHORT).show();
         if (OnlineSession.MODE_RANKED.equals(mode)) {
             OnlineSession.get().startMatchmaking();
@@ -1547,10 +1625,18 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     public void onRoundStart(final RoundStart round) {
-        if (this.roundLaunchScheduled || this.launchedRound == round.round) {
-            return;
+        OnlineSession session = OnlineSession.get();
+        if (destroyed || isFinishing() || !RoundIntermission.canLaunch(round,
+                session.getMatchId(), session.getCurrentRound(), session.getLastRoundEnd())) return;
+        RoundLaunchGate.Action action = launchGate.accept(round, session.isPracticeMode());
+        if (action == RoundLaunchGate.Action.PREPARE) {
+            launchRound(round);
+        } else if (action == RoundLaunchGate.Action.READY) {
+            session.sendRoundReady(round);
+        } else if (action == RoundLaunchGate.Action.START) {
+            // Same round's formal frame bypasses tutorial/list/countdown, exactly once.
+            startGameActivity(launchGate.formalFrame(), Games.get().getGameBiId(round.gameId));
         }
-        launchRound(round);
     }
 
     @Override
@@ -1563,6 +1649,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     public void onRoundEnd(RoundEnd round) {
         this.scoreView.setText(String.format(Locale.US, "%d : %d", round.myScore, round.oppScore));
         if (this.launchedRound <= round.round) {
+            this.launchGate.clear();
             this.roundLaunchScheduled = false;
             if (this.pendingTutorialStart != null && this.pendingTutorialStart.round <= round.round) {
                 int requestCode = this.pendingTutorialRequestCode;
@@ -1582,6 +1669,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         diagnosticMatchId=end.matchId;
         diagnostic("match_end","score",end.myScore);
         this.handler.removeCallbacksAndMessages(null);
+        this.launchGate.clear();
         this.roundLaunchScheduled = false;
         this.launchedRound = -1;
         int tutorialRequestCode = this.pendingTutorialRequestCode;

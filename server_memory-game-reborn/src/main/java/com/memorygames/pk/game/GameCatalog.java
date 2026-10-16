@@ -43,6 +43,14 @@ public class GameCatalog {
             this.botLevelIntervalMs = botLevelIntervalMs;
         }
 
+        public int maxLevel() {
+            return "22".equals(this.gameId) ? 48 : Integer.MAX_VALUE;
+        }
+
+        public long failureDelayMs() {
+            return "22".equals(this.gameId) ? 2000L : 0L;
+        }
+
         /** Score awarded for winning the given level (client parity). */
         public int levelScore(int level) {
             return flatScore ? baseScore : baseScore + level * 2;
@@ -64,7 +72,7 @@ public class GameCatalog {
         add(new GameSpec("10", 60000, 10, false, 1000, 3000)); // Correctly?
         add(new GameSpec("15", 30000, 8, true, 700, 2000));    // Like Previous?
         add(new GameSpec("19", 30000, 8, true, 600, 1500));    // Colors
-        add(new GameSpec("22", 45000, 0, false, 400, 1000));   // Schultz Tables
+        add(new GameSpec("22", 45000, 0, false, 400, 1800));   // Schultz Tables
     }
 
     private void add(GameSpec spec) {

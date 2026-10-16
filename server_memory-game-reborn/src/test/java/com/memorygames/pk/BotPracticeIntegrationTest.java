@@ -97,8 +97,10 @@ class BotPracticeIntegrationTest {
                 total += spec.levelScore(level);
                 Thread.sleep(250);
             }
-            assertNotNull(a.await(ProtocolCodec.T_OPPONENT_SCORE, 5000),
-                    "the bot must report progress during the round");
+            if (!"22".equals(rs.gameId)) {
+                assertNotNull(a.await(ProtocolCodec.T_OPPONENT_SCORE, 5000),
+                        "the bot must report progress during the round");
+            } // A Schulte mistake consumes the remaining accelerated two-second round.
 
             ProtocolCodec.RoundComplete done = new ProtocolCodec.RoundComplete();
             done.round = round;
@@ -178,6 +180,43 @@ class BotPracticeIntegrationTest {
                     "an idle human loses to the master bot");
             assertEquals(0, loss.as(ProtocolCodec.MatchEnd.class).practiceStreak,
                     "a loss resets the practice streak");
+        } finally {
+            a.close();
+        }
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void negotiatedPreparationWaitsForReadyOverWebSocket() throws Exception {
+        TestWsClient a = newClient();
+        try {
+            register(a, "Prepare");
+            ProtocolCodec.BotMatchRequest request = new ProtocolCodec.BotMatchRequest();
+            request.difficulty = "BRONZE";
+            a.send(ProtocolCodec.T_BOT_MATCH_REQUEST, request);
+            ProtocolCodec.MatchFound found = a.await(ProtocolCodec.T_MATCH_FOUND, 5000)
+                    .as(ProtocolCodec.MatchFound.class);
+            ProtocolCodec.MatchStart start = new ProtocolCodec.MatchStart();
+            start.prepareRounds = true;
+            a.send(ProtocolCodec.T_MATCH_START, start);
+            ProtocolCodec.RoundStart preparing = a.await(ProtocolCodec.T_ROUND_START, 5000)
+                    .as(ProtocolCodec.RoundStart.class);
+            assertTrue(preparing.preparing);
+            assertEquals(1, preparing.round);
+            // Longer than an accelerated gameplay round: preparation must not consume it.
+            org.junit.jupiter.api.Assertions.assertNull(a.await(ProtocolCodec.T_OPPONENT_SCORE, 2300));
+            org.junit.jupiter.api.Assertions.assertNull(a.await(ProtocolCodec.T_ROUND_END, 200));
+            ProtocolCodec.RoundReady ready = new ProtocolCodec.RoundReady();
+            ready.matchId = found.matchId;
+            ready.round = preparing.round;
+            a.send(ProtocolCodec.T_ROUND_READY, ready);
+            ProtocolCodec.RoundStart playing = a.await(ProtocolCodec.T_ROUND_START, 5000)
+                    .as(ProtocolCodec.RoundStart.class);
+            org.junit.jupiter.api.Assertions.assertFalse(playing.preparing);
+            assertEquals(preparing.durationMs, playing.durationMs);
+            assertEquals(preparing.gameId, playing.gameId);
+            a.send(ProtocolCodec.T_RESIGN, new Object());
+            assertNotNull(a.await(ProtocolCodec.T_MATCH_END, 10000));
         } finally {
             a.close();
         }

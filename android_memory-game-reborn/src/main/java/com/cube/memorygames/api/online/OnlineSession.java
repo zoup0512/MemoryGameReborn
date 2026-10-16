@@ -122,10 +122,8 @@ public class OnlineSession {
     private int resignRetries;
     /** Notified on the main thread whenever a fresh profile arrives. */
     private volatile Runnable profileCallback;
-    /** Round duration delivered by the server (round_start/match_found). */
-    private volatile long serverRoundDurationMs;
-    /** Monotonic receive time of the last round_start (0 = no round). */
-    private volatile long roundStartedElapsed;
+    private final RoundClock roundClock = new RoundClock();
+    private RoundStart lastRoundStart;
     /**
      * True while a friend-room pairing is pending (host is waiting with a
      * code, or a join code has been sent). Participants sit in STATE_IDLE —
@@ -275,11 +273,11 @@ public class OnlineSession {
      * / production defaults when no server value is known.
      */
     public long roundDurationMs(Context context, long defaultMs) {
-        if (this.roundStartedElapsed > 0L) {
+        if (roundClock.hasStarted()) {
             return Math.max(1L, roundRemainingMs());
         }
-        if (this.serverRoundDurationMs > 0L) {
-            return this.serverRoundDurationMs;
+        if (roundClock.durationMs() > 0L) {
+            return roundClock.durationMs();
         }
         return OnlineDebug.roundMs(context, defaultMs);
     }
@@ -291,11 +289,7 @@ public class OnlineSession {
      * opponent may still be playing. 0 when no round is running.
      */
     public long roundRemainingMs() {
-        long duration = serverRoundDurationMs;
-        if (duration <= 0L || roundStartedElapsed <= 0L) {
-            return 0L;
-        }
-        return Math.max(0L, duration - (SystemClock.elapsedRealtime() - roundStartedElapsed));
+        return roundClock.remainingMs(SystemClock.elapsedRealtime());
     }
 
     public RoundEnd getLastRoundEnd() {
@@ -422,7 +416,8 @@ public class OnlineSession {
         clearMatchSnapshot("framework");
         matchId = null;
         currentRound = -1;
-        roundStartedElapsed = 0L;
+        roundClock.reset(0L);
+        lastRoundStart = null;
         friendRoomPending = false;
         practicePending = false;
         cancelAcceptFallback();
@@ -708,7 +703,41 @@ public class OnlineSession {
         if (this.matchId != null) {
             this.localMatchStartSent = true;
         }
-        send(OnlineMessages.T_MATCH_START, new Object());
+        sendMatchStartRequest();
+    }
+
+    private boolean preparesPracticeRounds() {
+        return practiceMode && opponent != null && opponent.isBot;
+    }
+
+    private void sendMatchStartRequest() {
+        send(OnlineMessages.T_MATCH_START,
+                preparesPracticeRounds() ? new OnlineMessages.MatchStart() : new Object());
+    }
+
+    public RoundStart getRoundStartForRestore() {
+        if (lastRoundStart == null) return null;
+        RoundStart snapshot = new RoundStart();
+        snapshot.matchId = lastRoundStart.matchId;
+        snapshot.round = lastRoundStart.round;
+        snapshot.gameId = lastRoundStart.gameId;
+        snapshot.durationMs = lastRoundStart.durationMs;
+        snapshot.serverNow = lastRoundStart.serverNow;
+        snapshot.preparing = roundClock.isPreparing();
+        snapshot.resuming = roundClock.hasStarted();
+        return snapshot;
+    }
+
+    /** Callback is scoped to the owning match/round, and may safely repeat after reconnect. */
+    public void sendRoundReady(RoundStart preparation) {
+        if (!preparesPracticeRounds() || !roundClock.isPreparing() || matchEndSeen
+                || resigningMatchId != null
+                || !RoundIntermission.canLaunch(preparation, matchId, currentRound, getLastRoundEnd())
+                || !preparation.preparing) return;
+        OnlineMessages.RoundReady ready = new OnlineMessages.RoundReady();
+        ready.matchId = matchId;
+        ready.round = currentRound;
+        send(OnlineMessages.T_ROUND_READY, ready);
     }
 
     /** TOP Online leaderboard (top 20 by ELO). */
@@ -733,7 +762,7 @@ public class OnlineSession {
         android.util.Log.d("OnlinePK", "reportLevelWin round=" + currentRound
                 + " level=" + level + " score=" + totalScore
                 + " matchId=" + (matchId == null ? "null" : matchId));
-        if (matchId == null || currentRound < 0 || roundReported) {
+        if (matchId == null || currentRound < 0 || roundReported || roundClock.isPreparing()) {
             return;
         }
         // Live HUD value: completed rounds total plus the running round score.
@@ -752,7 +781,7 @@ public class OnlineSession {
      */
     public void onRoundFinished(int score) {
         diagnostic("round_complete", "score", score);
-        if (matchId == null || currentRound < 0 || roundReported) {
+        if (matchId == null || currentRound < 0 || roundReported || roundClock.isPreparing()) {
             return;
         }
         roundReported = true;
@@ -848,7 +877,7 @@ public class OnlineSession {
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
                 if (resumeMatch && this.currentRound < 0) {
                     if (this.localMatchStartSent) {
-                        send(OnlineMessages.T_MATCH_START, new Object());
+                        sendMatchStartRequest();
                     }
                     long remaining = this.acceptDeadlineElapsed > 0L
                             ? this.acceptDeadlineElapsed - SystemClock.elapsedRealtime() : 0L;
@@ -920,12 +949,11 @@ public class OnlineSession {
                 this.friendMode = OnlineSession.MODE_FRIEND.equals(found.mode);
                 this.practiceMode = OnlineSession.MODE_PRACTICE.equals(found.mode);
                 this.rounds = found.rounds;
-                if (found.rounds != null && found.rounds.length > 0) {
-                    this.serverRoundDurationMs = found.rounds[0].durationMs;
-                }
+                this.roundClock.reset(found.rounds != null && found.rounds.length > 0
+                        ? found.rounds[0].durationMs : 0L);
+                this.lastRoundStart = null;
                 this.currentRound = -1;
                 this.intermission.clear();
-                this.roundStartedElapsed = 0L;
                 this.myScore = 0;
                 this.myCompletedScore = 0;
                 this.oppScore = 0;
@@ -981,23 +1009,24 @@ public class OnlineSession {
                 if (start.matchId == null) {
                     start.matchId = this.matchId;
                 }
+                if (!RoundClock.belongsToMatch(start, this.matchId)) {
+                    diagnostic("frame_dropped", "reason", "wrong_match");
+                    return;
+                }
                 RoundEnd ended = intermission.getRoundEnd();
                 if (start.round < currentRound || (ended != null && start.round <= ended.round)) {
                     diagnostic("frame_dropped", "reason", "stale_round_start");
                     return;
                 }
+                if (this.matchId == null || this.resigningMatchId != null) return;
+                // Only explicit bot practice participates; ranked/friend retain their old launch flow.
+                start.preparing = preparesPracticeRounds() && start.preparing;
+                if (!roundClock.accept(start, preparesPracticeRounds(), SystemClock.elapsedRealtime())) return;
                 intermission.clear();
                 cancelAcceptFallback();
-                boolean resumeSameRound = this.currentRound == start.round
-                        && this.roundStartedElapsed > 0L;
                 this.currentRound = start.round;
-                if (!resumeSameRound) {
-                    this.roundStartedElapsed = SystemClock.elapsedRealtime();
-                }
-                if (start.durationMs > 0) {
-                    this.serverRoundDurationMs = start.durationMs;
-                }
-                this.roundReported = false;
+                this.lastRoundStart = start;
+                if (!start.resuming) this.roundReported = false;
                 if (listener != null) {
                     try {
                         listener.onRoundStart(start);
@@ -1064,8 +1093,8 @@ public class OnlineSession {
                 this.practiceMode = false;
                 this.currentRound = -1;
                 this.intermission.clear();
-                this.roundStartedElapsed = 0L;
-                this.serverRoundDurationMs = 0L;
+                this.roundClock.reset(0L);
+                this.lastRoundStart = null;
                 this.localEntryFeeCharged = 0;
                 this.localMatchStartSent = false;
                 this.disconnectedAt = 0L;
@@ -1269,8 +1298,8 @@ public class OnlineSession {
         this.practiceMode = false;
         this.currentRound = -1;
         this.intermission.clear();
-        this.roundStartedElapsed = 0L;
-        this.serverRoundDurationMs = 0L;
+        this.roundClock.reset(0L);
+        this.lastRoundStart = null;
         this.myScore = 0;
         this.myCompletedScore = 0;
         this.oppScore = 0;

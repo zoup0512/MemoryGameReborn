@@ -430,7 +430,14 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             }
             case ProtocolCodec.T_MATCH_START:
                 if (room != null) {
-                    room.onMatchStart(userId);
+                    ProtocolCodec.MatchStart start = ProtocolCodec.convert(envelope.d, ProtocolCodec.MatchStart.class);
+                    room.onMatchStart(userId, start != null && start.prepareRounds);
+                }
+                return;
+            case ProtocolCodec.T_ROUND_READY:
+                if (room != null) {
+                    ProtocolCodec.RoundReady ready = ProtocolCodec.convert(envelope.d, ProtocolCodec.RoundReady.class);
+                    if (ready != null) room.onRoundReady(userId, ready);
                 }
                 return;
             case ProtocolCodec.T_TOP_REQUEST: {

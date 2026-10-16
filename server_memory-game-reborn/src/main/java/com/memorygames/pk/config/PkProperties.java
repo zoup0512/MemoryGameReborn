@@ -73,6 +73,8 @@ public class PkProperties {
         private long botWaitMs = 15000;
         /** Window after match_found for both START presses before refund-cancel. */
         private long acceptTimeoutMs = 30000;
+        /** Bounded practice tutorial/countdown window, before gameplay clocks start. */
+        private long practicePreparationTimeoutMs = 120000;
         /** Disconnect window before a player is forfeited. */
         private long reconnectWindowMs = 90000;
 
@@ -90,6 +92,8 @@ public class PkProperties {
         public void setScoreAcceptGraceMs(long v) { this.scoreAcceptGraceMs = v; }
         public long getBotWaitMs() { return botWaitMs; }
         public void setBotWaitMs(long v) { this.botWaitMs = v; }
+        public long getPracticePreparationTimeoutMs() { return practicePreparationTimeoutMs; }
+        public void setPracticePreparationTimeoutMs(long v) { this.practicePreparationTimeoutMs = v; }
         public long getReconnectWindowMs() { return reconnectWindowMs; }
         public void setReconnectWindowMs(long v) { this.reconnectWindowMs = v; }
     }
