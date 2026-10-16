@@ -327,6 +327,7 @@ public class MatchRoom {
         info.elo = seat.elo();
         info.rank = seat.user != null ? this.rating.rankIndex(seat.user.elo) : this.rating.rankIndex(this.botElo);
         info.isBot = seat.isBot;
+        info.modeStats = this.users.modeStats(info.userId);
         // Practice bots carry their difficulty tier id for the client badge.
         info.tier = seat.isBot && isPracticeMode() ? this.practiceTierId() : null;
         if (seat.user != null) {
@@ -1059,6 +1060,8 @@ public class MatchRoom {
             SettlementService.SeatOutcome outcome = result.seats[i];
             ProtocolCodec.MatchEnd end = new ProtocolCodec.MatchEnd();
             end.matchId = this.matchId;
+            end.mode = command.mode;
+            end.modeStats = outcome.modeStats;
             end.result = plan.result;
             end.myScore = plan.score;
             end.oppScore = command.seats[1 - i].score;

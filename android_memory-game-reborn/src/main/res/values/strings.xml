@@ -180,6 +180,12 @@ Nickname"</string>
     <string name="online_connection_offline">You’re offline</string>
     <string name="online_retry">Retry</string>
     <string name="online_entry_fee">Entry %1$d</string>
+    <string name="online_tab_ranked">Ranked</string>
+    <string name="online_tab_practice">Practice</string>
+    <string name="online_tab_friend">With friends</string>
+    <string name="online_stat_unavailable" translatable="false">—</string>
+    <string name="online_ranked_meta" translatable="false">%1$s · %2$s</string>
+    <string name="online_mode_stats_unavailable">Stats for this mode are unavailable.</string>
     <string name="online_ranked_title">Ranked match</string>
     <string name="online_ranked_subtitle">Win coins and ELO in a quick head-to-head duel.</string>
     <string name="online_practice_title">Practice arena</string>

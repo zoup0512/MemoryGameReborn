@@ -1,12 +1,15 @@
 package com.memorygames.pk.user;
 
 import com.memorygames.pk.config.PkProperties;
+import com.memorygames.pk.match.MatchRecordRepository;
+import com.memorygames.pk.protocol.ProtocolCodec.MatchStats;
 import com.memorygames.pk.rating.Rating;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ public class UserService {
 
     private final UserRepository repository;
     private final CoinLedgerRepository ledger;
+    private final MatchRecordRepository records;
     private final PkProperties properties;
     private final Rating rating;
     private final JdbcTemplate db;
@@ -28,9 +32,11 @@ public class UserService {
     public UserService(UserRepository repository, CoinLedgerRepository ledger,
                        PkProperties properties, Rating rating, JdbcTemplate db,
                        ApplicationEventPublisher events, NicknameService nicknames,
-                       org.springframework.transaction.PlatformTransactionManager manager) {
+                       org.springframework.transaction.PlatformTransactionManager manager,
+                       MatchRecordRepository records) {
         this.repository = repository;
         this.ledger = ledger;
+        this.records = records;
         this.properties = properties;
         this.rating = rating;
         this.db = db;
@@ -109,6 +115,12 @@ public class UserService {
         return this.repository.findByToken(token).filter(account ->
                 !account.legacyAuthDisabled && "GUEST".equals(account.accountType)
                         && !account.deleted && account.deleteRequestedAt == 0);
+    }
+
+    /** All-time mode records are derived from complete, non-voided match history. */
+    @Transactional(readOnly = true)
+    public Map<String, MatchStats> modeStats(long userId) {
+        return this.records.modeStatsForUser(userId);
     }
 
     /** Admin/manual balance grant or charge; never negative, capped. */

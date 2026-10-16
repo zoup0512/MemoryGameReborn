@@ -1,6 +1,7 @@
 package com.memorygames.pk.user;
 
 import com.memorygames.pk.match.PlayerLifecycle;
+import com.memorygames.pk.protocol.ProtocolCodec.MatchStats;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,7 +19,7 @@ import java.util.*;
 public class AccountService {
     public record Revoked(String sessionId) {}
     public record Principal(UserAccount user, String sessionId, String deviceId) {}
-    public record UserView(long userId,String accountType,String nickname,String avatarValue,int elo,int balance,int wins,int losses,int draws,String email,boolean emailVerified,long nextNicknameChangeAt) {}
+    public record UserView(long userId,String accountType,String nickname,String avatarValue,int elo,int balance,int wins,int losses,int draws,String email,boolean emailVerified,long nextNicknameChangeAt,Map<String,MatchStats> modeStats) {}
     public record AuthResponse(String accessToken,String refreshToken,long accessExpiresAt,long refreshExpiresAt,String sessionId,UserView user) {}
     private static final SecureRandom RANDOM=new SecureRandom();
     private final JdbcTemplate db;
@@ -80,7 +81,7 @@ public class AccountService {
     private void audit(long id,String action) { db.update("insert into pk_account_audit(user_id,action,created_at) values(?,?,?)",id,action,System.currentTimeMillis()); }
     public UserView view(UserAccount u) {
         Map<String,Object> i=one("select * from pk_identity where user_id=?",u.id);
-        return new UserView(u.id,u.accountType,u.nickname,u.avatarValue,u.elo,u.balance,u.wins,u.losses,u.draws,i==null?null:(String)i.get("email"),i!=null&&flag(i,"email_verified"),u.nicknameChangedAt==0?0:u.nicknameChangedAt+NicknameService.COOLDOWN_MS);
+        return new UserView(u.id,u.accountType,u.nickname,u.avatarValue,u.elo,u.balance,u.wins,u.losses,u.draws,i==null?null:(String)i.get("email"),i!=null&&flag(i,"email_verified"),u.nicknameChangedAt==0?0:u.nicknameChangedAt+NicknameService.COOLDOWN_MS,users.modeStats(u.id));
     }
     @Transactional(propagation=org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public AuthResponse guest(String installation,String secret,String name,String device) {

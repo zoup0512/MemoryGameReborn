@@ -1,5 +1,6 @@
 package com.memorygames.pk.match;
 
+import com.memorygames.pk.protocol.ProtocolCodec.MatchStats;
 import com.memorygames.pk.user.CoinLedger;
 import com.memorygames.pk.user.CoinLedgerRepository;
 import com.memorygames.pk.user.UserAccount;
@@ -86,6 +87,7 @@ public class SettlementService {
         public int wins;
         public int losses;
         public int draws;
+        public Map<String, MatchStats> modeStats;
         public int practiceStreak;
         /** Effective coin change actually applied (refund, payout or 0). */
         public int coinDelta;
@@ -259,6 +261,10 @@ public class SettlementService {
             result.seats[i] = outcome;
         }
         persistRecord(cmd);
+        // JPQL aggregation auto-flushes the record and runs in this same
+        // transaction. Failures therefore roll back/retry with settlement,
+        // never interrupt post-commit match_end delivery.
+        fillModeStats(result);
         return result;
     }
 
@@ -276,7 +282,14 @@ public class SettlementService {
             }
             result.seats[i] = outcome;
         }
+        fillModeStats(result);
         return result;
+    }
+
+    private void fillModeStats(Result result) {
+        for (SeatOutcome outcome : result.seats) {
+            outcome.modeStats = this.records.modeStatsForUser(outcome.userId);
+        }
     }
 
     private void persistRecord(Command cmd) {

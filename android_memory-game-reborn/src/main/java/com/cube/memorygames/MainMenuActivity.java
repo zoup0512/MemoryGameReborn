@@ -70,6 +70,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     private static final String PREF_COINS_BUBBLE_SHOWED = "coinsBubbleShowedPrefs";
     public static final String PREF_GAMES_PLAYED = "gamesPlayedPrefs";
     private static final String PREF_LAST_TAB_POSITION = "lastTabPosition";
+    private static final String STATE_ONLINE_MODE_PAGE = "onlineModePage";
     private static final String PREF_TOP_BUBBLE_SHOWED = "topBubbleShowedPrefs";
     public static final int RESULT_LOGIN = 1001;
     private static final int TAB_CHALLENGE = 2;
@@ -92,6 +93,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     private BottomBar mBottomBar;
     private MenuAdapter menuAdapter;
     private OnlineLobbyAdapter onlineAdapter;
+    private int onlineModePage;
     @BindView(R.id.panel_header)
     View panelHeader;
     @BindView(R.id.text_top_bar_rating)
@@ -207,6 +209,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.onlineModePage = savedInstanceState != null
+                ? savedInstanceState.getInt(STATE_ONLINE_MODE_PAGE, 0) : 0;
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         this.application = MemoryApplicationModel.getInstance();
         this.localDataManager = this.application.getLocalDataManager();
@@ -309,10 +313,19 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE, MemoryApplicationModel.ANALYTICS_EVENT_CHALLENGE_TAB_CLICKED);
                         } else if (menuItemId == R.id.bottomBarOnline) {
                             newTab = TAB_ONLINE;
-                            MainMenuActivity.this.configureList(true);
+                            // The one full-height row is a viewport. Only its mode-page
+                            // ScrollViews scroll vertically; the shared RecyclerView must not.
+                            MainMenuActivity.this.recyclerView.setLayoutManager(new LinearLayoutManager(
+                                    MainMenuActivity.this, OrientationHelper.VERTICAL, false) {
+                                @Override
+                                public boolean canScrollVertically() {
+                                    return false;
+                                }
+                            });
                             if (MainMenuActivity.this.onlineAdapter == null) {
                                 MainMenuActivity.this.onlineAdapter = new OnlineLobbyAdapter(MainMenuActivity.this,
                                         MainMenuActivity.this::updateHeaderStatistics);
+                                MainMenuActivity.this.onlineAdapter.setSelectedPage(MainMenuActivity.this.onlineModePage);
                             }
                             MainMenuActivity.this.recyclerView.setAdapter(MainMenuActivity.this.onlineAdapter);
                             MainMenuActivity.this.recyclerView.setBackgroundColor(ContextCompat.getColor(MainMenuActivity.this, R.color.online_page));
@@ -549,6 +562,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     }
 
     protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt(STATE_ONLINE_MODE_PAGE, this.onlineAdapter != null
+                ? this.onlineAdapter.getSelectedPage() : this.onlineModePage);
         super.onSaveInstanceState(outState);
     }
 }

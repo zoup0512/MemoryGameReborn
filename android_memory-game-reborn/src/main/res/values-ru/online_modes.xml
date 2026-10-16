@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_tab_ranked">Рейтинг</string>
+    <string name="online_tab_practice">Практика</string>
+    <string name="online_tab_friend">С друзьями</string>
+    <string name="online_mode_stats_unavailable">Статистика этого режима недоступна.</string>
+</resources>

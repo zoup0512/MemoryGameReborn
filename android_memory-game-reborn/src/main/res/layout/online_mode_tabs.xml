@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.TabLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@id/online_mode_tabs"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/online_surface"
+    app:tabGravity="fill"
+    app:tabIndicatorColor="@color/online_primary"
+    app:tabIndicatorHeight="3dp"
+    app:tabMaxWidth="1000dp"
+    app:tabMinWidth="72dp"
+    app:tabMode="fixed"
+    app:tabPaddingStart="12dp"
+    app:tabPaddingEnd="12dp"
+    app:tabPaddingTop="0dp"
+    app:tabPaddingBottom="0dp" />

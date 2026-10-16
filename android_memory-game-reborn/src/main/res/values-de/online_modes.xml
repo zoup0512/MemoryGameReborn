@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_tab_ranked">Rangspiel</string>
+    <string name="online_tab_practice">Training</string>
+    <string name="online_tab_friend">Mit Freunden</string>
+    <string name="online_mode_stats_unavailable">Statistiken für diesen Modus sind nicht verfügbar.</string>
+</resources>
