@@ -164,7 +164,7 @@ def action_dialogs():
     tap(cancel[0])
     _, root = tree()
     assert_stats(root, "practice", (2, 6, 2, "20%"))
-    tap(tab(root, "与好友对战"))
+    tap(tab(root, "亲友赛"))
     _, root = tree()
     tap(by_id(root, "online_join_room")[0])
     xml, root = tree()
@@ -180,7 +180,7 @@ def action_dialogs():
 
 def recreation():
     _, root = launch(previewLanguage="zh", previewRecreate=True, previewRecreateDelayMs=14000)
-    tap(tab(root, "与好友对战"))
+    tap(tab(root, "亲友赛"))
     _, root = tree()
     assert_stats(root, "friend", (1, 2, 1, "25%"))
     time.sleep(14)
