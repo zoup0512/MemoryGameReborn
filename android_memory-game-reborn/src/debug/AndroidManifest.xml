@@ -25,6 +25,10 @@
             android:exported="true"
             tools:replace="android:exported" />
         <activity
+            android:name="com.cube.memorygames.DebugOnlineLobbyPreviewActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
             android:name="com.cube.memorygames.DebugSchulteActivity"
             android:exported="true" />
         <activity

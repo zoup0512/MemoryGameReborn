@@ -168,6 +168,10 @@
     <string name="online_connection_offline">你已离线</string>
     <string name="online_retry">重试</string>
     <string name="online_entry_fee">入场 %1$d</string>
+    <string name="online_tab_ranked">排位赛</string>
+    <string name="online_tab_practice">练习场</string>
+    <string name="online_tab_friend">与好友对战</string>
+    <string name="online_mode_stats_unavailable">此模式的战绩暂不可用。</string>
     <string name="online_ranked_title">排位赛</string>
     <string name="online_ranked_subtitle">在快速对决中赢取金币和 ELO。</string>
     <string name="online_practice_title">练习场</string>

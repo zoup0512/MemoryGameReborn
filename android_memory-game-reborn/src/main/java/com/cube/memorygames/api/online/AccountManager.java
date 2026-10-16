@@ -17,6 +17,7 @@ public final class AccountManager {
         public long userId;
         public String accountType, nickname, avatarValue, email;
         public int elo, balance, wins, losses, draws;
+        public java.util.Map<String, OnlineMessages.MatchStats> modeStats;
         public boolean emailVerified;
         /** Server-authoritative epoch milliseconds; zero means no previous nickname change. */
         public long nextNicknameChangeAt;

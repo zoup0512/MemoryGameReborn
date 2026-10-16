@@ -1321,6 +1321,7 @@ public class OnlineSession {
             profile.wins = end.myWins;
             profile.losses = end.myLosses;
             profile.draws = end.myDraws;
+            OnlineModeStats.applySettlement(profile, end);
             profile.practiceStreak = end.practiceStreak;
         }
         this.practiceStreak = end.practiceStreak;

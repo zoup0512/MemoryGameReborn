@@ -654,6 +654,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         ok.wins = account.wins;
         ok.losses = account.losses;
         ok.draws = account.draws;
+        ok.modeStats = this.users.modeStats(account.id);
         ok.balance = account.balance;
         ok.entryFee = this.properties.getEconomy().getEntryFee();
         ok.winCoins = this.properties.getEconomy().getWinCoins();

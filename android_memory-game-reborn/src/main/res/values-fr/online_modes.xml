@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_tab_ranked">Classé</string>
+    <string name="online_tab_practice">Entraînement</string>
+    <string name="online_tab_friend">Entre amis</string>
+    <string name="online_mode_stats_unavailable">Les statistiques de ce mode sont indisponibles.</string>
+</resources>
