@@ -12,6 +12,7 @@ import com.cube.memorygames.logic.GameProgression3;
 import com.cube.memorygames.logic.GameRandom;
 import com.cube.memorygames.ui.ElementGame14;
 import com.cube.memorygames.ui.Game23Grid;
+import com.cube.memorygames.ui.Game23Colors;
 import com.memory.brain.training.games.R;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +22,7 @@ import java.util.List;
 public class Game23TableActivity extends Game1MemoryGridActivity {
     private static final int GAME_TIME = 50000;
     private List<ElementGame14> elements;
+    private final Game23RoundProgress roundProgress = new Game23RoundProgress();
     private long gameTime;
     private long startedTime;
     private Handler timerHandler = new Handler();
@@ -159,7 +161,6 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
 
     private List<ElementGame14> generateElements() {
         int i;
-        List<Integer> colors = getColorGroups();
         List<Integer> numbers = getNumbers(1, 48);
         List<ElementGame14> result = new ArrayList();
         for (i = 0; i < 48; i++) {
@@ -169,14 +170,9 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
         }
         GameRandom.shuffle(result);
         i = 0;
-        int colorNumber = 0;
         while (i < result.size()) {
-            if (colorNumber == colors.size()) {
-                colorNumber = 0;
-            }
-            ((ElementGame14) result.get(i)).color = ((Integer) colors.get(colorNumber)).intValue();
+            ((ElementGame14) result.get(i)).color = Game23Colors.nextColor();
             i++;
-            colorNumber++;
         }
         Collections.sort(result, new Comparator<ElementGame14>() {
             public int compare(ElementGame14 t1, ElementGame14 t2) {
@@ -196,23 +192,22 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
         return numbers;
     }
 
-    private List<Integer> getColorGroups() {
-        int[] shapeColors = getResources().getIntArray(R.array.game23_colors);
-        List<Integer> colors = new ArrayList();
-        for (int shapeColor : shapeColors) {
-            colors.add(Integer.valueOf(shapeColor));
-        }
-        GameRandom.shuffle(colors);
-        return colors;
-    }
-
     protected void createGameFlowStates() {
         List<GameFlowState> states = new ArrayList();
         states.add(new StatGameFlowState());
         this.stateTimer = new GameFlowStateTimer(states);
     }
 
+    @Override
+    protected void startNextLevel() {
+        // Success and the base failure/skip callback both arrive here. Keep both
+        // round timers alive: an early round_complete would shorten the AI window.
+        roundProgress.advance(this.isOnlineGame, this.progression.getLevelNumber(),
+                () -> super.startNextLevel(), () -> this.grid.disableAllCells());
+    }
+
     public void onSuccessCellClicked(int lastAddedCellClicked) {
+        if (roundProgress.isWaitingForDeadline()) return;
         giveStars();
         this.userScore += getLevelScore(this.progression.getLevelNumber());
         updateOnlineScore();
@@ -237,6 +232,7 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
     }
 
     public void onFailCellClicked() {
+        if (roundProgress.isWaitingForDeadline()) return;
         if (!this.isOnlineGame) {
             this.progressBar.setVisibility(4);
             this.gameTime = (this.gameTime - (System.currentTimeMillis() - this.startedTime)) + this.pausedDuration;
@@ -248,6 +244,7 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
     }
 
     public void retryGame() {
+        this.roundProgress.reset();
         this.elements = generateElements();
         this.buyStarsClickedCountCount = 0;
         this.videoWatchedCount = 0;

@@ -259,6 +259,221 @@ class MatchRoomTimingTest {
         assertNull(old.nextGameId);
     }
 
+    @Test
+    void practicePreparationKeepsClocksAndBotStoppedUntilMatchingReady() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+            f.room.start();
+            f.room.onMatchStart(1, true);
+            f.scheduler.advanceTo(f.clock.get());
+            assertTrue(f.lastStart().preparing);
+            assertEquals(0, f.room.adminSnapshot().round);
+            f.scheduler.advanceTo(f.clock.get() + 20000);
+            assertEquals(0, f.room.adminSnapshot().seats[1].totalScore);
+            assertTrue(f.frames(ProtocolCodec.T_ROUND_END).isEmpty());
+            ProtocolCodec.RoundReady ready = new ProtocolCodec.RoundReady();
+            ready.matchId = "stale";
+            ready.round = 1;
+            f.room.onRoundReady(1, ready);
+            ready.matchId = f.room.matchId;
+            f.room.onRoundReady(2, ready);
+            ready.round = 2;
+            f.room.onRoundReady(1, ready);
+            assertEquals(1, f.frames(ProtocolCodec.T_ROUND_START).size());
+            ready.round = 1;
+            long startedAt = f.clock.get();
+            f.room.onRoundReady(1, ready);
+            assertFalse(f.lastStart().preparing);
+            assertEquals(startedAt, f.lastStart().serverNow);
+            assertEquals(DURATION, f.lastStart().durationMs);
+            f.room.onRoundReady(1, ready);
+            assertEquals(2, f.frames(ProtocolCodec.T_ROUND_START).size());
+            f.scheduler.advanceTo(startedAt + DURATION - 1);
+            assertTrue(f.room.adminSnapshot().seats[1].totalScore > 0);
+            f.complete(1, 1);
+            f.scheduler.advanceTo(startedAt + DURATION);
+            long nextAt = f.lastEnd().nextRoundStartsAt;
+            f.scheduler.advanceTo(nextAt);
+            assertTrue(f.lastStart().preparing);
+            assertEquals(2, f.lastStart().round);
+            f.room.onRoundReady(1, ready); // Stale round-1 callback cannot start round 2.
+            assertEquals(1, f.room.adminSnapshot().round);
+            ready.round = 2;
+            f.room.onRoundReady(1, ready);
+            assertFalse(f.lastStart().preparing);
+            assertEquals(2, f.room.adminSnapshot().round);
+        }
+    }
+
+    @Test
+    void preparationReconnectReplaysPreparationAndTimeoutOrResignCannotStartLater() {
+        for (boolean resign : new boolean[]{false, true}) {
+            try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+                f.room.start();
+                f.room.onMatchStart(1, true);
+                f.scheduler.advanceTo(f.clock.get());
+                List<String> resumed = new ArrayList<>();
+                f.room.onDisconnect(1);
+                f.room.onReconnect(1, endpoint(resumed));
+                assertTrue(decode(resumed.get(0)).payload(ProtocolCodec.RoundStart.class).preparing);
+                long time = f.clock.get();
+                if (resign) f.room.onResign(1);
+                f.scheduler.advanceTo(time + 120000);
+                assertEquals(1, f.dbTasks.size());
+                f.dbTasks.get(0).run();
+                assertTrue(resumed.stream().anyMatch(frame -> ProtocolCodec.T_MATCH_CANCELLED.equals(decode(frame).t)));
+                ProtocolCodec.RoundReady ready = new ProtocolCodec.RoundReady();
+                ready.matchId = f.room.matchId;
+                ready.round = 1;
+                f.room.onRoundReady(1, ready);
+                assertEquals(0, f.room.adminSnapshot().round);
+            }
+        }
+    }
+
+    @Test
+    void dequeuedAcceptTimeoutCannotCancelAlreadyAcceptedPreparation() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+            f.room.start();
+            ManualTask acceptTimeout = f.scheduler.at(f.clock.get() + f.properties.getTiming().getAcceptTimeoutMs());
+            f.room.onMatchStart(1, true);
+            f.scheduler.advanceTo(f.clock.get());
+            acceptTimeout.command.run();
+            assertTrue(f.lastStart().preparing);
+            assertEquals(0, f.dbTasks.size());
+            ProtocolCodec.RoundReady ready = new ProtocolCodec.RoundReady();
+            ready.matchId = f.room.matchId;
+            ready.round = 1;
+            f.room.onRoundReady(1, ready);
+            assertFalse(f.lastStart().preparing);
+            assertEquals(1, f.room.adminSnapshot().round);
+        }
+    }
+
+    @Test
+    void stalePreparationTimerCannotForfeitPlayingRoundAndLaterPreparationIsBounded() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+            f.room.start();
+            f.room.onMatchStart(1, true);
+            f.scheduler.advanceTo(f.clock.get());
+            ManualTask timeout = f.scheduler.at(f.clock.get() + 120000);
+            ProtocolCodec.RoundReady ready = new ProtocolCodec.RoundReady();
+            ready.matchId = f.room.matchId;
+            ready.round = 1;
+            f.room.onRoundReady(1, ready);
+            timeout.command.run();
+            assertEquals(0, f.dbTasks.size());
+            f.complete(1, 1);
+            f.scheduler.advanceTo(f.clock.get() + DURATION);
+            f.scheduler.advanceTo(f.lastEnd().nextRoundStartsAt);
+            assertTrue(f.lastStart().preparing);
+            timeout.command.run();
+            assertEquals(0, f.dbTasks.size());
+            long deadline = f.clock.get() + 120000;
+            f.scheduler.advanceTo(deadline);
+            assertEquals(1, f.dbTasks.size());
+            ready.round = 2;
+            f.room.onRoundReady(1, ready);
+            assertEquals(1, f.room.adminSnapshot().round);
+        }
+    }
+
+    @Test
+    void preparationCapabilityDoesNotChangeHumanOrRankedBotMatches() {
+        for (String mode : new String[]{MatchRoom.MODE_RANKED, MatchRoom.MODE_FRIEND}) {
+            for (boolean bot : new boolean[]{false, true}) {
+                try (Fixture f = new Fixture(mode, bot, 1)) {
+                    f.room.start();
+                    f.room.onMatchStart(1, true);
+                    if (!bot) f.room.onMatchStart(2, true);
+                    f.scheduler.advanceTo(f.clock.get());
+                    assertFalse(f.lastStart().preparing);
+                    assertEquals(1, f.room.adminSnapshot().round);
+                }
+            }
+        }
+    }
+
+    @Test
+    void schulteBotStopsAfter48TargetsAndHumanCannotScoreTarget49() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 1,
+                "22", 45000, 1, 1.0d, 1.0d)) {
+            f.answers = new java.util.Random() {
+                @Override public double nextDouble() { return 0.5d; }
+            };
+            f.start();
+            f.scheduler.advanceTo(f.startedAt + 44000);
+            int botScore = f.room.adminSnapshot().seats[1].totalScore;
+            assertTrue(botScore > 0);
+            assertEquals(48 * 49, botScore);
+            ProtocolCodec.LevelWin win = new ProtocolCodec.LevelWin();
+            win.round = 1;
+            win.level = 48;
+            f.room.onLevelWin(1, win);
+            assertEquals(96, f.room.adminSnapshot().seats[0].totalScore);
+            f.scheduler.advanceTo(f.startedAt + 44400);
+            win.level = 49;
+            f.room.onLevelWin(1, win);
+            assertEquals(96, f.room.adminSnapshot().seats[0].totalScore);
+            assertEquals(botScore, f.room.adminSnapshot().seats[1].totalScore);
+            // Both sides keep their full round window after exhausting the board.
+            assertTrue(f.frames(ProtocolCodec.T_ROUND_END).isEmpty());
+        }
+    }
+
+    @Test
+    void schulteBotWrongAnswerAddsTwoSecondRecoveryOnlyToThisGame() {
+        for (String game : new String[]{"22", "19"}) {
+            try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 1,
+                    game, 45000, 100, 0.0d, 1.0d)) {
+                f.answers = new java.util.Random() {
+                    @Override public double nextDouble() { return 0.5d; }
+                };
+                f.start();
+                ManualTask first = f.scheduler.pendingBefore(f.startedAt + 45000);
+                f.scheduler.advanceTo(first.at);
+                ManualTask second = f.scheduler.pendingBefore(f.startedAt + 45000);
+                long delay = second.at - first.at;
+                if ("22".equals(game)) assertTrue(delay >= 2091 && delay <= 2208, "delay=" + delay);
+                else assertTrue(delay >= 91 && delay <= 208, "delay=" + delay);
+                assertEquals(0, f.room.adminSnapshot().seats[1].totalScore);
+            }
+        }
+    }
+
+    @Test
+    void schulteDefault45SecondScoresRemainBoundedAndTieredAcross200Seeds() {
+        double previous = -1;
+        for (PkProperties.BotDifficulty tier : new PkProperties().getPractice().getDifficulties()) {
+            long sum = 0;
+            for (int seed = 0; seed < 200; seed++) {
+                try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 1,
+                        "22", 45000, 0, tier.getAccuracy(), tier.getPace())) {
+                    f.answers = new java.util.Random(seed);
+                    f.start();
+                    f.scheduler.advanceTo(f.startedAt + 45000);
+                    int score = f.room.adminSnapshot().seats[1].totalScore;
+                    assertTrue(score >= 0 && score <= 2352);
+                    sum += score;
+                }
+            }
+            double mean = sum / 200.0;
+            assertTrue(mean > previous, tier.getId() + " mean=" + mean + " previous=" + previous);
+            assertTrue(mean < 1800, tier.getId() + " must not routinely exhaust the board");
+            System.out.println("Schulte " + tier.getId() + " 200-seed mean score=" + mean);
+            previous = mean;
+        }
+    }
+
+    @Test
+    void defaultSchultePaceIsSlowerWithoutChangingOtherGames() {
+        GameCatalog catalog = new GameCatalog(new PkProperties());
+        assertEquals(1800, catalog.botLevelIntervalOf(catalog.byId("22")));
+        assertEquals(1500, catalog.botLevelIntervalOf(catalog.byId("19")));
+        assertEquals(4000, catalog.botLevelIntervalOf(catalog.byId("0")));
+        assertEquals(48, catalog.byId("22").maxLevel());
+        assertEquals(Integer.MAX_VALUE, catalog.byId("0").maxLevel());
+    }
+
     private static PlayerEndpoint endpoint(List<String> frames) {
         return new PlayerEndpoint() {
             @Override public void send(String json) { frames.add(json); }
@@ -288,21 +503,36 @@ class MatchRoomTimingTest {
         final MatchRoom room;
         final boolean bot;
         long startedAt;
+        java.util.Random answers;
 
         Fixture(String mode, boolean bot, int rounds) {
+            this(mode, bot, rounds, "0", DURATION, 40, 1.0d, 1.0d);
+        }
+
+        Fixture(String mode, boolean bot, int rounds, String gameId, long duration,
+                long botInterval, double accuracy, double pace) {
             this.bot = bot;
             properties.getMatch().setRoundsPerMatch(rounds);
-            properties.setRoundDurationOverrideMs(DURATION);
-            properties.setBotLevelIntervalOverrideMs(40);
+            properties.setRoundDurationOverrideMs(duration);
+            properties.setBotLevelIntervalOverrideMs(botInterval);
             properties.getTiming().setMatchFoundDelayMs(0);
             properties.getTiming().setRoundGraceMs(GRACE);
             UserAccount a = user(1);
             room = new MatchRoom(a, endpoint(sent), bot ? null : user(2), new PlayerEndpoint.Bot(),
-                    "Bot", mode, 1000, 1.0, 1.0,
-                    new GameCatalog(properties), mock(UserService.class), new Rating(properties), properties,
+                    "Bot", mode, 1000, accuracy, pace,
+                    new GameCatalog(properties) {
+                        @Override public List<ProtocolRound> planRounds(long seed, int count) {
+                            List<ProtocolRound> plan = new ArrayList<>();
+                            for (int i = 0; i < count; i++) plan.add(new ProtocolRound(gameId, duration, seed + i));
+                            return plan;
+                        }
+                    }, mock(UserService.class), new Rating(properties), properties,
                     MatchTerms.forVersus(properties), scheduler, dbTasks::add, ignored -> {},
                     mock(SettlementService.class), null, mock(EventRing.class), new AdminMetrics()) {
                 @Override long now() { return clock.get(); }
+                @Override java.util.Random newBotRandom() {
+                    return answers != null ? answers : super.newBotRandom();
+                }
             };
         }
 

@@ -2,6 +2,7 @@
 
 > 2026-10-10 定稿，基于 `dev/online-PK` 现有在线 PK 架构（M0+M1+M2+Admin+运行时配置+origin 吸收批次）。
 > 关联：`docs/online-pk-prd.md` §4.4（Bot 参数化）、§3.4（Bot 兜底）。
+> 2026-10-16 公平准备握手及舒尔特 AI 规则修订见 [修复说明](schulte-bot-fairness-2026-10-16.md)。
 
 ## 1. 现状盘点（可复用资产）
 
@@ -11,7 +12,7 @@
 | Bot 兜底（15s 超时配 Bot） | `Matchmaker.scan()` | 已有，仅排位被动触发 |
 | Bot rubber-banding（分差驱动命中率漂移） | `MatchRoom.botTick` | 已有 |
 | `opponent.isBot` 协议标志 + 客户端识别 | `match_found` 帧 | 已有 |
-| Bot 局局前教程（免计时公平坑） | `OnlineSession`（isBot 分支） | 已有，直接复用 |
+| Bot 局局前教程 | `OnlineSession` / `OnlineMatchActivity` | 原实现会消耗正式时间；2026-10-16 起新版显式人机局使用准备握手修复 |
 | 战绩 `botOpponent` 落库标记 | `MatchRecord` | 已有 |
 | Bot 按 ELO 推导 W/L/D（STATISTICS 板） | `MatchRoom.opponentInfo` | 已有 |
 

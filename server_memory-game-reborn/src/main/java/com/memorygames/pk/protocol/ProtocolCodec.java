@@ -29,6 +29,7 @@ public final class ProtocolCodec {
     public static final String T_ROOM_JOIN = "room_join";
     public static final String T_ROOM_CANCEL = "room_cancel";
     public static final String T_MATCH_START = "match_start";
+    public static final String T_ROUND_READY = "round_ready";
     public static final String T_TOP_REQUEST = "top_request";
     public static final String T_ROOM_CREATED = "room_created";
     public static final String T_HISTORY_REQUEST = "history_request";
@@ -113,6 +114,15 @@ public final class ProtocolCodec {
         public int score;
     }
 
+    public static class MatchStart {
+        public boolean prepareRounds;
+    }
+
+    public static class RoundReady {
+        public String matchId;
+        public int round;
+    }
+
     public static class RoundComplete {
         public int round;
         public int score;
@@ -152,6 +162,8 @@ public final class ProtocolCodec {
     }
 
     public static class RoundStart {
+        /** Negotiated practice-only preparation; neither clock nor bot runs yet. */
+        public boolean preparing;
         public String matchId;
         public int round;
         public String gameId;

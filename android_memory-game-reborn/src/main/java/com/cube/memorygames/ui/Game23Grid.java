@@ -234,6 +234,7 @@ public class Game23Grid extends View implements GameGrid {
         float centerY = (top + bottom) / 2.0f;
         this.mainPaint.setColor(color);
         canvas.drawRect(left, top, right, bottom, this.mainPaint);
+        this.numberPaint.setColor(Game23Colors.textColor(color));
         Rect bounds = new Rect();
         String text = "" + elementGame14.number;
         this.numberPaint.getTextBounds(text, 0, text.length(), bounds);
