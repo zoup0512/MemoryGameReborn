@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp"
+    android:height="10dp"
+    android:viewportWidth="18"
+    android:viewportHeight="10">
+    <path
+        android:fillColor="@color/coins_hint_surface"
+        android:pathData="M0,10 L7.6,1.6 Q9,0 10.4,1.6 L18,10 Z" />
+</vector>
