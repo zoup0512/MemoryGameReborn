@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@id/coins_hint"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingStart="16dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp"
+    android:visibility="invisible">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/coins_hint_surface"
+        android:elevation="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/coins_hint_badge"
+            android:importantForAccessibility="no"
+            android:padding="8dp"
+            android:src="@drawable/ic_coin" />
+
+        <TextView
+            android:id="@+id/coins_hint_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="3dp"
+            android:maxWidth="224dp"
+            android:text="@string/not_enough_coins"
+            android:textColor="@color/dialog_text_secondary"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="10dp"
+        android:layout_gravity="end|top"
+        android:layout_marginEnd="114dp"
+        android:elevation="5dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/coins_hint_pointer" />
+</FrameLayout>

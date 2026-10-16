@@ -511,7 +511,10 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         layoutParams.topMargin = getResources().getDimensionPixelSize(R.dimen.top_bar_height);
         this.coinsHint.setLayoutParams(layoutParams);
         float distance = getResources().getDimension(R.dimen.anim_distance);
-        ViewAnimator.animate(this.coinsHint).fadeIn().duration(1000).thenAnimate(this.coinsHint).interpolator(new LinearInterpolator()).translationY(0.0f, distance, 0.0f, distance, 0.0f, distance, 0.0f, distance, 0.0f, distance, 0.0f).duration(3000).thenAnimate(this.coinsHint).startDelay(4000).fadeOut().duration(1000).start();
+        ViewAnimator.animate(this.coinsHint).alpha(0.0f, 1.0f).translationY(-distance, 0.0f)
+                .interpolator(new DecelerateInterpolator()).duration(240)
+                .thenAnimate(this.coinsHint).startDelay(7600).fadeOut().duration(200)
+                .onStop(() -> this.coinsHint.setVisibility(View.INVISIBLE)).start();
         sharedPreferences.edit().putBoolean(PREF_COINS_BUBBLE_SHOWED, true).apply();
         return true;
     }

@@ -30,5 +30,8 @@
         <activity
             android:name="com.cube.memorygames.DebugDialogPreviewActivity"
             android:exported="true" />
+        <activity
+            android:name="com.cube.memorygames.DebugCoinsHintActivity"
+            android:exported="true" />
     </application>
 </manifest>
