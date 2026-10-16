@@ -492,6 +492,10 @@
     <item type="id" name="online_create_room" />
     <item type="id" name="online_join_room" />
     <item type="id" name="online_history_link" />
+    <item type="id" name="online_top_link" />
+    <item type="id" name="online_ranking_summary" />
+    <item type="id" name="online_ranking_elo" />
+    <item type="id" name="online_ranking_tier" />
     <item type="id" name="online_season_line" />
     <item type="id" name="online_history_empty" />
     <item type="id" name="bb_bottom_bar_appearance_id" />

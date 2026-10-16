@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="online_ranking_subtitle">Ваш рейтинг, таблица лидеров и недавние матчи в одном месте.</string>
+    <string name="online_ranking_rating">Текущий рейтинг</string>
+    <string name="online_ranking_snapshot">Последние синхронизированные результаты</string>
+    <string name="online_ranking_no_profile">Нет синхронизированных результатов</string>
+    <string name="online_ranking_no_profile_hint">Откройте таблицу лидеров или историю матчей, чтобы подключиться и загрузить результаты.</string>
+    <string name="online_ranking_top_title">Таблица лидеров онлайн</string>
+    <string name="online_ranking_top_hint">Посмотрите лучших игроков и сравните рейтинги ELO.</string>
+    <string name="online_ranking_history_title">История матчей</string>
+    <string name="online_ranking_history_hint">Просмотрите недавних соперников, счёт и результаты.</string>
+    <string name="online_ranking_season_hint">Рейтинговые матчи определяют ваш ранг и рейтинг ELO.</string>
+    <string name="online_ranking_tier_unknown">Ранг доступен после подключения</string>
+</resources>
