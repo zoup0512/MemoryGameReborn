@@ -327,7 +327,7 @@
     <string name="text_yesterday">昨天</string>
     <string name="textview_start_game_top">玩法说明</string>
     <string name="title_online_history">在线历史</string>
-    <string name="toast_game_not_accepted">对方未接受对局</string>
+    <string name="toast_game_not_accepted">对局未确认，已取消</string>
     <string name="top_ranks_text">排行榜</string>
     <string name="transfer_title">正在将数据转换为新格式</string>
     <string name="trophies_title">奖杯</string>
