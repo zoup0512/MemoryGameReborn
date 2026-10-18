@@ -4617,146 +4617,6 @@
       "encoding": "original-bytes"
     },
     {
-      "name": "lion_4",
-      "androidName": "lion_4",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        508,
-        550
-      ],
-      "size": [
-        508,
-        550
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lion_4.png",
-      "sourceSha256": "b8153ec47c0fdda293c1a4c662c5c4cfa812673d0a0dae7ff451022d3c272083",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lion_4.png",
-      "sha256": "b8153ec47c0fdda293c1a4c662c5c4cfa812673d0a0dae7ff451022d3c272083",
-      "bytes": 30035,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lion_5",
-      "androidName": "lion_5",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        458,
-        550
-      ],
-      "size": [
-        458,
-        550
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lion_5.png",
-      "sourceSha256": "b70b9d9db1becb34a7fd40614de3dece384c1a590d4e4b88a22d68fd2d97267c",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lion_5.png",
-      "sha256": "b70b9d9db1becb34a7fd40614de3dece384c1a590d4e4b88a22d68fd2d97267c",
-      "bytes": 25997,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lion_6",
-      "androidName": "lion_6",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        639,
-        550
-      ],
-      "size": [
-        639,
-        550
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lion_6.png",
-      "sourceSha256": "954fe1402b99e2289dda888dd8e076ee8aba5a62c167b4eebbcb68c1dbffb3be",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lion_6.png",
-      "sha256": "954fe1402b99e2289dda888dd8e076ee8aba5a62c167b4eebbcb68c1dbffb3be",
-      "bytes": 34132,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lionkid1",
-      "androidName": "lionkid1",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        510,
-        500
-      ],
-      "size": [
-        510,
-        500
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lionkid1.png",
-      "sourceSha256": "cc2b8d6943cc5dba94358c16c54c69350238e7b4967ae64f5bd2252ef0e64834",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lionkid1.png",
-      "sha256": "cc2b8d6943cc5dba94358c16c54c69350238e7b4967ae64f5bd2252ef0e64834",
-      "bytes": 29299,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lionkid2",
-      "androidName": "lionkid2",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        510,
-        500
-      ],
-      "size": [
-        510,
-        500
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lionkid2.png",
-      "sourceSha256": "8df289c4547d4642de7652862dfddbe1d72787b9af0aec1eb5a7894ab56997ec",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lionkid2.png",
-      "sha256": "8df289c4547d4642de7652862dfddbe1d72787b9af0aec1eb5a7894ab56997ec",
-      "bytes": 29946,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lionkid3",
-      "androidName": "lionkid3",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        510,
-        500
-      ],
-      "size": [
-        510,
-        500
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lionkid3.png",
-      "sourceSha256": "732beec25425f05d91b9112cdcef4c53eab277d25f5f1eb842f7cfc2c2a1c2e0",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lionkid3.png",
-      "sha256": "732beec25425f05d91b9112cdcef4c53eab277d25f5f1eb842f7cfc2c2a1c2e0",
-      "bytes": 24780,
-      "encoding": "original-bytes"
-    },
-    {
-      "name": "lionkid4",
-      "androidName": "lionkid4",
-      "kind": "ui_bitmap",
-      "sourceSize": [
-        600,
-        650
-      ],
-      "size": [
-        600,
-        650
-      ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/lionkid4.png",
-      "sourceSha256": "6783e0cf044502789a863ee4a643ec04a29ab34c2a07a041172acf6fdcb1d062",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/lionkid4.png",
-      "sha256": "6783e0cf044502789a863ee4a643ec04a29ab34c2a07a041172acf6fdcb1d062",
-      "bytes": 28670,
-      "encoding": "original-bytes"
-    },
-    {
       "name": "logo",
       "androidName": "logo",
       "kind": "ui_bitmap",
@@ -5776,7 +5636,7 @@
         },
         {
           "path": "android_memory-game-reborn/src/main/java/com/cube/memorygames/MainMenuActivity.java",
-          "line": 221,
+          "line": 225,
           "marker": "Typeface typefaceLight = Typeface.createFromAsset(getAssets(), \"Roboto-Light.ttf\");"
         },
         {
@@ -7284,13 +7144,6 @@
     "laser_6": "app.media.laser_6",
     "left": "app.media.left",
     "left2": "app.media.left2",
-    "lion_4": "app.media.lion_4",
-    "lion_5": "app.media.lion_5",
-    "lion_6": "app.media.lion_6",
-    "lionkid1": "app.media.lionkid1",
-    "lionkid2": "app.media.lionkid2",
-    "lionkid3": "app.media.lionkid3",
-    "lionkid4": "app.media.lionkid4",
     "logo": "app.media.logo",
     "menu_qhd": "app.media.menu_qhd",
     "mute": "app.media.mute",
@@ -7418,17 +7271,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 360,
+            "line": 364,
             "marker": "name=\"tutorial_game1_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 361,
+            "line": 365,
             "marker": "name=\"tutorial_game1_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 362,
+            "line": 366,
             "marker": "name=\"tutorial_game1_slide3\""
           }
         ],
@@ -7520,17 +7373,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 375,
+            "line": 379,
             "marker": "name=\"tutorial_game3_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 376,
+            "line": 380,
             "marker": "name=\"tutorial_game3_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 377,
+            "line": 381,
             "marker": "name=\"tutorial_game3_slide3\""
           }
         ],
@@ -7622,17 +7475,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 378,
+            "line": 382,
             "marker": "name=\"tutorial_game4_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 379,
+            "line": 383,
             "marker": "name=\"tutorial_game4_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 380,
+            "line": 384,
             "marker": "name=\"tutorial_game4_slide3\""
           }
         ],
@@ -7724,17 +7577,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 383,
+            "line": 387,
             "marker": "name=\"tutorial_game6_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 384,
+            "line": 388,
             "marker": "name=\"tutorial_game6_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 385,
+            "line": 389,
             "marker": "name=\"tutorial_game6_slide3\""
           }
         ],
@@ -7826,17 +7679,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 386,
+            "line": 390,
             "marker": "name=\"tutorial_game7_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 387,
+            "line": 391,
             "marker": "name=\"tutorial_game7_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 388,
+            "line": 392,
             "marker": "name=\"tutorial_game7_slide3\""
           }
         ],
@@ -7928,17 +7781,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 393,
+            "line": 397,
             "marker": "name=\"tutorial_game9_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 394,
+            "line": 398,
             "marker": "name=\"tutorial_game9_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 395,
+            "line": 399,
             "marker": "name=\"tutorial_game9_slide3\""
           }
         ],
@@ -8030,17 +7883,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 372,
+            "line": 376,
             "marker": "name=\"tutorial_game2_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 373,
+            "line": 377,
             "marker": "name=\"tutorial_game2_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 374,
+            "line": 378,
             "marker": "name=\"tutorial_game2_slide3\""
           }
         ],
@@ -8134,22 +7987,22 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 389,
+            "line": 393,
             "marker": "name=\"tutorial_game8_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 390,
+            "line": 394,
             "marker": "name=\"tutorial_game8_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 391,
+            "line": 395,
             "marker": "name=\"tutorial_game8_slide3\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 392,
+            "line": 396,
             "marker": "name=\"tutorial_game8_slide4\""
           }
         ],
@@ -8241,17 +8094,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 369,
+            "line": 373,
             "marker": "name=\"tutorial_game23_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 370,
+            "line": 374,
             "marker": "name=\"tutorial_game23_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 371,
+            "line": 375,
             "marker": "name=\"tutorial_game23_slide3\""
           }
         ],
@@ -8341,12 +8194,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 333,
+            "line": 337,
             "marker": "name=\"tutorial_game10_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 334,
+            "line": 338,
             "marker": "name=\"tutorial_game10_slide2\""
           }
         ],
@@ -8438,17 +8291,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 341,
+            "line": 345,
             "marker": "name=\"tutorial_game13_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 342,
+            "line": 346,
             "marker": "name=\"tutorial_game13_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 343,
+            "line": 347,
             "marker": "name=\"tutorial_game13_slide3\""
           }
         ],
@@ -8540,17 +8393,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 344,
+            "line": 348,
             "marker": "name=\"tutorial_game14_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 345,
+            "line": 349,
             "marker": "name=\"tutorial_game14_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 346,
+            "line": 350,
             "marker": "name=\"tutorial_game14_slide3\""
           }
         ],
@@ -8640,12 +8493,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 358,
+            "line": 362,
             "marker": "name=\"tutorial_game19_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 359,
+            "line": 363,
             "marker": "name=\"tutorial_game19_slide2\""
           }
         ],
@@ -8737,17 +8590,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 347,
+            "line": 351,
             "marker": "name=\"tutorial_game15_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 348,
+            "line": 352,
             "marker": "name=\"tutorial_game15_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 349,
+            "line": 353,
             "marker": "name=\"tutorial_game15_slide3\""
           }
         ],
@@ -8839,17 +8692,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 350,
+            "line": 354,
             "marker": "name=\"tutorial_game16_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 351,
+            "line": 355,
             "marker": "name=\"tutorial_game16_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 352,
+            "line": 356,
             "marker": "name=\"tutorial_game16_slide3\""
           }
         ],
@@ -8939,12 +8792,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 363,
+            "line": 367,
             "marker": "name=\"tutorial_game20_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 364,
+            "line": 368,
             "marker": "name=\"tutorial_game20_slide2\""
           }
         ],
@@ -9034,12 +8887,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 367,
+            "line": 371,
             "marker": "name=\"tutorial_game22_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 368,
+            "line": 372,
             "marker": "name=\"tutorial_game22_slide2\""
           }
         ],
@@ -9129,12 +8982,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 365,
+            "line": 369,
             "marker": "name=\"tutorial_game21_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 366,
+            "line": 370,
             "marker": "name=\"tutorial_game21_slide2\""
           }
         ],
@@ -9226,17 +9079,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 335,
+            "line": 339,
             "marker": "name=\"tutorial_game11_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 336,
+            "line": 340,
             "marker": "name=\"tutorial_game11_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 337,
+            "line": 341,
             "marker": "name=\"tutorial_game11_slide3\""
           }
         ],
@@ -9332,17 +9185,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 338,
+            "line": 342,
             "marker": "name=\"tutorial_game12_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 339,
+            "line": 343,
             "marker": "name=\"tutorial_game12_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 340,
+            "line": 344,
             "marker": "name=\"tutorial_game12_slide3\""
           }
         ],
@@ -9443,17 +9296,17 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 353,
+            "line": 357,
             "marker": "name=\"tutorial_game17_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 354,
+            "line": 358,
             "marker": "name=\"tutorial_game17_slide2\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 355,
+            "line": 359,
             "marker": "name=\"tutorial_game17_slide3\""
           }
         ],
@@ -9543,12 +9396,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 381,
+            "line": 385,
             "marker": "name=\"tutorial_game5_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 382,
+            "line": 386,
             "marker": "name=\"tutorial_game5_slide2\""
           }
         ],
@@ -9638,12 +9491,12 @@
         "tutorialText": [
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 356,
+            "line": 360,
             "marker": "name=\"tutorial_game18_slide1\""
           },
           {
             "path": "android_memory-game-reborn/src/main/res/values-zh/strings.xml",
-            "line": 357,
+            "line": 361,
             "marker": "name=\"tutorial_game18_slide2\""
           }
         ],
@@ -9667,9 +9520,9 @@
     }
   ],
   "summary": {
-    "totalAssetBytes": 2715220,
-    "imagesCount": 291,
-    "imagesBytes": 2141113,
+    "totalAssetBytes": 2512361,
+    "imagesCount": 284,
+    "imagesBytes": 1938254,
     "audioCount": 4,
     "audioBytes": 243292,
     "fontsCount": 4,
@@ -9683,7 +9536,7 @@
       "tutorial": 63,
       "icon": 94,
       "thumbnail": 23,
-      "ui_bitmap": 81,
+      "ui_bitmap": 74,
       "ui_vector": 29
     }
   }

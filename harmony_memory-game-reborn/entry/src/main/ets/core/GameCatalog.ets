@@ -529,13 +529,6 @@ export function media(name: string): Resource {
     case 'laser_6': return $r('app.media.laser_6');
     case 'left': return $r('app.media.left');
     case 'left2': return $r('app.media.left2');
-    case 'lion_4': return $r('app.media.lion_4');
-    case 'lion_5': return $r('app.media.lion_5');
-    case 'lion_6': return $r('app.media.lion_6');
-    case 'lionkid1': return $r('app.media.lionkid1');
-    case 'lionkid2': return $r('app.media.lionkid2');
-    case 'lionkid3': return $r('app.media.lionkid3');
-    case 'lionkid4': return $r('app.media.lionkid4');
     case 'logo': return $r('app.media.logo');
     case 'menu_qhd': return $r('app.media.menu_qhd');
     case 'mute': return $r('app.media.mute');

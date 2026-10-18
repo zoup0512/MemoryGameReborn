@@ -38,8 +38,7 @@ play play_press play_select play_unselected roundedbutton roundedbutton_inactive
 speaker mute soundon soundoff rightanswer wronganswer point_gray point_red
 ic_arrow_back_white ic_humburger ic_play ic_star_small icon_1 icon_2 icon_3 icon_4
 cupdialog paperplane_cyan paperplane_orange rain_cloud square laser laser_1 laser_2
-laser_3 laser_4 laser_5 laser_6 up up2 down down2 left left2 right right2
-lion_4 lion_5 lion_6 lionkid1 lionkid2 lionkid3 lionkid4""".split()
+laser_3 laser_4 laser_5 laser_6 up up2 down down2 left left2 right right2""".split()
 UI_XML = """ic_pause ic_pause_new ic_exit ic_reload ic_cup ic_star ic_menu
 ic_challenge ic_icon_daily_workout ic_play_rounded_button ic_questions_circular_button
 ic_life ic_lock ic_check ic_close ic_ok ic_game12_cancel ic_game12_tick

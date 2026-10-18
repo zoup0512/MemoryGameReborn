@@ -69,9 +69,10 @@ python tools/device-smoke.py
 
 图片与声音仅来自 `../android_memory-game-reborn/src/main/res`。
 
-- 原181张图片恢复为Android最高可用分辨率PNG，字节不变；另加入81张UI原PNG和29个原矢量SVG，总291个media。
+- 原181张图片恢复为Android最高可用分辨率PNG，字节不变；另加入74张UI原PNG和29个原矢量SVG，总284个media。
 - 声音保持Android原始`tap.wav`、`wrong.wav`、`win.mp3`、`error.mp3`；四套Roboto字体原样复制。
-- Entry资源合计2,715,220字节，其中图片2,141,113、音效243,292、字体135,184；不再降采样或有损转码。
+- Entry资源合计2,512,361字节，其中图片1,938,254、音效243,292、字体135,184；不再降采样或有损转码。
+- 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节），奖杯图保留待图形奖杯界面使用。
 - 每个资源的源路径、尺寸、编码、大小与哈希记录在 `resources-manifest.json`。
 - `tools/prepare_resources.py` 可重复复制原资源并生成矢量映射，需Python Pillow，不再需要FFmpeg转码。
 - HAP 的最终大小以 `entry/build/package-check.json` 为准，而不是图片合计。
