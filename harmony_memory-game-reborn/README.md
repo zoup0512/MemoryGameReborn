@@ -1,4 +1,4 @@
-# 记忆训练大师 · HarmonyOS 元服务
+# 脑力训练大师 · HarmonyOS 元服务
 
 以本仓库 Android 客户端为玩法与素材来源的纯本地 ArkTS / ArkUI Stage 元服务。原始需求保留在 [Harmony_README.md](Harmony_README.md)。
 
@@ -16,7 +16,7 @@
 
 | 项目 | 配置 |
 | --- | --- |
-| 应用名 | 记忆训练大师 |
+| 应用名 | 脑力训练大师 |
 | bundleName | `com.razor.memory.brain.training.games` |
 | 包类型 | `atomicService`，`installationFree: true` |
 | 最低版本 | HarmonyOS `5.1.1(19)` |

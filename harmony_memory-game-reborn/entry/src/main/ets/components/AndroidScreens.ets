@@ -182,9 +182,9 @@ export struct AndroidHome {
   build() {
     Column() {
       Row() {
-        Text('记忆训练大师')
+        Text('脑力训练大师')
           .fontFamily('RobotoMedium').fontSize(20).fontColor('#000000')
-          .accessibilityText('记忆训练大师')
+          .accessibilityText('脑力训练大师')
       }.width('100%').height(45).justifyContent(FlexAlign.Center)
         .padding({ left: 15, right: 15 }).backgroundColor('#FFFFFF')
       Rect().width('100%').height(1).fill(ANDROID_DIVIDER)

@@ -3,7 +3,7 @@
 Android 客户端 `android_memory-game-reborn` 的 HarmonyOS（ArkTS / ArkUI）单机元服务复刻。
 只参考本仓库中的 Android 客户端源码与资源，没有引入外部 Harmony 实现。
 
-- 应用名：记忆训练大师
+- 应用名：脑力训练大师
 - bundleName：`com.razor.memory.brain.training.games`
 - 包类型：`atomicService`（元服务，installationFree）
 - 兼容版本：`5.1.1(19)`，编译 / 目标版本 `6.1.1(24)`
