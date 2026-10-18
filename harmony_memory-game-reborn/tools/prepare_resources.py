@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Restore repository Android assets at original quality, without size budgets.
+"""Restore repository Android assets with lossless size optimizations.
 
-Python + Pillow only. PNG, original audio and referenced fonts are copied byte
-for byte; Android vectors become SVG without changing path geometry or colors.
-Stateful/stretchable XML is retained with resolved Canvas descriptions in rawfile.
-Only GameCatalog.media is regenerated; game parameters and UI code are untouched.
+Python + Pillow + fontTools. Tutorials, thumbnails and gameplay icons become
+lossless WebP at original dimensions; referenced Roboto fonts are subset to the
+characters used by ArkTS. Original audio is copied byte for byte. Android
+vectors become SVG without changing path geometry or colors. Stateful/stretchable
+XML is parsed only to build SVG media; its raw XML copies and the drawable JSON
+description are not packaged. Only GameCatalog.media is regenerated; game
+parameters and UI code are untouched.
 No network, purchases, dependency installation, config or Android source edits.
 --check verifies exact reproducibility without writing or imposing a HAP budget.
 """
@@ -13,6 +16,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import hashlib
+import io
 import json
 from pathlib import Path
 import re
@@ -206,16 +210,42 @@ def copied(source: Path, output: Path, **metadata) -> tuple[dict, bytes]:
              "encoding": "original-bytes"}, data)
 
 
+def webp_lossless(source: Path) -> tuple[bytes, list[int], list[int]]:
+    with Image.open(source) as image:
+        require(image.format == "PNG", f"Not a PNG: {source}")
+        image.load()
+        source_size = list(image.size)
+        if image.mode == "P":
+            rgba = image.convert("RGBA")
+            image = rgba if rgba.getchannel("A").getextrema()[0] < 255 else rgba.convert("RGB")
+        elif image.mode == "LA":
+            image = image.convert("RGBA")
+        elif image.mode not in ("RGB", "RGBA"):
+            image = image.convert("RGB")
+        buffer = io.BytesIO()
+        image.save(buffer, format="WEBP", lossless=True, method=4)
+        return buffer.getvalue(), source_size, list(image.size)
+
+
 def image_plan(assets: list[dict]) -> list[tuple[dict, bytes]]:
     result = []
     for asset in assets:
         source = bitmap_source(asset["androidName"])
-        with Image.open(source) as image:
-            require(image.format == "PNG", f"Not a PNG: {source}")
-            image.load()
-            size = list(image.size)
-        result.append(copied(source, MEDIA / (asset["name"] + ".png"), **asset,
-                             sourceSize=size, size=size, format="PNG"))
+        if asset["kind"] not in ("tutorial", "thumbnail", "icon"):
+            with Image.open(source) as image:
+                require(image.format == "PNG", f"Not a PNG: {source}")
+                image.load()
+                size = list(image.size)
+            result.append(copied(source, MEDIA / (asset["name"] + ".png"), **asset,
+                                 sourceSize=size, size=size, format="PNG"))
+            continue
+        data, source_size, size = webp_lossless(source)
+        result.append(({**asset, "source": relative(source),
+                        "sourceSha256": digest(source.read_bytes()),
+                        "output": relative(MEDIA / (asset["name"] + ".webp")),
+                        "sha256": digest(data), "bytes": len(data),
+                        "sourceSize": source_size, "size": size, "format": "WEBP",
+                        "encoding": "lossless WebP, original dimensions"}, data))
     return result
 
 
@@ -257,6 +287,36 @@ def audio_plan() -> list[tuple[dict, bytes]]:
     return result
 
 
+def used_characters() -> set[str]:
+    source_text = "\n".join(text(path) for path in (HARMONY / "entry/src/main/ets").rglob("*.ets"))
+    return {chr(code) for code in range(0x20, 0x7f)} | {ch for ch in source_text if ord(ch) > 0x7f}
+
+
+def subset_font(source: Path, characters: set[str]) -> tuple[bytes, int, int]:
+    try:
+        from fontTools.subset import Options, Subsetter
+        from fontTools.ttLib import TTFont
+    except ImportError as error:
+        raise SystemExit("fontTools is required: python -m pip install fonttools") from error
+    font = TTFont(source, recalcTimestamp=False)
+    cmap = set()
+    for table in font["cmap"].tables:
+        cmap.update(table.cmap)
+    unicodes = sorted(ord(ch) for ch in characters if ord(ch) in cmap)
+    options = Options()
+    options.layout_features = ["*"]
+    options.name_IDs = ["*"]
+    options.notdef_outline = True
+    options.recommended_glyphs = True
+    options.drop_tables = ["DSIG"]
+    subsetter = Subsetter(options=options)
+    subsetter.populate(unicodes=unicodes)
+    subsetter.subset(font)
+    buffer = io.BytesIO()
+    font.save(buffer)
+    return buffer.getvalue(), len(unicodes), len(cmap)
+
+
 def font_plan() -> list[tuple[dict, bytes]]:
     references: dict[str, list[dict]] = {}
     for path in sorted(JAVA.rglob("*.java")):
@@ -266,8 +326,19 @@ def font_plan() -> list[tuple[dict, bytes]]:
                                                         "marker": line.strip()})
     require(set(references) == {f"Roboto-{weight}.ttf" for weight in ("Light", "Regular", "Medium", "Bold")},
             "Review changed Android font usage")
-    return [copied(ANDROID / "assets" / name, RAW / "fonts" / name, name=Path(name).stem,
-                   androidReferences=origins) for name, origins in sorted(references.items())]
+    characters = used_characters()
+    result = []
+    for name, origins in sorted(references.items()):
+        source = ANDROID / "assets" / name
+        data, glyphs, source_glyphs = subset_font(source, characters)
+        result.append(({"name": Path(name).stem, "source": relative(source),
+                        "sourceSha256": digest(source.read_bytes()),
+                        "output": relative(RAW / "fonts" / name),
+                        "sha256": digest(data), "bytes": len(data),
+                        "encoding": "TrueType subset: ASCII + used non-ASCII glyphs, original outlines/features",
+                        "glyphs": glyphs, "sourceGlyphs": source_glyphs,
+                        "androidReferences": origins}, data))
+    return result
 
 
 def resource_values() -> dict[str, str]:
@@ -338,7 +409,7 @@ def vector_svg(node: ET.Element, values: dict[str, str]) -> bytes:
     return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n"
 
 
-def ui_plan() -> tuple[list[tuple[dict, bytes]], list[tuple[dict, bytes]], dict]:
+def ui_plan() -> list[tuple[dict, bytes]]:
     bitmaps = set(UI_BITMAPS)
     # All four Android trophy tiers are artwork, not a currency/purchase system.
     bitmaps.update(p.stem for p in RES.glob("drawable*/cup_*.png"))
@@ -362,33 +433,15 @@ def ui_plan() -> tuple[list[tuple[dict, bytes]], list[tuple[dict, bytes]], dict]
             else:
                 bitmaps.add(dependency)
     images = image_plan([{"name": name, "androidName": name, "kind": "ui_bitmap"} for name in sorted(bitmaps)])
-    drawables, descriptions = [], {}
     for name, (source, node) in sorted(xmls.items()):
-        drawables.append(copied(source, RAW / "android_drawables" / source.name,
-                                name=name, kind="android_xml", androidType=node.tag))
-        descriptions[name] = {"source": relative(source), "sourceSha256": digest(source.read_bytes()),
-                              "rendering": "SVG" if node.tag == "vector" else "Canvas/native background at actual target bounds",
-                              "node": resolved_node(node, values)}
-        if node.tag == "vector":
-            data = vector_svg(node, values)
-            images.append(({"name": name, "androidName": name, "kind": "ui_vector", "format": "SVG",
-                            "source": relative(source), "sourceSha256": digest(source.read_bytes()),
-                            "output": relative(MEDIA / (name + ".svg")), "encoding": "svg-path-preserving",
-                            "sha256": digest(data), "bytes": len(data)}, data))
-    description = {
-        "version": 1,
-        "renderingRules": [
-            "Dimensions with dip/dp are Android logical pixels; render at actual target bounds, never stretch a fixed-size screenshot.",
-            "Colors retain Android #AARRGGBB, not CSS #RRGGBBAA; values are resolved from repository values/*.xml.",
-            "Selectors: use first matching item in Android order; state_* attributes and referenced drawables are retained.",
-            "Layer-list: paint in order with item insets; clip draws to level 0..10000; rotate uses original pivots/degrees.",
-            "Shape stroke is centered on its inset path; corner radii/stroke widths remain dp; ring/sweep gradient needs Canvas.",
-            "Use media(name) only for bitmap/vector entries; shapes/selectors/layers are Canvas specifications, not flattened approximations."
-        ],
-        "drawables": descriptions,
-        "values": dict(sorted(values.items())),
-    }
-    return images, drawables, description
+        if node.tag != "vector":
+            continue
+        data = vector_svg(node, values)
+        images.append(({"name": name, "androidName": name, "kind": "ui_vector", "format": "SVG",
+                        "source": relative(source), "sourceSha256": digest(source.read_bytes()),
+                        "output": relative(MEDIA / (name + ".svg")), "encoding": "svg-path-preserving",
+                        "sha256": digest(data), "bytes": len(data)}, data))
+    return images
 
 
 def media_function(names: list[str]) -> str:
@@ -424,17 +477,12 @@ def summary(groups: dict[str, list[tuple[dict, bytes]]]) -> dict:
 
 def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, bytes]]:
     images = image_plan(assets)
-    ui_images, drawables, description = ui_plan()
-    images += ui_images
-    descriptor_data = json_bytes(description)
-    drawables.append(({"name": "android_drawables", "kind": "canvas_description",
-                       "output": relative(RAW / "android_drawables.json"),
-                       "bytes": len(descriptor_data), "sha256": digest(descriptor_data)}, descriptor_data))
+    images += ui_plan()
     icon = next(record for record, _ in images if record["name"] == "app_icon")
     # Preserve AppScope's resource name so app.json5 does not change.
     app_icons = [copied(REPO / icon["source"], APP_MEDIA / "game_icon.png", name="game_icon")]
     groups = {"images": images, "audio": audio_plan(), "fonts": font_plan(),
-              "drawables": drawables, "appIcons": app_icons}
+              "appIcons": app_icons}
     outputs = {record["output"]: data for items in groups.values() for record, data in items}
     names = [record["name"] for record, _ in images]
     require(len(names) == len(set(names)), "Duplicate image resource names")
@@ -443,15 +491,15 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
     manifest = {
         "version": 2, "generator": relative(Path(__file__)),
         "sourcePolicy": "Repository Android assets only; no network or currency/purchase functionality",
-        "sizePolicy": {"limits": None, "note": "No image or 2MB HAP budget; original fidelity takes precedence"},
+        "sizePolicy": {"limits": None, "note": "Lossless image/font optimization; original dimensions preserved"},
         "imagePolicy": {"sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
-                        "resize": False, "encoding": "PNG byte-for-byte copy; vector XML path/color-preserving SVG"},
+                        "resize": False, "encoding": "Tutorials, thumbnails and icg icons: lossless WebP at original dimensions; UI bitmaps: original PNG; vectors: path/color-preserving SVG"},
         "audioPolicy": {"encoding": "Original files copied byte-for-byte, no transcoding or normalization",
                         "filenames": {"error": "error.mp3", "tap": "tap.wav", "win": "win.mp3", "wrong": "wrong.wav"},
                         "integration": "SoundService must open tap.wav and wrong.wav, not .mp3"},
-        "fontPolicy": "Only font files referenced by application Java, copied byte-for-byte",
+        "fontPolicy": "Referenced Roboto fonts subset to ArkTS-used glyphs; TTF with original outlines and layout features",
         "drawablePolicy": {"vectors": "media SVG; exact path geometry, original dimensions and ARGB alpha",
-                           "statefulAndStretchable": "rawfile/android_drawables.json plus original XML; UI Canvas/native rendering required",
+                           "statefulAndStretchable": "Parsed only to build SVG media; raw Android XML and drawable JSON are not packaged",
                            "currency": "No coin, reward, online, purchase, replay-for-currency assets or behavior introduced; gold trophy tier is original artwork"},
         "catalogPolicy": {"writeScope": "media function only; GAMES, game parameters and other code preserved"},
         "applicationIconSource": evidence(ANDROID / "AndroidManifest.xml", 'android:icon="@drawable/ic_launcher"'),
@@ -500,7 +548,7 @@ def cleanup_plan(previous: dict, outputs: dict[str, bytes]) -> list[Path]:
 
 
 def validate(manifest: dict, expected: dict, outputs: dict[str, bytes]) -> None:
-    require(manifest == expected, "Manifest differs from original-quality source plan")
+    require(manifest == expected, "Manifest differs from source plan")
     for name, data in outputs.items():
         path = REPO / name
         require(path.is_file() and path.read_bytes() == data, f"Output differs from source plan: {name}")
@@ -510,10 +558,11 @@ def validate(manifest: dict, expected: dict, outputs: dict[str, bytes]) -> None:
     for name in ("tap", "wrong"):
         require(not (RAW / (name + ".mp3")).exists(), f"Obsolete transcoded audio remains: {name}.mp3")
     for record in manifest["images"]:
-        if record["format"] == "PNG":
+        if record["format"] in ("PNG", "WEBP"):
             with Image.open(REPO / record["output"]) as image:
                 image.load()
-                require(list(image.size) == record["sourceSize"] == record["size"], "Original PNG dimensions changed")
+                require(image.format == record["format"], f"Image format changed: {record['name']}")
+                require(list(image.size) == record["sourceSize"] == record["size"], "Image dimensions changed")
         else:
             source = ET.parse(REPO / record["source"]).getroot()
             svg = ET.parse(REPO / record["output"]).getroot()
@@ -525,7 +574,7 @@ def validate(manifest: dict, expected: dict, outputs: dict[str, bytes]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Verify original-quality assets; no writes or size limits")
+    parser.add_argument("--check", action="store_true", help="Verify reproducible assets; no writes or size limits")
     args = parser.parse_args()
     games, assets = source_catalog()
     manifest, outputs = build_plan(games, assets)

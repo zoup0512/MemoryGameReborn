@@ -69,13 +69,13 @@ python tools/device-smoke.py
 
 图片与声音仅来自 `../android_memory-game-reborn/src/main/res`。
 
-- 原181张图片恢复为Android最高可用分辨率PNG，字节不变；另加入74张UI原PNG和29个原矢量SVG，总284个media。
-- 声音保持Android原始`tap.wav`、`wrong.wav`、`win.mp3`、`error.mp3`；四套Roboto字体原样复制。
-- Entry资源合计2,512,361字节，其中图片1,938,254、音效243,292、字体135,184；不再降采样或有损转码。
-- 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节），奖杯图保留待图形奖杯界面使用。
+- 181张游戏图片中的180张（教程图63、缩略图23、icg图标94）转为无损WebP，保持Android原始像素尺寸且逐像素一致；另加入74张UI原PNG和29个原矢量SVG，总284个media。
+- 声音保持Android原始`tap.wav`、`wrong.wav`、`win.mp3`、`error.mp3`；四套Roboto字体按ArkTS实际字符集subset为TTF，保留原字形与排版特性。
+- Entry资源合计1,820,414字节，其中图片1,504,374、音效243,292、字体65,000；未降采样、未使用有损编码。
+- 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节）；Android drawable JSON/XML参考文件不再打包；奖杯图保留待图形奖杯界面使用。
 - 每个资源的源路径、尺寸、编码、大小与哈希记录在 `resources-manifest.json`。
-- `tools/prepare_resources.py` 可重复复制原资源并生成矢量映射，需Python Pillow，不再需要FFmpeg转码。
-- HAP 的最终大小以 `entry/build/package-check.json` 为准，而不是图片合计。
+- `tools/prepare_resources.py` 可重复生成WebP/SVG/字体子集，需Python Pillow + fontTools（`python -m pip install pillow fonttools`），不再需要FFmpeg转码。
+- HAP的最终大小以实际构建产物为准，而不是图片合计；当前本机Release HAP为unsigned 2,222,561字节、signed 2,261,931字节。
 
 ## 与 Android 有意不同的边界
 

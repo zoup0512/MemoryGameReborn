@@ -1,0 +1,15 @@
+# ProgressStore persists this shape with JSON.stringify; keep the keys stable
+# across obfuscated and unobfuscated builds so existing local records survive.
+-keep-property-name
+version
+sound
+records
+pendingId
+pendingLevel
+pendingScore
+id
+highest
+bestScore
+sessions
+tutorialSeen
+plays
