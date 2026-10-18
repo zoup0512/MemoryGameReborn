@@ -9,9 +9,6 @@ const ANDROID_DIALOG_BODY: string = '#596579';
 const ANDROID_DIALOG_BLUE: string = '#087CAF';
 const ANDROID_DIALOG_BORDER: string = '#D8E3ED';
 const ANDROID_DIALOG_DANGER: string = '#BD3045';
-// Exact Android drawable-xxxhdpi-v4/ic_reward.png. Inline because only this
-// component may be added and that original PNG is absent from the restored media.
-const ANDROID_REWARD_IMAGE: string = 'data:image/png;base64,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';
 
 class AndroidImageMetrics {
   logicalWidth: number;
@@ -137,14 +134,6 @@ export struct AndroidHome {
     return androidLevel(index < this.records.length ? this.records[index] : 0);
   }
 
-  private average(): string {
-    let total: number = 0;
-    for (let index: number = 0; index < GAMES.length; index++) {
-      total += this.recordAt(index);
-    }
-    return (total / GAMES.length).toFixed(1);
-  }
-
   private thumbnailScale(game: GameInfo): number {
     return Math.min(1, this.viewportWidth / androidImageMetrics(game.thumbnail).logicalWidth);
   }
@@ -193,15 +182,11 @@ export struct AndroidHome {
   build() {
     Column() {
       Row() {
-        Blank().layoutWeight(1)
-        Text(this.average())
-          .fontFamily('RobotoLight').fontSize(18).fontColor('#000000')
-          .width(56).height(45).padding({ left: 4, right: 4 }).textAlign(TextAlign.End)
-          .accessibilityText(`平均等级 ${this.average()}`)
-        // Original Android trophy PNG, not a substitute icon.
-        Image(ANDROID_REWARD_IMAGE).width(45).height(45).padding(10)
-          .objectFit(ImageFit.Contain).accessibilityText('奖杯')
-      }.width('100%').height(45).padding({ left: 15, right: 15 }).backgroundColor('#FFFFFF')
+        Text('记忆训练大师')
+          .fontFamily('RobotoMedium').fontSize(20).fontColor('#000000')
+          .accessibilityText('记忆训练大师')
+      }.width('100%').height(45).justifyContent(FlexAlign.Center)
+        .padding({ left: 15, right: 15 }).backgroundColor('#FFFFFF')
       Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
       List({ space: 0 }) {
         ForEach(GAMES, (game: GameInfo, index: number) => {
