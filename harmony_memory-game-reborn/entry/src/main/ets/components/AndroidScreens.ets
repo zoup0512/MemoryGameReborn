@@ -368,12 +368,11 @@ struct AndroidDialogAction {
 
 @Component
 export struct AndroidPause {
-  @Prop soundOn: boolean = true;
   @Prop screenHeight: number = 0;
-  onSound: () => void = (): void => {};
   onResume: () => void = (): void => {};
   onRestart: () => void = (): void => {};
   onTutorial: () => void = (): void => {};
+  onHome: () => void = (): void => {};
   onEnd: () => void = (): void => {};
 
   @Builder
@@ -383,24 +382,14 @@ export struct AndroidPause {
       Text('准备好后可继续游戏。结束本局将进入成绩结算。')
         .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
         .lineHeight(20).margin({ top: 8 })
-      Button({ type: ButtonType.Normal }) {
-        Row() {
-          Text(this.soundOn ? '声音已开启 · 点击关闭' : '声音已关闭 · 点击开启')
-            .layoutWeight(1).fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-          Image(media(this.soundOn ? 'speaker' : 'mute')).width(32).height(32)
-            .objectFit(ImageFit.Contain).accessibilityLevel('no')
-        }.width('100%').constraintSize({ minHeight: 32 })
-      }.width('100%').constraintSize({ minHeight: 48 }).padding(8).margin({ top: 16 })
-        .backgroundColor('#FFFFFF').border({ width: 1, color: ANDROID_DIALOG_BORDER, radius: 12 })
-        .borderRadius(12).clip(true)
-        .onClick(() => this.onSound())
-        .accessibilityText(this.soundOn ? '声音已开启 · 点击关闭' : '声音已关闭 · 点击开启')
       AndroidDialogAction({ labelText: '继续游戏', lightTypeface: true, onAction: () => this.onResume() })
         .margin({ top: 20 })
       AndroidDialogAction({ labelText: '重新开始本局', actionKind: 'secondary', lightTypeface: true,
         onAction: () => this.onRestart() }).margin({ top: 8 })
       AndroidDialogAction({ labelText: '查看玩法教程', actionKind: 'secondary', lightTypeface: true,
         onAction: () => this.onTutorial() }).margin({ top: 8 })
+      AndroidDialogAction({ labelText: '返回游戏列表', actionKind: 'secondary', lightTypeface: true,
+        onAction: () => this.onHome() }).margin({ top: 8 })
       AndroidDialogAction({ labelText: '结束本局并查看成绩', actionKind: 'danger', lightTypeface: true,
         onAction: () => this.onEnd() }).margin({ top: 8 })
     }.width('100%').padding(24).alignItems(HorizontalAlign.Start)

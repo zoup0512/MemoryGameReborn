@@ -323,6 +323,11 @@ struct Index {
           Image(media('ic_pause_new')).width(28).height(28).objectFit(ImageFit.Contain)
         }.width(48).height(48).padding({ left: 12, top: 12 }).justifyContent(FlexAlign.Center)
           .onClick(() => this.pause()).accessibilityText('暂停')
+        Column() {
+          Image(media(this.soundOn ? 'speaker' : 'mute')).width(24).height(24).objectFit(ImageFit.Contain)
+        }.width(44).height(48).padding({ top: 12 }).justifyContent(FlexAlign.Center)
+          .onClick(() => this.toggleSound())
+          .accessibilityText(this.soundOn ? '关闭声音' : '开启声音')
         Blank()
         if (this.showsLives()) {
           Row({ space: 4 }) {
@@ -431,8 +436,9 @@ struct Index {
         Stack() {
           this.GameSurface()
           if (this.paused && this.screen === 'game') {
-            AndroidPause({ soundOn: this.soundOn, onSound: () => this.toggleSound(), onResume: () => this.resume(),
+            AndroidPause({ onResume: () => this.resume(),
               onRestart: () => { this.saveSession(); this.start(); }, onTutorial: () => this.openTutorial(),
+              onHome: () => { this.saveSession(); this.paused = false; this.screen = 'home'; },
               onEnd: () => this.finish('训练记录已保存') })
           }
           if (this.screen === 'result') {
