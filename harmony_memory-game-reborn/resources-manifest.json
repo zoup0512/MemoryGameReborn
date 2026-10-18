@@ -12,14 +12,14 @@
     "encoding": "Tutorials, thumbnails and icg icons: lossless WebP at original dimensions; UI bitmaps: original PNG; vectors: path/color-preserving SVG"
   },
   "audioPolicy": {
-    "encoding": "Original files copied byte-for-byte, no transcoding or normalization",
+    "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
     "filenames": {
       "error": "error.mp3",
-      "tap": "tap.wav",
+      "tap": "tap.mp3",
       "win": "win.mp3",
-      "wrong": "wrong.wav"
+      "wrong": "wrong.mp3"
     },
-    "integration": "SoundService must open tap.wav and wrong.wav, not .mp3"
+    "integration": "SoundService opens the four MP3 rawfiles"
   },
   "fontPolicy": "Referenced Roboto fonts subset to ArkTS-used glyphs; TTF with original outlines and layout features",
   "drawablePolicy": {
@@ -5489,84 +5489,74 @@
     {
       "name": "error",
       "androidSound": "FAIL",
+      "source": "android_memory-game-reborn/src/main/res/raw/error.mp3",
+      "sourceSha256": "c97e9bc41c6959b4a877f14d11f5d3afe9d5432a2b42c41f49f60284de47fbc9",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/error.mp3",
+      "sha256": "3ecb546b0e67110e44b0c27cffe5f60901a728843c60aaf57d77cc3b69f0921e",
+      "bytes": 6244,
       "codec": "mp3",
       "sampleRate": 44100,
-      "channels": 2,
-      "bitrate": 320000,
-      "bitrateScope": "first MPEG audio frame; original stream preserved",
+      "channels": 1,
+      "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
       "mappingSource": {
         "path": "android_memory-game-reborn/src/main/java/com/cube/memorygames/SoundUtils.java",
         "line": 48,
         "marker": "R.raw.error"
-      },
-      "source": "android_memory-game-reborn/src/main/res/raw/error.mp3",
-      "sourceSha256": "c97e9bc41c6959b4a877f14d11f5d3afe9d5432a2b42c41f49f60284de47fbc9",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/error.mp3",
-      "sha256": "c97e9bc41c6959b4a877f14d11f5d3afe9d5432a2b42c41f49f60284de47fbc9",
-      "bytes": 37660,
-      "encoding": "original-bytes"
+      }
     },
     {
       "name": "tap",
       "androidSound": "TAP",
-      "codec": "pcm_s16le",
+      "source": "android_memory-game-reborn/src/main/res/raw/tap.wav",
+      "sourceSha256": "acc125f43384c4b37950958a4b5d20466eee08ce0f955174951a84c279d0ded0",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/tap.mp3",
+      "sha256": "cfba1930cd927f7238f2ec9121b6ffdd74ffb38c05a6c432e6d70d6de6cbf3c5",
+      "bytes": 1849,
+      "codec": "mp3",
       "sampleRate": 44100,
-      "channels": 2,
-      "bitsPerSample": 16,
-      "bitrate": 1411200,
-      "frames": 9311,
+      "channels": 1,
+      "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
       "mappingSource": {
         "path": "android_memory-game-reborn/src/main/java/com/cube/memorygames/SoundUtils.java",
         "line": 49,
         "marker": "R.raw.tap"
-      },
-      "source": "android_memory-game-reborn/src/main/res/raw/tap.wav",
-      "sourceSha256": "acc125f43384c4b37950958a4b5d20466eee08ce0f955174951a84c279d0ded0",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/tap.wav",
-      "sha256": "acc125f43384c4b37950958a4b5d20466eee08ce0f955174951a84c279d0ded0",
-      "bytes": 41340,
-      "encoding": "original-bytes"
+      }
     },
     {
       "name": "win",
       "androidSound": "WIN",
+      "source": "android_memory-game-reborn/src/main/res/raw/win.mp3",
+      "sourceSha256": "dc9aa6ad2d26b375f1b8983f78cc75e31b06752f38e61cea7ac9331e96967055",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/win.mp3",
+      "sha256": "678b94394fb98e7cb665760f9ee31f9a6ae731ca8d830dd85106a3b2c6054d79",
+      "bytes": 8476,
       "codec": "mp3",
       "sampleRate": 44100,
-      "channels": 2,
-      "bitrate": 320000,
-      "bitrateScope": "first MPEG audio frame; original stream preserved",
+      "channels": 1,
+      "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
       "mappingSource": {
         "path": "android_memory-game-reborn/src/main/java/com/cube/memorygames/SoundUtils.java",
         "line": 50,
         "marker": "R.raw.win"
-      },
-      "source": "android_memory-game-reborn/src/main/res/raw/win.mp3",
-      "sourceSha256": "dc9aa6ad2d26b375f1b8983f78cc75e31b06752f38e61cea7ac9331e96967055",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/win.mp3",
-      "sha256": "dc9aa6ad2d26b375f1b8983f78cc75e31b06752f38e61cea7ac9331e96967055",
-      "bytes": 76276,
-      "encoding": "original-bytes"
+      }
     },
     {
       "name": "wrong",
       "androidSound": "WRONG",
-      "codec": "pcm_s16le",
+      "source": "android_memory-game-reborn/src/main/res/raw/wrong.wav",
+      "sourceSha256": "a1195c949a9d01e36f47bda8fbfe295c4793a196c9765ea6ec22b0bb0edaa294",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/wrong.mp3",
+      "sha256": "9f4d9592c7a1ad7f4d9a9078f7759937fbbed7dea2b22c50f325a12d3414313a",
+      "bytes": 2628,
+      "codec": "mp3",
       "sampleRate": 44100,
-      "channels": 2,
-      "bitsPerSample": 16,
-      "bitrate": 1411200,
-      "frames": 21984,
+      "channels": 1,
+      "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
       "mappingSource": {
         "path": "android_memory-game-reborn/src/main/java/com/cube/memorygames/SoundUtils.java",
         "line": 51,
         "marker": "R.raw.wrong"
-      },
-      "source": "android_memory-game-reborn/src/main/res/raw/wrong.wav",
-      "sourceSha256": "a1195c949a9d01e36f47bda8fbfe295c4793a196c9765ea6ec22b0bb0edaa294",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/rawfile/wrong.wav",
-      "sha256": "a1195c949a9d01e36f47bda8fbfe295c4793a196c9765ea6ec22b0bb0edaa294",
-      "bytes": 88016,
-      "encoding": "original-bytes"
+      }
     }
   ],
   "fonts": [
@@ -8386,11 +8376,11 @@
     }
   ],
   "summary": {
-    "totalAssetBytes": 1820414,
+    "totalAssetBytes": 1596319,
     "imagesCount": 284,
     "imagesBytes": 1504374,
     "audioCount": 4,
-    "audioBytes": 243292,
+    "audioBytes": 19197,
     "fontsCount": 4,
     "fontsBytes": 65000,
     "appIconsCount": 1,

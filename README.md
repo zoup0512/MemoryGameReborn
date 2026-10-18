@@ -58,7 +58,7 @@
 `harmony_memory-game-reborn/` 是把 Android 单机版复刻成 HarmonyOS 元服务的独立工程：
 23 款“冲刺”游戏、新手教学、关卡推进、暂停/失败/结算与音效均已移植。它不包含服务端、
 金币、广告、奖杯、战绩图表和底部菜单栏；全部游戏默认解锁，失败可免费重试当前关。
-`bundleType` 为 `atomicService`。当前 Release HAP 约 2.2 MB（2,222,561 字节）；若按元服务单 HAP 2 MB 限制分发，仍需继续压缩或拆分资源。
+`bundleType` 为 `atomicService`。当前 Release HAP：unsigned 1,998,466 字节，signed 2,036,647 字节；若 2 MB 限制按 2,000,000 字节计，签名包仍差约 37 KB。
 
 构建、签名、与 Android 版的差异和验收截图见
 [harmony_memory-game-reborn/README.md](harmony_memory-game-reborn/README.md)。

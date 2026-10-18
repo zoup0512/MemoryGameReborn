@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Restore repository Android assets with lossless size optimizations.
 
-Python + Pillow + fontTools. Tutorials, thumbnails and gameplay icons become
-lossless WebP at original dimensions; referenced Roboto fonts are subset to the
-characters used by ArkTS. Original audio is copied byte for byte. Android
+Python + Pillow + fontTools + ffmpeg. Tutorials, thumbnails and gameplay icons
+become lossless WebP at original dimensions; referenced Roboto fonts are subset
+to the characters used by ArkTS; sound effects become mono MP3 VBR q7. Android
 vectors become SVG without changing path geometry or colors. Stateful/stretchable
 XML is parsed only to build SVG media; its raw XML copies and the drawable JSON
 description are not packaged. Only GameCatalog.media is regenerated; game
@@ -20,6 +20,8 @@ import io
 import json
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import wave
 import xml.etree.ElementTree as ET
 
@@ -277,13 +279,32 @@ def audio_info(source: Path) -> dict:
     raise RuntimeError(f"No MPEG Layer III header: {source}")
 
 
+def transcode_audio(source: Path) -> bytes:
+    executable = shutil.which("ffmpeg")
+    require(executable is not None, "ffmpeg is required: install ffmpeg and add it to PATH")
+    command = [executable, "-y", "-v", "error", "-i", str(source), "-vn", "-map_metadata", "-1",
+               "-ac", "1", "-ar", "44100", "-c:a", "libmp3lame", "-q:a", "7",
+               "-write_id3v1", "0", "-id3v2_version", "0", "-f", "mp3", "pipe:1"]
+    result = subprocess.run(command, capture_output=True)
+    require(result.returncode == 0,
+            f"ffmpeg failed for {source}: {result.stderr.decode(errors='replace')}")
+    return result.stdout
+
+
 def audio_plan() -> list[tuple[dict, bytes]]:
     result = []
-    for name, filename, sound in [("error", "error.mp3", "FAIL"), ("tap", "tap.wav", "TAP"),
-                                  ("win", "win.mp3", "WIN"), ("wrong", "wrong.wav", "WRONG")]:
-        source = RES / "raw" / filename
-        result.append(copied(source, RAW / filename, name=name, androidSound=sound,
-                             **audio_info(source), mappingSource=evidence(JAVA / "SoundUtils.java", f"R.raw.{name}")))
+    for name, source_name, output_name, sound in [("error", "error.mp3", "error.mp3", "FAIL"),
+                                                   ("tap", "tap.wav", "tap.mp3", "TAP"),
+                                                   ("win", "win.mp3", "win.mp3", "WIN"),
+                                                   ("wrong", "wrong.wav", "wrong.mp3", "WRONG")]:
+        source = RES / "raw" / source_name
+        data = transcode_audio(source)
+        result.append(({"name": name, "androidSound": sound,
+                        "source": relative(source), "sourceSha256": digest(source.read_bytes()),
+                        "output": relative(RAW / output_name), "sha256": digest(data), "bytes": len(data),
+                        "codec": "mp3", "sampleRate": 44100, "channels": 1,
+                        "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
+                        "mappingSource": evidence(JAVA / "SoundUtils.java", f"R.raw.{name}")}, data))
     return result
 
 
@@ -494,9 +515,9 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
         "sizePolicy": {"limits": None, "note": "Lossless image/font optimization; original dimensions preserved"},
         "imagePolicy": {"sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
                         "resize": False, "encoding": "Tutorials, thumbnails and icg icons: lossless WebP at original dimensions; UI bitmaps: original PNG; vectors: path/color-preserving SVG"},
-        "audioPolicy": {"encoding": "Original files copied byte-for-byte, no transcoding or normalization",
-                        "filenames": {"error": "error.mp3", "tap": "tap.wav", "win": "win.mp3", "wrong": "wrong.wav"},
-                        "integration": "SoundService must open tap.wav and wrong.wav, not .mp3"},
+        "audioPolicy": {"encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
+                        "filenames": {"error": "error.mp3", "tap": "tap.mp3", "win": "win.mp3", "wrong": "wrong.mp3"},
+                        "integration": "SoundService opens the four MP3 rawfiles"},
         "fontPolicy": "Referenced Roboto fonts subset to ArkTS-used glyphs; TTF with original outlines and layout features",
         "drawablePolicy": {"vectors": "media SVG; exact path geometry, original dimensions and ARGB alpha",
                            "statefulAndStretchable": "Parsed only to build SVG media; raw Android XML and drawable JSON are not packaged",
@@ -556,7 +577,7 @@ def validate(manifest: dict, expected: dict, outputs: dict[str, bytes]) -> None:
         names = [p.stem for p in directory.iterdir() if p.is_file()]
         require(len(names) == len(set(names)), f"Same-name media conflict in {relative(directory)}")
     for name in ("tap", "wrong"):
-        require(not (RAW / (name + ".mp3")).exists(), f"Obsolete transcoded audio remains: {name}.mp3")
+        require(not (RAW / (name + ".wav")).exists(), f"Obsolete WAV remains: {name}.wav")
     for record in manifest["images"]:
         if record["format"] in ("PNG", "WEBP"):
             with Image.open(REPO / record["output"]) as image:

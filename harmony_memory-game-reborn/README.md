@@ -7,7 +7,7 @@
 - 首页即冲刺列表，保持 Android 的 23 款游戏顺序与六大分类，无底部导航。
 - 23 款独立玩法：位置记忆、六边形、增量识别、顺序路径、旋转、移动跟踪、图像位置、数量、形色查找、算术、比较、排序、同异判断、纸飞机方向、248 行列循环连线、金字塔投影、对称、镜子激光及舒尔特。
 - 63 页原版教程图文、逐格入场、记忆展示、旋转/洗牌、正确/错误反馈、结算与四类原始音效。记忆1/2/3/5/6/8/9按Android执行800ms扇形准备、700ms入场，路径另含500ms白圆等待；其他游戏不额外插入倒计时。
-- 2026-10-18视觉方向修订：**取消2MB包体限制**，不为包体降低图片分辨率或音质。首页、教学、游戏顶栏、棋盘、选择卡和白卡弹窗以本仓库当前Android源码及实际截图为基准，不再使用自设计卡片列表。
+- 2026-10-18视觉方向修订：图片不为包体降低分辨率；音效为控制包体转为单声道MP3 VBR q7（不再保留原始WAV/320kbps MP3）。首页、教学、游戏顶栏、棋盘、选择卡和白卡弹窗以本仓库当前Android源码及实际截图为基准，不再使用自设计卡片列表。
 - 暂停次数不限；暂停、切后台、重看教学时冻结计时。后台保存当前局检查点，进程被回收后将该局纳入历史，重启不恢复进行中的棋盘。
 - 本机保存最高到达关卡、最高得分、最近七局、教程状态和音效偏好。适用游戏按最近七局平均关卡减五自适应起始，其余从第一关开始。
 - 无网络权限、账号、服务器、HTTP、WebSocket、金币、购买或广告，全部游戏默认开放。
@@ -70,12 +70,12 @@ python tools/device-smoke.py
 图片与声音仅来自 `../android_memory-game-reborn/src/main/res`。
 
 - 181张游戏图片中的180张（教程图63、缩略图23、icg图标94）转为无损WebP，保持Android原始像素尺寸且逐像素一致；另加入74张UI原PNG和29个原矢量SVG，总284个media。
-- 声音保持Android原始`tap.wav`、`wrong.wav`、`win.mp3`、`error.mp3`；四套Roboto字体按ArkTS实际字符集subset为TTF，保留原字形与排版特性。
-- Entry资源合计1,820,414字节，其中图片1,504,374、音效243,292、字体65,000；未降采样、未使用有损编码。
+- 四个音效统一转为44.1kHz单声道MP3 VBR q7（LAME），保留原始时长，合计19,197字节；四套Roboto字体按ArkTS实际字符集subset为TTF，保留原字形与排版特性。
+- Entry资源合计1,596,319字节，其中图片1,504,374、音效19,197、字体65,000；图片未降采样且保持无损，音效为有损压缩。
 - 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节）；Android drawable JSON/XML参考文件不再打包；奖杯图保留待图形奖杯界面使用。
 - 每个资源的源路径、尺寸、编码、大小与哈希记录在 `resources-manifest.json`。
-- `tools/prepare_resources.py` 可重复生成WebP/SVG/字体子集，需Python Pillow + fontTools（`python -m pip install pillow fonttools`），不再需要FFmpeg转码。
-- HAP的最终大小以实际构建产物为准，而不是图片合计；当前本机Release HAP为unsigned 2,222,561字节、signed 2,261,931字节。
+- `tools/prepare_resources.py` 可重复生成WebP/SVG/字体子集/MP3，需Python Pillow + fontTools + ffmpeg（`python -m pip install pillow fonttools`，并确保`ffmpeg`在PATH）。
+- HAP的最终大小以实际构建产物为准，而不是图片合计；当前本机Release HAP为unsigned 1,998,466字节、signed 2,036,647字节。
 
 ## 与 Android 有意不同的边界
 

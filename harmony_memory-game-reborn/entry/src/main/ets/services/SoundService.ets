@@ -4,7 +4,7 @@ import { common } from '@kit.AbilityKit';
 export class SoundService {
   private players: (media.AVPlayer | null)[] = [null, null, null, null];
   private names: string[] = ['tap', 'win', 'wrong', 'error'];
-  private files: string[] = ['tap.wav', 'win.mp3', 'wrong.wav', 'error.mp3'];
+  private files: string[] = ['tap.mp3', 'win.mp3', 'wrong.mp3', 'error.mp3'];
   private opened: string[] = [];
   private context: common.UIAbilityContext | null = null;
   private disposed: boolean = false;
