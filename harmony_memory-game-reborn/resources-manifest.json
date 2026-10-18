@@ -9,7 +9,7 @@
   "imagePolicy": {
     "sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
     "resize": false,
-    "encoding": "Tutorials, thumbnails and icg icons: lossless WebP at original dimensions; UI bitmaps: original PNG; vectors: path/color-preserving SVG"
+    "encoding": "All bitmaps except app_icon: lossless WebP at original dimensions; app icon: PNG; vectors: path/color-preserving SVG"
   },
   "audioPolicy": {
     "encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
@@ -3660,6 +3660,11 @@
       "name": "arrow",
       "androidName": "arrow",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/arrow.png",
+      "sourceSha256": "d7b9545f06ec88398306c3bc40197a48628431580707098e365f6cc2a631c61f",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/arrow.webp",
+      "sha256": "0d0e83621e01fa1683febb90e80a72d1dee852a398e4d4b456ccd2410c8ae372",
+      "bytes": 1094,
       "sourceSize": [
         128,
         64
@@ -3668,18 +3673,18 @@
         128,
         64
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/arrow.png",
-      "sourceSha256": "d7b9545f06ec88398306c3bc40197a48628431580707098e365f6cc2a631c61f",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/arrow.png",
-      "sha256": "d7b9545f06ec88398306c3bc40197a48628431580707098e365f6cc2a631c61f",
-      "bytes": 1807,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "blue_background_2",
       "androidName": "blue_background_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/blue_background_2.png",
+      "sourceSha256": "3dee76507e493bbd7e8941ed5dadc0b1cb152d067ae49b7cc76669a79d81239c",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/blue_background_2.webp",
+      "sha256": "85971e98a36a2273aa30e59fd7a6a5edd851d35ae935bebfd97e915ef22df0cc",
+      "bytes": 1050,
       "sourceSize": [
         1440,
         606
@@ -3688,18 +3693,18 @@
         1440,
         606
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/blue_background_2.png",
-      "sourceSha256": "3dee76507e493bbd7e8941ed5dadc0b1cb152d067ae49b7cc76669a79d81239c",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/blue_background_2.png",
-      "sha256": "3dee76507e493bbd7e8941ed5dadc0b1cb152d067ae49b7cc76669a79d81239c",
-      "bytes": 2818,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_1",
       "androidName": "cup_bronze_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_1.png",
+      "sourceSha256": "320307adf9cc59358a7f0330dfd04d31c1b44a3dc2c464557d9ea1df1fa18282",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_1.webp",
+      "sha256": "5b7a11203b9444e18b896238a7b62b2bd09b486e73cd7fcef4830d1428511157",
+      "bytes": 8780,
       "sourceSize": [
         434,
         600
@@ -3708,18 +3713,18 @@
         434,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_1.png",
-      "sourceSha256": "320307adf9cc59358a7f0330dfd04d31c1b44a3dc2c464557d9ea1df1fa18282",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_1.png",
-      "sha256": "320307adf9cc59358a7f0330dfd04d31c1b44a3dc2c464557d9ea1df1fa18282",
-      "bytes": 10753,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_2",
       "androidName": "cup_bronze_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_2.png",
+      "sourceSha256": "a5cd5850291969d0ae192ffe733e1bfab15437477d245d7d2e6412eb9d15cc13",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_2.webp",
+      "sha256": "259ca07153d32644914f0bf07096899d1ac4855043a966f0cee4b848eb9f3805",
+      "bytes": 7464,
       "sourceSize": [
         278,
         600
@@ -3728,18 +3733,18 @@
         278,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_2.png",
-      "sourceSha256": "a5cd5850291969d0ae192ffe733e1bfab15437477d245d7d2e6412eb9d15cc13",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_2.png",
-      "sha256": "a5cd5850291969d0ae192ffe733e1bfab15437477d245d7d2e6412eb9d15cc13",
-      "bytes": 8903,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_3",
       "androidName": "cup_bronze_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_3.png",
+      "sourceSha256": "b870b296e783d808949f28d501356f0e06a19ac67dcf788bbd50ae1fe2b0161d",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_3.webp",
+      "sha256": "d7e1146a4718a52d293c3c0bda97d7896aabf425172bc5615af7d904593a8c27",
+      "bytes": 8390,
       "sourceSize": [
         272,
         600
@@ -3748,18 +3753,18 @@
         272,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_3.png",
-      "sourceSha256": "b870b296e783d808949f28d501356f0e06a19ac67dcf788bbd50ae1fe2b0161d",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_3.png",
-      "sha256": "b870b296e783d808949f28d501356f0e06a19ac67dcf788bbd50ae1fe2b0161d",
-      "bytes": 10147,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_4",
       "androidName": "cup_bronze_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_4.png",
+      "sourceSha256": "d785ac544bbc525aa35ef45abed89a291d71b969bde2bf8703af6a7d16fb28e8",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_4.webp",
+      "sha256": "6cbeb35d3bcb6fffa74d06423eb5dc5ec31189be29b9b8ad36d175f63c26ab64",
+      "bytes": 10252,
       "sourceSize": [
         358,
         600
@@ -3768,18 +3773,18 @@
         358,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_4.png",
-      "sourceSha256": "d785ac544bbc525aa35ef45abed89a291d71b969bde2bf8703af6a7d16fb28e8",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_4.png",
-      "sha256": "d785ac544bbc525aa35ef45abed89a291d71b969bde2bf8703af6a7d16fb28e8",
-      "bytes": 12274,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_5",
       "androidName": "cup_bronze_5",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_5.png",
+      "sourceSha256": "7801a321560b054745498eef63b3e40f0f24c62f2c1ddddeaa4044b7ba548912",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_5.webp",
+      "sha256": "f1c4c11e77b4339e20409f038347b765dc221c108cb015bb8c3865ae4e809515",
+      "bytes": 9656,
       "sourceSize": [
         282,
         600
@@ -3788,18 +3793,18 @@
         282,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_5.png",
-      "sourceSha256": "7801a321560b054745498eef63b3e40f0f24c62f2c1ddddeaa4044b7ba548912",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_5.png",
-      "sha256": "7801a321560b054745498eef63b3e40f0f24c62f2c1ddddeaa4044b7ba548912",
-      "bytes": 11155,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_bronze_6",
       "androidName": "cup_bronze_6",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_6.png",
+      "sourceSha256": "3e30025a6683a6a6eb23740a98e9181028f35e8c669173804dc13b2de94e9ce8",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_6.webp",
+      "sha256": "68325df5d3a9e2c60a432df128e24641046d929bb82e432af625f939df0b51f6",
+      "bytes": 8798,
       "sourceSize": [
         226,
         600
@@ -3808,18 +3813,18 @@
         226,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_bronze_6.png",
-      "sourceSha256": "3e30025a6683a6a6eb23740a98e9181028f35e8c669173804dc13b2de94e9ce8",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_bronze_6.png",
-      "sha256": "3e30025a6683a6a6eb23740a98e9181028f35e8c669173804dc13b2de94e9ce8",
-      "bytes": 10559,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_1",
       "androidName": "cup_glass_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_1.png",
+      "sourceSha256": "dd62ce25b81d4b9b043e97d2fef6dff8f656c991c39d2078d5d108940a39a461",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_1.webp",
+      "sha256": "519c4a3da545b2d4ab979df7341b82a933ac682729d9307dda7fc15597cf4c6f",
+      "bytes": 11248,
       "sourceSize": [
         434,
         600
@@ -3828,18 +3833,18 @@
         434,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_1.png",
-      "sourceSha256": "dd62ce25b81d4b9b043e97d2fef6dff8f656c991c39d2078d5d108940a39a461",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_1.png",
-      "sha256": "dd62ce25b81d4b9b043e97d2fef6dff8f656c991c39d2078d5d108940a39a461",
-      "bytes": 13586,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_2",
       "androidName": "cup_glass_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_2.png",
+      "sourceSha256": "c3ed5947e989c1f57a89bea8cf11a9d11788e1807d9ec0f291f8e3b0b0d27e21",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_2.webp",
+      "sha256": "5afbe3b2e8a97a2644947a3eafee42c5521da848e41bed45892a4085c6bb416e",
+      "bytes": 9558,
       "sourceSize": [
         278,
         600
@@ -3848,18 +3853,18 @@
         278,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_2.png",
-      "sourceSha256": "c3ed5947e989c1f57a89bea8cf11a9d11788e1807d9ec0f291f8e3b0b0d27e21",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_2.png",
-      "sha256": "c3ed5947e989c1f57a89bea8cf11a9d11788e1807d9ec0f291f8e3b0b0d27e21",
-      "bytes": 11864,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_3",
       "androidName": "cup_glass_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_3.png",
+      "sourceSha256": "6a3d94e60a4b2f4f2c35c63dbfe813c281cd290659679fd29c309995ac231f78",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_3.webp",
+      "sha256": "fb798acf76e9245c4f4ddf7fd3797197bb8559572e27b3393e8f312ef02226b3",
+      "bytes": 8606,
       "sourceSize": [
         272,
         600
@@ -3868,18 +3873,18 @@
         272,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_3.png",
-      "sourceSha256": "6a3d94e60a4b2f4f2c35c63dbfe813c281cd290659679fd29c309995ac231f78",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_3.png",
-      "sha256": "6a3d94e60a4b2f4f2c35c63dbfe813c281cd290659679fd29c309995ac231f78",
-      "bytes": 11187,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_4",
       "androidName": "cup_glass_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_4.png",
+      "sourceSha256": "11b43c6c97b15c999d12f3574c1a2f46487661ded245da1b3598492ad39e03a9",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_4.webp",
+      "sha256": "71e6053b9cf901b9923b2328865ce39411fdbf11777441667abe16b81ab5278c",
+      "bytes": 11964,
       "sourceSize": [
         358,
         600
@@ -3888,18 +3893,18 @@
         358,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_4.png",
-      "sourceSha256": "11b43c6c97b15c999d12f3574c1a2f46487661ded245da1b3598492ad39e03a9",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_4.png",
-      "sha256": "11b43c6c97b15c999d12f3574c1a2f46487661ded245da1b3598492ad39e03a9",
-      "bytes": 13971,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_5",
       "androidName": "cup_glass_5",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_5.png",
+      "sourceSha256": "a7e257c174b2804f269145409a5fffc69f656a141048ce865bcc5d3ce7ff33fa",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_5.webp",
+      "sha256": "47b36c5b372210fd33d3d3e7580e6b546d6956273967bb496af4ff5f3ab26bf1",
+      "bytes": 8086,
       "sourceSize": [
         282,
         600
@@ -3908,18 +3913,18 @@
         282,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_5.png",
-      "sourceSha256": "a7e257c174b2804f269145409a5fffc69f656a141048ce865bcc5d3ce7ff33fa",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_5.png",
-      "sha256": "a7e257c174b2804f269145409a5fffc69f656a141048ce865bcc5d3ce7ff33fa",
-      "bytes": 10230,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_glass_6",
       "androidName": "cup_glass_6",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_6.png",
+      "sourceSha256": "748c1cee4e1c05f14fc63dcde68c640389b98d0fcd10e4353fc53d55e4cf0085",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_6.webp",
+      "sha256": "4951148ff012ba816e2cbcce2906eeb0721659723e91f9ea19dc812c96175c74",
+      "bytes": 10516,
       "sourceSize": [
         226,
         600
@@ -3928,18 +3933,18 @@
         226,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_glass_6.png",
-      "sourceSha256": "748c1cee4e1c05f14fc63dcde68c640389b98d0fcd10e4353fc53d55e4cf0085",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_glass_6.png",
-      "sha256": "748c1cee4e1c05f14fc63dcde68c640389b98d0fcd10e4353fc53d55e4cf0085",
-      "bytes": 13853,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_1",
       "androidName": "cup_gold_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_1.png",
+      "sourceSha256": "bb423478036596a7a359725905862932292578cdd7f312eb4d206c92bb830a02",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_1.webp",
+      "sha256": "3b7568567ad1e13e9a981158fe70681b3dc945b91a9453ad06cf2087ca831675",
+      "bytes": 8578,
       "sourceSize": [
         434,
         600
@@ -3948,18 +3953,18 @@
         434,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_1.png",
-      "sourceSha256": "bb423478036596a7a359725905862932292578cdd7f312eb4d206c92bb830a02",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_1.png",
-      "sha256": "bb423478036596a7a359725905862932292578cdd7f312eb4d206c92bb830a02",
-      "bytes": 10562,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_2",
       "androidName": "cup_gold_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_2.png",
+      "sourceSha256": "77978a4c1337839d1b25a4c80bce810aacb97e1aeeb3297045d1846a80cd1fa4",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_2.webp",
+      "sha256": "eef1b849c5aaa2472f0643c107ef24a6bdac44415bfc3f010430960099a88198",
+      "bytes": 9194,
       "sourceSize": [
         278,
         600
@@ -3968,18 +3973,18 @@
         278,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_2.png",
-      "sourceSha256": "77978a4c1337839d1b25a4c80bce810aacb97e1aeeb3297045d1846a80cd1fa4",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_2.png",
-      "sha256": "77978a4c1337839d1b25a4c80bce810aacb97e1aeeb3297045d1846a80cd1fa4",
-      "bytes": 10660,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_3",
       "androidName": "cup_gold_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_3.png",
+      "sourceSha256": "16c3a38cb1057e9192888c0d356f3a26c3124f5727591075b869dbab1b648bba",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_3.webp",
+      "sha256": "7c982fbc4787e7687cfec4eadaa85a5358087203d4c230f1d6e04c24551ec0a3",
+      "bytes": 8074,
       "sourceSize": [
         272,
         600
@@ -3988,18 +3993,18 @@
         272,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_3.png",
-      "sourceSha256": "16c3a38cb1057e9192888c0d356f3a26c3124f5727591075b869dbab1b648bba",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_3.png",
-      "sha256": "16c3a38cb1057e9192888c0d356f3a26c3124f5727591075b869dbab1b648bba",
-      "bytes": 9760,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_4",
       "androidName": "cup_gold_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_4.png",
+      "sourceSha256": "f98cfb7e0cc0621b2e3064f620f939ee659bb80afe9b9718444d7ba3070ec143",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_4.webp",
+      "sha256": "f2fe7b0f6877f7b970fb0a985560884b67596bb8bf0412d2af9aa08ef20cc443",
+      "bytes": 10026,
       "sourceSize": [
         358,
         600
@@ -4008,18 +4013,18 @@
         358,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_4.png",
-      "sourceSha256": "f98cfb7e0cc0621b2e3064f620f939ee659bb80afe9b9718444d7ba3070ec143",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_4.png",
-      "sha256": "f98cfb7e0cc0621b2e3064f620f939ee659bb80afe9b9718444d7ba3070ec143",
-      "bytes": 11940,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_5",
       "androidName": "cup_gold_5",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_5.png",
+      "sourceSha256": "a2b4deeb3a2dd2b4a55f861089ba4f4effa404e6c7574ed88fca19ccf9c9fa2b",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_5.webp",
+      "sha256": "83855b9bec1ddf456cf992c074ef8c6111a8f5fab1280f2b746eb26e97619e4a",
+      "bytes": 10762,
       "sourceSize": [
         282,
         600
@@ -4028,18 +4033,18 @@
         282,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_5.png",
-      "sourceSha256": "a2b4deeb3a2dd2b4a55f861089ba4f4effa404e6c7574ed88fca19ccf9c9fa2b",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_5.png",
-      "sha256": "a2b4deeb3a2dd2b4a55f861089ba4f4effa404e6c7574ed88fca19ccf9c9fa2b",
-      "bytes": 12337,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_gold_6",
       "androidName": "cup_gold_6",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_6.png",
+      "sourceSha256": "919c03b9ba4ef7f1531cd6912d707e81e50c8fc344d0adb4c6a1283f58330f60",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_6.webp",
+      "sha256": "05827cefe44144a7df78bb3385685c24ddf8b6b832b46487f0d0a31be2f33f21",
+      "bytes": 10714,
       "sourceSize": [
         226,
         600
@@ -4048,18 +4053,18 @@
         226,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_gold_6.png",
-      "sourceSha256": "919c03b9ba4ef7f1531cd6912d707e81e50c8fc344d0adb4c6a1283f58330f60",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_gold_6.png",
-      "sha256": "919c03b9ba4ef7f1531cd6912d707e81e50c8fc344d0adb4c6a1283f58330f60",
-      "bytes": 11828,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_1",
       "androidName": "cup_silver_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_1.png",
+      "sourceSha256": "004149038ab2ba3cdf3e417d84338115139f3ac2068c8e4ebff03459036e7028",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_1.webp",
+      "sha256": "abbe90c7ad222ebf183a136f3b7e3ee6694fe0ff546b17bc144c20fb6a8f22be",
+      "bytes": 11236,
       "sourceSize": [
         434,
         600
@@ -4068,18 +4073,18 @@
         434,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_1.png",
-      "sourceSha256": "004149038ab2ba3cdf3e417d84338115139f3ac2068c8e4ebff03459036e7028",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_1.png",
-      "sha256": "004149038ab2ba3cdf3e417d84338115139f3ac2068c8e4ebff03459036e7028",
-      "bytes": 12600,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_2",
       "androidName": "cup_silver_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_2.png",
+      "sourceSha256": "fdd0cb4e1fe9f41094ce0e98b9be5a9e7f1f9eb69749a64a47eab37a7f15f9ba",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_2.webp",
+      "sha256": "05c613c9e307ce742d74e0f333616109a7dee6f4aabda3855481057c7faf5464",
+      "bytes": 7582,
       "sourceSize": [
         278,
         600
@@ -4088,18 +4093,18 @@
         278,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_2.png",
-      "sourceSha256": "fdd0cb4e1fe9f41094ce0e98b9be5a9e7f1f9eb69749a64a47eab37a7f15f9ba",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_2.png",
-      "sha256": "fdd0cb4e1fe9f41094ce0e98b9be5a9e7f1f9eb69749a64a47eab37a7f15f9ba",
-      "bytes": 8960,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_3",
       "androidName": "cup_silver_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_3.png",
+      "sourceSha256": "81adeb03a4a08288ec457ba588239e616d717b384b33c787ac300b290562e4e0",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_3.webp",
+      "sha256": "189f7a5dd12bbd5132ba36e30e01ca9bb661c2c9531526e5806727ed36811018",
+      "bytes": 8542,
       "sourceSize": [
         272,
         600
@@ -4108,18 +4113,18 @@
         272,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_3.png",
-      "sourceSha256": "81adeb03a4a08288ec457ba588239e616d717b384b33c787ac300b290562e4e0",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_3.png",
-      "sha256": "81adeb03a4a08288ec457ba588239e616d717b384b33c787ac300b290562e4e0",
-      "bytes": 9804,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_4",
       "androidName": "cup_silver_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_4.png",
+      "sourceSha256": "0c44e8234513628b962ce5edf329fede0765da20c466f4b446b4715f3801b28b",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_4.webp",
+      "sha256": "c66722a08e2d7f65747230a2b7e58f3954af588e0c2d3a28a09ce9a5642cc0c6",
+      "bytes": 10456,
       "sourceSize": [
         358,
         600
@@ -4128,18 +4133,18 @@
         358,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_4.png",
-      "sourceSha256": "0c44e8234513628b962ce5edf329fede0765da20c466f4b446b4715f3801b28b",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_4.png",
-      "sha256": "0c44e8234513628b962ce5edf329fede0765da20c466f4b446b4715f3801b28b",
-      "bytes": 11818,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_5",
       "androidName": "cup_silver_5",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_5.png",
+      "sourceSha256": "081045143e251bfbd62bdc03a117e22bace3b7b602d97f091f400e970a527803",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_5.webp",
+      "sha256": "3933cdc638fe70516c3b0f27ff2ec976b328af0778da364ff2ce1b012bb6294d",
+      "bytes": 6820,
       "sourceSize": [
         282,
         600
@@ -4148,18 +4153,18 @@
         282,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_5.png",
-      "sourceSha256": "081045143e251bfbd62bdc03a117e22bace3b7b602d97f091f400e970a527803",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_5.png",
-      "sha256": "081045143e251bfbd62bdc03a117e22bace3b7b602d97f091f400e970a527803",
-      "bytes": 8180,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cup_silver_6",
       "androidName": "cup_silver_6",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_6.png",
+      "sourceSha256": "5d8d393eb299252ae010fcab198dd8f5097cbb3cc242dd1d0fd34a5658fb7982",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_6.webp",
+      "sha256": "f2ea2d7e2fe254ee9573abca75c10e3213e38a4b5bffd8f05a550a269582081d",
+      "bytes": 10044,
       "sourceSize": [
         226,
         600
@@ -4168,18 +4173,18 @@
         226,
         600
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cup_silver_6.png",
-      "sourceSha256": "5d8d393eb299252ae010fcab198dd8f5097cbb3cc242dd1d0fd34a5658fb7982",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cup_silver_6.png",
-      "sha256": "5d8d393eb299252ae010fcab198dd8f5097cbb3cc242dd1d0fd34a5658fb7982",
-      "bytes": 10966,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "cupdialog",
       "androidName": "cupdialog",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cupdialog.png",
+      "sourceSha256": "d25666392ffb8d11698fad07854cfe9707e4bca844b11c78ad54126242c760cb",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cupdialog.webp",
+      "sha256": "13617dee8ae5b37584820f7a3fb1fe9dd64fc2d9de3a494e89c8b6458521719e",
+      "bytes": 5672,
       "sourceSize": [
         264,
         265
@@ -4188,18 +4193,18 @@
         264,
         265
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/cupdialog.png",
-      "sourceSha256": "d25666392ffb8d11698fad07854cfe9707e4bca844b11c78ad54126242c760cb",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/cupdialog.png",
-      "sha256": "d25666392ffb8d11698fad07854cfe9707e4bca844b11c78ad54126242c760cb",
-      "bytes": 6783,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "down",
       "androidName": "down",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/down.png",
+      "sourceSha256": "5ddc1e3511a493987e9a84f66dbdb5d7882a6a2d8b3df9dde420518d97f88841",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/down.webp",
+      "sha256": "be7a2ed2345fce6f9132de1ac6c9f0a595d424708f8650ae1bafa08114a2b333",
+      "bytes": 168,
       "sourceSize": [
         72,
         72
@@ -4208,18 +4213,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/down.png",
-      "sourceSha256": "5ddc1e3511a493987e9a84f66dbdb5d7882a6a2d8b3df9dde420518d97f88841",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/down.png",
-      "sha256": "5ddc1e3511a493987e9a84f66dbdb5d7882a6a2d8b3df9dde420518d97f88841",
-      "bytes": 215,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "down2",
       "androidName": "down2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/down2.png",
+      "sourceSha256": "4888ea9a5bd5e3fdfd5f1bf29be6883c925c81cdff98752488d4cd1d7aa1c540",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/down2.webp",
+      "sha256": "a9d40a4cb6fa217abe908aad69539cc2c1f5cbbc065b08774df4637778010b7e",
+      "bytes": 186,
       "sourceSize": [
         72,
         72
@@ -4228,18 +4233,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/down2.png",
-      "sourceSha256": "4888ea9a5bd5e3fdfd5f1bf29be6883c925c81cdff98752488d4cd1d7aa1c540",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/down2.png",
-      "sha256": "4888ea9a5bd5e3fdfd5f1bf29be6883c925c81cdff98752488d4cd1d7aa1c540",
-      "bytes": 402,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "home",
       "androidName": "home",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/home.png",
+      "sourceSha256": "3094091d0198a333463e8f451df7174ebe16fc0340f33bc040a9df3e99fdacfb",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/home.webp",
+      "sha256": "3f4e04062442ae683b19e5b79aa68e5d622215bf863418065db099d89cf8d0da",
+      "bytes": 2684,
       "sourceSize": [
         230,
         230
@@ -4248,18 +4253,18 @@
         230,
         230
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/home.png",
-      "sourceSha256": "3094091d0198a333463e8f451df7174ebe16fc0340f33bc040a9df3e99fdacfb",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/home.png",
-      "sha256": "3094091d0198a333463e8f451df7174ebe16fc0340f33bc040a9df3e99fdacfb",
-      "bytes": 3389,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "ic_arrow_back_white",
       "androidName": "ic_arrow_back_white",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_arrow_back_white.png",
+      "sourceSha256": "de75ed650965d3119f3e2cd3122ca6ed37378a4e8e84b382704e6659fb989af2",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_arrow_back_white.webp",
+      "sha256": "b64f4b55afd1da841a847d39551f8dc6e01154f56a3a3567f7a722aada4aa108",
+      "bytes": 196,
       "sourceSize": [
         144,
         144
@@ -4268,18 +4273,18 @@
         144,
         144
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_arrow_back_white.png",
-      "sourceSha256": "de75ed650965d3119f3e2cd3122ca6ed37378a4e8e84b382704e6659fb989af2",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_arrow_back_white.png",
-      "sha256": "de75ed650965d3119f3e2cd3122ca6ed37378a4e8e84b382704e6659fb989af2",
-      "bytes": 283,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "ic_humburger",
       "androidName": "ic_humburger",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xhdpi-v4/ic_humburger.png",
+      "sourceSha256": "f3fdcaccbc6225bff1f9585b4b69ba5bc7a10951689194965306018a08ca6065",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_humburger.webp",
+      "sha256": "ec37649e2160be6b354d6a7ca477c5079261a54eafb7d1da89bf4a541d7fb2c2",
+      "bytes": 120,
       "sourceSize": [
         48,
         48
@@ -4288,18 +4293,18 @@
         48,
         48
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xhdpi-v4/ic_humburger.png",
-      "sourceSha256": "f3fdcaccbc6225bff1f9585b4b69ba5bc7a10951689194965306018a08ca6065",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_humburger.png",
-      "sha256": "f3fdcaccbc6225bff1f9585b4b69ba5bc7a10951689194965306018a08ca6065",
-      "bytes": 207,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "ic_play",
       "androidName": "ic_play",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_play.png",
+      "sourceSha256": "6b12c9e2b07d74dbfaf02d8b792c3978021585bb0308c6ca4dcc27df02f5f7ac",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_play.webp",
+      "sha256": "20a6e50c37defa628cdf1fce77df5db87417279d63e61beba211f5e841b6dd52",
+      "bytes": 2420,
       "sourceSize": [
         256,
         256
@@ -4308,18 +4313,18 @@
         256,
         256
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_play.png",
-      "sourceSha256": "6b12c9e2b07d74dbfaf02d8b792c3978021585bb0308c6ca4dcc27df02f5f7ac",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_play.png",
-      "sha256": "6b12c9e2b07d74dbfaf02d8b792c3978021585bb0308c6ca4dcc27df02f5f7ac",
-      "bytes": 4151,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "ic_star_small",
       "androidName": "ic_star_small",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_star_small.png",
+      "sourceSha256": "4ab943e786af9edcb631ee1a2d27a0d58c048c292cee393acdb2b53330e21337",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_star_small.webp",
+      "sha256": "fe5696cd6217b51422acd35ed535334dc56c4ef3548ea1f6b1dbe3fd64fdc2a8",
+      "bytes": 324,
       "sourceSize": [
         26,
         25
@@ -4328,18 +4333,18 @@
         26,
         25
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/ic_star_small.png",
-      "sourceSha256": "4ab943e786af9edcb631ee1a2d27a0d58c048c292cee393acdb2b53330e21337",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_star_small.png",
-      "sha256": "4ab943e786af9edcb631ee1a2d27a0d58c048c292cee393acdb2b53330e21337",
-      "bytes": 603,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "icon_1",
       "androidName": "icon_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_1.png",
+      "sourceSha256": "55f82f7095d26dec0a2a65028be11fd278d5b661b5f145ac89a814f588a10c55",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_1.webp",
+      "sha256": "4f820580d461b708d5e92b715a00386be9bd721651889151ab399c4df5612bdb",
+      "bytes": 1538,
       "sourceSize": [
         240,
         190
@@ -4348,18 +4353,18 @@
         240,
         190
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_1.png",
-      "sourceSha256": "55f82f7095d26dec0a2a65028be11fd278d5b661b5f145ac89a814f588a10c55",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_1.png",
-      "sha256": "55f82f7095d26dec0a2a65028be11fd278d5b661b5f145ac89a814f588a10c55",
-      "bytes": 1929,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "icon_2",
       "androidName": "icon_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_2.png",
+      "sourceSha256": "b3fbcb2628788bfad3e9abae19ab234e27ea2207577c84630582d73bee22c5d1",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_2.webp",
+      "sha256": "9c20be68d867c20eb186db5deaaee686600052a9465189260a0b1edbdf817741",
+      "bytes": 2520,
       "sourceSize": [
         240,
         191
@@ -4368,18 +4373,18 @@
         240,
         191
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_2.png",
-      "sourceSha256": "b3fbcb2628788bfad3e9abae19ab234e27ea2207577c84630582d73bee22c5d1",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_2.png",
-      "sha256": "b3fbcb2628788bfad3e9abae19ab234e27ea2207577c84630582d73bee22c5d1",
-      "bytes": 3156,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "icon_3",
       "androidName": "icon_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_3.png",
+      "sourceSha256": "6f48f4477818086d05176d4b5aaea0e9cc4666c80d4ac569e502e5ba22d8c391",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_3.webp",
+      "sha256": "1380d5a66655b55b648ddb829ed319e72090b0814aa18729c17cf1b879819cb6",
+      "bytes": 600,
       "sourceSize": [
         240,
         191
@@ -4388,18 +4393,18 @@
         240,
         191
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_3.png",
-      "sourceSha256": "6f48f4477818086d05176d4b5aaea0e9cc4666c80d4ac569e502e5ba22d8c391",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_3.png",
-      "sha256": "6f48f4477818086d05176d4b5aaea0e9cc4666c80d4ac569e502e5ba22d8c391",
-      "bytes": 883,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "icon_4",
       "androidName": "icon_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_4.png",
+      "sourceSha256": "b61a69566fc7cff4f53f5893fb8ab375f542d56b58b559daca0cc2f60e7ca87d",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_4.webp",
+      "sha256": "98ac63705a5aea89e5b2bf6d2ef45ddcb2e2e180e5bbf32fb111fdce444d3216",
+      "bytes": 2880,
       "sourceSize": [
         240,
         191
@@ -4408,18 +4413,18 @@
         240,
         191
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/icon_4.png",
-      "sourceSha256": "b61a69566fc7cff4f53f5893fb8ab375f542d56b58b559daca0cc2f60e7ca87d",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/icon_4.png",
-      "sha256": "b61a69566fc7cff4f53f5893fb8ab375f542d56b58b559daca0cc2f60e7ca87d",
-      "bytes": 3252,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "info",
       "androidName": "info",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/info.png",
+      "sourceSha256": "7914b346906f96ba29fb618bfbb492e83637ac1ca9de2adabbfb502d7bde7149",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/info.webp",
+      "sha256": "a8fff7c25a4b3f0f66646d36cf72aea4067df0cf711c31e3d9aafe3fad41a574",
+      "bytes": 972,
       "sourceSize": [
         84,
         84
@@ -4428,18 +4433,18 @@
         84,
         84
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/info.png",
-      "sourceSha256": "7914b346906f96ba29fb618bfbb492e83637ac1ca9de2adabbfb502d7bde7149",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/info.png",
-      "sha256": "7914b346906f96ba29fb618bfbb492e83637ac1ca9de2adabbfb502d7bde7149",
-      "bytes": 1140,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser",
       "androidName": "laser",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser.png",
+      "sourceSha256": "af80be8684fa03a069f1fedc3230088dc36b61fc18fa0a92313cf2b255684bd2",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser.webp",
+      "sha256": "7cbcb6750418f2a207fb687aa6e5e9a114c787a8b55be28016498329dc99696e",
+      "bytes": 826,
       "sourceSize": [
         117,
         136
@@ -4448,18 +4453,18 @@
         117,
         136
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser.png",
-      "sourceSha256": "af80be8684fa03a069f1fedc3230088dc36b61fc18fa0a92313cf2b255684bd2",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser.png",
-      "sha256": "af80be8684fa03a069f1fedc3230088dc36b61fc18fa0a92313cf2b255684bd2",
-      "bytes": 977,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_1",
       "androidName": "laser_1",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_1.png",
+      "sourceSha256": "0ea92ea974944c0cac93f28e9ead1d64c50e5f7ec4a48fa8f577b0a8c6a86fae",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_1.webp",
+      "sha256": "55f718c84427c9d618632048de804d4635095333d84daa3bec0b350d14d115fe",
+      "bytes": 6216,
       "sourceSize": [
         240,
         240
@@ -4468,18 +4473,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_1.png",
-      "sourceSha256": "0ea92ea974944c0cac93f28e9ead1d64c50e5f7ec4a48fa8f577b0a8c6a86fae",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_1.png",
-      "sha256": "0ea92ea974944c0cac93f28e9ead1d64c50e5f7ec4a48fa8f577b0a8c6a86fae",
-      "bytes": 7084,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_2",
       "androidName": "laser_2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_2.png",
+      "sourceSha256": "3ebe9c3c3937f21c5823d51bf9c6f740e57de8cf64d1dc4644dfedb32bd63662",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_2.webp",
+      "sha256": "c0c4950b19941223d50056739109863e780b299334f6e136067fbfd6cca6baee",
+      "bytes": 7400,
       "sourceSize": [
         240,
         240
@@ -4488,18 +4493,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_2.png",
-      "sourceSha256": "3ebe9c3c3937f21c5823d51bf9c6f740e57de8cf64d1dc4644dfedb32bd63662",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_2.png",
-      "sha256": "3ebe9c3c3937f21c5823d51bf9c6f740e57de8cf64d1dc4644dfedb32bd63662",
-      "bytes": 8264,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_3",
       "androidName": "laser_3",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_3.png",
+      "sourceSha256": "b7b1923b03ff7bab82828a6a2d3849f9ef9713cb1780868220d1933b3e07d8d2",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_3.webp",
+      "sha256": "98f1b63ccc60b68cbe879da9b99fd7aed5b0bf592e7ea4508668aa7dbb4a8d07",
+      "bytes": 6690,
       "sourceSize": [
         240,
         240
@@ -4508,18 +4513,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_3.png",
-      "sourceSha256": "b7b1923b03ff7bab82828a6a2d3849f9ef9713cb1780868220d1933b3e07d8d2",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_3.png",
-      "sha256": "b7b1923b03ff7bab82828a6a2d3849f9ef9713cb1780868220d1933b3e07d8d2",
-      "bytes": 7826,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_4",
       "androidName": "laser_4",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_4.png",
+      "sourceSha256": "8e16f3335eb784deba148d6af1feee0e9b56622467da375d4ac2be04331c456d",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_4.webp",
+      "sha256": "c18418ae6e6a2efa73a41ff2ef32e9ac9d9e96f0101919f9dc768ba6af116356",
+      "bytes": 6906,
       "sourceSize": [
         240,
         240
@@ -4528,18 +4533,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_4.png",
-      "sourceSha256": "8e16f3335eb784deba148d6af1feee0e9b56622467da375d4ac2be04331c456d",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_4.png",
-      "sha256": "8e16f3335eb784deba148d6af1feee0e9b56622467da375d4ac2be04331c456d",
-      "bytes": 7821,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_5",
       "androidName": "laser_5",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_5.png",
+      "sourceSha256": "f2aaf01ac7e2dc2aa2a25a6705acbc154e90bd52691a7c3d518712307b4095fc",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_5.webp",
+      "sha256": "89ea7f8d306f63c0928a5478b06b7a4f885b8a98eaded797013cc8b71c272e71",
+      "bytes": 7238,
       "sourceSize": [
         240,
         240
@@ -4548,18 +4553,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_5.png",
-      "sourceSha256": "f2aaf01ac7e2dc2aa2a25a6705acbc154e90bd52691a7c3d518712307b4095fc",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_5.png",
-      "sha256": "f2aaf01ac7e2dc2aa2a25a6705acbc154e90bd52691a7c3d518712307b4095fc",
-      "bytes": 8024,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "laser_6",
       "androidName": "laser_6",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_6.png",
+      "sourceSha256": "1e403dc495604ad523b62a9fa8b7c8320430d2e922e3ce666fdd19691fc5299b",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_6.webp",
+      "sha256": "91dea6c2091b5511f16485a06ce1ce999c1c04d6c7e2937f42142f9ca9faf20d",
+      "bytes": 6458,
       "sourceSize": [
         240,
         240
@@ -4568,18 +4573,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/laser_6.png",
-      "sourceSha256": "1e403dc495604ad523b62a9fa8b7c8320430d2e922e3ce666fdd19691fc5299b",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/laser_6.png",
-      "sha256": "1e403dc495604ad523b62a9fa8b7c8320430d2e922e3ce666fdd19691fc5299b",
-      "bytes": 7332,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "left",
       "androidName": "left",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/left.png",
+      "sourceSha256": "faa2612d7aaf2779ddecf3294016101fcf9dd6c41842f5f0d22a66f8e846eff1",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/left.webp",
+      "sha256": "aa5fdb86349454600f15d5d7696d305e57e442b552ef78db10dee04512d4bf20",
+      "bytes": 132,
       "sourceSize": [
         72,
         72
@@ -4588,18 +4593,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/left.png",
-      "sourceSha256": "faa2612d7aaf2779ddecf3294016101fcf9dd6c41842f5f0d22a66f8e846eff1",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/left.png",
-      "sha256": "faa2612d7aaf2779ddecf3294016101fcf9dd6c41842f5f0d22a66f8e846eff1",
-      "bytes": 165,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "left2",
       "androidName": "left2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/left2.png",
+      "sourceSha256": "2694d83896c13f88475aa219e3343e8ad82c00fcd6a48006b06b63422b66514a",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/left2.webp",
+      "sha256": "30bc79afe8e3fc2ecc9403aa6aea2a8c374ce46e596e02bf16558d6f143269aa",
+      "bytes": 184,
       "sourceSize": [
         72,
         72
@@ -4608,18 +4613,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/left2.png",
-      "sourceSha256": "2694d83896c13f88475aa219e3343e8ad82c00fcd6a48006b06b63422b66514a",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/left2.png",
-      "sha256": "2694d83896c13f88475aa219e3343e8ad82c00fcd6a48006b06b63422b66514a",
-      "bytes": 392,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "logo",
       "androidName": "logo",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/logo.png",
+      "sourceSha256": "f3137ce2bbc955df137f457d7524ff83b37fbc21a6904aef6df49eed75182c47",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/logo.webp",
+      "sha256": "7101920fb654d6ada6d010b680c530076e6dadbb52b7ad2419fc8d79efdb9998",
+      "bytes": 11064,
       "sourceSize": [
         500,
         500
@@ -4628,18 +4633,18 @@
         500,
         500
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/logo.png",
-      "sourceSha256": "f3137ce2bbc955df137f457d7524ff83b37fbc21a6904aef6df49eed75182c47",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/logo.png",
-      "sha256": "f3137ce2bbc955df137f457d7524ff83b37fbc21a6904aef6df49eed75182c47",
-      "bytes": 13091,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "menu_qhd",
       "androidName": "menu_qhd",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/menu_qhd.png",
+      "sourceSha256": "dc3f5a40dfb8d7950b2c7ac84b0b1163041670718f1190651c24ca1f2aa01f0a",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/menu_qhd.webp",
+      "sha256": "0726a5e81b950da3922b168eff2a093a1858119d978a55e16a55c98f19d7d233",
+      "bytes": 2700,
       "sourceSize": [
         80,
         80
@@ -4648,18 +4653,18 @@
         80,
         80
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/menu_qhd.png",
-      "sourceSha256": "dc3f5a40dfb8d7950b2c7ac84b0b1163041670718f1190651c24ca1f2aa01f0a",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/menu_qhd.png",
-      "sha256": "dc3f5a40dfb8d7950b2c7ac84b0b1163041670718f1190651c24ca1f2aa01f0a",
-      "bytes": 3191,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "mute",
       "androidName": "mute",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/mute.png",
+      "sourceSha256": "9639f2c06358b8928fc2570192aebccf5e1e747612215709b179e6b2199ea9c4",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/mute.webp",
+      "sha256": "5b3ab372cf4b86f46e7e557ebb8660e78b33f3d60ef910411ffb0cd3bd36d79b",
+      "bytes": 3060,
       "sourceSize": [
         104,
         104
@@ -4668,18 +4673,18 @@
         104,
         104
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/mute.png",
-      "sourceSha256": "9639f2c06358b8928fc2570192aebccf5e1e747612215709b179e6b2199ea9c4",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/mute.png",
-      "sha256": "9639f2c06358b8928fc2570192aebccf5e1e747612215709b179e6b2199ea9c4",
-      "bytes": 4111,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "next",
       "androidName": "next",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/next.png",
+      "sourceSha256": "384f83638900d5b6c5ddde58359c5f75d6d7bc5f8c1a19ea1515e4bfdd30ba5c",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/next.webp",
+      "sha256": "c939783295b7339b6b27bf605b07f5d4e96481e4f204ee7928e932cdc1186109",
+      "bytes": 1196,
       "sourceSize": [
         116,
         116
@@ -4688,18 +4693,18 @@
         116,
         116
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/next.png",
-      "sourceSha256": "384f83638900d5b6c5ddde58359c5f75d6d7bc5f8c1a19ea1515e4bfdd30ba5c",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/next.png",
-      "sha256": "384f83638900d5b6c5ddde58359c5f75d6d7bc5f8c1a19ea1515e4bfdd30ba5c",
-      "bytes": 1416,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "nextlevel",
       "androidName": "nextlevel",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/nextlevel.png",
+      "sourceSha256": "b8aa9f9fb9151bf463ce30e0282a972b7850747e61e84bad7744efbd342021a1",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/nextlevel.webp",
+      "sha256": "7cd299f3dfff4f749fd273fb499a28b2e118791bac01cc4518ce00b8112c4da9",
+      "bytes": 2222,
       "sourceSize": [
         230,
         230
@@ -4708,18 +4713,18 @@
         230,
         230
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/nextlevel.png",
-      "sourceSha256": "b8aa9f9fb9151bf463ce30e0282a972b7850747e61e84bad7744efbd342021a1",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/nextlevel.png",
-      "sha256": "b8aa9f9fb9151bf463ce30e0282a972b7850747e61e84bad7744efbd342021a1",
-      "bytes": 2838,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "paperplane_cyan",
       "androidName": "paperplane_cyan",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/paperplane_cyan.png",
+      "sourceSha256": "28fe3c290de5e8288a374db839c4e8220ba9bfd87a30f67613af580d1e316e3a",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/paperplane_cyan.webp",
+      "sha256": "fb917e5bd9ee7f7999cc55cd523bd7fc635365ee28b7e269a17d30a7880d0ed2",
+      "bytes": 5460,
       "sourceSize": [
         293,
         293
@@ -4728,18 +4733,18 @@
         293,
         293
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/paperplane_cyan.png",
-      "sourceSha256": "28fe3c290de5e8288a374db839c4e8220ba9bfd87a30f67613af580d1e316e3a",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/paperplane_cyan.png",
-      "sha256": "28fe3c290de5e8288a374db839c4e8220ba9bfd87a30f67613af580d1e316e3a",
-      "bytes": 9263,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "paperplane_orange",
       "androidName": "paperplane_orange",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/paperplane_orange.png",
+      "sourceSha256": "716955957815060ae16efc210b96b41ff2ff4e160aac3dc9b32928cf08ac2da5",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/paperplane_orange.webp",
+      "sha256": "568a4b6894ccd1b4ee619072f59997afc3bd99d61da9310e4ff78913e594b0c9",
+      "bytes": 4992,
       "sourceSize": [
         293,
         293
@@ -4748,18 +4753,18 @@
         293,
         293
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/paperplane_orange.png",
-      "sourceSha256": "716955957815060ae16efc210b96b41ff2ff4e160aac3dc9b32928cf08ac2da5",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/paperplane_orange.png",
-      "sha256": "716955957815060ae16efc210b96b41ff2ff4e160aac3dc9b32928cf08ac2da5",
-      "bytes": 8898,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "play",
       "androidName": "play",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play.png",
+      "sourceSha256": "43b891d24719f5b316379d51ae2c3dacdc37f721b9d7642aa2da027687777807",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play.webp",
+      "sha256": "dd7cc38a6065ddf41bd5debe116643f43f36862cd699aeff48cd024632faf6c5",
+      "bytes": 2250,
       "sourceSize": [
         265,
         265
@@ -4768,18 +4773,18 @@
         265,
         265
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play.png",
-      "sourceSha256": "43b891d24719f5b316379d51ae2c3dacdc37f721b9d7642aa2da027687777807",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play.png",
-      "sha256": "43b891d24719f5b316379d51ae2c3dacdc37f721b9d7642aa2da027687777807",
-      "bytes": 3059,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "play_press",
       "androidName": "play_press",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_press.png",
+      "sourceSha256": "d266051735754726a7cf9fa111ed43304af3e4c4fb86bccee70c6a6bc818631b",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_press.webp",
+      "sha256": "2ef1f927bc7c2b74bda928cb8cdceca4ba416e03c5c632f2dd0f183fbdf9174e",
+      "bytes": 2232,
       "sourceSize": [
         280,
         280
@@ -4788,18 +4793,18 @@
         280,
         280
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_press.png",
-      "sourceSha256": "d266051735754726a7cf9fa111ed43304af3e4c4fb86bccee70c6a6bc818631b",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_press.png",
-      "sha256": "d266051735754726a7cf9fa111ed43304af3e4c4fb86bccee70c6a6bc818631b",
-      "bytes": 3008,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "play_select",
       "androidName": "play_select",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_select.png",
+      "sourceSha256": "bb535a79dc1277237b6030d12a285e831c02ea78d8c0bd90ee4732aa8954265d",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_select.webp",
+      "sha256": "338fe064f11d8a72e10667cb58787b9b9ae5d070e3db0f7ef99538f30024512c",
+      "bytes": 680,
       "sourceSize": [
         84,
         84
@@ -4808,18 +4813,18 @@
         84,
         84
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_select.png",
-      "sourceSha256": "bb535a79dc1277237b6030d12a285e831c02ea78d8c0bd90ee4732aa8954265d",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_select.png",
-      "sha256": "bb535a79dc1277237b6030d12a285e831c02ea78d8c0bd90ee4732aa8954265d",
-      "bytes": 841,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "play_unselected",
       "androidName": "play_unselected",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_unselected.png",
+      "sourceSha256": "295b92fa911b6e94dac0b760a54805197e7bcfcd188fc7dc17d06ef371995fc4",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_unselected.webp",
+      "sha256": "9e436bb43d5846e5f7fe8b7e3d0fa75f3d195aaf620574aad963bd314ee40961",
+      "bytes": 686,
       "sourceSize": [
         84,
         84
@@ -4828,18 +4833,18 @@
         84,
         84
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/play_unselected.png",
-      "sourceSha256": "295b92fa911b6e94dac0b760a54805197e7bcfcd188fc7dc17d06ef371995fc4",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/play_unselected.png",
-      "sha256": "295b92fa911b6e94dac0b760a54805197e7bcfcd188fc7dc17d06ef371995fc4",
-      "bytes": 881,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "point_gray",
       "androidName": "point_gray",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/point_gray.png",
+      "sourceSha256": "cba9b0bfb5d126082d594125077483bf3dd9a9dc94a3f0f21ef680729cb6be21",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/point_gray.webp",
+      "sha256": "168c4b9d5334019ba65716a00e1e363df4619892c66c52759e0b3027d27e485e",
+      "bytes": 2866,
       "sourceSize": [
         240,
         240
@@ -4848,18 +4853,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/point_gray.png",
-      "sourceSha256": "cba9b0bfb5d126082d594125077483bf3dd9a9dc94a3f0f21ef680729cb6be21",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/point_gray.png",
-      "sha256": "cba9b0bfb5d126082d594125077483bf3dd9a9dc94a3f0f21ef680729cb6be21",
-      "bytes": 3595,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "point_red",
       "androidName": "point_red",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/point_red.png",
+      "sourceSha256": "b66497dbe896215bb0d399db51968062cfeb8da9f172028b312129da7e67c93c",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/point_red.webp",
+      "sha256": "baa324d2f4b02058a60d2ebe10c783b939301309f258eb03e5b603803461a540",
+      "bytes": 2974,
       "sourceSize": [
         240,
         240
@@ -4868,18 +4873,18 @@
         240,
         240
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/point_red.png",
-      "sourceSha256": "b66497dbe896215bb0d399db51968062cfeb8da9f172028b312129da7e67c93c",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/point_red.png",
-      "sha256": "b66497dbe896215bb0d399db51968062cfeb8da9f172028b312129da7e67c93c",
-      "bytes": 3531,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "rain_cloud",
       "androidName": "rain_cloud",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/rain_cloud.png",
+      "sourceSha256": "e0d3f1f19325344ca9f7a46ff74255df22ae89e17f0eebdfd36e64d201d07e4d",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/rain_cloud.webp",
+      "sha256": "e08fb4ff0813cd32a5714f10d87302de2c5702ea8bc555c533ac55487fee5e5f",
+      "bytes": 2712,
       "sourceSize": [
         512,
         512
@@ -4888,18 +4893,18 @@
         512,
         512
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/rain_cloud.png",
-      "sourceSha256": "e0d3f1f19325344ca9f7a46ff74255df22ae89e17f0eebdfd36e64d201d07e4d",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/rain_cloud.png",
-      "sha256": "e0d3f1f19325344ca9f7a46ff74255df22ae89e17f0eebdfd36e64d201d07e4d",
-      "bytes": 4544,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "right",
       "androidName": "right",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/right.png",
+      "sourceSha256": "356974a99e1bf0a71b3d0be2d7cb7c78001ce3adad0a81cf1d6c291b074952bb",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/right.webp",
+      "sha256": "d03ca353d69970420f1f5a005347224d6a460f687236682de99bc6259722f199",
+      "bytes": 146,
       "sourceSize": [
         72,
         72
@@ -4908,18 +4913,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/right.png",
-      "sourceSha256": "356974a99e1bf0a71b3d0be2d7cb7c78001ce3adad0a81cf1d6c291b074952bb",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/right.png",
-      "sha256": "356974a99e1bf0a71b3d0be2d7cb7c78001ce3adad0a81cf1d6c291b074952bb",
-      "bytes": 172,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "right2",
       "androidName": "right2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/right2.png",
+      "sourceSha256": "dc5741c5e556a0136e3091da88b6eba01f2868110c4a2d4e31c98ddba47249f0",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/right2.webp",
+      "sha256": "7a85bea7344b63547cf92b819e0f72d001b8c41882a1d8c7883250dbcdb77742",
+      "bytes": 188,
       "sourceSize": [
         72,
         72
@@ -4928,18 +4933,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/right2.png",
-      "sourceSha256": "dc5741c5e556a0136e3091da88b6eba01f2868110c4a2d4e31c98ddba47249f0",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/right2.png",
-      "sha256": "dc5741c5e556a0136e3091da88b6eba01f2868110c4a2d4e31c98ddba47249f0",
-      "bytes": 391,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "rightanswer",
       "androidName": "rightanswer",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/rightanswer.png",
+      "sourceSha256": "7092f8fcdfca91a70531820939e350a049c47757f35f9f7d4ca22aa12b449beb",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/rightanswer.webp",
+      "sha256": "603f58914f284ebfa0483bb37ab60cb5f7068ebfe149bded5a61fe9d5d4b1956",
+      "bytes": 340,
       "sourceSize": [
         170,
         170
@@ -4948,18 +4953,18 @@
         170,
         170
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/rightanswer.png",
-      "sourceSha256": "7092f8fcdfca91a70531820939e350a049c47757f35f9f7d4ca22aa12b449beb",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/rightanswer.png",
-      "sha256": "7092f8fcdfca91a70531820939e350a049c47757f35f9f7d4ca22aa12b449beb",
-      "bytes": 609,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "roundedbutton",
       "androidName": "roundedbutton",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/roundedbutton.png",
+      "sourceSha256": "ba7e61e0fbe7e73b668d2bb1153ec98b46b2af3add328199bd427d0099122e32",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/roundedbutton.webp",
+      "sha256": "f6bf66d5d5898b505c3e176576073b891b5bc15b399930f75d8d6b6b8b23462d",
+      "bytes": 1788,
       "sourceSize": [
         474,
         156
@@ -4968,18 +4973,18 @@
         474,
         156
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/roundedbutton.png",
-      "sourceSha256": "ba7e61e0fbe7e73b668d2bb1153ec98b46b2af3add328199bd427d0099122e32",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/roundedbutton.png",
-      "sha256": "ba7e61e0fbe7e73b668d2bb1153ec98b46b2af3add328199bd427d0099122e32",
-      "bytes": 3113,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "roundedbutton_inactive",
       "androidName": "roundedbutton_inactive",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/roundedbutton_inactive.png",
+      "sourceSha256": "7516a96ac7f8ffc85be70e855de5adffd75734acdf546584ed98a086ce322bb9",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/roundedbutton_inactive.webp",
+      "sha256": "72ee7c817932b9a740e831e25fa6ce0fe521a48967354765af59d7d4fbf389ff",
+      "bytes": 1788,
       "sourceSize": [
         474,
         156
@@ -4988,18 +4993,18 @@
         474,
         156
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/roundedbutton_inactive.png",
-      "sourceSha256": "7516a96ac7f8ffc85be70e855de5adffd75734acdf546584ed98a086ce322bb9",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/roundedbutton_inactive.png",
-      "sha256": "7516a96ac7f8ffc85be70e855de5adffd75734acdf546584ed98a086ce322bb9",
-      "bytes": 3113,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "soundoff",
       "androidName": "soundoff",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/soundoff.png",
+      "sourceSha256": "80b940146c4f72d2b9f9bf9f12d63e5189c2006bec6ae94f550efd9013faf275",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/soundoff.webp",
+      "sha256": "3018f4006f1db2b081ac8f54eebae084bd997019c9c6179ccfcc98d06eb55171",
+      "bytes": 394,
       "sourceSize": [
         90,
         83
@@ -5008,18 +5013,18 @@
         90,
         83
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/soundoff.png",
-      "sourceSha256": "80b940146c4f72d2b9f9bf9f12d63e5189c2006bec6ae94f550efd9013faf275",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/soundoff.png",
-      "sha256": "80b940146c4f72d2b9f9bf9f12d63e5189c2006bec6ae94f550efd9013faf275",
-      "bytes": 625,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "soundon",
       "androidName": "soundon",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/soundon.png",
+      "sourceSha256": "ab22ce2a2e1a92acf27b4d8b9fafbfa1a886a780bc2e5e1e862076f0d617a902",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/soundon.webp",
+      "sha256": "f56cb8f7ec4c4f03a37ad520e900fdff3b878bfcc17fdddbbf428d924cbabfb1",
+      "bytes": 1116,
       "sourceSize": [
         90,
         83
@@ -5028,18 +5033,18 @@
         90,
         83
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/soundon.png",
-      "sourceSha256": "ab22ce2a2e1a92acf27b4d8b9fafbfa1a886a780bc2e5e1e862076f0d617a902",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/soundon.png",
-      "sha256": "ab22ce2a2e1a92acf27b4d8b9fafbfa1a886a780bc2e5e1e862076f0d617a902",
-      "bytes": 1373,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "speaker",
       "androidName": "speaker",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/speaker.png",
+      "sourceSha256": "04be198c076592d460edab0fcfaebe1e8e25ac4b8c9b0ce17cfdc158486958ea",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/speaker.webp",
+      "sha256": "4f7f0a4ac02c03c3fbbb487dfd3ed26fc8372765c98c43408331e8eb07b04f48",
+      "bytes": 3098,
       "sourceSize": [
         104,
         104
@@ -5048,18 +5053,18 @@
         104,
         104
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/speaker.png",
-      "sourceSha256": "04be198c076592d460edab0fcfaebe1e8e25ac4b8c9b0ce17cfdc158486958ea",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/speaker.png",
-      "sha256": "04be198c076592d460edab0fcfaebe1e8e25ac4b8c9b0ce17cfdc158486958ea",
-      "bytes": 4069,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "square",
       "androidName": "square",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/square.png",
+      "sourceSha256": "dedaf7c3d88a9ce8bb16d0dab4c433e2b2c2c174a9218e45388a4cb225467137",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/square.webp",
+      "sha256": "8bd2848718fc99fe0836f03a80b9b5aaf91df97f4277e5049c3848fc0b12db80",
+      "bytes": 100,
       "sourceSize": [
         68,
         68
@@ -5068,18 +5073,18 @@
         68,
         68
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/square.png",
-      "sourceSha256": "dedaf7c3d88a9ce8bb16d0dab4c433e2b2c2c174a9218e45388a4cb225467137",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/square.png",
-      "sha256": "dedaf7c3d88a9ce8bb16d0dab4c433e2b2c2c174a9218e45388a4cb225467137",
-      "bytes": 138,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "up",
       "androidName": "up",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/up.png",
+      "sourceSha256": "e986701892b6e423fb2838d93e4baa5b7e674c7647daea5afdde4f00cd3d95bb",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/up.webp",
+      "sha256": "5bc8184a0860261c6a8bfa60b9081e2ed13769bf6365f7ccb26756801546160c",
+      "bytes": 166,
       "sourceSize": [
         72,
         72
@@ -5088,18 +5093,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/up.png",
-      "sourceSha256": "e986701892b6e423fb2838d93e4baa5b7e674c7647daea5afdde4f00cd3d95bb",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/up.png",
-      "sha256": "e986701892b6e423fb2838d93e4baa5b7e674c7647daea5afdde4f00cd3d95bb",
-      "bytes": 213,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "up2",
       "androidName": "up2",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/up2.png",
+      "sourceSha256": "83cb7ed3ee8be8f01577f73d8dde527b1d3c52998da722c34a07f7616b6ffa33",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/up2.webp",
+      "sha256": "ee5f22360f047d2e5de3680afdbb5c2fab8536c5f26c8f3f4a1ce42413063e95",
+      "bytes": 172,
       "sourceSize": [
         72,
         72
@@ -5108,18 +5113,18 @@
         72,
         72
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/up2.png",
-      "sourceSha256": "83cb7ed3ee8be8f01577f73d8dde527b1d3c52998da722c34a07f7616b6ffa33",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/up2.png",
-      "sha256": "83cb7ed3ee8be8f01577f73d8dde527b1d3c52998da722c34a07f7616b6ffa33",
-      "bytes": 381,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "wronganswer",
       "androidName": "wronganswer",
       "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/wronganswer.png",
+      "sourceSha256": "ba61145b9ec95f8a25b5b576bc1a3f8ec04afefd207a2a8eb51a081fa33b97c5",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/wronganswer.webp",
+      "sha256": "aa26964154eb15b0ed5f206462e620377d9e1cc9357e527479d45c9bbc6f099a",
+      "bytes": 564,
       "sourceSize": [
         133,
         133
@@ -5128,13 +5133,8 @@
         133,
         133
       ],
-      "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxhdpi-v4/wronganswer.png",
-      "sourceSha256": "ba61145b9ec95f8a25b5b576bc1a3f8ec04afefd207a2a8eb51a081fa33b97c5",
-      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/wronganswer.png",
-      "sha256": "ba61145b9ec95f8a25b5b576bc1a3f8ec04afefd207a2a8eb51a081fa33b97c5",
-      "bytes": 959,
-      "encoding": "original-bytes"
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
     },
     {
       "name": "doodle_26",
@@ -8376,9 +8376,9 @@
     }
   ],
   "summary": {
-    "totalAssetBytes": 1596319,
+    "totalAssetBytes": 1516870,
     "imagesCount": 284,
-    "imagesBytes": 1504374,
+    "imagesBytes": 1424925,
     "audioCount": 4,
     "audioBytes": 19197,
     "fontsCount": 4,

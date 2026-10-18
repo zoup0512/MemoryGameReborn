@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Restore repository Android assets with lossless size optimizations.
 
-Python + Pillow + fontTools + ffmpeg. Tutorials, thumbnails and gameplay icons
-become lossless WebP at original dimensions; referenced Roboto fonts are subset
+Python + Pillow + fontTools + ffmpeg. All bitmaps except the app icon become
+lossless WebP at original dimensions; referenced Roboto fonts are subset
 to the characters used by ArkTS; sound effects become mono MP3 VBR q7. Android
 vectors become SVG without changing path geometry or colors. Stateful/stretchable
 XML is parsed only to build SVG media; its raw XML copies and the drawable JSON
@@ -233,7 +233,7 @@ def image_plan(assets: list[dict]) -> list[tuple[dict, bytes]]:
     result = []
     for asset in assets:
         source = bitmap_source(asset["androidName"])
-        if asset["kind"] not in ("tutorial", "thumbnail", "icon"):
+        if asset["kind"] == "app_icon":
             with Image.open(source) as image:
                 require(image.format == "PNG", f"Not a PNG: {source}")
                 image.load()
@@ -514,7 +514,7 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
         "sourcePolicy": "Repository Android assets only; no network or currency/purchase functionality",
         "sizePolicy": {"limits": None, "note": "Lossless image/font optimization; original dimensions preserved"},
         "imagePolicy": {"sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
-                        "resize": False, "encoding": "Tutorials, thumbnails and icg icons: lossless WebP at original dimensions; UI bitmaps: original PNG; vectors: path/color-preserving SVG"},
+                        "resize": False, "encoding": "All bitmaps except app_icon: lossless WebP at original dimensions; app icon: PNG; vectors: path/color-preserving SVG"},
         "audioPolicy": {"encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
                         "filenames": {"error": "error.mp3", "tap": "tap.mp3", "win": "win.mp3", "wrong": "wrong.mp3"},
                         "integration": "SoundService opens the four MP3 rawfiles"},
