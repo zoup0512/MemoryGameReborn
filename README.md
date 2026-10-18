@@ -52,13 +52,25 @@
   加固设计与发布注意见 [客户端加固设计](docs/android-client-hardening-design.md)
 - 支持库沿用原版 `com.android.support:26.1.0`（未迁移 AndroidX），依赖从 Google Maven / Maven Central 下载
 
+
+## HarmonyOS 元服务复刻
+
+`harmony_memory-game-reborn/` 是把 Android 单机版复刻成 HarmonyOS 元服务的独立工程：
+23 款“冲刺”游戏、新手教学、关卡推进、暂停/失败/结算与音效均已移植。它不包含服务端、
+金币、广告、奖杯、战绩图表和底部菜单栏；全部游戏默认解锁，失败可免费重试当前关。
+`bundleType` 为 `atomicService`。当前 Release HAP 约 2.2 MB（2,222,561 字节）；若按元服务单 HAP 2 MB 限制分发，仍需继续压缩或拆分资源。
+
+构建、签名、与 Android 版的差异和验收截图见
+[harmony_memory-game-reborn/README.md](harmony_memory-game-reborn/README.md)。
+
 ## 目录说明
 
-仓库分两个子工程：`android_memory-game-reborn/`（客户端）与 `server_memory-game-reborn/`（服务端），`docs/` 为两端共享文档。
+仓库包含 `android_memory-game-reborn/`（Android 客户端）、`server_memory-game-reborn/`（在线 PK 服务端）与 `harmony_memory-game-reborn/`（HarmonyOS 元服务复刻），`docs/` 为共享文档。
 
 - `android_memory-game-reborn/src/main/java/com/cube/memorygames` — 游戏本体（反编译还原 + 修复）
 - `android_memory-game-reborn/src/main/java/com/cube/memorygames/api/online` — 在线 PK 客户端（新增）
 - `server_memory-game-reborn/` — 在线 PK 服务端（Spring Boot 3，新增）
+- `harmony_memory-game-reborn/` — HarmonyOS 元服务复刻（ArkTS，单机 23 款游戏，新增）
 - `docs/online-pk-prd.md` — 在线 PK 需求文档
 - `android_memory-game-reborn/src/main/java/com/activeandroid` 等 — 内嵌的第三方库（反编译修复版）
 - `android_memory-game-reborn/src/main/res/xml/bottombar_tabs.xml` — 底部导航定义（5 tab，含 Online）

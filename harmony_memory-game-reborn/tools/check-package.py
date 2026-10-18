@@ -10,7 +10,7 @@ app = json.loads((ROOT / 'AppScope/app.json5').read_text(encoding='utf-8'))['app
 module = json.loads((ROOT / 'entry/src/main/module.json5').read_text(encoding='utf-8'))['module']
 build = json.loads((ROOT / 'build-profile.json5').read_text(encoding='utf-8'))
 assert app['bundleType'] == 'atomicService'
-assert app['bundleName'] == 'com.razor.memory.brain.training.games'
+assert app['bundleName'] == 'com.atomicservice.6917619386167723098'
 assert module['installationFree'] is True
 assert not module.get('requestPermissions'), 'Offline service must not request network permissions'
 product = build['app']['products'][0]

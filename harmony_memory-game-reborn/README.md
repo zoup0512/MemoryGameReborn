@@ -17,7 +17,7 @@
 | 项目 | 配置 |
 | --- | --- |
 | 应用名 | 脑力训练大师 |
-| bundleName | `com.razor.memory.brain.training.games` |
+| bundleName | `com.atomicservice.6917619386167723098` |
 | 包类型 | `atomicService`，`installationFree: true` |
 | 最低版本 | HarmonyOS `5.1.1(19)` |
 | 编译 / 目标版本 | HarmonyOS `6.1.1(24)` |
