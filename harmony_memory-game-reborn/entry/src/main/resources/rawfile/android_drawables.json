@@ -1,0 +1,3841 @@
+{
+  "version": 1,
+  "renderingRules": [
+    "Dimensions with dip/dp are Android logical pixels; render at actual target bounds, never stretch a fixed-size screenshot.",
+    "Colors retain Android #AARRGGBB, not CSS #RRGGBBAA; values are resolved from repository values/*.xml.",
+    "Selectors: use first matching item in Android order; state_* attributes and referenced drawables are retained.",
+    "Layer-list: paint in order with item insets; clip draws to level 0..10000; rotate uses original pivots/degrees.",
+    "Shape stroke is centered on its inset path; corner radii/stroke widths remain dp; ring/sweep gradient needs Canvas.",
+    "Use media(name) only for bitmap/vector entries; shapes/selectors/layers are Canvas specifications, not flattened approximations."
+  ],
+  "drawables": {
+    "background_cell_twofold1": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_cell_twofold1.xml",
+      "sourceSha256": "885b197450a44b60bb406664e1197f3927fb9965e129ac0a99425c805c1ab75a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffef5350"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_cell_twofold2": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_cell_twofold2.xml",
+      "sourceSha256": "f9e240e8b93b1a1171800a1780c9806922b1c07a1a4fe53c92cce55006ee5656",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffca28"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_cell_twofold3": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_cell_twofold3.xml",
+      "sourceSha256": "2b6bff8ffed29a0946efa18afdf98e85b79cef967406cbd717b2751ab0ecf143",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff31a499"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_cell_twofold4": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_cell_twofold4.xml",
+      "sourceSha256": "b72e88c9d5066addc2c1f8472d3d9d1ad3a911ec27e4b13dc49fcadb83e74285",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff29b6f6"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_game11_press": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_game11_press.xml",
+      "sourceSha256": "573a3acbba8a2702f7d3bff1e75338b2c7d4d692124770c1baf6feff5953f7a1",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_game11_white": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_game11_white.xml",
+      "sourceSha256": "cd6977cc94973c416a6352748dfbca368ca3478dd59dc9ae70b5c8f638928cad",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_game11_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_game11_wrong.xml",
+      "sourceSha256": "5f9458da56c6efdc47c421a4ee962737807534be4028715e93f185d2950a3fcf",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#fff44336"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "background_game12_white": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/background_game12_white.xml",
+      "sourceSha256": "3f49f4fadc90203ba7f6cc0c4dcb713a06f148b60fe3f7641cc5ceebb964c609",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_continue": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_continue.xml",
+      "sourceSha256": "cf866e3317c5163be21ab126fb2fd4a0e49535f39c200024df6e9b5208007598",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "true",
+              "state_pressed": "false",
+              "drawable": "@drawable/button_continue_background"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false",
+              "state_pressed": "false",
+              "drawable": "@drawable/button_continue_background_press"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_continue_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_continue_background.xml",
+      "sourceSha256": "9b231f8746a2e6eb7d229aa00414d6d98d4344a40a3c105247b2a82d80f64df9",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_continue_background_press": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_continue_background_press.xml",
+      "sourceSha256": "5e812967c19744823c9cea67b9c32fa77b2fc036f52d58ea013093bd89f8a8f6",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff156cb4"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_count": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_count.xml",
+      "sourceSha256": "ac694c110622b644cf0e15aabbffbbc4514e4a7951c9de27af85fccadc935e5b",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "true",
+              "state_pressed": "false",
+              "drawable": "@drawable/button_count_background"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false",
+              "state_pressed": "false",
+              "drawable": "@drawable/button_count_background_press"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_count_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_count_background.xml",
+      "sourceSha256": "3f49f4fadc90203ba7f6cc0c4dcb713a06f148b60fe3f7641cc5ceebb964c609",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_count_background_press": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_count_background_press.xml",
+      "sourceSha256": "0bf5ac787de92623be1afaf66f0e10a36246450c15070c6001c33735b5d237bd",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_play": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_play.xml",
+      "sourceSha256": "4f61b5f95c0829b447793092e5590ec840f05ab37d97da70417a93a1586f6a2d",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false",
+              "drawable": "@drawable/button_play_background"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/button_play_background_press"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/button_play_background"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_play_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_play_background.xml",
+      "sourceSha256": "aa5a647bbe6c5e903576572240c5fe133710b4e5800cf722212268e12efd7108",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_play_background_press": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_play_background_press.xml",
+      "sourceSha256": "cadd6b517b99bcd99496e04b160fac0cc041d5829d854d36e270e4e4b7bae62a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff156cb4"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_sounds_on_off": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_sounds_on_off.xml",
+      "sourceSha256": "81262df80e691156c64d48971310aaf5333157a14b4c1e977c9c105d7564d534",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/speaker"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "false",
+              "drawable": "@drawable/mute"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_tutorial": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_tutorial.xml",
+      "sourceSha256": "e1140bd18671fb7f221410d9f4bfdc1ae8e9b74a3be1e7dcd07fd0582049b15b",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false",
+              "drawable": "@drawable/button_tutorial_background"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/button_tutorial_background_press"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/button_tutorial_background"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_tutorial_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_tutorial_background.xml",
+      "sourceSha256": "326e7d0776062f48ffb0ae31fd9d949026084f8a9e962215d49de72459cf1a53",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ff8d8e8e"
+            },
+            "children": []
+          },
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "button_tutorial_background_press": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/button_tutorial_background_press.xml",
+      "sourceSha256": "920ce3ff2a9ad9317215f9ebf9c17a347da459e1297f140c97c7c685af2d4392",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ff8d8e8e"
+            },
+            "children": []
+          },
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "dialog_primary_button": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/dialog_primary_button.xml",
+      "sourceSha256": "c11d8564a971babd20850c641ec331b38f97bfea8f6d36d2b3ed675be6a6b61a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FFE1EAF2"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FF06628C"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_focused": "true"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FF06628C"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "2dp",
+                      "color": "#FF087CAF"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FF087CAF"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "dialog_secondary_button": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/dialog_secondary_button.xml",
+      "sourceSha256": "1f833333412ad97cc5d73c7381e063d52f1f7bde12479352913bfd9ddbb921cf",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_enabled": "false"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FFE1EAF2"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FFDDF3FC"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1dp",
+                      "color": "#FF087CAF"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_focused": "true"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FFDDF3FC"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "2dp",
+                      "color": "#FF087CAF"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#FFFFFFFF"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1dp",
+                      "color": "#FFD8E3ED"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "12dp"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "dialog_surface": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/dialog_surface.xml",
+      "sourceSha256": "8324850d3595ca102d468bc951749526fe69d27e5dc17378ff80f99433ec6513",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#FFFFFFFF"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "20dp"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "doodle_26": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/doodle_26.xml",
+      "sourceSha256": "e34bb47f24428bf7aefa3afecd70d2665e3b03a84b1645a8ef2c7d919e151a2a",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "110.0dip",
+          "width": "110.0dip",
+          "viewportWidth": "256.0",
+          "viewportHeight": "256.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M128.1,29.5c32.7,0 65.4,0 98.2,0c13.4,0 25,8.7 28.7,21.7c0.8,2.7 1.1,5.4 1.1,8.1c0,45.8 0,91.6 0,137.5c0,14.6 -10.1,26.8 -24.5,29.3c-1.6,0.3 -3.2,0.4 -4.8,0.4c-65.7,0 -131.3,0 -197,0C15.2,226.5 3,216.3 0.4,202c-0.3,-1.6 -0.4,-3.2 -0.4,-4.8c0,-45.9 0,-91.9 0,-137.8c0,-15.2 10.8,-27.6 25.8,-29.6c1.4,-0.2 2.7,-0.2 4.1,-0.2C62.7,29.5 95.4,29.5 128.1,29.5zM128,39.3c-32.6,0 -65.1,0 -97.7,0c-0.7,0 -1.5,0 -2.2,0.1C18,40 9.9,48.7 9.9,58.8c0,46.1 0,92.1 0,138.2c0,1.3 0.1,2.6 0.4,3.9c2,9.4 10,15.7 19.5,15.7c65.1,0 130.1,0 195.2,0c0.8,0 1.6,0 2.4,-0.1c10.5,-0.5 18.7,-9 18.7,-19.6c0,-46 0,-92.1 0,-138.1c0,-4.8 -1.6,-9 -4.7,-12.6c-4,-4.7 -9.1,-7 -15.3,-7C193.5,39.3 160.7,39.3 128,39.3z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M128,39.3c32.7,0 65.4,0 98.1,0c6.1,0 11.3,2.3 15.3,7c3.1,3.6 4.7,7.9 4.7,12.6c0,46 0,92.1 0,138.1c0,10.5 -8.2,19.1 -18.7,19.6c-0.8,0 -1.6,0.1 -2.4,0.1c-65.1,0 -130.1,0 -195.2,0c-9.6,0 -17.5,-6.4 -19.5,-15.7c-0.3,-1.3 -0.4,-2.6 -0.4,-3.9c0,-46.1 0,-92.1 0,-138.2C9.9,48.7 18,40 28.1,39.4c0.7,0 1.5,-0.1 2.2,-0.1C62.9,39.3 95.5,39.3 128,39.3zM69,115.1c0,4.5 1,8.2 3.3,11.5c5.3,7.7 15.1,8.5 21.4,1.9c6.4,-6.8 6.4,-18.6 0.1,-25.4c-5.3,-5.6 -13.3,-6.1 -18.9,-1.1C70.8,105.6 69.1,110.3 69,115.1zM157.5,115c0,4.9 1.2,8.7 3.7,12.1c5.3,7.1 14.7,7.8 20.9,1.5c6.9,-7.1 6.6,-19.8 -0.7,-26.5c-5.1,-4.7 -12.4,-4.9 -17.7,-0.4C159.4,105.3 157.7,110.2 157.5,115zM128,167.4c-8.1,0 -16.3,0 -24.4,0c-2.9,0 -5.1,2 -5.1,4.9c0,2.8 2.1,5 5.1,5c16.3,0 32.5,0 48.8,0c0.7,0 1.5,-0.1 2.2,-0.4c2.2,-0.9 3.4,-3.2 2.9,-5.5c-0.4,-2.2 -2.5,-3.9 -4.9,-3.9C144.4,167.4 136.2,167.4 128,167.4z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M69,115.1c0.1,-4.8 1.8,-9.5 5.9,-13.1c5.6,-5.1 13.6,-4.6 18.9,1.1c6.4,6.8 6.3,18.7 -0.1,25.4c-6.3,6.6 -16.1,5.8 -21.4,-1.9C70,123.3 69,119.6 69,115.1z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M157.5,115c0.1,-4.8 1.9,-9.7 6.2,-13.3c5.3,-4.5 12.5,-4.3 17.7,0.4c7.3,6.7 7.6,19.4 0.7,26.5c-6.2,6.3 -15.6,5.6 -20.9,-1.5C158.7,123.7 157.6,119.9 157.5,115z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M128,167.4c8.2,0 16.4,0 24.6,0c2.4,0 4.4,1.7 4.9,3.9c0.5,2.3 -0.7,4.6 -2.9,5.5c-0.7,0.3 -1.5,0.4 -2.2,0.4c-16.3,0 -32.5,0 -48.8,0c-3,0 -5.1,-2.1 -5.1,-5c0,-2.8 2.2,-4.9 5.1,-4.9C111.7,167.4 119.9,167.4 128,167.4z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "doodle_31": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/doodle_31.xml",
+      "sourceSha256": "1cab09a5550f10d1702c3bd66d1bcc8e62a1b6f6ef3740c503685b9947b866b8",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "110.0dip",
+          "width": "110.0dip",
+          "viewportWidth": "256.0",
+          "viewportHeight": "256.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M128,39.3c32.7,0 65.3,0 98,0c5,0 9.5,1.5 13.4,4.8c4.4,3.9 6.8,8.8 6.8,14.7c0,46.1 0,92.1 0,138.2c0,10.5 -8.3,19.1 -18.8,19.6c-0.8,0 -1.7,0.1 -2.5,0.1c-65,0 -130,0 -195,0c-9.6,0 -17.6,-6.4 -19.6,-15.8c-0.3,-1.2 -0.4,-2.5 -0.4,-3.7c0,-46.1 0,-92.3 0,-138.4C9.9,48.7 18,40 28.1,39.4c0.8,0 1.6,-0.1 2.3,-0.1C62.9,39.3 95.5,39.3 128,39.3zM157.5,115.1c0,4.8 1.2,8.6 3.7,12c5.3,7.2 15,7.9 21.1,1.4c6.6,-7 6.4,-19.2 -0.5,-26c-5.1,-5 -12.6,-5.4 -18.1,-0.7C159.4,105.3 157.7,110.2 157.5,115.1zM147.6,157.6c-13.1,-3.2 -26.2,-3.2 -39.4,0c0.1,1.6 0,3.2 0.3,4.7c1,6.1 4.1,10.7 10,13.2c5.1,2.1 10.5,2.2 15.8,1C145.1,174.2 148.4,164.7 147.6,157.6zM82.6,113.2c-0.5,0.2 -0.8,0.4 -1,0.6c-3.3,1.7 -6.7,3.3 -10,5c-2.9,1.5 -3.5,5.1 -1.4,7.6c1.5,1.7 3.9,2.1 6.2,1c6.3,-3.2 12.7,-6.3 19,-9.5c1.9,-0.9 3,-2.4 3,-4.6c0,-2.2 -1.1,-3.6 -3,-4.6c-5,-2.5 -10.1,-5 -15.1,-7.5c-1.5,-0.8 -3,-1.6 -4.6,-2.3c-2.4,-1 -5.1,0 -6.3,2.4c-1.1,2.3 -0.3,5.1 2,6.4c0.6,0.3 1.2,0.6 1.8,0.9C76.2,110 79.3,111.6 82.6,113.2z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M128,29.5c32.7,0 65.4,0 98.2,0c13.4,0 24.9,8.6 28.7,21.5c0.8,2.6 1.1,5.3 1.1,8c0,46.1 0,92.3 0,138.4c0,14.2 -11,26.8 -25,28.7c-1.7,0.2 -3.4,0.4 -5.1,0.4c-65.3,0 -130.7,0 -196,0c-12.5,0 -23.3,-7.4 -27.9,-19c-1.3,-3.3 -1.9,-6.7 -1.9,-10.3C0,151.2 0,105.1 0,59C0,45 9.9,32.8 23.6,30.1c2.1,-0.4 4.2,-0.6 6.3,-0.6C62.6,29.5 95.3,29.5 128,29.5zM128,39.3c-32.5,0 -65.1,0 -97.6,0c-0.8,0 -1.6,0 -2.3,0.1C18,40 9.9,48.7 9.9,58.8c0,46.1 0,92.3 0,138.4c0,1.2 0.1,2.5 0.4,3.7c2,9.4 10,15.8 19.6,15.8c65,0 130,0 195,0c0.8,0 1.7,0 2.5,-0.1c10.5,-0.5 18.8,-9.1 18.8,-19.6c0,-46.1 0,-92.1 0,-138.2c0,-5.9 -2.4,-10.8 -6.8,-14.7c-3.8,-3.3 -8.3,-4.8 -13.4,-4.8C193.3,39.3 160.7,39.3 128,39.3zM161.2,127.1c5.3,7.2 15,7.9 21.1,1.4c6.6,-7 6.4,-19.2 -0.5,-26c-5.1,-5 -12.6,-5.4 -18.1,-0.7c-4.3,3.6 -6,8.5 -6.1,13.4C157.6,119.8 158.7,123.7 161.2,127.1zM108.2,157.6c0.1,1.6 0,3.2 0.3,4.7c1,6.1 4.1,10.7 10,13.2c5.1,2.1 10.5,2.2 15.8,1c10.8,-2.4 14.1,-11.9 13.3,-19C134.5,154.4 121.4,154.4 108.2,157.6zM81.5,113.7c-3.3,1.7 -6.7,3.3 -10,5c-2.9,1.5 -3.5,5.1 -1.4,7.6c1.5,1.7 3.9,2.1 6.2,1c6.3,-3.2 12.7,-6.3 19,-9.5c1.9,-0.9 3,-2.4 3,-4.6c0,-2.2 -1.1,-3.6 -3,-4.6c-5,-2.5 -10.1,-5 -15.1,-7.5c-1.5,-0.8 -3,-1.6 -4.6,-2.3c-2.4,-1 -5.1,0 -6.3,2.4c-1.1,2.3 -0.3,5.1 2,6.4c0.6,0.3 1.2,0.6 1.8,0.9c3.1,1.5 6.2,3 9.4,4.7C82.1,113.4 81.8,113.6 81.5,113.7z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "doodle_33": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/doodle_33.xml",
+      "sourceSha256": "cbe0d29ba4a577446bde5ac9a58925e9897108adfb3dd4dde9229fffe3a4bac3",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "110.0dip",
+          "width": "110.0dip",
+          "viewportWidth": "256.0",
+          "viewportHeight": "256.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M128,39.3c32.7,0 65.3,0 98,0c5,0 9.5,1.5 13.4,4.8c4.4,3.9 6.8,8.8 6.8,14.7c0,46.1 0,92.1 0,138.2c0,10.5 -8.3,19.1 -18.8,19.6c-0.8,0 -1.7,0.1 -2.5,0.1c-65,0 -130,0 -195,0c-9.6,0 -17.6,-6.4 -19.6,-15.8c-0.3,-1.2 -0.4,-2.5 -0.4,-3.7c0,-46.1 0,-92.3 0,-138.4C9.9,48.7 18,40 28.1,39.4c0.8,0 1.6,-0.1 2.3,-0.1C62.9,39.3 95.5,39.3 128,39.3zM157.5,115c0,4.9 1.2,8.7 3.7,12.1c5.3,7.1 14.7,7.8 20.9,1.5c6.9,-7.1 6.6,-19.8 -0.7,-26.5c-5.1,-4.7 -12.4,-4.9 -17.7,-0.4C159.4,105.3 157.7,110.1 157.5,115zM83.2,132.9c3.6,0 6.3,-1 8.7,-2.9c8,-6.4 8.8,-19.8 1.6,-27.1c-5.7,-5.8 -13.8,-5.9 -19.6,-0.1c-6.3,6.4 -6.8,17.9 -0.9,24.9C75.9,131 79.4,132.8 83.2,132.9zM147.7,157.6c-13.2,-3.2 -26.2,-3.2 -39.5,0c0.1,1.5 0,3.1 0.3,4.6c1,6.1 4.1,10.7 9.9,13.2c4.2,1.8 8.5,2 13,1.6c3.4,-0.3 6.6,-1.3 9.4,-3.3C146.2,169.7 148,164.1 147.7,157.6z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M128,29.5c32.7,0 65.4,0 98.2,0c13.5,0 24.9,8.6 28.7,21.5c0.8,2.6 1.1,5.3 1.1,8c0,46.2 0,92.3 0,138.5c0,14.1 -11,26.7 -25,28.7c-1.7,0.2 -3.5,0.4 -5.2,0.4c-65.3,0 -130.7,0.1 -196,0c-12.6,0 -21.7,-6.2 -27.2,-17.5c-1.8,-3.7 -2.6,-7.6 -2.6,-11.7C0,151.2 0,105.1 0,59c0,-14 9.8,-26 23.5,-28.9c2.1,-0.4 4.3,-0.6 6.4,-0.6C62.6,29.5 95.3,29.5 128,29.5zM128,39.3c-32.5,0 -65.1,0 -97.6,0c-0.8,0 -1.6,0 -2.3,0.1C18,40 9.9,48.7 9.9,58.8c0,46.1 0,92.3 0,138.4c0,1.2 0.1,2.5 0.4,3.7c2,9.4 10,15.8 19.6,15.8c65,0 130,0 195,0c0.8,0 1.7,0 2.5,-0.1c10.5,-0.5 18.8,-9 18.8,-19.6c0,-46.1 0,-92.1 0,-138.2c0,-5.9 -2.4,-10.8 -6.8,-14.7c-3.8,-3.3 -8.3,-4.8 -13.4,-4.8C193.3,39.3 160.7,39.3 128,39.3zM161.2,127.1c5.3,7.1 14.7,7.8 20.9,1.5c6.9,-7.1 6.6,-19.8 -0.7,-26.5c-5.1,-4.7 -12.4,-4.9 -17.7,-0.4c-4.3,3.6 -6.1,8.5 -6.2,13.3C157.6,119.9 158.7,123.7 161.2,127.1zM92,130c8,-6.4 8.8,-19.8 1.6,-27.1c-5.7,-5.8 -13.8,-5.9 -19.6,-0.1c-6.3,6.4 -6.8,17.9 -0.9,24.9c2.8,3.3 6.3,5.2 10.1,5.3C86.8,132.9 89.6,131.9 92,130zM108.2,157.6c0.1,1.5 0,3.1 0.3,4.6c1,6.1 4.1,10.7 9.9,13.2c4.2,1.8 8.5,2 13,1.6c3.4,-0.3 6.6,-1.3 9.4,-3.3c5.4,-4 7.2,-9.6 6.9,-16.1C134.5,154.4 121.5,154.4 108.2,157.6z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "doodle_42": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/doodle_42.xml",
+      "sourceSha256": "2dfbe6a6e0c884e379e1d6b81fdfcfb61838a358251c965c7b6cf32232f23cd3",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "110.0dip",
+          "width": "110.0dip",
+          "viewportWidth": "256.0",
+          "viewportHeight": "256.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M128,226.5c-32.8,0 -65.6,0 -98.3,0c-13.4,0 -25,-8.8 -28.5,-21.6c-0.7,-2.5 -1.1,-5.1 -1.1,-7.7c-0.1,-46 0,-92.1 0,-138.1c0,-14.5 10.2,-26.7 24.5,-29.2c1.7,-0.3 3.4,-0.4 5,-0.4c65.7,0 131.4,0 197.1,0c14.4,0 27,10.8 29,25c0.2,1.7 0.4,3.4 0.4,5c0,45.7 0,91.4 0,137.1c0,14.4 -9.4,26.2 -23.4,29.3c-2,0.4 -4.1,0.6 -6.1,0.6C193.6,226.5 160.8,226.5 128,226.5zM128,39.3c-32.5,0 -65,0 -97.5,0c-0.7,0 -1.5,0 -2.2,0.1C17.9,40 9.9,48.6 9.9,58.9c0,46 0,92.1 0,138.1c0,1.2 0.1,2.5 0.3,3.7c1.9,9.4 10,15.9 19.6,15.9c65.4,0 130.8,0 196.1,0c1.4,0 2.8,-0.1 4.1,-0.3c9.6,-1.9 16.1,-9.8 16.1,-19.6c0,-45.8 0,-91.6 0,-137.4c0,-1.7 -0.2,-3.4 -0.6,-5.1c-2.2,-8.9 -10.1,-14.9 -19.3,-14.9C193.5,39.3 160.8,39.3 128,39.3z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M128,39.3c32.8,0 65.5,0 98.3,0c9.2,0 17,6 19.3,14.9c0.4,1.6 0.6,3.4 0.6,5.1c0,45.8 0,91.6 0,137.4c0,9.8 -6.5,17.7 -16.1,19.6c-1.3,0.3 -2.7,0.3 -4.1,0.3c-65.4,0 -130.8,0 -196.1,0c-9.6,0 -17.7,-6.5 -19.6,-15.9c-0.2,-1.2 -0.3,-2.5 -0.3,-3.7c0,-46 0,-92.1 0,-138.1c0,-10.3 8.1,-18.9 18.4,-19.5c0.7,0 1.5,-0.1 2.2,-0.1C63,39.3 95.5,39.3 128,39.3zM69,114.5c0,5.3 1.1,8.8 3.2,12c5.2,7.7 15,8.6 21.4,2c6.3,-6.6 6.5,-18.4 0.4,-25.2c-5.3,-5.9 -13.2,-6.6 -19.1,-1.4C70.8,105.5 69.1,110.2 69,114.5zM157.6,114.2c-0.1,5.3 1,9.3 3.6,12.8c5.3,7.2 14.8,7.8 21,1.4c6.3,-6.6 6.5,-18.4 0.4,-25.1c-5.3,-5.9 -13.2,-6.6 -19.1,-1.5C159.5,105.3 157.8,109.9 157.6,114.2zM129.5,157.6c-8.5,0 -14.8,2.1 -20.2,6.6c-2,1.6 -3.9,3.5 -5.2,5.7c-1.3,2.3 -0.6,5.2 1.6,6.6c2.2,1.4 5.1,0.8 6.6,-1.3c3.3,-4.5 7.8,-7.1 13.3,-7.6c7.5,-0.8 13.7,1.6 18.2,7.8c1.2,1.6 3.4,2.3 5.3,1.7c2.1,-0.7 3.4,-2.4 3.5,-4.5c0.1,-1.9 -1,-3.3 -2.1,-4.7C144.6,161 137,157.7 129.5,157.6z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M69,114.5c0.1,-4.2 1.8,-9 5.9,-12.6c5.9,-5.1 13.8,-4.5 19.1,1.4c6.1,6.8 5.9,18.6 -0.4,25.2c-6.4,6.6 -16.1,5.6 -21.4,-2C70.1,123.3 69,119.7 69,114.5z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M157.6,114.2c0.2,-4.3 1.9,-8.9 5.9,-12.4c5.9,-5.1 13.8,-4.4 19.1,1.5c6.1,6.8 5.9,18.6 -0.4,25.1c-6.2,6.4 -15.7,5.8 -21,-1.4C158.6,123.5 157.5,119.5 157.6,114.2z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M129.5,157.6c7.6,0.1 15.1,3.4 21,10.3c1.1,1.3 2.2,2.7 2.1,4.7c-0.1,2.1 -1.4,3.8 -3.5,4.5c-1.9,0.6 -4.1,-0.1 -5.3,-1.7c-4.6,-6.2 -10.8,-8.6 -18.2,-7.8c-5.5,0.6 -10,3.1 -13.3,7.6c-1.5,2.1 -4.4,2.7 -6.6,1.3c-2.2,-1.4 -3,-4.3 -1.6,-6.6c1.3,-2.3 3.2,-4.1 5.2,-5.7C114.7,159.7 121,157.6 129.5,157.6z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M256,-256h256v256h-256z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M256,0h256v256h-256z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M256,256h256v256h-256z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_babble": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_babble.xml",
+      "sourceSha256": "b0f9676cbf1bb7a402d6747759e99c560e4551dc830cb8a733e875bd82bc0cb0",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ddffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffaaaaaa"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_background_dialog": {
+      "source": "android_memory-game-reborn/src/main/res/drawable-hdpi-v4/drawable_background_dialog.xml",
+      "sourceSha256": "3514b6bad3b6a41d34c9bf24ab43a33738394615fbd934e7ba185fce680cd261",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ee207bc5"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "5.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_background_fail_dialog": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_background_fail_dialog.xml",
+      "sourceSha256": "e10c730cab78050bf7ab9e5b6daf8ae7796bdfd2abc7b98205b94c31fe6c1272",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ee3b96e4"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "5.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_background_fail_dialog_inner": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_background_fail_dialog_inner.xml",
+      "sourceSha256": "65f22f5bc7a4dff7090ace8a4fde3ae79fafa657b6d0c653360a91c89e20fd1a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ee53a6ef"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "5.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_cell_default": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_cell_default.xml",
+      "sourceSha256": "7f36028b75f062905fd87b942e7650d3d9d1c034f837bc3830e5b9e1b71ff45f",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_cell_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_cell_empty"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/drawable_state_cell_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/drawable_state_cell_empty"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_cell_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_cell_wrong.xml",
+      "sourceSha256": "b320b5a6b04e59c76c72286cbe5c028a81425fccb63dbed17a726a6722215486",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_cell_wrong"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_cell_empty"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/drawable_state_cell_wrong"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/drawable_state_cell_empty"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_default": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_default.xml",
+      "sourceSha256": "2879eee2b3d4756e10c333fd351df6bf159c3bc51dc087bcec03543529759722",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_empty"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/drawable_state_circle_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/drawable_state_circle_empty"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_green": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_green.xml",
+      "sourceSha256": "74cfdb1ffb9a1bb19efc32357d43a5f8e2046500bcd2d503d59aa4e751ac21cf",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff009da7"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_grey": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_grey.xml",
+      "sourceSha256": "f5b663c42138b691f7ba8a30b74f07818a7db4a85218caf662069cc3919ecd65",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffcdcdcd"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_hidden": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_hidden.xml",
+      "sourceSha256": "9def2d43c37ba239be2b836366bdfc5ff71683579269afac39db6360e45264d0",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_success_hidden"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/drawable_state_circle_success"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/drawable_state_circle_success_hidden"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_online_rating": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_online_rating.xml",
+      "sourceSha256": "c950517fdb6dd5b180fd61101908bc5e3ee2a7da4550452f4464220deeb95448",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#FF4A5BC7"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#FFFFFFFF"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_circle_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_circle_wrong.xml",
+      "sourceSha256": "dc45710e7adb3bb21e6bd1214ef21fd8a5ce6fa7e0bc9743120b5077b4c094b4",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_wrong"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/drawable_state_circle_empty"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_checked": "true",
+              "drawable": "@drawable/drawable_state_circle_wrong"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/drawable_state_circle_empty"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_panel_view_pager_item_text_area": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_panel_view_pager_item_text_area.xml",
+      "sourceSha256": "5c46a0a1a5e8ed6ec97d50705b2e2ab58198ee3f438e59bb9defbb9fa913102b",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff227cc5"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "5.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_progress_circle": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_progress_circle.xml",
+      "sourceSha256": "6cceef62e1d7df5c0bcf16bb4631af0e4c5aef81153c8d159021708cba26e1d8",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_dark": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_dark.xml",
+      "sourceSha256": "1e5522a9b1d1ded2599ca488236079becd391ff18af29bce99edaae1cab9233d",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff555555"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_dark_dot": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_dark_dot.xml",
+      "sourceSha256": "6790a48d59d0676827c94d83cc80fea91d593cc3e60b1131bc80a5d0e286b51b",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "34.0dip",
+              "color": "#ffdcdcdc"
+            },
+            "children": []
+          },
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff666666"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_empty": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_empty.xml",
+      "sourceSha256": "9e066ce2fa9b3bb614424403870a5bdcee6a916ae04ee52fde715ed6357e84b0",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_success": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_success.xml",
+      "sourceSha256": "915ddc20665cc475831273017616e53384427d2ea516f6d7ba96a12d52d3af96",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_success_last": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_success_last.xml",
+      "sourceSha256": "22819fdc733a45173979014a42fab3b70a4331446e0ac5979c18ff8a769e924c",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#ff03a9f4"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1.0dip",
+                      "color": "#ffd9d9d9"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/rightanswer"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_unclicked": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_unclicked.xml",
+      "sourceSha256": "17f095cacf5aefd29c0c0eef1c1618f8e2e564c24fef2d8e6604a36c2089a19a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff8c8c8c"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_cell_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_cell_wrong.xml",
+      "sourceSha256": "19d7ee69ea312a1e0960dd59a52c22869598e80583e71ebba95abdf08125126a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#fff44336"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1.0dip",
+                      "color": "#ffd9d9d9"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/wronganswer"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_empty": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_empty.xml",
+      "sourceSha256": "461258aff402fe3719f9744a71c435faa6ddd69a4c7e2d3c37685d3333c35f9c",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_success": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_success.xml",
+      "sourceSha256": "b083c91d3fa476de93a4f585512b8280d8d3d6160ff40f7bbed659f4e9bf3edc",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_success_hidden": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_success_hidden.xml",
+      "sourceSha256": "bf8dfcd1299a084cf4c654c167b8e3e11af57af21f375828a3083b4de1074d2b",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff979696"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_success_last": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_success_last.xml",
+      "sourceSha256": "95f3bdada1f5cc864ad0d0f8079f73c9de6b1e4a5d8a17a496270563d3f00b73",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {
+                  "shape": "oval"
+                },
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#ff03a9f4"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1.0dip",
+                      "color": "#ffd9d9d9"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/rightanswer"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_unclicked": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_unclicked.xml",
+      "sourceSha256": "2a76bef019c21445b7e054c8394ef1ad2b4406d7e559d76636778b46e0e99e0c",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff8c8c8c"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_state_circle_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_state_circle_wrong.xml",
+      "sourceSha256": "656e6a2ff4cac9d45d93aca4bb94320e094087c18709df03fef8a2a66a0b5046",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {
+                  "shape": "oval"
+                },
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#fff44336"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "stroke",
+                    "attributes": {
+                      "width": "1.0dip",
+                      "color": "#ffd9d9d9"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/wronganswer",
+              "left": "5.0dip",
+              "top": "5.0dip",
+              "right": "5.0dip",
+              "bottom": "5.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "drawable_white_circle_blue_check": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/drawable_white_circle_blue_check.xml",
+      "sourceSha256": "27830a763917135df2192151eee5db8efac3242a260225e58191c6c88cc788c9",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffcdcdcd"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "game17_circle": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/game17_circle.xml",
+      "sourceSha256": "70b7489a2abe3aab72b71d198563ae3ff8577c50cc699eb68bfb4659074bb1a2",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff5c6bc0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "home_pressed": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/home_pressed.xml",
+      "sourceSha256": "b96bea315d77d2808b09818ca2fc18bee3b90f3f270fd059604b9b4c7cb08bb9",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/home"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {
+                  "shape": "oval"
+                },
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#cc333333"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "home_selectable": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/home_selectable.xml",
+      "sourceSha256": "ef311a658f0d3caf47a6f13599ca7e276c8a121b23eb4ed765cb0bcb7aa6229d",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/home_pressed"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "false",
+              "drawable": "@drawable/home"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "horizontal_progress": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/horizontal_progress.xml",
+      "sourceSha256": "d4cf53ec23e8f471785a1b4331bbab8a11b6fafdea85d7e40f5fd7485c2a1310",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/background"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#99cccccc"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/progress"
+            },
+            "children": [
+              {
+                "tag": "clip",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "shape",
+                    "attributes": {},
+                    "children": [
+                      {
+                        "tag": "solid",
+                        "attributes": {
+                          "color": "#ff03a9f4"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ic_bolt": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_bolt.xml",
+      "sourceSha256": "1e172f2fc5e884420e08bfa08c11399eb19de93e3ee01243165a809c7ad2b258",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "36.0dip",
+          "width": "36.0dip",
+          "viewportWidth": "337.19",
+          "viewportHeight": "337.19"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffcd00",
+              "pathData": "M168.6,0l0,204.5l107.8,0z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffda44",
+              "pathData": "M60.8,132.7l107.8,204.5l0,-204.5z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_challenge": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_challenge.xml",
+      "sourceSha256": "2f6482c1d6c35ef9546050b88fd633f2684188849ca128d97782436ba5d728d8",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "488.451",
+          "viewportHeight": "488.451"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M20,228.5c7.6,10.4 7.7,24.5 0.3,35l-9,12.7c-10.4,14.7 -5.6,35.3 10.3,43.8l13.7,7.3c11.4,6.1 17.6,18.7 15.4,31.5l-2.6,15.3c-3,17.8 10.3,34.2 28.3,35l15.5,0.7c12.9,0.5 24,9.3 27.6,21.6l4.3,14.9c5,17.3 24.1,26.4 40.7,19.2l14.3,-6.1c11.8,-5.1 25.6,-2.1 34.2,7.5l10.4,11.6c12.1,13.4 33.2,13.3 45,-0.3l10.2,-11.7c8.5,-9.7 22.2,-13 34.1,-8.1l14.4,5.9c16.7,6.9 35.6,-2.4 40.4,-19.8l4.1,-15c3.4,-12.4 14.4,-21.3 27.2,-22.1l15.5,-0.9c18,-1 31.1,-17.6 27.8,-35.4l-2.8,-15.3c-2.3,-12.7 3.7,-25.4 15,-31.7l13.6,-7.5c15.8,-8.8 20.3,-29.4 9.7,-44l-9.2,-12.6c-7.6,-10.4 -7.7,-24.5 -0.3,-35l9,-12.7c10.4,-14.7 5.6,-35.3 -10.3,-43.8l-13.7,-7.3c-11.4,-6.1 -17.6,-18.7 -15.4,-31.5l2.6,-15.3c3,-17.8 -10.3,-34.2 -28.3,-35l-15.5,-0.7c-12.9,-0.5 -24,-9.3 -27.6,-21.6l-4.3,-14.9c-5,-17.3 -24.1,-26.4 -40.7,-19.2l-14.3,6.1c-11.8,5.1 -25.6,2.1 -34.2,-7.5l-10.4,-11.6c-12.1,-13.4 -33.2,-13.3 -45,0.3l-10.2,11.7c-8.5,9.7 -22.2,13 -34.1,8.1l-14.4,-5.9c-16.7,-6.9 -35.6,2.4 -40.4,19.8l-4.1,15c-3.4,12.4 -14.4,21.3 -27.2,22l-15.5,0.9c-18,1 -31.1,17.6 -27.8,35.4l2.8,15.3c2.3,12.7 -3.7,25.4 -15,31.7l-13.6,7.5c-15.8,8.8 -20.3,29.4 -9.7,44L20,228.5zM123.7,193.6l76.7,-5.6l29,-71.2c5.5,-13.4 24.4,-13.4 29.9,0l29,71.2l76.7,5.6c14.4,1 20.3,19.1 9.2,28.4l-58.7,49.6l18.4,74.6c3.5,14 -11.9,25.2 -24.2,17.6l-65.4,-40.6l-65.3,40.5c-12.3,7.6 -27.6,-3.5 -24.2,-17.6l18.4,-74.6l-58.7,-49.6C103.4,212.7 109.3,194.7 123.7,193.6z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_check": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_check.xml",
+      "sourceSha256": "571f766ce01e98d2662d29e7cba73dee4448394162951a0bca35a3c98d834d90",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "60.0dip",
+          "width": "60.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff66bb6a",
+              "pathData": "M21.652,3.211c-0.293,-0.295 -0.77,-0.295 -1.061,0L9.41,14.34c-0.293,0.297 -0.771,0.297 -1.062,0L3.449,9.351C3.304,9.203 3.114,9.13 2.923,9.129C2.73,9.128 2.534,9.201 2.387,9.351l-2.165,1.946C0.078,11.445 0,11.63 0,11.823c0,0.194 0.078,0.397 0.223,0.544l4.94,5.184c0.292,0.296 0.771,0.776 1.062,1.07l2.124,2.141c0.292,0.293 0.769,0.293 1.062,0l14.366,-14.34c0.293,-0.294 0.293,-0.777 0,-1.071L21.652,3.211z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_close": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_close.xml",
+      "sourceSha256": "81d4bfedf22434967d5beb79566fa2c6799611c45fd30858e3154dd9b254fc8f",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "32.0dip",
+          "width": "32.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_cup": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_cup.xml",
+      "sourceSha256": "bb48c8bd342e250d673d738a5d867347b30078f70395f5cc0d130888d9abac16",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "297.566",
+          "viewportHeight": "297.566"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M239.63,288.17c2.1,5.04 -0.65,9.17 -6.11,9.17H64.04c-5.46,0 -8.22,-4.13 -6.11,-9.17l18.09,-32.81c2.1,-5.04 8.29,-9.17 13.76,-9.17h118.02c5.46,0 11.65,4.13 13.76,9.17L239.63,288.17z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M290.87,46.45c0,0 -29.21,0 -38.95,0c-4.14,0 -2.59,-4.83 -2.59,-4.83l7.6,-27.56c2.1,-7.61 -2.64,-13.83 -10.53,-13.83h-82.69h-29.87H51.16c-7.89,0 -12.63,6.22 -10.53,13.83l7.6,27.56c0,0 1.55,4.83 -2.59,4.83c-9.74,0 -38.95,0 -38.95,0c-4.86,0 -7.72,3.81 -6.36,8.48l28.65,113.84c1.36,4.66 6.45,8.48 11.31,8.48c0,0 27.2,0 36.26,0c4.41,0 5.14,3.67 5.14,3.67l2.08,7.55c2.54,11.07 42.97,29.84 54.47,34.78c6.69,2.88 14.36,2.84 21.07,0c12.68,-5.36 50.35,-22.6 54.47,-34.78l2.08,-7.55c0,0 0.73,-3.67 5.14,-3.67c9.06,0 36.26,0 36.26,0c4.86,0 9.94,-3.82 11.31,-8.48L297.23,54.93C298.59,50.27 295.73,46.45 290.87,46.45zM70.46,155.17c-3.68,0 -14.72,0 -14.72,0c-4.86,0 -9.84,-3.84 -11.07,-8.54l-13.03,-69.56c-1.23,-4.7 1.73,-8.54 6.59,-8.54c0,0 11.15,0 14.86,0c2.76,0 3.41,3.11 3.41,3.11l17.03,79.72C73.54,151.36 74.71,155.17 70.46,155.17zM265.92,77.07l-13.03,69.56c-1.23,4.7 -6.22,8.54 -11.07,8.54c0,0 -11.04,0 -14.72,0c-4.25,0 -3.08,-3.81 -3.08,-3.81l17.03,-79.72c0,0 0.65,-3.11 3.41,-3.11c3.72,0 14.86,0 14.86,0C264.19,68.53 267.15,72.37 265.92,77.07z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_direction": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_direction.xml",
+      "sourceSha256": "eb574192f84a8f00db12ae6cba6b0fe94c032399ea129a6bc587dfad8ae9d795",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "32.0dip",
+          "width": "32.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M21,11H6.83l3.58,-3.59L9,6l-6,6 6,6 1.41,-1.41L6.83,13H21z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_exit": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_exit.xml",
+      "sourceSha256": "6473072123722c8ecc6415d2e5e16d7ec5b30cc1b9d117aab32d0d8abbae196f",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "402.779",
+          "viewportHeight": "402.779"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff010002",
+              "pathData": "M55.7,217.7H271.5c9,0 16.3,-7.3 16.3,-16.3c0,-9 -7.3,-16.3 -16.3,-16.3H55.7l31.5,-31.4c6.3,-6.4 6.3,-16.7 -0,-23.1c-3.1,-3.1 -7.2,-4.8 -11.5,-4.8s-8.4,1.7 -11.5,4.8L4.9,189.7c-1.5,1.5 -2.8,3.3 -3.7,5.5C0.4,197.2 0,199.3 0,201.4c0,2.1 0.4,4.2 1.2,6.2c0.8,2.1 2.1,3.9 3.5,5.3l59.3,59.3c3.1,3.1 7.2,4.8 11.5,4.8c4.4,0 8.5,-1.7 11.6,-4.8c6.3,-6.4 6.3,-16.7 -0,-23.1L55.7,217.7z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff010002",
+              "pathData": "M348.4,55.2H164.9c-30,0 -54.4,24.4 -54.4,54.4l0,48.3c0.2,8.8 7.5,15.9 16.3,15.9c5.3,0 10.1,-2.6 13.1,-6.7l3.2,-0v-57.6c0,-12 9.8,-21.8 21.7,-21.8h183.5c12,0 21.7,9.8 21.7,21.8v183.5c0,12 -9.8,21.8 -21.7,21.8H164.9c-12,0 -21.7,-9.8 -21.7,-21.8l-0,-57.7h-3.2c-3,-4 -7.7,-6.6 -13.1,-6.6c-8.9,0 -16.1,7 -16.3,16.3v48c0,30 24.4,54.4 54.4,54.4h183.5c30,0 54.4,-24.4 54.4,-54.4V109.6C402.8,79.6 378.4,55.2 348.4,55.2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_game12_cancel": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_game12_cancel.xml",
+      "sourceSha256": "518ed145ee9d47651f55d50a74d2752fc89bf6bd1d8b46b2a110c1c03febb3f5",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "489.307",
+          "viewportHeight": "489.307"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#fff73e7c",
+              "pathData": "M489.3,56.5l-56.5,-56.5l-188.2,188.2l-188.2,-188.2l-56.5,56.5l188.2,188.2l-188.2,188.2l56.5,56.5l188.2,-188.2l188.2,188.2l56.5,-56.5l-188.2,-188.2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_game12_cancel_white": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_game12_cancel_white.xml",
+      "sourceSha256": "883283889e3258e886219e002ca1c084ac9a83fe85682e37e263dc07cec83d4c",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "489.307",
+          "viewportHeight": "489.307"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M489.3,56.5l-56.5,-56.5l-188.2,188.2l-188.2,-188.2l-56.5,56.5l188.2,188.2l-188.2,188.2l56.5,56.5l188.2,-188.2l188.2,188.2l56.5,-56.5l-188.2,-188.2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_game12_tick": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_game12_tick.xml",
+      "sourceSha256": "87263a87fe02c9b64c95234bbcff2b5195cd44a16c1dbd87f1cf5f9a6462ba80",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "488.878",
+          "viewportHeight": "488.878"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff03a9f4",
+              "pathData": "M143.3,340.1l-92.5,-92.5l-50.8,50.8l122,122l0.1,-0.1l22.3,22.3l344.5,-344.5l-51.8,-51.8z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_game12_tick_white": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_game12_tick_white.xml",
+      "sourceSha256": "b193607726d60cbdc854ed7ff98ea0402fcf5deeff01e480676b9be1e107efb7",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "488.878",
+          "viewportHeight": "488.878"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M143.3,340.1l-92.5,-92.5l-50.8,50.8l122,122l0.1,-0.1l22.3,22.3l344.5,-344.5l-51.8,-51.8z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_icon_daily_workout": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_icon_daily_workout.xml",
+      "sourceSha256": "95afe95717d385c74fa7f9cf1000d25813011c60ba374541380a90e38843e95a",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "121.0",
+          "viewportHeight": "121.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M120.36,87.32c-3.16,14.46 -37.93,23.2 -44.82,25.28s-21.7,4.98 -29.26,2.43S33.11,100.58 33.23,85.55C33.35,71.13 34.78,52.63 31.65,47.1a37.15,37.15 0,0 1,-2.53 -5.4l-7.97,0.48a2.31,2.31 0,0 1,-0.63 -0.06l0.68,11.3a2.88,2.88 0,0 1,-2.47 3.22l-4.47,0.27a2.88,2.88 0,0 1,-2.84 -2.9L9.43,20.78A2.89,2.89 0,0 1,11.9 17.56l4.47,-0.27a2.88,2.88 0,0 1,2.84 2.9l0.65,10.88a2.31,2.31 0,0 1,0.62 -0.13l6.87,-0.41c0.28,-3.65 1.95,-4.02 2.92,-5.41 2.11,-3.03 13.76,-3.58 15.36,-3.2 1,0.24 3.72,3.63 5.89,7.15l8.04,-0.49 -0.67,-11.1a2.89,2.89 0,0 1,2.47 -3.22l4.47,-0.27a2.88,2.88 0,0 1,2.84 2.9l2,33.25a2.88,2.88 0,0 1,-2.47 3.22l-4.47,0.27a2.88,2.88 0,0 1,-2.84 -2.9L60.22,39.83l-7.22,0.44a54.79,54.79 0,0 1,-6.54 8.55c-1.19,1.38 0.44,3.04 -0.28,5.61 -0.57,2 0.3,9 1.05,10.95a246.23,246.23 0,0 1,8.44 28.38c2.25,0.75 7.24,-15.45 18.01,-20.2 6.26,-2.76 10.6,3.07 12.77,0.9s1.81,-6.35 4.41,-10.17c2.63,-3.84 12.52,-7.49 18.01,-3.95C114.49,63.95 123.52,72.86 120.36,87.32ZM77.6,47.14l-2.02,0.12a2.88,2.88 0,0 1,-2.84 -2.9l-1.32,-22a2.88,2.88 0,0 1,2.47 -3.22l2.02,-0.12a2.88,2.88 0,0 1,2.84 2.9l1.32,22A2.89,2.89 0,0 1,77.6 47.14ZM6.18,51.77L4.15,51.9a2.88,2.88 0,0 1,-2.84 -2.9L0,27a2.89,2.89 0,0 1,2.47 -3.22l2.02,-0.12a2.88,2.88 0,0 1,2.84 2.9l1.32,22A2.89,2.89 0,0 1,6.18 51.77Z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_life": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_life.xml",
+      "sourceSha256": "3974d5d4700b4756f5bce4a447b978f63ad6bfd2cd4babfcc8880d8bd40ea9a6",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "52.0dip",
+          "width": "52.0dip",
+          "viewportWidth": "455.0",
+          "viewportHeight": "455.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#fffa4162",
+              "pathData": "M326.6,10.3c-38.7,0 -75,17.5 -99.1,46.9c-24.1,-29.4 -60.4,-46.9 -99.1,-46.9C57.6,10.3 0,67.9 0,138.7c0,55.4 33,119.5 98.2,190.5c50.2,54.6 104.7,97 120.3,108.6l9,6.8l9,-6.8c15.5,-11.7 70.1,-54 120.3,-108.6C422,258.3 455,194.1 455,138.7C455,67.9 397.4,10.3 326.6,10.3z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_lock": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_lock.xml",
+      "sourceSha256": "3be9f6a141fbbbe8bf2eac7132ce82bca165095d64876bad15838246b8c23975",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M18,8h-1L17,6c0,-2.76 -2.24,-5 -5,-5S7,3.24 7,6v2L6,8c-1.1,0 -2,0.9 -2,2v10c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2L20,10c0,-1.1 -0.9,-2 -2,-2zM12,17c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2zM15.1,8L8.9,8L8.9,6c0,-1.71 1.39,-3.1 3.1,-3.1 1.71,0 3.1,1.39 3.1,3.1v2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_menu": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_menu.xml",
+      "sourceSha256": "c40b19963113af32884c8ddbb167b7459e0fb2ad5418f006dd485817a5d529ac",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "290.0",
+          "viewportHeight": "290.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M255,110c-19.3,0 -35,15.7 -35,35s15.7,35 35,35s35,-15.7 35,-35S274.3,110 255,110z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M35,110c-19.3,0 -35,15.7 -35,35s15.7,35 35,35s35,-15.7 35,-35S54.3,110 35,110z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M145,110c-19.3,0 -35,15.7 -35,35s15.7,35 35,35s35,-15.7 35,-35S164.3,110 145,110z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_ok": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_ok.xml",
+      "sourceSha256": "15b500d813cf9c014659f9ee952b23f5fab15013eafd344e36b3049dd2f9073e",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "151.0",
+          "viewportHeight": "151.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M75.5,151A75.5,75.5 0,1 1,151 75.5,75.5 75.5,0 0,1 75.5,151ZM76,10a66,66 0,1 0,66 66A66,66 0,0 0,76 10ZM39,76.74l7.39,-8.63L67.5,90.75 107.08,49 115,56.97 67.5,108Z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_pause": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_pause.xml",
+      "sourceSha256": "50aaa40714e1bf0fb82e30dcbecb86047b97e7c611266d95e1794a9144c368b5",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "28.0dip",
+          "width": "28.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff8c8c8c",
+              "pathData": "M9,16h2L11,8L9,8v8zM12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8zM13,16h2L15,8h-2v8z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_pause_new": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_pause_new.xml",
+      "sourceSha256": "613f491e707304c1951a7ae52bf0b67088f92e3ee8524ab910d23e5a9b7383ee",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "42.0dip",
+          "width": "42.0dip",
+          "viewportWidth": "512.0",
+          "viewportHeight": "512.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M256,0C114.6,0 0,114.6 0,256s114.6,256 256,256s256,-114.6 256,-256S397.4,0 256,0zM256,486.4C128.8,486.4 25.6,383.2 25.6,256S128.8,25.6 256,25.6S486.4,128.8 486.4,256S383.2,486.4 256,486.4z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M217.6,115.2c-7.1,0 -12.8,5.7 -12.8,12.8v256c0,7.1 5.7,12.8 12.8,12.8c7.1,0 12.8,-5.7 12.8,-12.8V128C230.4,120.9 224.7,115.2 217.6,115.2z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M294.4,115.2c-7.1,0 -12.8,5.7 -12.8,12.8v256c0,7.1 5.7,12.8 12.8,12.8s12.8,-5.7 12.8,-12.8V128C307.2,120.9 301.5,115.2 294.4,115.2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_play_rounded_button": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_play_rounded_button.xml",
+      "sourceSha256": "e60110bf6a5dbb07f8f934b66e385fe0717abdf0ad06586cb5cdd1f2c20c5347",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "42.0dip",
+          "width": "42.0dip",
+          "viewportWidth": "510.0",
+          "viewportHeight": "510.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M255,0C114.8,0 0,114.8 0,255s114.8,255 255,255s255,-114.8 255,-255S395.3,0 255,0zM204,369.8v-229.5L357,255L204,369.8z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_podium": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_podium.xml",
+      "sourceSha256": "97c5507f328b204148d17dcb6deb751d86239355bf51c4d9a46eb69e74605fb6",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "24.0dip",
+          "width": "24.0dip",
+          "viewportWidth": "512.0",
+          "viewportHeight": "512.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ff000000",
+              "pathData": "M492.7,143.3H354.2v-48.7c0,-10.7 -8.6,-19.3 -19.3,-19.3H177.1c-10.7,0 -19.3,8.6 -19.3,19.3V196.4H19.3C8.6,196.4 0,205 0,215.7v201.7c0,10.7 8.6,19.3 19.3,19.3c9.2,0 464.8,0 473.4,0c10.7,0 19.3,-8.6 19.3,-19.3V162.6C512,152 503.4,143.3 492.7,143.3zM98.2,320.5c-13.4,0 -24.2,-10.8 -24.2,-24.2s10.8,-24.2 24.2,-24.2c13.4,0 24.2,10.8 24.2,24.2C122.4,309.7 111.6,320.5 98.2,320.5zM256,199.5c-13.4,0 -24.2,-10.8 -24.2,-24.2c0,-13.4 10.8,-24.2 24.2,-24.2s24.2,10.8 24.2,24.2C280.2,188.6 269.4,199.5 256,199.5zM413.8,267.5c-13.4,0 -24.2,-10.8 -24.2,-24.2c0,-13.4 10.8,-24.2 24.2,-24.2s24.2,10.8 24.2,24.2C438,256.6 427.2,267.5 413.8,267.5z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_questions_circular_button": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_questions_circular_button.xml",
+      "sourceSha256": "643298249c69d5075c7c508fdae8da743a05b0097112c3e9970e5dd4ac689e40",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "42.0dip",
+          "width": "42.0dip",
+          "viewportWidth": "612.0",
+          "viewportHeight": "612.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M230.7,181.2c-2.4,2.6 -4,4.3 -5.1,5.5C227.8,184.4 230.7,181.2 230.7,181.2z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M337,200.9c8,9.8 11.9,21.3 11.9,34.6c0,9.5 -2.7,18.7 -8.2,27.5c-3,5 -6.9,9.8 -11.8,14.5l-16.3,16.1c-15.6,15.4 -25.7,29 -30.4,40.9c-4.6,11.9 -6.9,27.5 -6.9,47h36.3c0,-17.1 1.9,-30 5.8,-38.8c3.9,-8.8 12.3,-19.4 25.4,-32.1c17.9,-17.4 29.8,-30.6 35.7,-39.5s8.9,-20.6 8.9,-35.1c0,-23.8 -8,-43.3 -24.1,-58.6c-16.1,-15.3 -37.5,-22.9 -64.3,-22.9c-28.9,0 -51.7,8.9 -68.3,26.8s-24.9,41.4 -24.9,70.8h36.3c0.7,-17.7 3.5,-31.2 8.3,-40.6c8.7,-16.8 24.4,-25.3 47.1,-25.3C315.9,186.2 329,191.1 337,200.9z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M612,306C612,137 475,0 306,0C137,0 0,137 0,306c0,169 137,306 306,306C475,612 612,475 612,306zM27.8,306C27.8,152.4 152.4,27.8 306,27.8S584.2,152.4 584.2,306S459.6,584.2 306,584.2S27.8,459.6 27.8,306z"
+            },
+            "children": []
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M274.5,415.2h40.6v42.4h-40.6z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_ranking_history": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_ranking_history.xml",
+      "sourceSha256": "4bba8779c36ea9c960c926686d3a94fac10684896ab91370e82da4bc6dcb543d",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "width": "24dp",
+          "height": "24dp",
+          "viewportWidth": "24",
+          "viewportHeight": "24"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#FF000000",
+              "pathData": "M13,3a9,9 0,0 0,-9 9H1l4,4 4,-4H6a7,7 0,1 1,2.05 4.95L6.64,18.36A9,9 0,1 0,13 3zM12,7v6l5,3 1,-1.64 -4,-2.36V7z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_reload": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_reload.xml",
+      "sourceSha256": "3dbe866dc13681c6d56f80f59884fc61abe46daccd1dabc13ac7f30836c03d79",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "42.0dip",
+          "width": "42.0dip",
+          "viewportWidth": "489.533",
+          "viewportHeight": "489.533"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M268.2,488.2c98.2,-11 176.9,-89.5 188.1,-187.7c14.7,-128.4 -85.1,-237.7 -210.2,-239.1v-57.6c0,-3.2 -4,-4.9 -6.7,-2.9l-118.6,87.1c-2,1.5 -2,4.4 0,5.9l118.6,87.1c2.7,2 6.7,0.2 6.7,-2.9v-57.5c87.9,1.4 158.3,76.2 152.3,165.6c-5.1,76.9 -67.8,139.3 -144.7,144.2c-81.5,5.2 -150.8,-53 -163.2,-130c-2.3,-14.3 -14.8,-24.7 -29.2,-24.7c-17.9,0 -31.9,15.9 -29.1,33.6C49.6,419 150.9,501.3 268.2,488.2z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_replay_arrow": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_replay_arrow.xml",
+      "sourceSha256": "8e1ee3f5aae5d62121f396e03a7baaf977966202ce7ee3b4987a0f20fcf60574",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "510.0",
+          "viewportHeight": "510.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffffff",
+              "pathData": "M255,102V0L127.5,127.5L255,255V153c84.2,0 153,68.8 153,153c0,84.2 -68.8,153 -153,153c-84.2,0 -153,-68.8 -153,-153H51c0,112.2 91.8,204 204,204s204,-91.8 204,-204S367.2,102 255,102z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "ic_star": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/ic_star.xml",
+      "sourceSha256": "7c67c2f638137d7503b7fb6be25decbee32b7db431b1576e23c04481381bc7a3",
+      "rendering": "SVG",
+      "node": {
+        "tag": "vector",
+        "attributes": {
+          "height": "48.0dip",
+          "width": "48.0dip",
+          "viewportWidth": "24.0",
+          "viewportHeight": "24.0"
+        },
+        "children": [
+          {
+            "tag": "path",
+            "attributes": {
+              "fillColor": "#ffffc109",
+              "pathData": "M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2 9.19,8.63 2,9.24l5.46,4.73L5.82,21z"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "level_number": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/level_number.xml",
+      "sourceSha256": "bbe65b50ce6f16e477beabe3307114cb6d7109230dfa621250015a50a7cbdd2f",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#fff0faff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "next_level_selectable": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/next_level_selectable.xml",
+      "sourceSha256": "0cb2453c357d19c6c9f32db62eac5eb324e09b6c458b4ca496d1291355351e68",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "true",
+              "drawable": "@drawable/nextlevel_pressed"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "state_pressed": "false",
+              "drawable": "@drawable/play"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "nextlevel_pressed": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/nextlevel_pressed.xml",
+      "sourceSha256": "ab46b3488a138f6420abc901e2be1d15382b6c4d7dfee549260bf7cc4aa1f296",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/play"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {
+                  "shape": "oval"
+                },
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#cc333333"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "progess_drawable": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progess_drawable.xml",
+      "sourceSha256": "8dcff745bfbe39af5152bd20da86d47b0d37b72e2abeb0f67081bdded3493ad8",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/background"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#ffe5f6fe"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/progress"
+            },
+            "children": [
+              {
+                "tag": "clip",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "shape",
+                    "attributes": {},
+                    "children": [
+                      {
+                        "tag": "solid",
+                        "attributes": {
+                          "color": "#ff03a9f4"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "progress": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progress.xml",
+      "sourceSha256": "37f89c0966a2dd43ec486315bff1b6433b72180ed19c125e1849affa354b9711",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "rotate",
+        "attributes": {
+          "fromDegrees": "0.0",
+          "pivotX": "50.0%",
+          "pivotY": "50.0%",
+          "toDegrees": "1080.0"
+        },
+        "children": [
+          {
+            "tag": "shape",
+            "attributes": {
+              "innerRadiusRatio": "3.0",
+              "shape": "ring",
+              "thicknessRatio": "8.0",
+              "useLevel": "false"
+            },
+            "children": [
+              {
+                "tag": "size",
+                "attributes": {
+                  "width": "76.0dip",
+                  "height": "76.0dip"
+                },
+                "children": []
+              },
+              {
+                "tag": "gradient",
+                "attributes": {
+                  "angle": "0.0",
+                  "endColor": "#ff03a9f4",
+                  "startColor": "#00000000",
+                  "type": "sweep",
+                  "useLevel": "false"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "progress_item_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progress_item_background.xml",
+      "sourceSha256": "3463c283bef5268f66d2c903adf1a59ef104b446dbf8d38eef464a8df1e0bd60",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "selector",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/progress_item_full",
+              "state_enabled": "true"
+            },
+            "children": []
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "drawable": "@drawable/progress_item_empty",
+              "state_enabled": "false"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "progress_item_empty": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progress_item_empty.xml",
+      "sourceSha256": "e1e66031482e51e30c17454f67e455b4825df81a3e6fdd5c129f640233b48f11",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "progress_item_full": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progress_item_full.xml",
+      "sourceSha256": "2732bbb7e431c16bd62fac36988e9124c5566c6ad9087897603a82ce30f71b2a",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "2.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "progress_statistics": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progress_statistics.xml",
+      "sourceSha256": "9ab6e7e517ea66474e48b04dada4408014a6deca8154b8562039bb1662d1bd46",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {},
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#ff9cda06"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "5.0dip"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "bottom": "2.0dip"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "solid",
+                    "attributes": {
+                      "color": "#ffcddc39"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "5.0dip"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "progressbar": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/progressbar.xml",
+      "sourceSha256": "c50252c16e14dfd6f627b10f2cfb550caf134ed915f3ee832271010732eba263",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "layer-list",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/background"
+            },
+            "children": [
+              {
+                "tag": "shape",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "corners",
+                    "attributes": {
+                      "radius": "5.0dip"
+                    },
+                    "children": []
+                  },
+                  {
+                    "tag": "gradient",
+                    "attributes": {
+                      "angle": "0.0",
+                      "centerColor": "#ffffffff",
+                      "centerY": "0.75",
+                      "endColor": "#ffffffff",
+                      "startColor": "#ffffffff"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "item",
+            "attributes": {
+              "id": "@android:id/progress"
+            },
+            "children": [
+              {
+                "tag": "clip",
+                "attributes": {},
+                "children": [
+                  {
+                    "tag": "shape",
+                    "attributes": {
+                      "shape": "rectangle"
+                    },
+                    "children": [
+                      {
+                        "tag": "corners",
+                        "attributes": {
+                          "radius": "0.0dip"
+                        },
+                        "children": []
+                      },
+                      {
+                        "tag": "solid",
+                        "attributes": {
+                          "color": "#ff37bc84"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "start_level_info_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/start_level_info_background.xml",
+      "sourceSha256": "21e3c3bc0d26154872e8f6c4b90acb4687ea8b4a08bb88737d62aeb17db55b92",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff4cb1e7"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "suggestion_background": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/suggestion_background.xml",
+      "sourceSha256": "12b0b1d9608b3bfe49707c5c70712351b31b4d65f2148fc09132f63b0ff30c4f",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffe1f5fe"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_background_equals": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_background_equals.xml",
+      "sourceSha256": "809f08a2a40315c0caec08b8879a845f0547b3c1e584ccda9621a712d94436c0",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ffffffff"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_background_hidden_success": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_background_hidden_success.xml",
+      "sourceSha256": "9fdd36bf0f52661698f1cbddeb99c21e1eba20b485be8c84d6646834fa2972f7",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "rectangle"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff979696"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_background_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_background_wrong.xml",
+      "sourceSha256": "1c36375cb85301b7c7d4bb8a6cebbb53ce3e1dd352982398836f6853bcd5c55d",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {},
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#fff44336"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          },
+          {
+            "tag": "corners",
+            "attributes": {
+              "radius": "4.0dip"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_equals_background_wrong": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_equals_background_wrong.xml",
+      "sourceSha256": "ab5d94eec92d16676108d41dcba8fe84acdb739f4ff04965b97d3af439a237f7",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#fff44336"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_equals_hidden_success": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_equals_hidden_success.xml",
+      "sourceSha256": "13701af596b32363212397cce5b081e38803e2b4637395061fa5843452f62be0",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff979696"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    "text_compare_equals_success": {
+      "source": "android_memory-game-reborn/src/main/res/drawable/text_compare_equals_success.xml",
+      "sourceSha256": "d411d5ea3c2982b66fcb2891644e23a5e1a6d3f8cae74e9c92577c52527451c6",
+      "rendering": "Canvas/native background at actual target bounds",
+      "node": {
+        "tag": "shape",
+        "attributes": {
+          "shape": "oval"
+        },
+        "children": [
+          {
+            "tag": "solid",
+            "attributes": {
+              "color": "#ff03a9f4"
+            },
+            "children": []
+          },
+          {
+            "tag": "stroke",
+            "attributes": {
+              "width": "1.0dip",
+              "color": "#ffd9d9d9"
+            },
+            "children": []
+          }
+        ]
+      }
+    }
+  },
+  "values": {
+    "@color/attention_background": "#fff9fefe",
+    "@color/attention_background_grid": "#ffcff6f1",
+    "@color/babble_stroke": "#ffaaaaaa",
+    "@color/background": "#ffe5f6fe",
+    "@color/background2": "#ffe3f5f2",
+    "@color/background3": "@android:color/white",
+    "@color/background_center": "#ff4cb1e7",
+    "@color/background_circle_center": "#ff4db5e8",
+    "@color/background_circle_edge": "#ff3a8fdd",
+    "@color/background_dialog": "#ee207bc5",
+    "@color/background_fail_dialog": "#ee3b96e4",
+    "@color/background_fail_dialog_inner": "#ee53a6ef",
+    "@color/bb_darkBackgroundColor": "#ff212121",
+    "@color/bb_inActiveBottomBarItemColor": "#ff747474",
+    "@color/bb_tabletRightBorderDark": "#ff505050",
+    "@color/black_50_opacity": "#5a000000",
+    "@color/button_pressed": "#ff156cb4",
+    "@color/categoryAttention": "#ff009688",
+    "@color/categoryFlexibility": "#ffffc107",
+    "@color/categoryImagination": "#ff00bcd4",
+    "@color/categoryMemory": "#ff03a9f4",
+    "@color/categoryProblemSolving": "#ff673ab7",
+    "@color/categorySpeed": "#fff44336",
+    "@color/cell_empty": "#ffb6ddff",
+    "@color/cell_right_shadow": "#ff9cda06",
+    "@color/challenge_indicator": "#ff17c89d",
+    "@color/coins_hint_badge": "#FFFFEDC2",
+    "@color/coins_hint_surface": "#FFFFFBF2",
+    "@color/com_smart_login_code": "#ff3c6499",
+    "@color/common_google_signin_btn_text_dark_default": "@android:color/white",
+    "@color/common_google_signin_btn_text_dark_disabled": "#1f000000",
+    "@color/common_google_signin_btn_text_dark_focused": "@android:color/black",
+    "@color/common_google_signin_btn_text_dark_pressed": "@android:color/white",
+    "@color/common_google_signin_btn_text_light_default": "#90000000",
+    "@color/common_google_signin_btn_text_light_disabled": "#1f000000",
+    "@color/common_google_signin_btn_text_light_focused": "#90000000",
+    "@color/common_google_signin_btn_text_light_pressed": "#de000000",
+    "@color/common_plus_signin_btn_text_dark_default": "@android:color/white",
+    "@color/common_plus_signin_btn_text_dark_disabled": "#ffaaaaaa",
+    "@color/common_plus_signin_btn_text_dark_focused": "@android:color/white",
+    "@color/common_plus_signin_btn_text_dark_pressed": "@android:color/white",
+    "@color/common_plus_signin_btn_text_light_default": "#ff737373",
+    "@color/common_plus_signin_btn_text_light_disabled": "#ffaaaaaa",
+    "@color/common_plus_signin_btn_text_light_focused": "#ff737373",
+    "@color/common_plus_signin_btn_text_light_pressed": "#de000000",
+    "@color/current_top": "#ff81d8ff",
+    "@color/current_user_rank": "#ffebc315",
+    "@color/dark_transparent": "#55000000",
+    "@color/default_background": "#ffe9f5fb",
+    "@color/default_background_grid": "#60c7e8ff",
+    "@color/default_circle_indicator_fill_color": "#ffffffff",
+    "@color/default_circle_indicator_page_color": "#00000000",
+    "@color/default_circle_indicator_stroke_color": "#ffdddddd",
+    "@color/default_line_indicator_selected_color": "#ff33b5e5",
+    "@color/default_line_indicator_unselected_color": "#ffbbbbbb",
+    "@color/default_title_indicator_footer_color": "#ff33b5e5",
+    "@color/default_title_indicator_selected_color": "#ffffffff",
+    "@color/default_title_indicator_text_color": "#bbffffff",
+    "@color/default_underline_indicator_selected_color": "#ff33b5e5",
+    "@color/design_textinput_error_color_dark": "#ffff6e6e",
+    "@color/design_textinput_error_color_light": "#ffd50000",
+    "@color/dialog_border": "#FFD8E3ED",
+    "@color/dialog_danger": "#FFBD3045",
+    "@color/dialog_disabled_surface": "#FFE1EAF2",
+    "@color/dialog_disabled_text": "#FF596579",
+    "@color/dialog_primary": "#FF087CAF",
+    "@color/dialog_primary_pressed": "#FF06628C",
+    "@color/dialog_surface": "#FFFFFFFF",
+    "@color/dialog_text": "#FF182230",
+    "@color/dialog_text_secondary": "#FF596579",
+    "@color/disable_top_ranks": "#bb333333",
+    "@color/disabled": "#99cccccc",
+    "@color/disabled_text": "#ff818181",
+    "@color/edittext_nick_hint": "#ffeff5fb",
+    "@color/fail_dialog_text_color": "#ff000000",
+    "@color/finished_icon_color": "#ff06ba01",
+    "@color/flexibility_background": "#fff8f9f9",
+    "@color/flexibility_background_grid": "#ffe3e3e3",
+    "@color/game10_color0": "#fffdc112",
+    "@color/game10_color1": "#ff673ab7",
+    "@color/game10_color2": "#ff009688",
+    "@color/game10_color3": "#ffef4438",
+    "@color/game13_color0": "#ffff5722",
+    "@color/game13_color1": "#ff8ab935",
+    "@color/game13_color2": "#fff9c60f",
+    "@color/game13_color3": "#ff673ab7",
+    "@color/game14_color0": "#ffffb300",
+    "@color/game18_color0": "#ffffd54f",
+    "@color/game18_color1": "#ff5c6bc0",
+    "@color/game18_color2": "#ff009688",
+    "@color/game18_color3": "#ffef5350",
+    "@color/game18_color4": "#ff795548",
+    "@color/game19_color0": "#fff9c60f",
+    "@color/game19_color1": "#ff8ab935",
+    "@color/game19_color2": "#ff07a2e4",
+    "@color/game19_color3": "#ffff7043",
+    "@color/game19_color4": "#ffe0007d",
+    "@color/game19_color5": "#ff37474f",
+    "@color/game20_color0": "#ffffc107",
+    "@color/game20_color1": "#fff44336",
+    "@color/game20_color2": "#ff795548",
+    "@color/game20_color3": "#ff4caf50",
+    "@color/game20_color4": "#ff2196f3",
+    "@color/game20_color5": "#ff000000",
+    "@color/game23_color0": "#ff38968d",
+    "@color/game23_color1": "#ff519b94",
+    "@color/game23_color2": "#ff54a79e",
+    "@color/game23_color3": "#ff71b0aa",
+    "@color/game_248_color_1": "#ffef5350",
+    "@color/game_248_color_2": "#ffffca28",
+    "@color/game_248_color_3": "#ff31a499",
+    "@color/game_248_color_4": "#ff29b6f6",
+    "@color/grid_correct": "#ff03a9f4",
+    "@color/grid_correct_hidden": "#ff979696",
+    "@color/grid_empty": "#ffffffff",
+    "@color/grid_stroke": "#ffd9d9d9",
+    "@color/grid_unclicked": "#ff8c8c8c",
+    "@color/grid_wrong": "#fff44336",
+    "@color/imagination_background": "#fffafdf7",
+    "@color/imagination_background_grid": "#ffd4f1c0",
+    "@color/indicator_background": "#ff227cc5",
+    "@color/level_number": "#fff0faff",
+    "@color/login_edittext": "#ff2b6aa3",
+    "@color/memory_background": "#fff7fdff",
+    "@color/memory_background_grid": "#ffc7e8ff",
+    "@color/money_progress": "#ffcddc39",
+    "@color/onlineAnimColor": "#ffcdcdcd",
+    "@color/onlineHistoryLose": "#ffc62828",
+    "@color/onlineHistoryWin": "#ff2e7d32",
+    "@color/onlineStatsColor": "#ff384ab2",
+    "@color/onlineTextHint": "#8a000000",
+    "@color/onlineTutorialText": "#ff37474f",
+    "@color/online_accent": "#FF4A5BC7",
+    "@color/online_danger": "#FFE05260",
+    "@color/online_danger_soft": "#FFFFE9EC",
+    "@color/online_divider": "#FFE1EAF2",
+    "@color/online_page": "#FFF4F9FE",
+    "@color/online_primary": "#FF087CAF",
+    "@color/online_primary_disabled": "#FF9FD7EC",
+    "@color/online_primary_pressed": "#FF06628C",
+    "@color/online_primary_soft": "#FFDDF3FC",
+    "@color/online_rank_bronze": "#FFB87942",
+    "@color/online_rank_diamond": "#FF56AED1",
+    "@color/online_rank_gold": "#FFE0A92F",
+    "@color/online_rank_master": "#FF8A5BC3",
+    "@color/online_rank_silver": "#FF97A2AE",
+    "@color/online_reward": "#FFF2B84B",
+    "@color/online_scrim": "#660E1C2C",
+    "@color/online_success": "#FF20A464",
+    "@color/online_success_soft": "#FFE3F7ED",
+    "@color/online_surface": "#FFFFFFFF",
+    "@color/online_surface_alt": "#FFE8F5FD",
+    "@color/online_text_primary": "#FF182230",
+    "@color/online_text_secondary": "#FF667085",
+    "@color/online_warning": "#FFF29F3D",
+    "@color/online_warning_soft": "#FFFFF2DF",
+    "@color/pressed": "#eecccccc",
+    "@color/problem_solving_background": "#fffcfcfc",
+    "@color/problem_solving_background_grid": "#ffebeefb",
+    "@color/selectable_color_filler": "#cc333333",
+    "@color/speed_background": "#fff8f9f9",
+    "@color/speed_background_grid": "#ffe3e3e3",
+    "@color/star": "#ffffc109",
+    "@color/suggestion_background": "#ffe1f5fe",
+    "@color/symmetry_background_color": "#ffdcdcdc",
+    "@color/symmetry_color": "#ff555555",
+    "@color/tab1": "#ff01a4c7",
+    "@color/tab2": "#ff01a4c7",
+    "@color/tab3": "#ff009da7",
+    "@color/tab4": "#ff009688",
+    "@color/tab_selected": "#ffebc313",
+    "@color/text_button_disabled": "#ff67ace7",
+    "@color/text_shadow_color": "#66000000",
+    "@color/top_bar_background": "#ff227cc5",
+    "@color/vip_text_color": "#ff7e7e7e",
+    "@color/void_cup": "#ffd1d1d1",
+    "@color/vpi__background_holo_dark": "#ff000000",
+    "@color/vpi__background_holo_light": "#fff3f3f3",
+    "@color/vpi__bright_foreground_disabled_holo_dark": "#ff4c4c4c",
+    "@color/vpi__bright_foreground_disabled_holo_light": "#ffb2b2b2",
+    "@color/vpi__bright_foreground_holo_dark": "@color/vpi__background_holo_light",
+    "@color/vpi__bright_foreground_holo_light": "@color/vpi__background_holo_dark",
+    "@color/vpi__bright_foreground_inverse_holo_dark": "@color/vpi__bright_foreground_holo_light",
+    "@color/vpi__bright_foreground_inverse_holo_light": "@color/vpi__bright_foreground_holo_dark",
+    "@color/white": "#ffffffff",
+    "@color/workout_calendar_progress_empty": "#ffcbcbcb",
+    "@color/workout_games_title_color": "#ff414141",
+    "@color/workout_iq_left": "#ff8d8e8e",
+    "@color/workout_progress_empty": "#ffdcf6fc",
+    "@color/workout_progress_filled": "#ff00abf5",
+    "@dimen/abc_dialog_list_padding_vertical_material": "8.0dip",
+    "@dimen/anim_distance": "8.0dip",
+    "@dimen/avatar_crop_padding_size": "60.0dip",
+    "@dimen/avatar_size": "90.0dip",
+    "@dimen/avatar_size_half": "45.0dip",
+    "@dimen/avatar_size_large": "198.0dip",
+    "@dimen/avatar_size_online": "100.0dip",
+    "@dimen/avatar_size_online_history": "60.0dip",
+    "@dimen/badge_size_online_history": "28.0dip",
+    "@dimen/bb_default_elevation": "8.0dip",
+    "@dimen/bb_fake_shadow_height": "4.0dip",
+    "@dimen/bb_height": "56.0dip",
+    "@dimen/button_text_padding_bottm": "4.0px",
+    "@dimen/button_text_size_dialog": "26.0sp",
+    "@dimen/button_width_dialog": "130.0dip",
+    "@dimen/card_stack_margin": "20.0dip",
+    "@dimen/cell_stroke_width": "1.0dip",
+    "@dimen/colorsTextSize": "56.0dip",
+    "@dimen/count_button_size": "70.0dip",
+    "@dimen/cup_size": "188.0dip",
+    "@dimen/cup_star_padding": "10.0dip",
+    "@dimen/cup_star_size": "94.0dip",
+    "@dimen/cup_star_width": "48.0dip",
+    "@dimen/default_circle_indicator_radius": "3.0dip",
+    "@dimen/default_circle_indicator_stroke_width": "1.0dip",
+    "@dimen/default_line_indicator_gap_width": "4.0dip",
+    "@dimen/default_line_indicator_line_width": "12.0dip",
+    "@dimen/default_line_indicator_stroke_width": "1.0dip",
+    "@dimen/default_title_indicator_clip_padding": "4.0dip",
+    "@dimen/default_title_indicator_footer_indicator_height": "4.0dip",
+    "@dimen/default_title_indicator_footer_indicator_underline_padding": "20.0dip",
+    "@dimen/default_title_indicator_footer_line_height": "2.0dip",
+    "@dimen/default_title_indicator_footer_padding": "7.0dip",
+    "@dimen/default_title_indicator_text_size": "15.0dip",
+    "@dimen/default_title_indicator_title_padding": "5.0dip",
+    "@dimen/default_title_indicator_top_padding": "7.0dip",
+    "@dimen/dialog_content_padding": "24dp",
+    "@dimen/dialog_edge_margin": "16dp",
+    "@dimen/dialog_fail_margin_top": "35.0dip",
+    "@dimen/dialog_game_5_height": "210.0dip",
+    "@dimen/dialog_game_5_width": "250.0dip",
+    "@dimen/dialog_max_width": "420dp",
+    "@dimen/facebook_button_height": "42.0dip",
+    "@dimen/facebook_button_text": "20.0sp",
+    "@dimen/fail_dialog_button_size": "70.0dip",
+    "@dimen/fail_dialog_game_suggestion_thumb_height": "140.0dip",
+    "@dimen/fail_dialog_game_suggestion_thumb_width": "220.0dip",
+    "@dimen/fail_dialog_text_above_buttons": "13.0sp",
+    "@dimen/fail_dialog_text_level": "23.0sp",
+    "@dimen/fail_dialog_text_title": "22.0sp",
+    "@dimen/fail_dialog_title_offset": "24.0dip",
+    "@dimen/game13_shadow_offset": "1.0dip",
+    "@dimen/game13_shadow_radius": "2.0dip",
+    "@dimen/game16_figure_margin": "60.0dip",
+    "@dimen/game16_figure_size": "200.0dip",
+    "@dimen/game18_shadow_offset": "2.0dip",
+    "@dimen/game18_shadow_radius": "4.0dip",
+    "@dimen/game_248_sequence_line_thickness": "15.0dip",
+    "@dimen/height_dialog_lose": "180.0dip",
+    "@dimen/height_dialog_win": "200.0dip",
+    "@dimen/item_height": "100.0dip",
+    "@dimen/login_button_min_height": "48.0dip",
+    "@dimen/login_button_text": "18.0sp",
+    "@dimen/login_min_height": "44.0dip",
+    "@dimen/login_padding_horizontal": "28.0dip",
+    "@dimen/login_padding_vertical": "40.0dip",
+    "@dimen/margin_button_facebook": "42.0dip",
+    "@dimen/material_margin": "16.0dip",
+    "@dimen/material_margin_and_half": "24.0dip",
+    "@dimen/material_margin_half": "8.0dip",
+    "@dimen/menu_padding_big": "24.0dip",
+    "@dimen/menu_padding_small": "12.0dip",
+    "@dimen/min_item_height": "20.0dip",
+    "@dimen/mirror_size": "3.0dip",
+    "@dimen/offer_dialog_discount_font": "80.0sp",
+    "@dimen/offer_dialog_discount_padding": "150.0dip",
+    "@dimen/offer_dialog_item_size": "62.0dip",
+    "@dimen/online_button_height": "52.0dip",
+    "@dimen/online_button_radius": "14.0dip",
+    "@dimen/online_card_gap": "12.0dip",
+    "@dimen/online_card_padding": "16.0dip",
+    "@dimen/online_card_radius": "18.0dip",
+    "@dimen/online_chip_height": "28.0dip",
+    "@dimen/online_content_max_width": "560.0dip",
+    "@dimen/online_hero_art_size": "104.0dip",
+    "@dimen/online_mode_name_size": "150.0dip",
+    "@dimen/online_page_padding": "16.0dip",
+    "@dimen/online_page_padding_large": "24.0dip",
+    "@dimen/online_result_card_width": "360.0dip",
+    "@dimen/online_toolbar_height": "52.0dip",
+    "@dimen/padding_big": "20.0dip",
+    "@dimen/padding_bigger": "25.0dip",
+    "@dimen/padding_dialog_xxxlarge": "68.0dip",
+    "@dimen/padding_horizontal_fail_xlarge": "58.0dip",
+    "@dimen/padding_horizontal_top_bar": "15.0dip",
+    "@dimen/padding_horizontal_win_xlarge": "64.0dip",
+    "@dimen/padding_large": "30.0dip",
+    "@dimen/padding_larger": "35.0dip",
+    "@dimen/padding_main_menu_game_thumbnail": "10.0dip",
+    "@dimen/padding_medium": "15.0dip",
+    "@dimen/padding_small": "10.0dip",
+    "@dimen/padding_top_ranks_text": "15.0dip",
+    "@dimen/padding_xsmall": "5.0dip",
+    "@dimen/play_button_size": "42.0dip",
+    "@dimen/play_icon_size": "30.0dip",
+    "@dimen/progressTextViewSize": "22.0dip",
+    "@dimen/progress_bar_corners": "4.0dip",
+    "@dimen/progress_bar_height": "44.0dip",
+    "@dimen/progress_item_dimen": "24.0dip",
+    "@dimen/progress_item_margin": "4.0dip",
+    "@dimen/radius_cell_corner": "5.0dip",
+    "@dimen/sales_size": "50.0dip",
+    "@dimen/secret_game_banner_height": "180.0dip",
+    "@dimen/share_coins_size": "45.0dip",
+    "@dimen/share_coins_text_size": "16.0sp",
+    "@dimen/share_plus_padding": "2.0dip",
+    "@dimen/size_button_dialog": "96.0dip",
+    "@dimen/size_button_dialog_half": "50.0dip",
+    "@dimen/size_button_dialog_negative": "-110.0dip",
+    "@dimen/size_icons_top_bar": "32.0dip",
+    "@dimen/size_icons_top_bar_burger": "30.0dip",
+    "@dimen/size_main_menu_game_thumbnail": "220.0dip",
+    "@dimen/star_size": "60.0dip",
+    "@dimen/swipeThreshold": "32.0dip",
+    "@dimen/swipeVelocityThreshold": "32.0dip",
+    "@dimen/text_big": "18.0sp",
+    "@dimen/text_level_ready": "34.0sp",
+    "@dimen/text_size_big": "22.0sp",
+    "@dimen/text_size_medium": "18.0sp",
+    "@dimen/text_small": "16.0sp",
+    "@dimen/toolbar_height": "48.0dip",
+    "@dimen/toolbar_icon": "30.0dip",
+    "@dimen/toolbar_padding": "12.0dip",
+    "@dimen/top_avatar_size": "44.0dip",
+    "@dimen/top_bar_height": "45.0dip",
+    "@dimen/top_ranks_item_text": "18.0sp",
+    "@dimen/viewPgerPadding": "56.0dip",
+    "@dimen/width_dialog_lose": "100.0dip",
+    "@dimen/width_dialog_win": "100.0dip",
+    "@dimen/width_item_view_pager_text_area": "200.0dip",
+    "@dimen/win_circle_width": "40.0dip",
+    "@dimen/win_dialog_lion_height": "140.0dip",
+    "@dimen/win_dialog_margin_top": "60.0dip",
+    "@dimen/win_dialog_padding_large": "48.0dip",
+    "@dimen/win_dialog_padding_medium": "10.0dip",
+    "@dimen/win_dialog_padding_small": "8.0dip",
+    "@dimen/win_dialog_padding_xsmall": "4.0dip",
+    "@dimen/win_dialog_star_margin": "22.0dip",
+    "@dimen/win_dialog_star_size": "48.0dip",
+    "@dimen/win_dialog_text_next_level": "23.0sp",
+    "@dimen/win_dialog_text_stars": "22.0sp",
+    "@dimen/win_dialog_text_title": "32.0sp"
+  }
+}

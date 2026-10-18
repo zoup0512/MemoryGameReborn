@@ -1,0 +1,8 @@
+{
+  "modelVersion": "6.0.0",
+  "name": "memory-training",
+  "version": "1.0.0",
+  "description": "Offline memory training atomic service",
+  "dependencies": {},
+  "devDependencies": {}
+}
