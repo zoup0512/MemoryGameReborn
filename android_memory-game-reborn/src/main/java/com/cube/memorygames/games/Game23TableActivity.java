@@ -169,9 +169,11 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
             result.add(elementGame14);
         }
         GameRandom.shuffle(result);
+        int[] palette = Game23Colors.shuffledPalette();
         i = 0;
         while (i < result.size()) {
-            ((ElementGame14) result.get(i)).color = Game23Colors.nextColor();
+            ElementGame14 elementGame14 = (ElementGame14) result.get(i);
+            elementGame14.color = Game23Colors.colorForNumber(elementGame14.number, palette);
             i++;
         }
         Collections.sort(result, new Comparator<ElementGame14>() {

@@ -319,6 +319,15 @@ test('23 fixed 6x8 permutation, stable board, progress scoring and settlement on
     assert.equal(p.timeLimitMs, 50000);
     assert.deepEqual(Array.from(p.tiles, t => t.value).sort((a, b) => a - b), Array.from({length: 48}, (_, i) => i + 1));
     const layout = JSON.stringify(Array.from(p.tiles, t => [t.id, t.text, t.value, t.color]));
+    const palette = new Set(['#E91E63', '#9C27B0', '#3F51B5', '#2196F3', '#00BCD4',
+      '#4CAF50', '#FFEB3B', '#FF9800', '#FF5722', '#795548']);
+    const byNumber = new Map(Array.from(p.tiles, t => [t.value, t.color]));
+    for (let n = 1; n <= 48; n++) { assert.ok(palette.has(byNumber.get(n))); }
+    for (let n = 1; n <= 38; n++) { assert.equal(byNumber.get(n), byNumber.get(n + 10)); }
+    for (let start = 1; start <= 41; start += 10) {
+      const count = Math.min(10, 49 - start);
+      assert.equal(new Set(Array.from({length: count}, (_, i) => byNumber.get(start + i))).size, count);
+    }
     let score = 0;
     for (let i = 0; i < 48; i++) {
       const result = apply(p, move('tile', p.target[i]));

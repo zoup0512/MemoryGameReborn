@@ -2,44 +2,41 @@ package com.cube.memorygames.ui;
 
 import com.cube.memorygames.logic.GameRandom;
 import org.junit.Test;
-import java.util.Random;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import static org.junit.Assert.*;
 
 public class Game23ColorsTest {
-    @Test public void eachColorUsesThreeIndependentFullRangeChannelsAndOpaqueAlpha() {
-        GameRandom.init(20261016L);
-        Random expected = new Random(20261016L);
-        Set<Integer> colors = new HashSet<>();
-        Set<Integer> reds = new HashSet<>();
-        Set<Integer> greens = new HashSet<>();
-        Set<Integer> blues = new HashSet<>();
-        for (int i = 0; i < 4096; i++) {
-            int color = Game23Colors.nextColor();
-            int red = expected.nextInt(256);
-            int green = expected.nextInt(256);
-            int blue = expected.nextInt(256);
-            assertEquals(0xff000000 | (red << 16) | (green << 8) | blue, color);
-            colors.add(color);
-            reds.add(red);
-            greens.add(green);
-            blues.add(blue);
+    @Test public void paletteHoldsTheTenOpaqueSchulteColors() {
+        Set<Integer> expected = new HashSet<>(Arrays.asList(
+                0xffe91e63, 0xff9c27b0, 0xff3f51b5, 0xff2196f3, 0xff00bcd4,
+                0xff4caf50, 0xffffeb3b, 0xffff9800, 0xffff5722, 0xff795548));
+        int[] palette = Game23Colors.shuffledPalette();
+        Set<Integer> actual = new HashSet<>();
+        for (int color : palette) {
+            assertEquals(0xff000000, color & 0xff000000);
+            actual.add(color);
         }
-        assertTrue(colors.size() > 4000);
-        assertEquals(256, reds.size());
-        assertEquals(256, greens.size());
-        assertEquals(256, blues.size());
+        assertEquals(10, palette.length);
+        assertEquals(expected, actual);
     }
 
-    @Test public void sameRoundSeedReproducesAll48Colors() {
-        int[] colors = new int[48];
+    @Test public void shuffledPaletteIsReproducibleAndVariesBySeed() {
         GameRandom.init(12345L);
-        for (int i = 0; i < colors.length; i++) colors[i] = Game23Colors.nextColor();
+        int[] colors = Game23Colors.shuffledPalette();
         GameRandom.init(12345L);
-        for (int color : colors) assertEquals(color, Game23Colors.nextColor());
+        assertArrayEquals(colors, Game23Colors.shuffledPalette());
         GameRandom.init(54321L);
-        assertNotEquals(colors[0], Game23Colors.nextColor());
+        assertFalse(Arrays.equals(colors, Game23Colors.shuffledPalette()));
+    }
+
+    @Test public void numbersCycleThroughTheShuffledPaletteByNumber() {
+        int[] palette = Game23Colors.shuffledPalette();
+        for (int number = 1; number <= 48; number++) {
+            assertEquals(palette[(number - 1) % palette.length],
+                    Game23Colors.colorForNumber(number, palette));
+        }
     }
 
     @Test public void digitsUseContrastingBlackOrWhiteOnLightAndDarkCells() {

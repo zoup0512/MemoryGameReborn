@@ -18,6 +18,10 @@ const COLORS19: string[] = ['#F9C60F', '#8AB935', '#07A2E4', '#FF7043', '#E0007D
 const NAMES19: string[] = ['黄', '绿', '蓝', '橙', '玫红', '深灰'];
 const COLORS20: string[] = ['#FFC107', '#F44336', '#795548', '#4CAF50', '#2196F3', '#000000'];
 const NAMES20: string[] = ['黄色', '红色', '棕色', '绿色', '蓝色', '黑色'];
+const SCHULTE_COLORS: string[] = [
+  '#E91E63', '#9C27B0', '#3F51B5', '#2196F3', '#00BCD4',
+  '#4CAF50', '#FFEB3B', '#FF9800', '#FF5722', '#795548'
+];
 const SHAPES10: string[] = ['●', '◆', '■', '✦'];
 const SHAPES13: string[] = ['▲', '⬟', '⬢', '●', '◆', '■', '✦'];
 const SHAPES16: string[] = ['⬟', '◆', '⬢', '■', '▲', '●', '✦'];
@@ -407,11 +411,13 @@ function schulte(p: Puzzle): void {
   p.sequence = true;
   board(p, 6, 8);
   const numbers = shuffled(48);
+  // Palette and per-number assignment mirror the DevEco SchultzTablesPage:
+  // shuffle the ten colors once, then number n takes palette[(n - 1) % 10],
+  // so 1-10 cover the whole palette and 11-20 repeat the same order.
+  const palette = shuffled(SCHULTE_COLORS.length);
   for (let i = 0; i < 48; i++) {
-    const hex = '0123456789ABCDEF';
-    let color = '#';
-    for (let j = 0; j < 6; j++) { color += hex.charAt(randomInt(16)); }
-    show(p.tiles[i], (numbers[i] + 1).toString(), color, numbers[i] + 1);
+    const number = numbers[i] + 1;
+    show(p.tiles[i], number.toString(), SCHULTE_COLORS[palette[numbers[i] % palette.length]], number);
   }
   for (let value = 1; value <= 48; value++) {
     for (let i = 0; i < 48; i++) {
