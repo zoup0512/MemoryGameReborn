@@ -68,7 +68,7 @@ public class OnlineSession {
 
         void onMatchFound(MatchFound match);
 
-        void onMatchCancelled(boolean acceptedMatch, String mode);
+        void onMatchCancelled(MatchAcceptance.Action action, String mode);
 
         void onRoundStart(RoundStart round);
 
@@ -158,8 +158,7 @@ public class OnlineSession {
     private boolean roundReported;
     /** Exact entry fee mirrored locally for the accepted non-practice match. */
     private int localEntryFeeCharged;
-    /** True after this client pressed START for the current accepted match. */
-    private boolean localMatchStartSent;
+    private final MatchAcceptance matchAcceptance = new MatchAcceptance();
     /** Match id whose resign retry chain is currently active. */
     private String resigningMatchId;
     /** Local fallback for a lost match_cancelled frame during the START gate. */
@@ -698,11 +697,14 @@ public class OnlineSession {
         send(OnlineMessages.T_HISTORY_REQUEST, new Object());
     }
 
+    public boolean hasRequestedMatchStart() {
+        return matchId != null && matchAcceptance.isStartRequested();
+    }
+
     /** Origin's manual START: releases round 1 once both seats pressed. */
     public void sendMatchStart() {
-        if (this.matchId != null) {
-            this.localMatchStartSent = true;
-        }
+        if (this.matchId == null || this.resigningMatchId != null) return;
+        this.matchAcceptance.requestStart();
         sendMatchStartRequest();
     }
 
@@ -876,7 +878,7 @@ public class OnlineSession {
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
                 if (resumeMatch && this.currentRound < 0) {
-                    if (this.localMatchStartSent) {
+                    if (this.matchAcceptance.isStartRequested()) {
                         sendMatchStartRequest();
                     }
                     long remaining = this.acceptDeadlineElapsed > 0L
@@ -961,7 +963,7 @@ public class OnlineSession {
                 this.matchEndSeen = false;
                 this.resigningMatchId = null;
                 this.localEntryFeeCharged = 0;
-                this.localMatchStartSent = false;
+                this.matchAcceptance.clear();
                 this.disconnectedAt = 0L;
                 if (!this.practiceMode) {
                     chargeEntryFee();
@@ -980,26 +982,7 @@ public class OnlineSession {
             return;
         }
         if (OnlineMessages.T_MATCH_CANCELLED.equals(type)) {
-            diagnostic("match_cancelled", "reason", "match_cancelled");
-            boolean cancelledAcceptedMatch = this.matchId != null;
-            String cancelledMode = this.practiceMode ? MODE_PRACTICE
-                    : this.friendMode ? MODE_FRIEND : MODE_RANKED;
-            cancelAcceptFallback();
-            if (cancelledAcceptedMatch) {
-                refundEntryFeeIfNeeded();
-            }
-            clearMatchSnapshot("match_cancelled");
-            this.friendRoomPending = false;
-            this.practicePending = false;
-            cancelRoomAck();
-            cancelQueuedWatchdog();
-            setState(STATE_IDLE);
-            if (listener != null) {
-                try {
-                    listener.onMatchCancelled(cancelledAcceptedMatch, cancelledMode);
-                } catch (RuntimeException ignored) {
-                }
-            }
+            handleMatchCancelled("match_cancelled");
             return;
         }
         if (OnlineMessages.T_ROUND_START.equals(type)) {
@@ -1096,7 +1079,7 @@ public class OnlineSession {
                 this.roundClock.reset(0L);
                 this.lastRoundStart = null;
                 this.localEntryFeeCharged = 0;
-                this.localMatchStartSent = false;
+                this.matchAcceptance.clear();
                 this.disconnectedAt = 0L;
                 setState(STATE_IDLE);
                 if (listener != null) {
@@ -1241,6 +1224,30 @@ public class OnlineSession {
         }
     }
 
+    private void handleMatchCancelled(String reason) {
+        boolean hadMatch = this.matchId != null;
+        String mode = this.practiceMode ? MODE_PRACTICE : this.friendMode ? MODE_FRIEND : MODE_RANKED;
+        MatchAcceptance.Action action = this.matchAcceptance.cancel(hadMatch, mode,
+                this.resigningMatchId != null);
+        diagnostic("accept_gate".equals(reason) ? "accept_timeout" : "match_cancelled", "reason", reason);
+        if (hadMatch) refundEntryFeeIfNeeded();
+        clearMatchSnapshot(reason);
+        this.pendingQueueRejoin = false;
+        this.queueRequestPending = false;
+        this.friendRoomPending = false;
+        this.practicePending = false;
+        cancelRoomAck();
+        cancelQueuedWatchdog();
+        setState(STATE_IDLE);
+        MatchListener target = this.listener;
+        if (target != null) {
+            try {
+                target.onMatchCancelled(action, mode);
+            } catch (RuntimeException ignored) {
+            }
+        }
+    }
+
     private void armAcceptFallback(long delayMs) {
         if (this.acceptFallback != null) {
             this.main.removeCallbacks(this.acceptFallback);
@@ -1262,19 +1269,7 @@ public class OnlineSession {
                 if (active == null || !active.isConnected()) {
                     return;
                 }
-                String mode = OnlineSession.this.practiceMode ? MODE_PRACTICE
-                        : OnlineSession.this.friendMode ? MODE_FRIEND : MODE_RANKED;
-                diagnostic("accept_timeout", "reason", "accept_gate");
-                refundEntryFeeIfNeeded();
-                clearMatchSnapshot("accept_gate");
-                setState(STATE_IDLE);
-                MatchListener target = OnlineSession.this.listener;
-                if (target != null) {
-                    try {
-                        target.onMatchCancelled(true, mode);
-                    } catch (RuntimeException ignored) {
-                    }
-                }
+                handleMatchCancelled("accept_gate");
             }
         };
         this.main.postDelayed(this.acceptFallback, delayMs);
@@ -1305,7 +1300,7 @@ public class OnlineSession {
         this.oppScore = 0;
         this.roundReported = false;
         this.localEntryFeeCharged = 0;
-        this.localMatchStartSent = false;
+        this.matchAcceptance.clear();
         this.resigningMatchId = null;
         this.resignRetries = 0;
     }
@@ -1321,6 +1316,7 @@ public class OnlineSession {
             profile.wins = end.myWins;
             profile.losses = end.myLosses;
             profile.draws = end.myDraws;
+            OnlineModeStats.applySettlement(profile, end);
             profile.practiceStreak = end.practiceStreak;
         }
         this.practiceStreak = end.practiceStreak;

@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
+import java.util.Map;
+
 /**
  * Wire protocol between the client and the PK server (see
  * docs/online-pk-prd.md section 4.3). Every frame is a JSON envelope
@@ -62,6 +64,12 @@ public final class OnlineMessages {
 
     // ---------------------------------------------------------------- DTOs
 
+    public static class MatchStats {
+        public long wins;
+        public long losses;
+        public long draws;
+    }
+
     /** Server-side opponent / profile snapshot. */
     public static class OpponentInfo {
         public long userId;
@@ -75,6 +83,7 @@ public final class OnlineMessages {
         public int wins;
         public int losses;
         public int draws;
+        public Map<String, MatchStats> modeStats;
     }
 
     public static class Register {
@@ -125,6 +134,7 @@ public final class OnlineMessages {
         public int wins;
         public int losses;
         public int draws;
+        public Map<String, MatchStats> modeStats;
         public int balance;
         public int seasonIndex;
         public long seasonEndsAt;
@@ -215,6 +225,8 @@ public final class OnlineMessages {
     /** result: "W" win, "L" loss, "D" draw. */
     public static class MatchEnd {
         public String matchId;
+        public String mode;
+        public Map<String, MatchStats> modeStats;
         public String result;
         public int myScore;
         public int oppScore;

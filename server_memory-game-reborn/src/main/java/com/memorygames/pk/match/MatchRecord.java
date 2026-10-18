@@ -24,7 +24,7 @@ public class MatchRecord {
     @Column(nullable = false, unique = true)
     public String matchId;
 
-    /** RANKED or FRIEND. */
+    /** RANKED, PRACTICE or FRIEND. */
     @Column(nullable = false)
     public String mode;
 

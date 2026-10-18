@@ -9,9 +9,13 @@ import com.memorygames.pk.rating.Rating;
 import com.memorygames.pk.user.UserAccount;
 import com.memorygames.pk.user.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.InOrder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledFuture;
@@ -330,6 +334,84 @@ class MatchRoomTimingTest {
         }
     }
 
+    @ParameterizedTest(name = "accept timeout: acceptedA={0}, acceptedB={1}")
+    @CsvSource({"false, false", "true, false", "false, true"})
+    void acceptTimeoutCancelsBothHumansOnceAndLateStartsCannotReviveRoom(boolean acceptedA, boolean acceptedB) {
+        try (Fixture f = new Fixture(MatchRoom.MODE_RANKED, false, 2)) {
+            f.room.start();
+            if (acceptedA) f.room.onMatchStart(1);
+            if (acceptedB) f.room.onMatchStart(2);
+            long deadline = f.clock.get() + f.properties.getTiming().getAcceptTimeoutMs();
+            ManualTask acceptTimeout = f.scheduler.at(deadline);
+            doAnswer(ignored -> {
+                for (List<String> sent : List.of(f.sent, f.sentB)) {
+                    assertEquals(List.of(ProtocolCodec.T_MATCH_FOUND),
+                            sent.stream().map(json -> decode(json).t).toList(),
+                            "release callback must precede either cancellation");
+                }
+                return null;
+            }).when(f.settlementCallback).onSettled(f.room);
+
+            f.scheduler.advanceTo(deadline - 1);
+            assertTrue(f.dbTasks.isEmpty(), "accept timeout must not fire early");
+            verify(f.settlement, never()).abortMatch(anyString());
+            verifyNoInteractions(f.settlementCallback);
+            for (List<String> sent : List.of(f.sent, f.sentB)) {
+                assertEquals(List.of(ProtocolCodec.T_MATCH_FOUND),
+                        sent.stream().map(json -> decode(json).t).toList());
+            }
+
+            f.scheduler.advanceTo(deadline);
+            assertEquals(1, f.dbTasks.size(), "timeout dispatches exactly one abort");
+            verify(f.settlement, never()).abortMatch(anyString());
+            verifyNoInteractions(f.settlementCallback);
+            // Replayed dequeued timers and late STARTs must be harmless even
+            // while the abort is still waiting for the DB executor.
+            for (int i = 0; i < 3; i++) {
+                acceptTimeout.command.run();
+                f.room.onMatchStart(1);
+                f.room.onMatchStart(2);
+            }
+            f.scheduler.advanceTo(deadline);
+            assertEquals(1, f.dbTasks.size());
+            assertEquals(0, f.room.adminSnapshot().round);
+            assertEquals(1, f.scheduler.tasks.size(), "late START must not schedule a round");
+            for (List<String> sent : List.of(f.sent, f.sentB)) {
+                assertEquals(List.of(ProtocolCodec.T_MATCH_FOUND),
+                        sent.stream().map(json -> decode(json).t).toList(),
+                        "cancellation must wait for abort and seat release");
+            }
+
+            f.dbTasks.get(0).run();
+            for (int i = 0; i < 3; i++) {
+                acceptTimeout.command.run();
+                f.room.onMatchStart(1);
+                f.room.onMatchStart(2);
+            }
+            f.scheduler.advanceTo(deadline + 100000);
+            assertEquals(1, f.dbTasks.size(), "replays must not dispatch another abort or settlement");
+            assertEquals(0, f.room.adminSnapshot().round);
+            assertTrue(f.room.adminSnapshot().roundEnded);
+            assertEquals(0, f.room.adminSnapshot().nextRoundStartsAt);
+            assertEquals(1, f.scheduler.tasks.size(), "cancelled room must not gain new timers");
+            for (List<String> sent : List.of(f.sent, f.sentB)) {
+                assertEquals(List.of(ProtocolCodec.T_MATCH_FOUND, ProtocolCodec.T_MATCH_CANCELLED),
+                        sent.stream().map(json -> decode(json).t).toList(),
+                        "each human gets one cancellation, no opponent_start/round_start/round_end/match_end");
+                assertEquals(Map.of(), decode(sent.get(1)).data, "cancellation payload must stay empty");
+            }
+            InOrder cleanup = inOrder(f.settlement, f.settlementCallback);
+            cleanup.verify(f.settlement).openMatch(f.room.matchId, MatchRoom.MODE_RANKED,
+                    1L, 2L, f.properties.getEconomy().getEntryFee());
+            cleanup.verify(f.settlement).abortMatch(f.room.matchId);
+            cleanup.verify(f.settlementCallback).onSettled(f.room);
+            verify(f.settlement, never()).settle(any());
+            verifyNoMoreInteractions(f.settlement, f.settlementCallback);
+            // This fixture observes the release callback, not MatchManager's
+            // room/user maps or Matchmaker's queue; it cannot prove requeue behavior.
+        }
+    }
+
     @Test
     void dequeuedAcceptTimeoutCannotCancelAlreadyAcceptedPreparation() {
         try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
@@ -499,7 +581,10 @@ class MatchRoomTimingTest {
         final PkProperties properties = new PkProperties();
         final ManualScheduler scheduler = new ManualScheduler(clock);
         final List<String> sent = new ArrayList<>();
+        final List<String> sentB = new ArrayList<>();
         final List<Runnable> dbTasks = new ArrayList<>();
+        final SettlementService settlement = mock(SettlementService.class);
+        final MatchRoom.SettlementCallback settlementCallback = mock(MatchRoom.SettlementCallback.class);
         final MatchRoom room;
         final boolean bot;
         long startedAt;
@@ -518,7 +603,7 @@ class MatchRoomTimingTest {
             properties.getTiming().setMatchFoundDelayMs(0);
             properties.getTiming().setRoundGraceMs(GRACE);
             UserAccount a = user(1);
-            room = new MatchRoom(a, endpoint(sent), bot ? null : user(2), new PlayerEndpoint.Bot(),
+            room = new MatchRoom(a, endpoint(sent), bot ? null : user(2), endpoint(sentB),
                     "Bot", mode, 1000, accuracy, pace,
                     new GameCatalog(properties) {
                         @Override public List<ProtocolRound> planRounds(long seed, int count) {
@@ -527,8 +612,8 @@ class MatchRoomTimingTest {
                             return plan;
                         }
                     }, mock(UserService.class), new Rating(properties), properties,
-                    MatchTerms.forVersus(properties), scheduler, dbTasks::add, ignored -> {},
-                    mock(SettlementService.class), null, mock(EventRing.class), new AdminMetrics()) {
+                    MatchTerms.forVersus(properties), scheduler, dbTasks::add, settlementCallback,
+                    settlement, null, mock(EventRing.class), new AdminMetrics()) {
                 @Override long now() { return clock.get(); }
                 @Override java.util.Random newBotRandom() {
                     return answers != null ? answers : super.newBotRandom();

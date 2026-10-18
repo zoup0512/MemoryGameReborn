@@ -206,6 +206,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
             showMatchUi();
             if (OnlineSession.get().getLastRoundEnd() != null) {
                 showIntermissionUi();
+            } else if (OnlineSession.get().getCurrentRound() < 0
+                    && OnlineSession.get().hasRequestedMatchStart()) {
+                showAcceptWaitingUi();
             } else if (OnlineSession.get().isPracticeMode()) {
                 restorePracticeRound();
             }
@@ -1600,9 +1603,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     }
 
     @Override
-    public void onMatchCancelled(boolean acceptedMatch, String mode) {
+    public void onMatchCancelled(MatchAcceptance.Action action, String mode) {
         diagnostic("match_cancelled","mode",mode,"reason","match_cancelled");
-        if (!acceptedMatch || isFinishing()) {
+        if (action == MatchAcceptance.Action.IGNORE || destroyed || isFinishing()) {
             return;
         }
         launchGate.clear();
@@ -1614,9 +1617,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         pendingTutorialInfo = null;
         if (tutorialRequest >= 0) finishActivity(tutorialRequest);
         Toast.makeText(this, R.string.toast_game_not_accepted, Toast.LENGTH_SHORT).show();
-        if (OnlineSession.MODE_RANKED.equals(mode)) {
-            OnlineSession.get().startMatchmaking();
+        if (action == MatchAcceptance.Action.REQUEUE) {
             showSearchUi();
+            OnlineSession.get().startMatchmaking();
         } else {
             finishReason="match_cancelled";
             finish();

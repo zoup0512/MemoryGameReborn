@@ -371,7 +371,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
     }
 
     @Override
-    public void onMatchCancelled(boolean acceptedMatch, String mode) {
+    public void onMatchCancelled(MatchAcceptance.Action action, String mode) {
     }
 
     @Override

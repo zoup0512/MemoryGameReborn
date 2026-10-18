@@ -168,11 +168,15 @@
     <string name="online_connection_offline">你已离线</string>
     <string name="online_retry">重试</string>
     <string name="online_entry_fee">入场 %1$d</string>
+    <string name="online_tab_ranked">排位赛</string>
+    <string name="online_tab_practice">练习场</string>
+    <string name="online_tab_friend">亲友赛</string>
+    <string name="online_mode_stats_unavailable">此模式的战绩暂不可用。</string>
     <string name="online_ranked_title">排位赛</string>
     <string name="online_ranked_subtitle">在快速对决中赢取金币和 ELO。</string>
     <string name="online_practice_title">练习场</string>
     <string name="online_practice_subtitle">免费练习 · 不影响 ELO</string>
-    <string name="online_friend_title">与好友对战</string>
+    <string name="online_friend_title">亲友赛</string>
     <string name="online_friend_subtitle">创建私密房间，或输入四位数字代码。</string>
     <string name="online_overview_title">你的赛季</string>
     <string name="online_win_rate">胜率</string>
@@ -323,7 +327,7 @@
     <string name="text_yesterday">昨天</string>
     <string name="textview_start_game_top">玩法说明</string>
     <string name="title_online_history">在线历史</string>
-    <string name="toast_game_not_accepted">对方未接受对局</string>
+    <string name="toast_game_not_accepted">对局未确认，已取消</string>
     <string name="top_ranks_text">排行榜</string>
     <string name="transfer_title">正在将数据转换为新格式</string>
     <string name="trophies_title">奖杯</string>

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Map;
+
 /**
  * Wire codec for the envelope {"v":1,"t":"<type>","d":{...}}.
  *
@@ -133,6 +135,13 @@ public final class ProtocolCodec {
         public String difficulty;
     }
 
+    /** All-time non-voided match counts from the user's perspective. */
+    public static class MatchStats {
+        public long wins;
+        public long losses;
+        public long draws;
+    }
+
     public static class OpponentInfo {
         public long userId;
         public String nickname;
@@ -141,10 +150,12 @@ public final class ProtocolCodec {
         public boolean isBot;
         /** Practice bots only: the difficulty tier id (e.g. "BRONZE"). */
         public String tier;
-        /** Season record for the pre-match statistics board. */
+        /** Legacy aggregate record for the pre-match statistics board. */
         public int wins;
         public int losses;
         public int draws;
+        /** Authoritative all-time buckets keyed RANKED, PRACTICE and FRIEND. */
+        public Map<String, MatchStats> modeStats;
     }
 
     public static class RoundDesc {
@@ -194,6 +205,7 @@ public final class ProtocolCodec {
     /** result: "W" win, "L" loss, "D" draw. */
     public static class MatchEnd {
         public String matchId;
+        public String mode;
         public String result;
         public int myScore;
         public int oppScore;
@@ -207,6 +219,8 @@ public final class ProtocolCodec {
         public int myWins;
         public int myLosses;
         public int myDraws;
+        /** Full authoritative snapshot including this settlement, not a delta. */
+        public Map<String, MatchStats> modeStats;
         /** Per-round scores feeding the results list board. */
         public RoundScore[] rounds;
     }
@@ -248,6 +262,8 @@ public final class ProtocolCodec {
         public int wins;
         public int losses;
         public int draws;
+        /** Authoritative all-time buckets keyed RANKED, PRACTICE and FRIEND. */
+        public Map<String, MatchStats> modeStats;
         public int balance;
         public int seasonIndex;
         public long seasonEndsAt;
