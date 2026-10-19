@@ -355,9 +355,9 @@
     <string name="online_retry">Повторить</string>
     <string name="online_entry_fee">Взнос %1$d</string>
     <string name="online_ranked_title">Ранговый матч</string>
-    <string name="online_ranked_subtitle">Зарабатывайте монетки и ELO в быстрой дуэли один на один.</string>
+    <string name="online_ranked_subtitle">Зарабатывайте монетки и повышайте рейтинг в быстрой дуэли один на один.</string>
     <string name="online_practice_title">Тренировочная арена</string>
-    <string name="online_practice_subtitle">Бесплатная тренировка · без риска для ELO</string>
+    <string name="online_practice_subtitle">Бесплатная тренировка · без риска для рейтинга</string>
     <string name="online_friend_title">Играйте с другом</string>
     <string name="online_friend_subtitle">Создайте приватную комнату или введите четырёхзначный код.</string>
     <string name="online_overview_title">Ваш сезон</string>
@@ -368,9 +368,9 @@
     <string name="online_rule_two">Оба игрока проходят одни и те же игры с одинаковым сидом.</string>
     <string name="online_rule_three">Наберите больше очков до конца таймера раунда.</string>
     <string name="online_profile_offline">Подключитесь, чтобы загрузить профиль</string>
-    <string name="online_profile_rank_line">%1$s · %2$d ELO</string>
+    <string name="online_profile_rank_line">%1$s · рейтинг %2$d</string>
     <string name="online_percent">%1$d%%</string>
-    <string name="online_practice_with_streak">Бесплатная тренировка · без риска для ELO · Серия побед: %1$d</string>
+    <string name="online_practice_with_streak">Бесплатная тренировка · без риска для рейтинга · Серия побед: %1$d</string>
     <string name="online_game_tutorial_title">Обучение: %1$s</string>
     <string name="online_tutorial_rating_up_value">58</string>
     <string name="online_tutorial_rating_down_value">53</string>
@@ -385,7 +385,7 @@
     <string name="online_match_ready_subtitle">Изучите расклад и начинайте, когда будете готовы.</string>
     <string name="online_stake_title">Ставка матча</string>
     <string name="online_free_match">Бесплатный матч</string>
-    <string name="online_ranked_rating_note">На кону ELO</string>
+    <string name="online_ranked_rating_note">На кону рейтинг</string>
     <string name="online_rounds_label">Раундов: %1$d</string>
     <string name="online_round_score">Счёт %1$d : %2$d</string>
     <string name="online_waiting_subtitle">Матч начнётся, как только оба игрока будут готовы.</string>
@@ -395,7 +395,7 @@
     <string name="online_result_draw_subtitle">Равная борьба. Ещё разок?</string>
     <string name="online_result_loss_subtitle">Разберите раунды и возвращайтесь сильнее.</string>
     <string name="online_reward_coins">Монетки</string>
-    <string name="online_reward_rating">Рейтинг ELO</string>
+    <string name="online_reward_rating">Рейтинг</string>
     <string name="online_round_results">Результаты раундов</string>
     <string name="online_total">Всего</string>
     <string name="online_history_loading">Загружаем недавние матчи…</string>
@@ -411,7 +411,7 @@
     <string name="online_room_expires">Комната закроется через десять минут</string>
     <string name="online_room_copy_hint">Поделитесь этим кодом с другом</string>
     <string name="online_room_invalid">Введите все четыре цифры</string>
-    <string name="online_bot_reward">%1$d ELO · победа +%2$d</string>
+    <string name="online_bot_reward">Рейтинг %1$d · победа +%2$d</string>
     <string name="online_tutorial_fee">Для входа в ранговый матч нужно &lt;b&gt;%1$d монеток&lt;/b&gt;</string>
     <string name="online_tutorial_win_fee">Выиграйте матч и получите монетки</string>
     <string name="online_tutorial_loss_fee">Проигранный ранговый матч тратит взнос</string>
@@ -421,7 +421,7 @@
     <string name="online_rank_platinum">Платина</string>
     <string name="online_rank_diamond">Алмаз</string>
     <string name="online_rank_master">Мастер</string>
-    <string name="online_elo">ELO</string>
+    <string name="online_elo">Рейтинг</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Раунд</string>
     <string name="online_again">Играть снова</string>

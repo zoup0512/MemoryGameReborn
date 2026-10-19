@@ -292,7 +292,8 @@ public final class OnlineRankingActivity extends AppCompatActivity {
         this.nickname.setText(available ? summary.nickname : getString(R.string.online_ranking_no_profile));
         this.rating.setText(available ? String.valueOf(summary.elo) : "—");
         this.rating.setContentDescription(available
-                ? getString(R.string.online_ranking_rating) + ": " + summary.elo + " ELO" : null);
+                ? getString(R.string.online_ranking_rating_accessibility,
+                        getString(R.string.online_elo), summary.elo) : null);
         this.ratingLabel.setVisibility(available ? View.VISIBLE : View.GONE);
         this.tier.setVisibility(available ? View.VISIBLE : View.GONE);
         this.stats.setVisibility(available ? View.VISIBLE : View.GONE);

@@ -6,9 +6,9 @@
     <string name="online_ranking_no_profile">Noch keine synchronisierten Ergebnisse</string>
     <string name="online_ranking_no_profile_hint">Öffne die Bestenliste oder den Matchverlauf, um dich zu verbinden und Ergebnisse zu laden.</string>
     <string name="online_ranking_top_title">Online-Bestenliste</string>
-    <string name="online_ranking_top_hint">Sieh dir die besten Spieler an und vergleiche ELO-Wertungen.</string>
+    <string name="online_ranking_top_hint">Sieh dir die besten Spieler an und vergleiche Wertungen.</string>
     <string name="online_ranking_history_title">Matchverlauf</string>
     <string name="online_ranking_history_hint">Sieh dir letzte Gegner, Punktestände und Ergebnisse an.</string>
-    <string name="online_ranking_season_hint">Gewertete Matches bestimmen deinen Rang und deine ELO-Wertung.</string>
+    <string name="online_ranking_season_hint">Gewertete Matches bestimmen deinen Rang und deine Wertung.</string>
     <string name="online_ranking_tier_unknown">Rang nach dem Verbinden verfügbar</string>
 </resources>

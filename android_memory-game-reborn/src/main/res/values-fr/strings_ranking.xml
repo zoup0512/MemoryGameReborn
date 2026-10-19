@@ -6,9 +6,9 @@
     <string name="online_ranking_no_profile">Aucun résultat synchronisé</string>
     <string name="online_ranking_no_profile_hint">Ouvrez le classement ou l’historique des matchs pour vous connecter et charger vos résultats.</string>
     <string name="online_ranking_top_title">Classement en ligne</string>
-    <string name="online_ranking_top_hint">Découvrez les meilleurs joueurs et comparez les cotes ELO.</string>
+    <string name="online_ranking_top_hint">Découvrez les meilleurs joueurs et comparez les cotes.</string>
     <string name="online_ranking_history_title">Historique des matchs</string>
     <string name="online_ranking_history_hint">Consultez vos adversaires, scores et résultats récents.</string>
-    <string name="online_ranking_season_hint">Les matchs classés déterminent votre rang et votre cote ELO.</string>
+    <string name="online_ranking_season_hint">Les matchs classés déterminent votre rang et votre cote.</string>
     <string name="online_ranking_tier_unknown">Rang disponible après connexion</string>
 </resources>

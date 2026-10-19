@@ -187,9 +187,9 @@ Nickname"</string>
     <string name="online_ranked_meta" translatable="false">%1$s · %2$s</string>
     <string name="online_mode_stats_unavailable">Stats for this mode are unavailable.</string>
     <string name="online_ranked_title">Ranked match</string>
-    <string name="online_ranked_subtitle">Win coins and ELO in a quick head-to-head duel.</string>
+    <string name="online_ranked_subtitle">Win coins and boost your rating in a quick head-to-head duel.</string>
     <string name="online_practice_title">Practice arena</string>
-    <string name="online_practice_subtitle">Free practice · no ELO risk</string>
+    <string name="online_practice_subtitle">Free practice · no rating risk</string>
     <string name="online_friend_title">Play with a friend</string>
     <string name="online_friend_subtitle">Create a private room or enter a four-digit code.</string>
     <string name="online_overview_title">Your season</string>
@@ -201,19 +201,19 @@ Nickname"</string>
     <string name="online_ranking_no_profile">No synced results yet</string>
     <string name="online_ranking_no_profile_hint">Open the leaderboard or match history to connect and load your results.</string>
     <string name="online_ranking_top_title">Online leaderboard</string>
-    <string name="online_ranking_top_hint">See the top players and compare ELO ratings.</string>
+    <string name="online_ranking_top_hint">See the top players and compare ratings.</string>
     <string name="online_ranking_history_title">Match history</string>
     <string name="online_ranking_history_hint">Review recent opponents, scores and results.</string>
-    <string name="online_ranking_season_hint">Ranked matches determine your tier and ELO rating.</string>
+    <string name="online_ranking_season_hint">Ranked matches determine your tier and rating.</string>
     <string name="online_ranking_tier_unknown">Tier available after connecting</string>
     <string name="online_rules_title">How Online works</string>
     <string name="online_rule_one">Choose ranked, practice, or a private room.</string>
     <string name="online_rule_two">Both players face the same games and seed.</string>
     <string name="online_rule_three">Score more before the round timer ends.</string>
     <string name="online_profile_offline">Connect to load your profile</string>
-    <string name="online_profile_rank_line">%1$s · %2$d ELO</string>
+    <string name="online_profile_rank_line">%1$s · rating %2$d</string>
     <string name="online_percent">%1$d%%</string>
-    <string name="online_practice_with_streak">Free practice · no ELO risk · Win streak: %1$d</string>
+    <string name="online_practice_with_streak">Free practice · no rating risk · Win streak: %1$d</string>
     <string name="online_game_tutorial_title">Tutorial: %1$s</string>
     <string name="online_tutorial_rating_up_value">58</string>
     <string name="online_tutorial_rating_down_value">53</string>
@@ -228,7 +228,7 @@ Nickname"</string>
     <string name="online_match_ready_subtitle">Compare the matchup, then start when you’re ready.</string>
     <string name="online_stake_title">Match stake</string>
     <string name="online_free_match">Free match</string>
-    <string name="online_ranked_rating_note">ELO on the line</string>
+    <string name="online_ranked_rating_note">Rating on the line</string>
     <string name="online_rounds_label">%1$d rounds</string>
     <string name="online_round_score">Score %1$d : %2$d</string>
     <string name="online_waiting_subtitle">The match starts as soon as both players are ready.</string>
@@ -238,7 +238,7 @@ Nickname"</string>
     <string name="online_result_draw_subtitle">Evenly matched. One more?</string>
     <string name="online_result_loss_subtitle">Review the rounds and come back stronger.</string>
     <string name="online_reward_coins">Coins</string>
-    <string name="online_reward_rating">ELO rating</string>
+    <string name="online_reward_rating">Rating</string>
     <string name="online_round_results">Round results</string>
     <string name="online_total">Total</string>
     <string name="online_history_loading">Loading your recent matches…</string>
@@ -254,7 +254,7 @@ Nickname"</string>
     <string name="online_room_expires">Room closes in ten minutes</string>
     <string name="online_room_copy_hint">Share this code with your friend</string>
     <string name="online_room_invalid">Enter all four digits</string>
-    <string name="online_bot_reward">%1$d ELO · win +%2$d</string>
+    <string name="online_bot_reward">Rating %1$d · win +%2$d</string>
     <string name="online_tutorial_fee">You need &lt;b&gt;%1$d coins&lt;/b&gt; to enter a ranked match</string>
     <string name="online_tutorial_win_fee">Win the match to earn coins</string>
     <string name="online_tutorial_loss_fee">A ranked loss spends the entry stake</string>
@@ -266,7 +266,9 @@ Nickname"</string>
     <string name="online_rank_master">Master</string>
     <string name="online_draw">Draw!</string>
     <string name="online_lose">You lost</string>
-    <string name="online_elo">ELO</string>
+    <string name="online_elo">Rating</string>
+    <string name="online_account_rating" translatable="false">%1$s %2$d</string>
+    <string name="online_ranking_rating_accessibility" translatable="false">%1$s: %2$d</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Round</string>
     <string name="online_again">Play again</string>

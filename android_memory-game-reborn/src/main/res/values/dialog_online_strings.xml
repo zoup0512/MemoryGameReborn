@@ -43,7 +43,7 @@
     <string name="dialog_account_error_environment">The saved identity belongs to another service environment. Return to its original address; do not reuse its credentials elsewhere.</string>
     <string name="dialog_account_error_changed">The account or service environment changed. Review the current account and retry.</string>
     <string name="dialog_account_error_storage">The secure identity could not be verified or saved. Existing credentials are retained. Do not clear app data.</string>
-    <string name="dialog_account_error_logout">Logout was not confirmed by the server. Your previous identity is retained. Retry; coins and ELO will not be merged.</string>
+    <string name="dialog_account_error_logout">Logout was not confirmed by the server. Your previous identity is retained. Retry; coins and rating will not be merged.</string>
     <string name="dialog_account_error_guest">This action requires an eligible retained guest. If you already bound an email, log in with that email instead.</string>
     <string name="dialog_account_error_endpoint">Enter a valid ws[s]://host[:port]/ws address. Accounts and migration require WSS/HTTPS, except explicitly configured local account debugging.</string>
     <string name="dialog_account_error_unknown">The request could not be completed. Review the account state and try again. Existing credentials are retained.</string>

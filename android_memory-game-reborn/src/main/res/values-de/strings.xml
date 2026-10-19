@@ -354,9 +354,9 @@ Schalten Sie aus!"</string>
     <string name="online_retry">Erneut versuchen</string>
     <string name="online_entry_fee">Einsatz %1$d</string>
     <string name="online_ranked_title">Ranglistenmatch</string>
-    <string name="online_ranked_subtitle">Gewinnen Sie Münzen und ELO in einem schnellen Duell.</string>
+    <string name="online_ranked_subtitle">Gewinnen Sie Münzen und steigern Sie Ihre Wertung in einem schnellen Duell.</string>
     <string name="online_practice_title">Trainingsarena</string>
-    <string name="online_practice_subtitle">Kostenloses Training · kein ELO-Risiko</string>
+    <string name="online_practice_subtitle">Kostenloses Training · kein Risiko für die Wertung</string>
     <string name="online_friend_title">Mit einem Freund spielen</string>
     <string name="online_friend_subtitle">Erstellen Sie einen privaten Raum oder geben Sie einen vierstelligen Code ein.</string>
     <string name="online_overview_title">Ihre Saison</string>
@@ -367,9 +367,9 @@ Schalten Sie aus!"</string>
     <string name="online_rule_two">Beide Spieler bekommen dieselben Spiele mit demselben Seed.</string>
     <string name="online_rule_three">Erzielen Sie mehr Punkte, bevor der Rundentimer abläuft.</string>
     <string name="online_profile_offline">Verbinden, um Ihr Profil zu laden</string>
-    <string name="online_profile_rank_line">%1$s · %2$d ELO</string>
+    <string name="online_profile_rank_line">%1$s · Wertung %2$d</string>
     <string name="online_percent">%1$d%%</string>
-    <string name="online_practice_with_streak">Kostenloses Training · kein ELO-Risiko · Siegesserie: %1$d</string>
+    <string name="online_practice_with_streak">Kostenloses Training · kein Risiko für die Wertung · Siegesserie: %1$d</string>
     <string name="online_game_tutorial_title">Anleitung: %1$s</string>
     <string name="online_tutorial_rating_up_value">58</string>
     <string name="online_tutorial_rating_down_value">53</string>
@@ -384,7 +384,7 @@ Schalten Sie aus!"</string>
     <string name="online_match_ready_subtitle">Vergleichen Sie die Paarung und starten Sie, wenn Sie bereit sind.</string>
     <string name="online_stake_title">Matcheinsatz</string>
     <string name="online_free_match">Freies Match</string>
-    <string name="online_ranked_rating_note">Es geht um ELO</string>
+    <string name="online_ranked_rating_note">Es geht um Ihre Wertung</string>
     <string name="online_rounds_label">%1$d Runden</string>
     <string name="online_round_score">Punkte %1$d : %2$d</string>
     <string name="online_waiting_subtitle">Das Match startet, sobald beide Spieler bereit sind.</string>
@@ -394,7 +394,7 @@ Schalten Sie aus!"</string>
     <string name="online_result_draw_subtitle">Gleich stark. Noch ein Match?</string>
     <string name="online_result_loss_subtitle">Analysieren Sie die Runden und kommen Sie stärker zurück.</string>
     <string name="online_reward_coins">Münzen</string>
-    <string name="online_reward_rating">ELO-Rating</string>
+    <string name="online_reward_rating">Wertung</string>
     <string name="online_round_results">Rundenergebnisse</string>
     <string name="online_total">Gesamt</string>
     <string name="online_history_loading">Ihre letzten Matches werden geladen…</string>
@@ -410,7 +410,7 @@ Schalten Sie aus!"</string>
     <string name="online_room_expires">Der Raum schließt in zehn Minuten</string>
     <string name="online_room_copy_hint">Teilen Sie diesen Code mit Ihrem Freund</string>
     <string name="online_room_invalid">Bitte alle vier Ziffern eingeben</string>
-    <string name="online_bot_reward">%1$d ELO · Sieg +%2$d</string>
+    <string name="online_bot_reward">Wertung %1$d · Sieg +%2$d</string>
     <string name="online_tutorial_fee">Sie müssen &lt;b&gt;%1$d Münzen&lt;/b&gt; haben, um ein Ranglistenmatch zu spielen</string>
     <string name="online_tutorial_win_fee">Gewinnen Sie das Match, um Münzen zu erhalten</string>
     <string name="online_tutorial_loss_fee">Bei einer Niederlage ist der Einsatz verloren</string>
@@ -420,7 +420,7 @@ Schalten Sie aus!"</string>
     <string name="online_rank_platinum">Platin</string>
     <string name="online_rank_diamond">Diamant</string>
     <string name="online_rank_master">Meister</string>
-    <string name="online_elo">ELO</string>
+    <string name="online_elo">Wertung</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Runde</string>
     <string name="online_again">Nochmal spielen</string>

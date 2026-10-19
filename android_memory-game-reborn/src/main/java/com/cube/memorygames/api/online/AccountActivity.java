@@ -155,7 +155,8 @@ public final class AccountActivity extends AppCompatActivity {
             OnlineUi.applyAvatar(this,avatar,user.avatarValue); card.addView(avatar.view);
             card.addView(text(profileOnly ? user.nickname : getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
                     + " #" + user.userId + "\n" + user.nickname + "\n" + (user.email == null ? "" : user.email)
-                    + "\nELO " + user.elo + " · " + getString(R.string.online_account_balance,user.balance)));
+                    + "\n" + getString(R.string.online_account_rating,getString(R.string.online_elo),user.elo)
+                    + " · " + getString(R.string.online_account_balance,user.balance)));
         } else {
             OnlineMessages.AuthOk old=OnlineSession.get().getLastProfile();
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);

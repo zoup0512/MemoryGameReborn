@@ -352,9 +352,9 @@
     <string name="online_retry">Réessayer</string>
     <string name="online_entry_fee">Mise d\'entrée %1$d</string>
     <string name="online_ranked_title">Match classé</string>
-    <string name="online_ranked_subtitle">Gagnez des monnaies et de l\'ELO dans un rapide duel en face à face.</string>
+    <string name="online_ranked_subtitle">Gagnez des monnaies et améliorez votre cote dans un rapide duel en face à face.</string>
     <string name="online_practice_title">Arène d\'entraînement</string>
-    <string name="online_practice_subtitle">Entraînement gratuit · aucun risque pour l\'ELO</string>
+    <string name="online_practice_subtitle">Entraînement gratuit · aucun risque pour votre cote</string>
     <string name="online_friend_title">Jouez avec un ami</string>
     <string name="online_friend_subtitle">Créez un salon privé ou saisissez un code à quatre chiffres.</string>
     <string name="online_overview_title">Votre saison</string>
@@ -365,9 +365,9 @@
     <string name="online_rule_two">Les deux joueurs affrontent les mêmes jeux et la même graine.</string>
     <string name="online_rule_three">Marquez plus de points avant la fin du chronomètre du tour.</string>
     <string name="online_profile_offline">Connectez-vous pour charger votre profil</string>
-    <string name="online_profile_rank_line">%1$s · %2$d ELO</string>
+    <string name="online_profile_rank_line">%1$s · cote %2$d</string>
     <string name="online_percent">%1$d%%</string>
-    <string name="online_practice_with_streak">Entraînement gratuit · aucun risque pour l\'ELO · Série de victoires : %1$d</string>
+    <string name="online_practice_with_streak">Entraînement gratuit · aucun risque pour votre cote · Série de victoires : %1$d</string>
     <string name="online_game_tutorial_title">Tutoriel : %1$s</string>
     <string name="online_tutorial_rating_up_value">58</string>
     <string name="online_tutorial_rating_down_value">53</string>
@@ -382,7 +382,7 @@
     <string name="online_match_ready_subtitle">Comparez le match-up, puis démarrez quand vous êtes prêt.</string>
     <string name="online_stake_title">Mise du match</string>
     <string name="online_free_match">Match gratuit</string>
-    <string name="online_ranked_rating_note">ELO en jeu</string>
+    <string name="online_ranked_rating_note">Cote en jeu</string>
     <string name="online_rounds_label">%1$d manches</string>
     <string name="online_round_score">Score %1$d : %2$d</string>
     <string name="online_waiting_subtitle">Le match commence dès que les deux joueurs sont prêts.</string>
@@ -392,7 +392,7 @@
     <string name="online_result_draw_subtitle">Égalité parfaite. On remet ça ?</string>
     <string name="online_result_loss_subtitle">Revoyez les manches et revenez plus fort.</string>
     <string name="online_reward_coins">Monnaies</string>
-    <string name="online_reward_rating">Classement ELO</string>
+    <string name="online_reward_rating">Cote</string>
     <string name="online_round_results">Résultats des manches</string>
     <string name="online_total">Total</string>
     <string name="online_history_loading">Chargement de vos matchs récents…</string>
@@ -408,7 +408,7 @@
     <string name="online_room_expires">Le salon se ferme dans dix minutes</string>
     <string name="online_room_copy_hint">Partagez ce code avec votre ami</string>
     <string name="online_room_invalid">Saisissez les quatre chiffres</string>
-    <string name="online_bot_reward">%1$d ELO · victoire +%2$d</string>
+    <string name="online_bot_reward">Cote %1$d · victoire +%2$d</string>
     <string name="online_tutorial_fee">Vous avez besoin de &lt;b&gt;%1$d monnaies&lt;/b&gt; pour entrer dans un match classé</string>
     <string name="online_tutorial_win_fee">Gagnez le match pour remporter des monnaies</string>
     <string name="online_tutorial_loss_fee">Une défaite en match classé consomme la mise d\'entrée</string>
@@ -418,7 +418,7 @@
     <string name="online_rank_platinum">Platine</string>
     <string name="online_rank_diamond">Diamant</string>
     <string name="online_rank_master">Maître</string>
-    <string name="online_elo">ELO</string>
+    <string name="online_elo">Cote</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Manche</string>
     <string name="online_again">Rejouer</string>
