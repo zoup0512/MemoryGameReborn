@@ -11,7 +11,7 @@
 - 服务端 API 默认拒绝明文 HTTP。`PK_AUTH_ALLOW_HTTP=true` 仅用于隔离的本地验收，不能在公网生产开启。
 - 不记录 Authorization、refresh token、guestSecret、验证码和密码；反代也不能把这些数据写访问日志。
 - 已配置服务端与 SMTP 连接、读写超时。
-- 若开放自定义昵称，已按 [昵称机器审核](nickname-moderation.md) 配置外部审核服务，完成拒绝、需复核、超时及鉴权失败验收。未配置时只能使用服务端安全默认昵称，自定义改名必须明确失败；禁止上线临时“全部通过”审核实现。
+- 若开放自定义昵称，已按 [昵称机器审核](nickname-moderation.md) 确认同机敏感词服务（默认 `sensitive-word` 模式）可用，完成命中拒绝、超时、服务不可用及异常返回验收；使用腾讯模式时另验需复核与鉴权失败。服务不可用或 `disabled` 时自定义改名必须明确失败；禁止上线临时“全部通过”审核实现。
 - 接入第三方审核前完成隐私政策及供应商数据处理评估；只提交必要昵称文本，不提交账号邮箱、令牌或设备秘密。
 
 ## 2. TLS
@@ -109,7 +109,7 @@ JAVA_HOME=F:/jdk17 ./gradlew -p server_memory-game-reborn pgTest
 ```bash
 F:/jdk17/bin/java -jar server_memory-game-reborn/build/libs/<boot-jar>.jar \
   --server.address=127.0.0.1 --server.port=18081 \
-  --pk.auth.allow-http=true \
+  --pk.auth.allow-http=true --pk.nickname.mode=disabled \
   --spring.mail.host=127.0.0.1 --spring.mail.port=2526 \
   --pk.auth.mail-from=no-reply@example.com \
   --spring.mail.properties.mail.smtp.connectiontimeout=5000 \

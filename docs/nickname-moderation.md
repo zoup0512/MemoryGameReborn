@@ -2,7 +2,7 @@
 
 ## 默认行为与边界
 
-**默认配置不支持客户端自定义昵称，直到配置真实机器审核服务。** `mode=disabled` 不是放行模式：合法自定义昵称返回 HTTP 503 `NICKNAME_MODERATION_UNAVAILABLE`。本地词库只能提前拒绝，不能在外审不可用时替代生产审核。没有 `allow`、`mock`、任意 URL 回调或可配置通过接口。
+**默认使用云服务器同机敏感词服务**：`mode=sensitive-word`，后端固定调用 `http://127.0.0.1:18081/api/v1/check`，客户端不直接访问。`mode=disabled` 不是放行模式：合法自定义昵称返回 HTTP 503 `NICKNAME_MODERATION_UNAVAILABLE`。进程内的少量本地规则只能提前拒绝，不能在审核服务不可用时替代检测。没有 `allow`、`mock`、任意 URL 回调或可配置通过接口。
 
 服务端自行生成的昵称从固定的中文前后词库各选一词，例如“晴空小鹿”“星河企鹅”；不再生成 Player 数字。144 种组合允许重名，用户身份永远使用 userId。仅 `NicknameService.generate` 内部入口免外审，客户端提交相同文字仍需审核，没有按前缀或命中词库免审的逻辑。匿名化使用固定“已注销棋友”。机器人昵称是既有服务端配置，与用户写入分离。
 
@@ -21,6 +21,8 @@
 
 ### 外审结果
 
+同机服务 `data.contains=false` 对应 PASS，`true` 对应 REJECT；不提供 PENDING，协议异常对应 UNAVAILABLE。以下为可选腾讯模式及通用失败语义。
+
 | 腾讯 TMS Suggestion / 情况 | 结果 | 是否公开或提交 |
 |---|---|---|
 | Pass | 正常响应 | 提交时再次校验后才写入 |
@@ -31,13 +33,33 @@
 
 Review 不提供后台自动审批；用户可以重新选择昵称。若需要人工复核工单/异步转正，应另行设计，不能把 Review 当 Pass。
 
-## 腾讯云 TMS provider 配置
+## 同机敏感词服务（默认）
+
+部署拓扑：用户客户端调用现有 HTTPS 个人资料接口，运行在 `124.220.35.87` 上的 PK 后端通过 loopback 调用敏感词服务。**不要开放 18081 公网端口，不要将 `/api/v1/*` 反代到公网，也不要把云服务器 IP 的 18081 端口写进客户端。** PK 进程和检测服务必须处于同一网络命名空间；当前同机 systemd 部署适用，普通 Docker 容器中的 `127.0.0.1` 并不是宿主机。
+
+- `PK_NICKNAME_MODERATION_MODE=sensitive-word`（默认）；若已有环境变量覆盖为 `disabled` 或 `tencent`，上线时需要显式调整。
+- 固定 `POST /api/v1/check`，Content-Type 为 `application/json; charset=utf-8`，仅发送 `{"text":"规范化后的昵称"}`。不发送账号 ID、令牌、邮箱、设备秘密，不调用 analyze、replace 或动态增删词接口。
+- HTTP 200 且 `data.contains` 为严格 JSON 布尔值时（响应如包含 `code`，必须为整数0），`false` 通过、`true` 返回 422 `NICKNAME_REJECTED`。`firstWord` / `words` 不存储、不回显；审计使用本次服务端生成的 DataId，而非虚构供应商 RequestId。
+- 非200（包括重定向）、缺失或非布尔 `contains`、错误/非法 JSON、超时、连接失败及超过256 KiB的响应统一返回503。不跟随重定向，也不使用系统 HTTP 代理，避免本机请求被转发到外部。
+- 连接和单次请求超时复用 `PK_NICKNAME_TIMEOUT_MS`，默认3000毫秒，钳制200–10000毫秒。联合昵称/头像更新失败时均不落库、不启动冷却。
+- 仅做服务给出的敏感词判定，不把该词库等同于腾讯 TMS 的上下文语义审核。仍应维护词库与现有本地反冒充、联系方式检查。相同请求最多缓存60秒；动态加词不会主动清除此缓存，变更后同一主体同一请求最迟缓存到期才重新检测，进程重启也会清空缓存。
+
+发布验收需在云服务器本机确认服务可用（不输出真实用户昵称或命中词）：
+
+```bash
+curl --noproxy '*' -fsS http://127.0.0.1:18081/api/v1/check \
+  -H 'Content-Type: application/json' -d '{"text":"晴空小鹿"}'
+```
+
+随后以隔离测试账号验证安全昵称保存、已知测试敏感词拒绝，以及服务不可用时不改昵称/头像且不耗冷却。不要为验收停止生产敏感词服务，可在独立环境模拟故障。本次代码交付不连接生产、不改云上环境变量、不重启或部署服务。
+
+## 腾讯云 TMS provider 配置（可选）
 
 使用 Java 17 HttpClient，固定 HTTPS `https://tms.tencentcloudapi.com/`，不跟随重定向；API `TextModeration` / `2020-12-29`，Content 为 UTF-8 后 Base64，BizType 为昵称专属策略，DataId 是随机请求号。使用 TC3-HMAC-SHA256（service=tms、scope=date/tms/tc3_request、签名 content-type/host）；可传临时凭证 Token。未新增 SDK 依赖。凭据只由环境变量注入，不写入 Git、命令行参数或日志。
 
 | 环境变量 | 默认/用途 |
 |---|---|
-| `PK_NICKNAME_MODERATION_MODE` | `disabled`；配置后设 `tencent` |
+| `PK_NICKNAME_MODERATION_MODE` | 默认 `sensitive-word`；选择腾讯时显式设 `tencent`；`disabled` 拒绝自定义名 |
 | `PK_TENCENT_SECRET_ID` | 空；最小权限审核凭证 ID |
 | `PK_TENCENT_SECRET_KEY` | 空；凭证密钥 |
 | `PK_TENCENT_SESSION_TOKEN` | 空；使用临时凭证时必填 |
@@ -49,11 +71,11 @@ Review 不提供后台自动审批；用户可以重新选择昵称。若需要�
 | `PK_NICKNAME_GLOBAL_PER_MINUTE` | 60；每进程全局外审调用上限 |
 | `PK_NICKNAME_SUBJECT_PER_MINUTE` | 5；每用户/新建身份每分钟外审调用上限 |
 
-管理员应在腾讯云开通 TMS、确认地域与计费、建立适合昵称的策略和自定义词库、授予仅 TextModeration 所需权限后注入配置。程序默认不会发外部请求。此交付未进行真实服务调用或公网核验；发布前需用隔离测试凭据验证真实签名、策略 Pass/Block/Review、权限和额度，不可直接依赖离线测试认定已验收供应商。
+管理员应在腾讯云开通 TMS、确认地域与计费、建立适合昵称的策略和自定义词库、授予仅 TextModeration 所需权限后注入配置。程序默认只请求 loopback 敏感词服务，不会请求公网腾讯接口。此交付未进行真实服务调用或公网核验；发布前需用隔离测试凭据验证真实签名、策略 Pass/Block/Review、权限和额度，不可直接依赖离线测试认定已验收供应商。
 
 ## 基础防线、事务与请求治理
 
-本地检查经 NFKC 折叠的少量明确敏感词、辱骂、色情博彩词、官方/系统/游戏客服及管理员冒充，以及网址、邮箱、完整手机号、明确微信/QQ等联系前缀+长账号。不会仅因“客服”“官方”单词或任意短数字一概封禁。规则不是完整内容安全词库，需与腾讯策略一起维护；修改规则或供应商策略时增加 `POLICY_VERSION`，当前为 `nickname-v1`。
+本地检查经 NFKC 折叠的少量明确敏感词、辱骂、色情博彩词、官方/系统/游戏客服及管理员冒充，以及网址、邮箱、完整手机号、明确微信/QQ等联系前缀+长账号。不会仅因“客服”“官方”单词或任意短数字一概封禁。规则不是完整内容安全词库，需与同机敏感词库或所选腾讯策略一起维护；修改规则或供应商策略时增加 `POLICY_VERSION`，当前为 `nickname-v2`（接入同机检测）。
 
 profile 先做参数检查，在短事务中查身份与冷却，事务结束后执行本地/外部审核，再开启短提交事务。提交重新锁用户和 session，校验撤销、过期、封禁、注销及审核前昵称/冷却快照。审批是不可由客户端构造的短时对象，绑定 user/installation、session/上下文、规范化原文、HMAC 摘要和策略版本；提交再次校验，避免审甲写乙和并发绕过。并发改名冲突返回409 `PROFILE_CHANGED`，应刷新后重试。游客创建也是先审后短事务、重新解析 installation，唯一键冲突整笔回滚，不产生孤儿 welcome ledger。
 
@@ -83,4 +105,4 @@ Flyway `V8__nickname_moderation.sql` 新增 `pk_nickname_audit`：user_id、crea
 
 ## 离线验证
 
-Java17，Gradle `--offline test bootJar`。针对性测试覆盖 Pass/Block/Review/异常/未知/未配置，TC3独立签名fixture，模拟HTTP超时且不访问网络，联合回滚、头像不审、冷却、外审时无事务、审核期间撤销/封禁/注销/冷却变化、重复请求去重与身份绑定、单用户/全局限流及并发上限、中文默认名、Unicode码点与禁止字符、真实本地WS旧注册绕过、新游客拒绝无身份落库、历史扫描/安全替名及其并发保护。供应商真实联网验收与PostgreSQL容器并发属于另行验证项，本次不连接生产或部署。
+Java17，Gradle `--offline test bootJar`。`SensitiveWordNicknameProviderTest` 覆盖固定 loopback 请求、严格布尔值解析、异常 JSON、HTTP错误/重定向/超时、中断恢复、禁用系统代理，以及按字节限额取消响应读取；`SensitiveWordNicknameIntegrationTest` 通过真实本地 profile HTTP 入口和模拟检测 HTTP 客户端验证保存、命中/不可用时联合回滚及头像独立更新，均不访问云服务器。测试 profile 默认禁用真实审核请求，专用检测测试显式选择适配器。其他针对性测试覆盖 Pass/Block/Review/异常/未知/未配置，TC3独立签名fixture，模拟HTTP超时且不访问网络，联合回滚、头像不审、冷却、外审时无事务、审核期间撤销/封禁/注销/冷却变化、重复请求去重与身份绑定、单用户/全局限流及并发上限、中文默认名、Unicode码点与禁止字符、真实本地WS旧注册绕过、新游客拒绝无身份落库、历史扫描/安全替名及其并发保护。供应商真实联网验收与PostgreSQL容器并发属于另行验证项，本次不连接生产或部署。

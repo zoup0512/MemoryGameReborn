@@ -3,7 +3,6 @@ package com.memorygames.pk.user;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,7 +15,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /** Tencent TMS TextModeration, API 2020-12-29, TC3-HMAC-SHA256. No configurable URL. */
-@Component
 public class TencentNicknameProvider implements NicknameProvider {
     private final String mode, secretId, secretKey, region, bizType, sessionToken;
     private final int timeoutMs;

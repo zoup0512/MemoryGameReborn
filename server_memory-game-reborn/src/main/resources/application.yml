@@ -52,8 +52,8 @@ pk:
     trust-forwarded-headers: ${PK_ADMIN_TRUST_FORWARDED_HEADERS:false}
 
   nickname:
-    # Disabled means custom nicknames fail closed; server-generated names remain available.
-    mode: ${PK_NICKNAME_MODERATION_MODE:disabled}
+    # sensitive-word calls only this server's 127.0.0.1:18081; disabled rejects custom names.
+    mode: ${PK_NICKNAME_MODERATION_MODE:sensitive-word}
     tencent-secret-id: ${PK_TENCENT_SECRET_ID:}
     tencent-secret-key: ${PK_TENCENT_SECRET_KEY:}
     tencent-session-token: ${PK_TENCENT_SESSION_TOKEN:}

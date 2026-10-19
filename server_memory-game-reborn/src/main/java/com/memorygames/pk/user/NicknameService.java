@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 /** Single nickname policy and mutation authority. No caller-supplied 'trusted' flag. */
 @Service
 public class NicknameService {
-    public static final String POLICY_VERSION="nickname-v1";
+    public static final String POLICY_VERSION="nickname-v2";
     public static final long COOLDOWN_MS=604800000L;
     private static final long TTL=60000L;
     private static final SecureRandom RANDOM=new SecureRandom();
