@@ -132,7 +132,7 @@ public class MatchManager {
                 this.catalog, this.users, this.rating, this.properties,
                 MatchTerms.forVersus(this.properties),
                 this.scheduler, this.dbExecutor,
-                settled -> onSettled(settled), this.settlement, this.seasons, this.events, this.metrics);
+                this.roomCallbacks, this.settlement, this.seasons, this.events, this.metrics);
         return register(room, userA, userB);
     }
 
@@ -151,7 +151,7 @@ public class MatchManager {
                 this.catalog, this.users, this.rating, this.properties,
                 MatchTerms.forPractice(this.properties, difficulty),
                 this.scheduler, this.dbExecutor,
-                settled -> onSettled(settled), this.settlement, this.seasons, this.events, this.metrics);
+                this.roomCallbacks, this.settlement, this.seasons, this.events, this.metrics);
         return register(room, user, null);
     }
 
@@ -170,9 +170,8 @@ public class MatchManager {
                 // must stay untouched. Callers release their own MATCHING
                 // claims when this throws.
                 for (UserAccount taken : seated) {
-                    if (taken != null && taken.id != user.id
-                            && this.roomByUser.remove(taken.id, room.matchId)) {
-                        this.lifecycle.release(taken.id);
+                    if (taken != null && taken.id != user.id) {
+                        releasePlayer(room, taken.id);
                     }
                 }
                 throw new IllegalStateException("user " + user.id + " already seated in a match");
@@ -192,10 +191,7 @@ public class MatchManager {
             // the caller releases its lifecycle claims.
             this.rooms.remove(room.matchId);
             for (UserAccount user : seated) {
-                if (user != null) {
-                    this.roomByUser.remove(user.id, room.matchId);
-                    this.lifecycle.release(user.id);
-                }
+                if (user != null) releasePlayer(room, user.id);
             }
             throw e;
         }
@@ -208,14 +204,34 @@ public class MatchManager {
         return matchId != null ? this.rooms.get(matchId) : null;
     }
 
-    private void onSettled(MatchRoom room) {
-        this.rooms.remove(room.matchId);
-        for (long userId : room.userIds()) {
-            if (userId >= 0) {
-                this.roomByUser.remove(userId, room.matchId);
-                this.lifecycle.release(userId);
-            }
+    private final MatchRoom.SettlementCallback roomCallbacks = new MatchRoom.SettlementCallback() {
+        @Override public void onSettled(MatchRoom room) { MatchManager.this.onSettled(room); }
+        @Override public void onPlayerReleased(MatchRoom room, long userId) {
+            releasePlayer(room, userId);
         }
+    };
+
+    /**
+     * Release only the named room's seat. Keep its mapping present until the
+     * lifecycle release completes, so no successor room can register between
+     * ownership verification and release. Stale callbacks cannot free a new
+     * queue/friend-room/match claim after a player has actively left.
+     */
+    public void releasePlayer(MatchRoom room, long userId) {
+        this.roomByUser.computeIfPresent(userId, (id, owner) -> {
+            if (!room.matchId.equals(owner)) return owner;
+            this.lifecycle.release(id);
+            return null;
+        });
+    }
+
+    private void onSettled(MatchRoom room) {
+        for (long userId : room.userIds()) {
+            if (userId >= 0) releasePlayer(room, userId);
+        }
+        // A missing room must imply all its seats have already detached:
+        // tagged resign retries can then be acknowledged without a room lookup.
+        this.rooms.remove(room.matchId, room);
     }
 
     public int activeRooms() {

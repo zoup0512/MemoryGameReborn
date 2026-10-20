@@ -277,7 +277,7 @@
 | C→S | `match_join` / `match_cancel` | — | 进/出匹配队列 |
 | C→S | `room_create` / `room_join` / `ready` | roomCode? | 好友房（P1） |
 | C→S | `answer` | round, itemIndex, choice, clientTs | 单题作答，服务端校验计分 |
-| C→S | `resign` | — | 认输 |
+| C→S | `resign` | matchId（旧客户端可省略） | 主动退出指定比赛；重试不得影响新局 |
 | C→S | `ping` | ts | 10s 心跳 |
 | S→C | `auth_ok` | userId, profile, balance | |
 | S→C | `match_found` | roomId, opponent, elo, rounds[{gameId, seed, durationMs}] | 匹配成功 |
@@ -285,7 +285,9 @@
 | S→C | `round_start` | round, gameId, seed, serverNow, deadline | 客户端以 serverNow+deadline 倒计时 |
 | S→C | `opponent_event` | round, itemIndex, gainedScore, streak | 对手进度（打码：不透露对错明细给对方利用） |
 | S→C | `round_end` | round, myScore, oppScore | 轮末比分 |
-| S→C | `match_end` | result, detail[], eloDelta, coinDelta | 终局结算 |
+| S→C | `resign_ack` | matchId | 已同步释放退出玩家的对局占用，不等待异步结算；不代表账务完成 |
+| S→C | `match_cancelled` | matchId（队列取消无此字段） | 已配对比赛的取消必须绑定比赛 ID，客户端忽略旧局通知 |
+| S→C | `match_end` | matchId, result, detail[], eloDelta, coinDelta | 终局结算；不得改变其他比赛的本地状态 |
 | S→C | `opponent_disconnected` / `opponent_reconnected` | deadlineTs | 逃跑倒计时提示 |
 | S→C | `reconnect_state` | 全量对局快照 | 重连时补发 |
 

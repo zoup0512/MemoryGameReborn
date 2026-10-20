@@ -27,6 +27,8 @@ public final class ProtocolCodec {
     public static final String T_LEVEL_WIN = "level_win";
     public static final String T_ROUND_COMPLETE = "round_complete";
     public static final String T_RESIGN = "resign";
+    /** Seat release receipt; settlement may still be pending. */
+    public static final String T_RESIGN_ACK = "resign_ack";
     public static final String T_ROOM_CREATE = "room_create";
     public static final String T_ROOM_JOIN = "room_join";
     public static final String T_ROOM_CANCEL = "room_cancel";
@@ -108,6 +110,16 @@ public final class ProtocolCodec {
 
     public static class Auth {
         public String token;
+    }
+
+    /** Optional matchId keeps legacy empty resign commands compatible. */
+    public static class Resign {
+        public String matchId;
+    }
+
+    /** Match-scoped control receipt (resign_ack / room match_cancelled). */
+    public static class MatchRef {
+        public String matchId;
     }
 
     public static class LevelWin {

@@ -457,12 +457,30 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 reply(session, rid, ProtocolCodec.T_TOP_RESPONSE, response);
                 return;
             }
-            case ProtocolCodec.T_RESIGN:
-                log.info("resign received user={} room={}", userId, room != null ? room.matchId : "none");
-                if (room != null) {
-                    room.onResign(userId);
+            case ProtocolCodec.T_RESIGN: {
+                ProtocolCodec.Resign request;
+                try {
+                    request = ProtocolCodec.convert(envelope.d, ProtocolCodec.Resign.class);
+                } catch (IllegalArgumentException malformed) {
+                    reply(session, rid, ProtocolCodec.T_ERROR, error(400, "bad resign"));
+                    return;
+                }
+                String targetId = request != null ? request.matchId : null;
+                // Untagged legacy commands target the current room. A tagged
+                // retry must NEVER resign a successor room (or its claim).
+                MatchRoom target = targetId != null ? this.manager.roomById(targetId) : room;
+                ProtocolCodec.MatchRef ack = new ProtocolCodec.MatchRef();
+                ack.matchId = targetId != null ? targetId : target != null ? target.matchId : null;
+                log.info("resign received user={} room={}", userId, ack.matchId);
+                if (target != null && target.seatIndex(userId) >= 0) {
+                    target.onResign(userId, () -> reply(session, rid, ProtocolCodec.T_RESIGN_ACK, ack));
+                } else {
+                    // A completed/unknown old id is already detached for this
+                    // user; idempotently receipt it without touching live state.
+                    reply(session, rid, ProtocolCodec.T_RESIGN_ACK, ack);
                 }
                 return;
+            }
             case ProtocolCodec.T_RESUME:
                 // M1: resume is implicit in auth; kept for protocol evolution.
                 return;

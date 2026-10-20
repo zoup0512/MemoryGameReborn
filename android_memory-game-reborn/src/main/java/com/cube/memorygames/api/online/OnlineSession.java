@@ -797,25 +797,23 @@ public class OnlineSession {
     public void resign() {
         diagnostic("resign", "reason", "user_resign");
         if (this.matchId != null) {
+            cancelAcceptFallback();
             this.resigningMatchId = this.matchId;
             this.resignRetries = RESIGN_RETRY_MAX;
             sendResign(this.resigningMatchId);
         }
     }
 
-    /**
-     * A resigned match must settle. A half-dead TCP connection swallows the
-     * frame without any signal (the 2026-10-04 two-device finding: the
-     * server kept the duel running while the player sat on the scoreboard),
-     * so the resign is re-sent until match_end confirms the settlement.
-     */
+    /** Retry until the server confirms seat release or sends a legacy terminal frame. */
     private void sendResign(final String targetMatchId) {
         diagnostic("resign_send", "attempt", RESIGN_RETRY_MAX-resignRetries);
         OnlineClient c = client;
         android.util.Log.d("OnlinePK", "sendResign matchId=" + targetMatchId
                 + " connected=" + (c != null && c.isConnected())
                 + " retriesLeft=" + resignRetries);
-        send(OnlineMessages.T_RESIGN, new Object());
+        OnlineMessages.Resign request = new OnlineMessages.Resign();
+        request.matchId = targetMatchId;
+        send(OnlineMessages.T_RESIGN, request);
         this.main.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -877,7 +875,10 @@ public class OnlineSession {
                 } catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
-                if (resumeMatch && this.currentRound < 0) {
+                if (resumeMatch && this.resigningMatchId != null) {
+                    this.resignRetries = RESIGN_RETRY_MAX;
+                    sendResign(this.resigningMatchId);
+                } else if (resumeMatch && this.currentRound < 0) {
                     if (this.matchAcceptance.isStartRequested()) {
                         sendMatchStartRequest();
                     }
@@ -978,6 +979,20 @@ public class OnlineSession {
                     } catch (RuntimeException ignored) {
                     }
                 }
+            }
+            return;
+        }
+        if (OnlineMessages.T_RESIGN_ACK.equals(type)) {
+            OnlineMessages.ResignAck ack = OnlineMessages.payloadOf(json, OnlineMessages.ResignAck.class);
+            if (ack != null && ack.confirms(this.matchId, this.resigningMatchId)) {
+                clearMatchSnapshot("resign_ack");
+                this.pendingQueueRejoin = false;
+                this.queueRequestPending = false;
+                this.friendRoomPending = false;
+                this.practicePending = false;
+                cancelRoomAck();
+                cancelQueuedWatchdog();
+                setState(STATE_IDLE);
             }
             return;
         }
@@ -1171,25 +1186,13 @@ public class OnlineSession {
                 || OnlineMessages.T_OPPONENT_SCORE.equals(type)
                 || OnlineMessages.T_ROUND_END.equals(type)
                 || OnlineMessages.T_MATCH_END.equals(type)
+                || OnlineMessages.T_MATCH_CANCELLED.equals(type)
+                || OnlineMessages.T_RESIGN_ACK.equals(type)
                 || OnlineMessages.T_OPPONENT_START.equals(type);
     }
 
     private boolean ownedByCurrentMatch(String json) {
-        try {
-            com.google.gson.JsonObject root =
-                    new com.google.gson.JsonParser().parse(json).getAsJsonObject();
-            if (!root.has("d") || !root.get("d").isJsonObject()) {
-                return true; // malformed: let the existing handlers ignore it
-            }
-            com.google.gson.JsonObject d = root.get("d").getAsJsonObject();
-            if (!d.has("matchId") || d.get("matchId").isJsonNull()) {
-                return true; // legacy server frame without tagging
-            }
-            String frameMatch = d.get("matchId").getAsString();
-            return frameMatch.equals(this.matchId);
-        } catch (RuntimeException e) {
-            return true;
-        }
+        return OnlineMessages.belongsToMatch(json, this.matchId);
     }
 
     private void setState(int newState) {

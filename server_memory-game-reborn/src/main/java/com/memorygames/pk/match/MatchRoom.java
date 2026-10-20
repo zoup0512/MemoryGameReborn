@@ -38,6 +38,9 @@ public class MatchRoom {
     public interface SettlementCallback {
 
         void onSettled(MatchRoom room);
+
+        /** Releases only this room's ownership; accounting can finish later. */
+        default void onPlayerReleased(MatchRoom room, long userId) { }
     }
 
     /** Per-seat state inside the match. */
@@ -278,28 +281,47 @@ public class MatchRoom {
                     "reason=" + reason + " acceptedA=" + this.seats[0].accepted
                             + " acceptedB=" + this.seats[1].accepted);
         }
-        Runnable abort = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    MatchRoom.this.settlement.abortMatch(MatchRoom.this.matchId);
-                } catch (RuntimeException e) {
-                    MatchRoom.this.events.emit("ABORT_FAILED", MatchRoom.this.matchId,
-                            "reason=" + reason + " class=" + e.getClass().getName());
-                }
-                // Release the seats BEFORE the cancellation frame reaches
-                // the client (immediate re-queue must CAS cleanly).
-                MatchRoom.this.settlementCallback.onSettled(MatchRoom.this);
-                for (int i = 0; i < 2; i++) {
-                    sendTo(i, ProtocolCodec.T_MATCH_CANCELLED, new Object());
-                }
-            }
-        };
+        dispatchAbort(reason, 0);
+    }
+
+    private void dispatchAbort(String reason, int attempt) {
+        Runnable abort = () -> runAbort(reason, attempt);
         try {
             this.dbExecutor.execute(abort);
         } catch (RuntimeException saturated) {
-            abort.run(); // degrade to the caller thread rather than leak the room
+            abort.run(); // degrade to the caller thread rather than lose accounting
         }
+    }
+
+    private void runAbort(String reason, int attempt) {
+        try {
+            this.settlement.abortMatch(this.matchId);
+        } catch (RuntimeException failure) {
+            String detail = "reason=" + reason + " attempt=" + (attempt + 1)
+                    + " class=" + failure.getClass().getName();
+            if (attempt >= MAX_SETTLE_ATTEMPTS || this.scheduler.isShutdown()) {
+                this.metrics.settlementFailures.incrementAndGet();
+                this.events.emit("ABORT_FAILED", this.matchId, detail);
+            } else {
+                this.events.emit("ABORT_RETRY", this.matchId, detail);
+                try {
+                    this.scheduler.schedule(() -> dispatchAbort(reason, attempt + 1),
+                            SETTLE_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
+                } catch (RuntimeException rejected) {
+                    this.metrics.settlementFailures.incrementAndGet();
+                    this.events.emit("ABORT_FAILED", this.matchId,
+                            detail + " scheduler=" + rejected.getClass().getName());
+                }
+            }
+            // Keep the room/ACTIVE instance for accounting recovery, but a
+            // resigning player's admission has already been released.
+            return;
+        }
+        // Release remaining seats BEFORE clients learn the abort completed.
+        this.settlementCallback.onSettled(this);
+        ProtocolCodec.MatchRef cancelled = new ProtocolCodec.MatchRef();
+        cancelled.matchId = this.matchId;
+        for (int i = 0; i < 2; i++) sendTo(i, ProtocolCodec.T_MATCH_CANCELLED, cancelled);
     }
 
     private ProtocolCodec.MatchFound buildMatchFound(int viewerIndex) {
@@ -722,18 +744,34 @@ public class MatchRoom {
     // ------------------------------------------------------------ controls
 
     public void onResign(long userId) {
+        onResign(userId, () -> { });
+    }
+
+    /**
+     * Active departure releases admission synchronously, even while an earlier
+     * settlement is retrying. The receipt runs before any DB work (including
+     * caller-thread fallback) and does NOT promise settlement has completed.
+     */
+    public void onResign(long userId, Runnable acknowledge) {
         synchronized (this) {
             int index = seatIndex(userId);
-            if (index < 0 || this.settledOnce.get()) {
-                return;
+            if (index < 0) return;
+            this.settlementCallback.onPlayerReleased(this, userId);
+            try {
+                acknowledge.run();
+            } finally {
+                // A failed socket receipt must not keep the abandoned match
+                // running or prevent its accounting from being dispatched.
+                if (!this.settledOnce.get()) {
+                    this.events.emit("RESIGN", this.matchId, "user=" + userId + " round=" + this.currentRound);
+                    if (this.currentRound == 0) {
+                        // Leaving during the START gate costs nothing.
+                        cancelUnaccepted("resign");
+                    } else {
+                        settle(1 - index, true, "resign");
+                    }
+                }
             }
-            this.events.emit("RESIGN", this.matchId, "user=" + userId + " round=" + this.currentRound);
-            if (this.currentRound == 0) {
-                // Leaving during the START gate costs nothing.
-                cancelUnaccepted("resign");
-                return;
-            }
-            settle(1 - index, true, "resign");
         }
     }
 

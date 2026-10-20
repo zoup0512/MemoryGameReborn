@@ -398,7 +398,8 @@ class MatchRoomTimingTest {
                 assertEquals(List.of(ProtocolCodec.T_MATCH_FOUND, ProtocolCodec.T_MATCH_CANCELLED),
                         sent.stream().map(json -> decode(json).t).toList(),
                         "each human gets one cancellation, no opponent_start/round_start/round_end/match_end");
-                assertEquals(Map.of(), decode(sent.get(1)).data, "cancellation payload must stay empty");
+                assertEquals(Map.of("matchId", f.room.matchId), decode(sent.get(1)).data,
+                        "room cancellation must be scoped so a delayed abort cannot cancel a new match");
             }
             InOrder cleanup = inOrder(f.settlement, f.settlementCallback);
             cleanup.verify(f.settlement).openMatch(f.room.matchId, MatchRoom.MODE_RANKED,
@@ -409,6 +410,69 @@ class MatchRoomTimingTest {
             verifyNoMoreInteractions(f.settlement, f.settlementCallback);
             // This fixture observes the release callback, not MatchManager's
             // room/user maps or Matchmaker's queue; it cannot prove requeue behavior.
+        }
+    }
+
+    @Test
+    void abortFailureExhaustionRetainsAccountingAndRepeatedExitStillAcknowledges() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+            f.room.start();
+            when(f.settlement.abortMatch(anyString())).thenThrow(new IllegalStateException("database unavailable"));
+            f.room.onResign(1);
+            for (int attempt = 0; attempt < 6; attempt++) {
+                assertEquals(attempt + 1, f.dbTasks.size());
+                f.dbTasks.get(attempt).run();
+                f.scheduler.advanceTo(f.clock.get() + 2000);
+            }
+            verify(f.settlement, times(6)).abortMatch(f.room.matchId);
+            verify(f.settlementCallback, never()).onSettled(any());
+            assertTrue(f.frames(ProtocolCodec.T_MATCH_CANCELLED).isEmpty());
+            boolean[] acknowledged = {false};
+            f.room.onResign(1, () -> acknowledged[0] = true);
+            assertTrue(acknowledged[0]);
+            verify(f.settlementCallback, times(2)).onPlayerReleased(f.room, 1);
+            assertEquals(6, f.dbTasks.size());
+        }
+    }
+
+    @Test
+    void resignAfterSettlementRetriesExhaustStillReleasesAndAcknowledges() {
+        try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+            f.start();
+            when(f.settlement.settle(any())).thenThrow(new IllegalStateException("database unavailable"));
+            assertTrue(f.room.adminSettle(false));
+            for (int attempt = 0; attempt < 6; attempt++) {
+                assertEquals(attempt + 1, f.dbTasks.size());
+                f.dbTasks.get(attempt).run();
+                f.scheduler.advanceTo(f.clock.get() + 2000);
+            }
+            verify(f.settlement, times(6)).settle(any());
+            verify(f.settlementCallback, never()).onSettled(any());
+            boolean[] acknowledged = {false};
+            f.room.onResign(1, () -> {
+                verify(f.settlementCallback).onPlayerReleased(f.room, 1);
+                acknowledged[0] = true;
+            });
+            assertTrue(acknowledged[0]);
+            assertEquals(6, f.dbTasks.size(), "active leave must not duplicate failed accounting");
+        }
+    }
+
+    @Test
+    void resignReceiptPrecedesAccountingAndBrokenReceiptStillTerminatesRoom() {
+        for (boolean started : new boolean[]{false, true}) {
+            try (Fixture f = new Fixture(MatchRoom.MODE_PRACTICE, true, 2)) {
+                if (started) f.start(); else f.room.start();
+                assertThrows(IllegalStateException.class, () -> f.room.onResign(1, () -> {
+                    verify(f.settlementCallback).onPlayerReleased(f.room, 1);
+                    assertTrue(f.dbTasks.isEmpty(), "receipt cannot wait for database execution");
+                    throw new IllegalStateException("socket receipt failed");
+                }));
+                assertEquals(1, f.dbTasks.size(), "failed receipt must still dispatch terminal accounting");
+                f.room.onResign(1);
+                assertEquals(1, f.dbTasks.size(), "replayed resign does not dispatch twice");
+                verify(f.settlementCallback, times(2)).onPlayerReleased(f.room, 1);
+            }
         }
     }
 

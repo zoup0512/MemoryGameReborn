@@ -48,6 +48,7 @@ public final class OnlineMessages {
     public static final String T_MATCH_QUEUED = "match_queued";
     public static final String T_MATCH_FOUND = "match_found";
     public static final String T_MATCH_CANCELLED = "match_cancelled";
+    public static final String T_RESIGN_ACK = "resign_ack";
     public static final String T_ROUND_START = "round_start";
     public static final String T_OPPONENT_SCORE = "opponent_score";
     public static final String T_ROUND_END = "round_end";
@@ -98,6 +99,19 @@ public final class OnlineMessages {
 
     public static class Resume {
         public String matchId;
+    }
+
+    public static class Resign {
+        public String matchId;
+    }
+
+    public static class ResignAck {
+        public String matchId;
+
+        public boolean confirms(String currentMatchId, String resigningMatchId) {
+            return matchId != null && matchId.equals(currentMatchId)
+                    && matchId.equals(resigningMatchId);
+        }
     }
 
     public static class LevelWin {
@@ -287,6 +301,22 @@ public final class OnlineMessages {
             return root == null ? null : (root.has("t") ? root.get("t").getAsString() : null);
         } catch (RuntimeException e) {
             return null;
+        }
+    }
+
+    static boolean belongsToMatch(String json, String currentMatchId) {
+        try {
+            JsonObject root = GSON.fromJson(json, JsonObject.class);
+            if (root == null || !root.has("d") || !root.get("d").isJsonObject()) {
+                return true;
+            }
+            JsonObject data = root.getAsJsonObject("d");
+            if (!data.has("matchId") || data.get("matchId").isJsonNull()) {
+                return true; // Untagged frames remain compatible with older servers.
+            }
+            return data.get("matchId").getAsString().equals(currentMatchId);
+        } catch (RuntimeException e) {
+            return true;
         }
     }
 
