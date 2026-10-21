@@ -45,7 +45,7 @@
     <string name="dialog_account_error_storage">无法验证或保存安全身份。原凭证已保留，请勿清除应用数据。</string>
     <string name="dialog_account_error_logout">服务端尚未确认退出，原身份已保留，请重试；金币和排位分不会合并。</string>
     <string name="dialog_account_error_guest">此操作仅适用于符合条件的保留游客；若已绑定邮箱，请使用该邮箱登录。</string>
-    <string name="dialog_account_error_endpoint">请输入有效的 ws[s]://host[:port]/ws 地址。账号和迁移要求 WSS/HTTPS，仅显式配置的本地账号调试可例外。</string>
+    <string name="dialog_account_error_endpoint">服务地址无效或不符合当前连接策略，请检查 ws[s]://host[:port]/ws 配置。跨环境账号迁移仍要求 WSS/HTTPS。</string>
     <string name="dialog_account_error_unknown">请求未完成，请检查账号状态后重试。原凭证已保留。</string>
     <string name="dialog_account_revoke_warning">撤销此设备的会话后，该设备须重新登录。若为当前设备，在线连接也将断开。其他设备的会话与离线数据不受影响。</string>
     <string name="dialog_account_logout_all_warning">要退出所有设备吗？服务端须先成功撤销会话，本地凭证才会改变；此设备随后将创建新游客。请先绑定游客邮箱以保留访问权限。离线数据不变。</string>

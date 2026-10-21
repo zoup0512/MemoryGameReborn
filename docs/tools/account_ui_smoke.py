@@ -7,7 +7,7 @@ Loopback runs use the in-process SMTP fixture; remote runs pass
 It never installs, clears data, or writes credentials to test output.
 Running it does register a disposable account and update its profile: use only
 an isolated test deployment. Nickname and avatar editors are checked separately
-from both the account/security and profile-only summaries.
+from the account/security page.
 """
 import argparse
 import json
@@ -157,6 +157,8 @@ def main():
 
     def assert_nickname_editor(expected=None):
         root = tree()
+        assert not any("仅保留本机草稿" in n.get("text", "") for n in root.iter("node")), \
+            "Nickname editor contains obsolete local-draft guidance"
         fields = edit_fields(root)
         assert len(fields) == 1, "Nickname editor must contain exactly one name input"
         assert not avatar_choices(root), "Nickname editor contains avatar choices"
@@ -214,6 +216,8 @@ def main():
         selected = set()
         for _ in range(6):
             root = tree()
+            assert not any("仅保留本机草稿" in n.get("text", "") for n in root.iter("node")), \
+                "Avatar editor contains obsolete local-draft guidance"
             assert not edit_fields(root), "Avatar-only dialog must not contain an EditText"
             assert visible_node(root, "编辑名字") is None, "Avatar dialog opened the nickname editor"
             for node in avatar_choices(root):
@@ -334,28 +338,6 @@ def main():
 
         change_avatar(current_nickname, heading, "04-security")
         screenshot("04-account-summary")
-
-        # Exercise the same independent actions from the profile-only summary. This
-        # launches only the account UI, not an editor extra or a data-changing API.
-        adb("shell", "am", "start", "-n", package + "/com.cube.memorygames.api.online.AccountActivity",
-            "--ez", "profileOnly", "true")
-        wait_summary(current_nickname, "我的资料")
-        click("修改昵称")
-        assert_nickname_editor(current_nickname)
-        if options.expect_nickname_approval:
-            # A successful save may have started the nickname cooldown; no second rename.
-            back_from_editor()
-            wait_summary(current_nickname, "我的资料")
-        else:
-            clear_field(0)
-            fill(0, "UiProfileDraft")
-            assert_nickname_editor("UiProfileDraft")
-            discard_nickname(current_nickname, "我的资料")
-        checks.append("profile summary exposes independent nickname and avatar actions")
-        change_avatar(current_nickname, "我的资料", "04-profile")
-        screenshot("04-profile-summary")
-        adb("shell", "input", "keyevent", "4")
-        wait_summary(current_nickname, heading)
 
         click("设备与会话")
         wait_contains("当前设备")

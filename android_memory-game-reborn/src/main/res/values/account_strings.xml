@@ -48,12 +48,11 @@
     <string name="account_recover_guest">Recover retained guest</string>
     <string name="account_recover_warning">Only the saved guest secret is used. A response with a different user ID is rejected. If you just bound an email, log in with that email instead.</string>
     <string name="account_environment">Service environment</string>
-    <string name="account_environment_note">Accounts require WSS/HTTPS. Debug local HTTP additionally requires PK_AUTH_ALLOW_HTTP=true on the server. No default TLS domain is assumed.</string>
+    <string name="account_environment_note">WS/HTTP accounts are temporarily allowed when the server enables PK_AUTH_ALLOW_HTTP=true. Cleartext connections do not encrypt account data and are for temporary compatibility only; WSS/HTTPS is recommended.</string>
     <string name="account_registered_note">Your verified email account can be used on other devices. Online coins and rating belong to this account; offline progress remains separate.</string>
     <string name="account_avatar">Avatar %1$d</string>
     <string name="account_migrate">Trust HTTPS address and migrate old guest</string>
     <string name="account_migrate_warning">Old environment: %1$s\nTrusted target: %2$s\nOld user ID: %3$d\nYour old credential will be sent to this target for one migration attempt. Only confirm if you trust its operator. Failure retains the old credential and environment; success preserves your user ID.</string>
-    <string name="profile_my">My profile</string>
     <string name="profile_format">Use 2–16 Unicode characters. Ordinary internal spaces are allowed; invisible characters and controls are not.</string>
     <string name="profile_invalid">Enter a nickname of 2–16 characters, without controls or invisible characters. Ordinary internal spaces are allowed.</string>
     <string name="profile_save">Review and save</string>

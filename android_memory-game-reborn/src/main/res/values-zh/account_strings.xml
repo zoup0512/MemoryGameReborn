@@ -48,12 +48,11 @@
     <string name="account_recover_guest">恢复安全保留的游客</string>
     <string name="account_recover_warning">仅使用保存的游客秘密恢复；返回不同用户 ID 会被拒绝。如果刚绑定邮箱，请直接用该邮箱登录。</string>
     <string name="account_environment">服务环境</string>
-    <string name="account_environment_note">账号需要 WSS/HTTPS。Debug 本地 HTTP 还须服务端配置 PK_AUTH_ALLOW_HTTP=true。不会假设不存在的 TLS 域名。</string>
+    <string name="account_environment_note">当前临时允许账号使用 WS/HTTP，服务端须启用 PK_AUTH_ALLOW_HTTP=true。明文连接不加密账号数据，仅用于临时兼容；建议使用 WSS/HTTPS。</string>
     <string name="account_registered_note">已验证邮箱账号可在其他设备登录。在线金币与排位分属于当前账号，离线进度保持独立。</string>
     <string name="account_avatar">头像 %1$d</string>
     <string name="account_migrate">信任 HTTPS 地址并迁移旧游客</string>
     <string name="account_migrate_warning">原环境：%1$s\n授权目标：%2$s\n原用户 ID：%3$d\n本次迁移会把旧凭证发送到上述目标。仅在信任其运营方时确认。失败保留旧凭证和原环境；成功保持用户 ID 不变。</string>
-    <string name="profile_my">我的资料</string>
     <string name="profile_format">昵称限 2–16 个 Unicode 字符，可含普通内部空格，不含控制符或不可见字符。</string>
     <string name="profile_invalid">请输入 2–16 个字符，可含普通内部空格，不含控制符或不可见字符。</string>
     <string name="profile_save">审核并保存</string>

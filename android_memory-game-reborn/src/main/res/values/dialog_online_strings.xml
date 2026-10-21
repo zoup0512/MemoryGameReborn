@@ -45,7 +45,7 @@
     <string name="dialog_account_error_storage">The secure identity could not be verified or saved. Existing credentials are retained. Do not clear app data.</string>
     <string name="dialog_account_error_logout">Logout was not confirmed by the server. Your previous identity is retained. Retry; coins and rating will not be merged.</string>
     <string name="dialog_account_error_guest">This action requires an eligible retained guest. If you already bound an email, log in with that email instead.</string>
-    <string name="dialog_account_error_endpoint">Enter a valid ws[s]://host[:port]/ws address. Accounts and migration require WSS/HTTPS, except explicitly configured local account debugging.</string>
+    <string name="dialog_account_error_endpoint">The service address is invalid or disallowed by the connection policy. Check the ws[s]://host[:port]/ws configuration. Cross-environment account migration still requires WSS/HTTPS.</string>
     <string name="dialog_account_error_unknown">The request could not be completed. Review the account state and try again. Existing credentials are retained.</string>
     <string name="dialog_account_revoke_warning">Revoke this device session? It must log in again. If this is the current device, its online connection will end. Other sessions and offline data are unchanged.</string>
     <string name="dialog_account_logout_all_warning">Log out all devices? Server sessions must be revoked successfully before local credentials change. This device will start a new guest. Bind a guest first to preserve access. Offline data is unchanged.</string>

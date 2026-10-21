@@ -13,6 +13,11 @@ if (!(endpointUri.scheme in ['ws', 'wss']) || !endpointUri.host || endpointUri.r
     throw new GradleException('onlineEndpoint must be ws[s]://host[:port]/ws without credentials/query/fragment')
 }
 def accountUiTest = project.findProperty('accountUiTest')?.toString() == 'true'
+// Temporary compatibility with the current WS deployment; set false to require TLS again.
+def accountAllowHttp = (project.findProperty('accountAllowHttp') ?: 'true').toString()
+if (!(accountAllowHttp in ['true', 'false'])) {
+    throw new GradleException('accountAllowHttp must be true or false')
+}
 def appVersionCode = 74
 def appVersionName = '3.6.3'
 def buildTime = new Date()
@@ -39,6 +44,7 @@ android {
         // can still be traced back to the build it came from.
         buildConfigField 'String', 'BUILD_TIME', "\"${buildTimeText}\""
         buildConfigField 'String', 'ONLINE_ENDPOINT', "\"${onlineEndpoint}\""
+        buildConfigField 'boolean', 'ACCOUNT_ALLOW_HTTP', accountAllowHttp
         manifestPlaceholders = [buildTime: buildTimeText]
         vectorDrawables.useSupportLibrary = true
         // Only languages with real translations are bundled; everything else

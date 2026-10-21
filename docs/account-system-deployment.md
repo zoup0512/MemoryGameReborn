@@ -8,7 +8,7 @@
 - 生产启用持久化 PostgreSQL；默认内存 H2 仅用于测试。
 - 有用户可访问的 HTTPS/WSS 域名和有效证书。
 - 配置真实 SMTP 投递及发件地址，建议验证 SPF/DKIM/DMARC。
-- 服务端 API 默认拒绝明文 HTTP。`PK_AUTH_ALLOW_HTTP=true` 仅用于隔离的本地验收，不能在公网生产开启。
+- **临时例外：当前服务端 `pk.auth.allow-http` 使用 `${PK_AUTH_ALLOW_HTTP:true}`，未显式设置时默认允许明文 HTTP；Docker Compose 同样透传此开关并默认 `true`。** 这只用于暂时去掉强制 HTTPS/WSS 期间的兼容，不是正式上线的安全默认值。公网开放 HTTP 会使邮箱、密码、账号令牌及头像修改等请求暴露于明文传输和中间人攻击；不应通过旧明文地址发送真实账号凭证。HTTPS/WSS 就绪后必须显式恢复 `PK_AUTH_ALLOW_HTTP=false` 并重启服务（Compose 需重建服务容器以应用环境变量），再按下文验收。
 - 不记录 Authorization、refresh token、guestSecret、验证码和密码；反代也不能把这些数据写访问日志。
 - 已配置服务端与 SMTP 连接、读写超时。
 - 若开放自定义昵称，已按 [昵称机器审核](nickname-moderation.md) 确认同机敏感词服务（默认 `sensitive-word` 模式）可用，完成命中拒绝、超时、服务不可用及异常返回验收；使用腾讯模式时另验需复核与鉴权失败。服务不可用或 `disabled` 时自定义改名必须明确失败；禁止上线临时“全部通过”审核实现。
@@ -38,6 +38,15 @@ server.ssl.key-store-password=${PK_TLS_KEYSTORE_PASSWORD}
 7. 对 WebSocket 设置 Upgrade/Connection、合适的 idle/read timeout。
 
 没有真实域名、证书和可信代理配置时，不应发布启用正式账号登录的 APK。
+
+### 临时 HTTP 兼容与恢复
+
+本次同时调整 Android 客户端与服务端的临时兼容开关，不部署或修改远端代理。Android 构建属性 `accountAllowHttp` 暂时默认 `true`，允许已通过地址校验的 WS 服务用于账号请求；使用 `-PaccountAllowHttp=false` 可恢复强制 WSS/HTTPS，跨环境迁移仍要求 TLS。`PK_AUTH_ALLOW_HTTP` 控制 `AccountApiGuard` 对 `/api/v2/` 的 HTTPS 检查，不配置 TLS，也不改变 `/ws` 的 WS/WSS 监听或代理规则。临时去掉强制 WSS、改用 `ws://` 后，相应账号 API 可能通过 `http://` 明文访问；默认允许 HTTP 不表示这些连接安全。
+
+- 未设置 `PK_AUTH_ALLOW_HTTP` 时，当前临时默认值为 `true`；Compose 也将默认 `true` 传入容器。仅在隔离环境短期使用，避免真实密码和长期有效凭证经过明文链路。
+- 临时兼容不绕过身份校验、会话撤销、限流或昵称审核；仅改头像或提交未变化昵称时无需触发改名审核。
+- 恢复安全模式时，先配置并验证 HTTPS/WSS，再在实际运行环境显式设置 `PK_AUTH_ALLOW_HTTP=false`，重启服务；使用 Compose 时需重建 `pk-server` 容器，不能只重启保留旧环境变量的容器。同步恢复客户端安全端点和入口代理的强制 HTTPS/WSS。
+- 恢复后验收 HTTP `/api/v2/` 返回 `403 HTTPS_REQUIRED`，伪造 `X-Forwarded-Proto: https` 仍被拒绝；可信 HTTPS 请求正常。`AccountApiGuard` 的强制模式保持不变，不能靠删除安全校验来临时放行。
 
 ## 3. 邮件配置
 
@@ -77,12 +86,12 @@ TLS 配置完成后指定实际地址：
 
 ```bash
 JAVA_HOME=F:/jdk17 ./gradlew -p android_memory-game-reborn assembleDebug \
-  -PonlineEndpoint=wss://your-real-domain.example/ws
+  -PonlineEndpoint=wss://your-real-domain.example/ws -PaccountAllowHttp=false
 ```
 
 `your-real-domain.example` 是占位符，不是已部署地址。正式 release 构建还需要仓库外签名配置；不能将 unsigned 包称为可发行签名包。
 
-默认旧游客地址保持兼容。客户端正式账号 API 不允许明文 HTTP；debug 可显式使用本地开发地址，并配合服务端开发 HTTP 开关。切换服务端时不得把前一个来源的凭证发送到新来源。
+默认旧游客地址保持兼容。正式发布仍应要求客户端账号 API 使用 HTTPS；debug 本地验收可显式使用开发地址。当前服务端临时默认允许 HTTP 不会替客户端启用或强制安全传输，也不能作为正式发布的安全保障。切换服务端时不得把前一个来源的凭证发送到新来源。
 
 用于验收的独立测试包可以使用 `-PaccountUiTest=true`，包名增加 `.accounttest`，provider 使用对应 applicationId，避免覆盖设备上原游戏与单机数据库。该开关仅用于 debug，不能发布给正常用户。
 
@@ -93,6 +102,18 @@ JAVA_HOME=F:/jdk17 ./gradlew -p android_memory-game-reborn assembleDebug \
 ```bash
 JAVA_HOME=F:/jdk17 ./gradlew -p server_memory-game-reborn test bootJar
 ```
+
+本次临时 HTTP 开关的定向离线回归（在仓库根目录运行；启动前不设置 `PK_AUTH_ALLOW_HTTP` 或其他 `pk.auth.allow-http` 覆盖，以验证配置默认值）：
+
+```bash
+JAVA_HOME=F:/jdk17 ./server_memory-game-reborn/gradlew -p server_memory-game-reborn --offline test \
+  --tests com.memorygames.pk.DiagnosticsIntegrationTest \
+  --tests com.memorygames.pk.AccountIntegrationTest \
+  --tests com.memorygames.pk.NicknameModerationIntegrationTest \
+  --tests com.memorygames.pk.DefaultHttpAccountIntegrationTest
+```
+
+`DefaultHttpAccountIntegrationTest` 不显式配置 HTTP 开关，通过随机端口上的真实 loopback HTTP 请求验证头像 PATCH 成功，响应与数据库中的昵称及改名冷却时间不变；覆盖仅头像和携带原昵称两种请求。`DiagnosticsIntegrationTest` 保留显式 `pk.auth.allow-http=false`，验证 HTTP（含伪造转发头）被拒绝，HTTPS 头像 PATCH 仍可成功。测试使用隔离 H2，不访问远端审核或生产服务；离线命令需要本机已有 Gradle 和依赖缓存。
 
 PostgreSQL Testcontainers：
 

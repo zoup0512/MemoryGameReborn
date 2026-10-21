@@ -47,25 +47,15 @@ public final class OnlineConfig {
         int port=uri.getPort() < 0 ? ("wss".equals(uri.getScheme()) ? 443 : 80) : uri.getPort();
         return uri.getScheme()+"://"+uri.getHost().toLowerCase(java.util.Locale.US)+":"+port;
     }
-    private static boolean localHost(String host) {
-        host=host.toLowerCase(java.util.Locale.US);
-        if ("localhost".equals(host) || "[::1]".equals(host) || "::1".equals(host)) return true;
-        String[] parts=host.split("\\.");
-        if (parts.length != 4) return false;
-        try {
-            int[] n=new int[4];
-            for(int i=0;i<4;i++) { n[i]=Integer.parseInt(parts[i]); if(n[i]<0 || n[i]>255)return false; }
-            return n[0]==127 || n[0]==10 || (n[0]==192 && n[1]==168)
-                    || (n[0]==172 && n[1]>=16 && n[1]<=31);
-        } catch(NumberFormatException e) { return false; }
+    static boolean accountTransportAllowed(String value,boolean allowHttp) {
+        URI uri=endpoint(value);
+        return "wss".equals(uri.getScheme()) || allowHttp;
     }
     public static boolean accountsAllowed(Context context) {
-        URI uri=endpoint(getEndpoint(context));
-        return "wss".equals(uri.getScheme()) || (debug(context) && localHost(uri.getHost())
-                && (hasOverride(context) || !DEFAULT_ENDPOINT.equals(LEGACY_ENDPOINT)));
+        return accountTransportAllowed(getEndpoint(context),BuildConfig.ACCOUNT_ALLOW_HTTP);
     }
     public static void requireAccountTransport(Context context) {
-        if (!accountsAllowed(context)) throw new IllegalStateException("账号服务要求 HTTPS/WSS；仅显式配置的本地调试允许 HTTP");
+        if (!accountsAllowed(context)) throw new IllegalStateException("账号服务要求 HTTPS/WSS");
     }
     public static void setEndpoint(Context context, String value) {
         if (!debug(context)) throw new IllegalStateException("正式版服务器地址不可修改");

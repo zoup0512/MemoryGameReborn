@@ -25,19 +25,15 @@ import com.memory.brain.training.games.R;
 
 /** Programmatic support-26 account forms, matching OnlineUi cards; no database migrations. */
 public final class AccountActivity extends AppCompatActivity {
-    private static final String EXTRA_PROFILE="profileOnly";
     private static final String EXTRA_ENTRY="accountEntry";
     private static final String EXTRA_AVATAR="avatarEditor";
     private static final String EXTRA_NICKNAME="nicknameEditor";
-    private boolean profileOnly, entryHandled, nicknameEditor;
-    public static android.content.Intent profileIntent(android.content.Context context) {
-        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_PROFILE,true);
-    }
+    private boolean entryHandled, nicknameEditor, avatarEditor;
     public static android.content.Intent avatarIntent(android.content.Context context) {
-        return profileIntent(context).putExtra(EXTRA_AVATAR,true);
+        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_AVATAR,true);
     }
     public static android.content.Intent nicknameIntent(android.content.Context context) {
-        return profileIntent(context).putExtra(EXTRA_NICKNAME,true);
+        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_NICKNAME,true);
     }
     static android.content.Intent entryIntent(android.content.Context context,AccountEntry entry) {
         return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_ENTRY,entry.name());
@@ -75,14 +71,14 @@ public final class AccountActivity extends AppCompatActivity {
         OnlineSession.get().init(this);
         manager=AccountManager.get(this);
         user=manager.profile();
-        profileOnly=getIntent().getBooleanExtra(EXTRA_PROFILE,false);
         nicknameEditor=getIntent().getBooleanExtra(EXTRA_NICKNAME,false);
+        avatarEditor=!nicknameEditor && getIntent().getBooleanExtra(EXTRA_AVATAR,false);
         entryHandled=state!=null && state.getBoolean("entryHandled");
         loading=true;
         root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(OnlineUi.color(this,R.color.online_page));
         root.addView(OnlineUi.toolbar(this,nicknameEditor ? R.string.profile_edit_name
-                : profileOnly ? R.string.profile_my : R.string.online_account_title,v -> onBackPressed()).view);
+                : avatarEditor ? R.string.profile_change_avatar : R.string.online_account_title,v -> onBackPressed()).view);
         status=text("");
         ScrollView scroll=new ScrollView(this);
         page=OnlineUi.page(this); scroll.addView(page);
@@ -100,9 +96,9 @@ public final class AccountActivity extends AppCompatActivity {
                     entryHandled=true;
                     if(nicknameEditor) nicknameForm(); else avatarForm();
                 } else {
-                    if(nicknameEditor && (restoredDraft || entryHandled)) { finish(); return; }
+                    if((nicknameEditor || avatarEditor) && (restoredDraft || entryHandled)) { finish(); return; }
                     restoredDraft=false;
-                    if(!openEntry() && value!=null && !nicknameEditor) refresh();
+                    if(!openEntry() && value!=null && !nicknameEditor && !avatarEditor) refresh();
                 }
             }
             public void onError(String message) { restoredDraft=false; fail(message); }
@@ -120,7 +116,7 @@ public final class AccountActivity extends AppCompatActivity {
     }
     @Override protected void onRestart() {
         super.onRestart();
-        if(!nicknameEditor && !profileEditing && !loading) {
+        if(!nicknameEditor && !avatarEditor && !profileEditing && !loading) {
             user=manager.profile(); render();
         }
     }
@@ -133,12 +129,12 @@ public final class AccountActivity extends AppCompatActivity {
     private boolean openEntry() {
         if(entryHandled)return false;
         entryHandled=true;
-        if(profileOnly) {
+        if(nicknameEditor || avatarEditor) {
             if(!OnlineSession.get().canChangeAccount() || manager.isBusy()) {
                 status.setText(R.string.online_account_busy); return false;
             }
             if(nicknameEditor) { nicknameForm(); return true; }
-            if(getIntent().getBooleanExtra(EXTRA_AVATAR,false)) { avatarForm(); return true; }
+            if(avatarEditor) { avatarForm(); return true; }
             return false;
         }
         if(!OnlineSession.get().canChangeAccount() || manager.isBusy())return false;
@@ -171,13 +167,22 @@ public final class AccountActivity extends AppCompatActivity {
     private void render() {
         if (!active() || (nicknameEditor && profileEditing)) return;
         page.removeAllViews();
+        if(nicknameEditor || avatarEditor) {
+            status=text(loading ? getString(R.string.account_loading) : "");
+            status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); page.addView(status);
+            statusTechnical=text(""); statusTechnical.setVisibility(View.GONE); page.addView(statusTechnical);
+            if(!profileEditing)action(page,R.string.account_retry,() -> {
+                if(!manager.isBusy()) { entryHandled=false; openEntry(); }
+            });
+            return;
+        }
         LinearLayout card=OnlineUi.emphasisCard(this);
         if (user != null) {
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
             OnlineUi.applyAvatar(this,avatar,user.avatarValue); card.addView(avatar.view);
             avatar.view.setContentDescription(getString(R.string.profile_change_avatar));
             avatar.view.setOnClickListener(v -> openAvatarEditor());
-            card.addView(text(profileOnly ? user.nickname : getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
+            card.addView(text(getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
                     + " #" + user.userId + "\n" + user.nickname + "\n" + (user.email == null ? "" : user.email)
                     + "\n" + getString(R.string.online_account_rating,getString(R.string.online_elo),user.elo)
                     + " · " + getString(R.string.online_account_balance,user.balance)));
@@ -188,24 +193,18 @@ public final class AccountActivity extends AppCompatActivity {
             avatar.view.setContentDescription(getString(R.string.profile_change_avatar));
             avatar.view.setOnClickListener(v -> openAvatarEditor());
             card.addView(text(old==null ? LocalProfile.nickname(this)+"\n"+getString(R.string.profile_local_note)
-                    : profileOnly ? old.nickname : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
+                    : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
         }
-        if(!profileOnly)card.addView(text(getString(user == null || user.isGuest() ? R.string.account_warning : R.string.account_registered_note)));
+        card.addView(text(getString(user == null || user.isGuest() ? R.string.account_warning : R.string.account_registered_note)));
         status=text(loading ? getString(R.string.account_loading) : "");
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         card.addView(status);
         statusTechnical=text(""); statusTechnical.setTextSize(12);
         statusTechnical.setVisibility(View.GONE); card.addView(statusTechnical);
         page.addView(card,OnlineUi.cardParams(this));
-        if(nicknameEditor)return;
         LinearLayout actions=OnlineUi.card(this);
         action(actions,R.string.profile_change_nickname,() -> startActivity(nicknameIntent(this)));
         action(actions,R.string.profile_change_avatar,this::avatarForm);
-        if(profileOnly) {
-            action(actions,R.string.account_retry,this::refresh);
-            page.addView(actions,OnlineUi.cardParams(this));
-            return;
-        }
         action(actions,R.string.account_retry,this::refresh);
         if (user == null || user.isGuest()) action(actions,R.string.account_bind,this::bindForm);
         action(actions,R.string.account_login,() -> confirm(R.string.account_login, R.string.dialog_account_continue_login, R.string.account_login_warning, false, () -> loginForm(false)));
@@ -753,7 +752,7 @@ public final class AccountActivity extends AppCompatActivity {
     }
     private void dismissProfile() {
         if(loading || !profileEditing)return;
-        Runnable close=nicknameEditor ? this::finish : this::closeForm;
+        Runnable close=nicknameEditor || avatarEditor ? this::finish : this::closeForm;
         boolean changed=nicknameEditor ? !ProfileRules.same(profileOriginalNickname,value(profileNickname))
                 : !ProfileRules.same(profileOriginalAvatar,profileAvatar);
         if(changed) {
@@ -779,7 +778,7 @@ public final class AccountActivity extends AppCompatActivity {
             public void onSuccess(AccountManager.UserProfile value) {
                 user=value;
                 if(!active())return;
-                if(nicknameEditor) { loading=false; finish(); } else done();
+                if(nicknameEditor || avatarEditor) { loading=false; finish(); } else done();
                 OnlineSession.get().connect();
             }
             public void onError(String message) { fail(message); }

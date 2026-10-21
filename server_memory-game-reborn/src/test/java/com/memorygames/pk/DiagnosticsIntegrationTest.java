@@ -103,6 +103,21 @@ class DiagnosticsIntegrationTest {
             mvc.perform(post(path).secure(true).contentType("application/json").content(new byte[16385])).andExpect(status().isBadRequest());
         mvc.perform(put(PATH).secure(true).contentType("application/json").content(new byte[16385])).andExpect(status().isBadRequest());
     }
+    @Test void explicitFalseRejectsHttpAvatarPatchButStillAllowsHttps() throws Exception {
+        var guest=accounts.guest(UUID.randomUUID().toString(),AccountService.randomToken(),null,"Offline fixture");
+        mvc.perform(patch("/api/v2/me/profile").secure(false).header("X-Forwarded-Proto","https")
+                        .header("Authorization","Bearer "+guest.accessToken()).contentType("application/json")
+                        .content("{\"avatarValue\":\"avatar_2\"}"))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("HTTPS_REQUIRED"))
+                .andExpect(header().string("Cache-Control","no-store"));
+        var unchanged=repository.findById(guest.user().userId()).orElseThrow();
+        assertEquals("avatar_1",unchanged.avatarValue); assertEquals(guest.user().nickname(),unchanged.nickname);
+        mvc.perform(patch("/api/v2/me/profile").secure(true)
+                        .header("Authorization","Bearer "+guest.accessToken()).contentType("application/json")
+                        .content("{\"avatarValue\":\"avatar_2\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.avatarValue").value("avatar_2"))
+                .andExpect(jsonPath("$.nickname").value(guest.user().nickname()));
+    }
     @Test void actualUnknownLengthIsBoundedAtLimitPlusOne() throws Exception {
         for(String path:List.of(PATH,"/api/v2/auth/guest")) {
             MockHttpServletRequest request=new MockHttpServletRequest("POST",path) {

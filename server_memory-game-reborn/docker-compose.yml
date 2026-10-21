@@ -23,6 +23,8 @@ services:
         condition: service_healthy
     environment:
       PK_DB_PASSWORD: ${PK_DB_PASSWORD:-change-me}
+      # Temporary HTTP compatibility; restore false after HTTPS/WSS is ready.
+      PK_AUTH_ALLOW_HTTP: ${PK_AUTH_ALLOW_HTTP:-true}
       # Browser password login and automation tokens are independent.
       PK_ADMIN_TOKEN: ${PK_ADMIN_TOKEN:-}
       PK_ADMIN_PASSWORD_HASH: ${PK_ADMIN_PASSWORD_HASH:-}

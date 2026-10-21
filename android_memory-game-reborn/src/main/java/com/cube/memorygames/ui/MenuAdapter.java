@@ -100,15 +100,11 @@ public class MenuAdapter extends Adapter<ViewHolder> {
             public void onError(String message) { /* Do not replace a damaged/foreign identity with a guest. */ }
         });
     }
-    private void openProfile() {
-        mainMenuActivity.startActivity(com.cube.memorygames.api.online.AccountActivity.profileIntent(mainMenuActivity));
-    }
 
     public void fillMenuItems() {
         LocalUser localUser = MemoryApplicationModel.getInstance().getLocalDataManager().getLocalUser();
         this.items = new ArrayList();
         this.items.add(localUser);
-        this.items.add(new MenuItem(R.drawable.ic_user_placeholder,R.string.profile_my,view -> openProfile()));
         this.items.add(new MenuItem(R.drawable.ic_reward, R.string.your_trophies, new OnClickListener() {
             public void onClick(View view) {
                 MenuAdapter.this.mainMenuActivity.startActivity(new Intent(MenuAdapter.this.mainMenuActivity, TrophiesActivity.class));
@@ -169,8 +165,9 @@ public class MenuAdapter extends Adapter<ViewHolder> {
                     : com.cube.memorygames.api.online.LocalProfile.avatar(mainMenuActivity);
             userViewHolder.userName.setText(name);
             com.cube.memorygames.api.online.AvatarCatalog.apply(mainMenuActivity,userViewHolder.profilePicture,avatar);
-            userViewHolder.itemView.setContentDescription(mainMenuActivity.getString(R.string.profile_my));
-            userViewHolder.itemView.setOnClickListener(v -> openProfile());
+            userViewHolder.itemView.setContentDescription(null);
+            userViewHolder.itemView.setOnClickListener(null);
+            userViewHolder.itemView.setClickable(false);
             userViewHolder.profilePicture.setContentDescription(mainMenuActivity.getString(R.string.profile_change_avatar));
             userViewHolder.profilePicture.setOnClickListener(v -> mainMenuActivity.startActivity(
                     com.cube.memorygames.api.online.AccountActivity.avatarIntent(mainMenuActivity)));
