@@ -8,6 +8,61 @@ public class PartyStateTest {
         PartyState s = new PartyState(); s.lobbyId = lobby; s.matchId = "match";
         s.stateVersion = version; s.phase = "LOBBY"; s.hostId = 1; return s;
     }
+    @Test public void terminalAuthenticationNeverQueuesAnotherCreateOrJoin() {
+        PartySession.EntryRequests entries = new PartySession.EntryRequests();
+        entries.sending("party_create", "old-entry");
+        entries.reset(); // stopAuthorization resets party before disconnecting.
+        for (String type : new String[]{"party_create", "party_join"}) {
+            assertFalse(entries.queue(type, new com.google.gson.JsonObject(), false, true));
+            assertFalse(entries.occupied());
+            assertFalse(entries.queue(type, new com.google.gson.JsonObject(), true, true));
+            assertFalse(entries.occupied());
+            assertFalse(entries.queue(type, new com.google.gson.JsonObject(), false, false));
+            assertFalse(entries.occupied());
+        }
+    }
+    @Test public void unsentRoomRequestCanBeCancelledWithoutServerLeave() {
+        PartySession.EntryRequests entries = new PartySession.EntryRequests();
+        for (String type : new String[]{"party_create", "party_join"}) {
+            assertTrue(entries.queue(type, new com.google.gson.JsonObject(), true, false));
+            assertTrue(entries.occupied()); assertTrue(entries.canCancel());
+            assertTrue(entries.cancel()); assertFalse(entries.occupied());
+            assertNull(entries.queuedType); assertNull(entries.queuedData);
+        }
+    }
+    @Test public void sentEntryIsNotReleasedByCancelOrUnrelatedOrOlderSync() {
+        PartySession.EntryRequests entries = new PartySession.EntryRequests();
+        entries.sending("party_sync", "before-entry");
+        entries.sending("party_join", "entry");
+        assertFalse(entries.canCancel()); assertFalse(entries.cancel());
+        entries.acknowledged("unrelated-ready", false);
+        entries.acknowledged("before-entry", true);
+        assertTrue(entries.occupied());
+        entries.sending("party_sync", "failed-sync");
+        entries.acknowledged("failed-sync", false);
+        assertTrue(entries.occupied());
+        entries.sending("party_sync", "after-entry");
+        entries.acknowledged("after-entry", true);
+        assertFalse(entries.occupied());
+    }
+    @Test public void correlatedReplyReleasesOnlyItsOwnSentEntry() {
+        PartySession.EntryRequests entries = new PartySession.EntryRequests();
+        entries.sending("party_create", "entry");
+        entries.acknowledged("entry", false);
+        assertFalse(entries.occupied());
+    }
+    @Test public void normalReconnectRetainsQueuedPayloadUntilItIsSent() {
+        PartySession.EntryRequests entries = new PartySession.EntryRequests();
+        com.google.gson.JsonObject data = new com.google.gson.JsonObject(); data.addProperty("code", "123456");
+        assertTrue(entries.queue("party_join", data, true, false));
+        entries.sending("party_sync", "auth-sync");
+        assertEquals("party_join", entries.queuedType); assertSame(data, entries.queuedData);
+        entries.clearQueued(); entries.sending("party_join", "entry");
+        entries.acknowledged("auth-sync", true);
+        assertTrue(entries.occupied()); assertFalse(entries.cancel());
+        entries.acknowledged("entry", true);
+        assertFalse(entries.occupied());
+    }
     @Test public void stateVersionsRejectDuplicateAndDelayedUpdates() {
         PartyState s = state("a", 20);
         assertFalse(PartySession.accepts(s, state("a", 19)));

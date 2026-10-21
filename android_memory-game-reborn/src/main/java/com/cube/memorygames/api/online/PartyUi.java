@@ -62,6 +62,7 @@ final class PartyUi {
         int res;
         switch (raw) {
             case "party_busy": res = R.string.party_busy; break;
+            case "party_login_required": res = R.string.party_login_required; break;
             case "party_disconnected": res = R.string.party_disconnected; break;
             case "party_timeout": res = R.string.party_timeout; break;
             case "kicked": res = R.string.party_kicked; break;

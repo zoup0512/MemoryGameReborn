@@ -67,6 +67,11 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
     private void render() {
         if (box == null || isFinishing()) return;
         int y = scroll.getScrollY(); box.removeAllViews(); countdown = null;
+        if (OnlineSession.get().requiresAccountLogin()) {
+            text(R.string.party_login_required);
+            action(R.string.online_account_title, () -> startActivity(new Intent(this, AccountActivity.class)));
+            return;
+        }
         if (!party.connected()) { text(R.string.party_disconnected); action(R.string.party_reconnect, () -> party.sync()); }
         if (party.error() != null) text(PartyUi.error(this, party.error()));
         PartyState s = party.state(); PartyState result = party.finished();
@@ -88,7 +93,13 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
                     if (!value.matches("[0-9]{6}")) { code.setError(getString(R.string.party_code_invalid)); return; }
                     returnRequested = false; party.dismissFinished(); party.join(value);
                 });
-            } else text(R.string.party_waiting);
+            } else if (party.canCancelEntry()) {
+                text(R.string.party_connecting);
+                action(R.string.party_cancel_entry, () -> party.cancelEntry());
+            } else {
+                text(R.string.party_waiting);
+                if (party.connected()) action(R.string.party_reconnect, () -> party.sync());
+            }
             action(R.string.party_history, () -> startActivity(new Intent(this, PartyHistoryActivity.class)));
             return;
         }
@@ -165,7 +176,11 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
         super.onActivityResult(request, result, data); if (request == 701) { gameOpen = false; render(); }
     }
     @Override public void onBackPressed() {
-        if (party.state() == null) { if (party.occupied()) { text(R.string.party_waiting); return; } finish(); return; }
+        if (party.state() == null) {
+            if (party.canCancelEntry()) party.cancelEntry();
+            if (party.occupied()) { party.sync(); text(R.string.party_waiting); return; }
+            finish(); return;
+        }
         com.cube.memorygames.ui.DialogUi.builder(this).setTitle(R.string.party_leave).setMessage(R.string.party_leave_confirm)
                 .setPositiveButton(R.string.ok, (d, w) -> { exitRequested = true; party.dismissFinished(); party.leave(); })
                 .setNegativeButton(R.string.cancel, null).show();

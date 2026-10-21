@@ -786,11 +786,12 @@ public class OnlineSession {
         return client != null && client.isConnected() && (state == STATE_IDLE || state == STATE_MATCH);
     }
 
-    void sendParty(String type, Object data, String rid) {
+    boolean sendParty(String type, Object data, String rid) {
         com.google.gson.JsonObject root = new com.google.gson.JsonParser()
                 .parse(OnlineMessages.envelope(type, data)).getAsJsonObject();
         root.addProperty("rid", rid);
-        if (client != null) client.send(root.toString());
+        OnlineClient target = client;
+        return target != null && target.send(root.toString());
     }
 
     /** Called from Game1MemoryGridActivity.updateOnlineScore() in online mode. */

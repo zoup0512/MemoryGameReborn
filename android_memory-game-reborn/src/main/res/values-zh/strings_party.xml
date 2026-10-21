@@ -51,6 +51,9 @@
     <string name="party_leave_confirm">确认离开房间？比赛中离开将弃赛，当前未完成轮不计分，保留已完成轮积分。</string>
     <string name="party_leaving">正在离房 · 等待服务端确认释放席位</string>
     <string name="party_waiting">正在等待服务端确认</string>
+    <string name="party_connecting">正在连接，创建或加入房间的请求尚未发送。</string>
+    <string name="party_cancel_entry">取消创建 / 加入请求</string>
+    <string name="party_login_required">在线会话已失效，请前往账户与安全重新登录后，再创建或加入房间。</string>
     <string name="party_reconnect">重新连接 / 同步房间</string>
     <string name="party_disconnected">连接已断开，正使用原账户恢复；比赛计时不会暂停。</string>
     <string name="party_timeout">服务端暂未响应，请先同步确认房间状态后重试。</string>

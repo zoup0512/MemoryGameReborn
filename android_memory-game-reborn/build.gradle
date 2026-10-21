@@ -100,7 +100,8 @@ android {
 
     buildTypes {
         debug {
-            if (project.findProperty('partyUiTest')?.toString() == 'true') applicationIdSuffix '.partytest'
+            if (project.findProperty('partyCloudUiTest')?.toString() == 'true') applicationIdSuffix '.cloudpartytest'
+            else if (project.findProperty('partyUiTest')?.toString() == 'true') applicationIdSuffix '.partytest'
             else if (accountUiTest) applicationIdSuffix '.accounttest'
         }
         release {

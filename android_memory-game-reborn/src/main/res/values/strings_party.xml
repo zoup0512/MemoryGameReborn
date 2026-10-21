@@ -51,6 +51,9 @@
     <string name="party_leave_confirm">Leave this room? During a match, you forfeit the unfinished round. Completed round points are kept.</string>
     <string name="party_leaving">Leaving room · Waiting for server confirmation</string>
     <string name="party_waiting">Waiting for server confirmation</string>
+    <string name="party_connecting">Connecting. Your room request has not been sent yet.</string>
+    <string name="party_cancel_entry">Cancel room request</string>
+    <string name="party_login_required">Your online session is no longer valid. Open Account and security to sign in again before creating or joining a room.</string>
     <string name="party_reconnect">Reconnect / Sync</string>
     <string name="party_disconnected">Connection lost. Reconnecting on the same account; the game clock does not stop.</string>
     <string name="party_timeout">No server response. Sync to check the room before trying again.</string>

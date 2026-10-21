@@ -22,7 +22,31 @@ public final class PartySession {
     public interface Listener { void onPartyChanged(); }
     private static final class Holder { private static final PartySession INSTANCE = new PartySession(); }
     public static PartySession get() { return Holder.INSTANCE; }
-    private final Handler main = new Handler(Looper.getMainLooper());
+    /** Transport/scheduler seam keeps the real coordinator runnable in plain JVM regression tests. */
+    interface Runtime {
+        boolean connected();
+        boolean canAutoConnect();
+        boolean requiresAccountLogin();
+        boolean canChangeAccount();
+        void connectIfDisconnected();
+        boolean send(String type, JsonObject data, String rid);
+        void postDelayed(Runnable task, long delay);
+        long elapsedRealtime();
+    }
+    private static final class AndroidRuntime implements Runtime {
+        private final Handler main = new Handler(Looper.getMainLooper());
+        public boolean connected() { return OnlineSession.get().isAuthenticatedSocket(); }
+        public boolean canAutoConnect() { return OnlineSession.get().canAutoConnect(); }
+        public boolean requiresAccountLogin() { return OnlineSession.get().requiresAccountLogin(); }
+        public boolean canChangeAccount() { return OnlineSession.get().canChangeAccount(); }
+        public void connectIfDisconnected() {
+            if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) OnlineSession.get().connect();
+        }
+        public boolean send(String type, JsonObject data, String rid) { return OnlineSession.get().sendParty(type, data, rid); }
+        public void postDelayed(Runnable task, long delay) { main.postDelayed(task, delay); }
+        public long elapsedRealtime() { return SystemClock.elapsedRealtime(); }
+    }
+    private final Runtime runtime;
     private final Set<Listener> listeners = new HashSet<>();
     private final Map<String, String> requests = new HashMap<>();
     private final Map<String, String> requestLobbies = new HashMap<>();
@@ -33,11 +57,46 @@ public final class PartySession {
     private PartyState state, finished;
     private PartyState.History[] history = new PartyState.History[0];
     private String error, lease, leaseKey, leavingLobby, leavingMatch;
-    private String queuedType; private JsonObject queuedData;
+    private final EntryRequests entries = new EntryRequests();
+    /** Unsent intent is cancellable; sent entries need a reply or a later authoritative sync. */
+    static final class EntryRequests {
+        String queuedType; JsonObject queuedData;
+        private final Map<String, String> sent = new HashMap<>();
+        private final Map<String, Set<String>> syncs = new HashMap<>();
+        boolean queue(String type, JsonObject data, boolean canAutoConnect, boolean requiresAccountLogin) {
+            if (!canAutoConnect || requiresAccountLogin) return false;
+            queuedType = type; queuedData = data; return true;
+        }
+        boolean occupied() { return queuedType != null || !sent.isEmpty(); }
+        boolean canCancel() { return queuedType != null && sent.isEmpty(); }
+        boolean cancel() {
+            if (!canCancel()) return false;
+            clearQueued(); return true;
+        }
+        void clearQueued() { queuedType = null; queuedData = null; }
+        void sending(String type, String rid) {
+            if ("party_create".equals(type) || "party_join".equals(type)) sent.put(rid, type);
+            else if ("party_sync".equals(type)) syncs.put(rid, new HashSet<>(sent.keySet()));
+        }
+        boolean mayReenter(String rid) {
+            if (commandMayReenter(sent.get(rid))) return true;
+            Set<String> snapshot = syncs.get(rid);
+            if (snapshot != null) for (String entry : snapshot) if (commandMayReenter(sent.get(entry))) return true;
+            return false;
+        }
+        void acknowledged(String rid, boolean authoritativeSync) {
+            sent.remove(rid);
+            Set<String> snapshot = syncs.remove(rid);
+            if (authoritativeSync && snapshot != null) for (String entry : snapshot) sent.remove(entry);
+        }
+        void forgetSync(String rid) { syncs.remove(rid); }
+        void reset() { clearQueued(); sent.clear(); syncs.clear(); }
+    }
     private long serverAt, elapsedAt;
     private int reportedLevel;
     private boolean completed, pendingHistory;
-    private PartySession() { }
+    private PartySession() { this(new AndroidRuntime()); }
+    PartySession(Runtime runtime) { this.runtime = runtime; }
     public void init(Context c) { context = c.getApplicationContext(); }
     public void addListener(Listener l) { listeners.add(l); }
     public void removeListener(Listener l) { listeners.remove(l); }
@@ -48,19 +107,24 @@ public final class PartySession {
     public PartyState.History[] history() { return history; }
     public String error() { return error; }
     public long userId() { OnlineMessages.AuthOk p = OnlineSession.get().getLastProfile(); return p == null ? -1 : p.userId; }
-    public boolean occupied() { return state != null || queuedType != null || leavingLobby != null || hasEntryRequest(); }
-    private boolean hasEntryRequest() { return requests.containsValue("party_create") || requests.containsValue("party_join"); }
-    public long now() { return serverAt == 0 ? System.currentTimeMillis() : serverAt + SystemClock.elapsedRealtime() - elapsedAt; }
+    public boolean occupied() { return state != null || leavingLobby != null || entries.occupied(); }
+    public boolean canCancelEntry() { return state == null && leavingLobby == null && entries.canCancel(); }
+    public boolean cancelEntry() {
+        if (!canCancelEntry() || !entries.cancel()) return false;
+        error = null; changed(); return true;
+    }
+    public long now() { return serverAt == 0 ? System.currentTimeMillis() : serverAt + runtime.elapsedRealtime() - elapsedAt; }
     public long remaining() { return state == null ? 0 : Math.max(0, state.deadlineAt - now()); }
-    public boolean connected() { return OnlineSession.get().isAuthenticatedSocket(); }
+    public boolean connected() { return runtime.connected(); }
     public void connectionChanged() { changed(); }
     public void authenticated() {
         send("party_sync", new JsonObject());
         if (pendingHistory) { pendingHistory = false; requestHistory(); }
         if (leavingLobby != null) sendLeave();
         else if (loadedIntent != null && owns(loadedIntent) && state.is("LOADING")) loaded(loadedIntent);
-        if (queuedType != null) {
-            String t = queuedType; JsonObject d = queuedData; queuedType = null; queuedData = null; send(t, d);
+        if (entries.queuedType != null) {
+            String t = entries.queuedType; JsonObject d = entries.queuedData;
+            if (send(t, d)) entries.clearQueued();
         }
         changed();
     }
@@ -69,16 +133,19 @@ public final class PartySession {
             send("party_sync", new JsonObject());
             if (leavingLobby != null) sendLeave();
         }
-        else if (OnlineSession.get().getState() == OnlineSession.STATE_DISCONNECTED) OnlineSession.get().connect();
+        else runtime.connectIfDisconnected();
     }
     public void create(int rounds) { JsonObject d = new JsonObject(); d.addProperty("roundCount", rounds); enter("party_create", d); }
     public void join(String code) { JsonObject d = new JsonObject(); d.addProperty("code", code); enter("party_join", d); }
     private void enter(String t, JsonObject d) {
         if (occupied()) { error = "party_busy"; changed(); return; }
-        if (!OnlineSession.get().canChangeAccount()) { error = "party_busy"; changed(); return; }
+        if (runtime.requiresAccountLogin()) { error = "party_login_required"; changed(); return; }
+        if (!runtime.canAutoConnect() || !runtime.canChangeAccount()) { error = "party_busy"; changed(); return; }
         error = null;
-        if (connected()) send(t, d);
-        else { queuedType = t; queuedData = d; sync(); }
+        if (entries.queue(t, d, runtime.canAutoConnect(), runtime.requiresAccountLogin())) {
+            if (connected() && send(t, d)) entries.clearQueued();
+            else sync();
+        }
         changed();
     }
     private JsonObject scope() {
@@ -102,8 +169,8 @@ public final class PartySession {
         send("party_history", new JsonObject());
     }
     public void leave() {
-        queuedType = null; queuedData = null;
-        if (state == null) return;
+        if (state == null) { cancelEntry(); return; }
+        entries.clearQueued();
         leavingLobby = state.lobbyId; leavingMatch = state.matchId; lease = null;
         sendLeave(); changed();
     }
@@ -113,20 +180,22 @@ public final class PartySession {
         if (leavingMatch != null) d.addProperty("matchId", leavingMatch);
         send("party_leave", d);
     }
-    private void send(String type, JsonObject d) {
+    private boolean send(String type, JsonObject d) {
         error = null;
-        if (!connected()) { error = "party_disconnected"; changed(); return; }
-        final String rid = "party-" + UUID.randomUUID(); requests.put(rid, type);
+        if (!connected()) { error = "party_disconnected"; changed(); return false; }
+        final String rid = "party-" + UUID.randomUUID();
+        if (!runtime.send(type, d, rid)) { error = "party_disconnected"; changed(); return false; }
+        requests.put(rid, type);
         requestLobbies.put(rid, state == null ? null : state.lobbyId);
-        correlations.put(rid, type);
-        main.postDelayed(() -> { correlations.remove(rid); requestLobbies.remove(rid); }, 120000);
-        OnlineSession.get().sendParty(type, d, rid);
-        main.postDelayed(() -> {
+        correlations.put(rid, type); entries.sending(type, rid);
+        runtime.postDelayed(() -> { correlations.remove(rid); requestLobbies.remove(rid); entries.forgetSync(rid); }, 120000);
+        runtime.postDelayed(() -> {
             String pending = requests.remove(rid);
             if (pending != null && !pending.equals("party_level") && !pending.equals("party_complete") && !pending.equals("party_round_ready")) {
                 error = "party_timeout"; changed();
             }
         }, 8000);
+        return true;
     }
     /** Called before legacy error handling, so correlated party errors cannot mutate duel state. */
     public boolean receive(String type, String json) {
@@ -141,6 +210,7 @@ public final class PartySession {
             if (!ours) return false;
             OnlineMessages.ErrorMsg e = OnlineMessages.payloadOf(json, OnlineMessages.ErrorMsg.class);
             if (e != null && e.code == 401) return false; // OnlineSession owns token refresh/terminal auth failure.
+            entries.acknowledged(rid, false);
             error = e == null ? "party_error" : e.message;
             if ("party_leave".equals(command)) { leavingLobby = null; leavingMatch = null; sync(); }
             changed(); return true;
@@ -148,17 +218,26 @@ public final class PartySession {
         if (!type.startsWith("party_")) return false;
         if ("party_state".equals(type)) {
             PartyState incoming = OnlineMessages.payloadOf(json, PartyState.class);
-            // A new explicit join may legitimately reuse the same persistent lobby.
-            if (incoming != null && commandMayReenter(command)) retiredLobbies.remove(incoming.lobbyId);
-            if (accepts(state, incoming) && !retiredLobbies.contains(incoming.lobbyId)
+            // Keep explicit join authority through lost acks and correlation expiry. A sync may
+            // reconcile only entries that preceded it, never a later join or an unsolicited broadcast.
+            boolean reenter = entries.mayReenter(rid);
+            if (accepts(state, incoming) && (reenter || !retiredLobbies.contains(incoming.lobbyId))
                     && (state == null || state.lobbyId.equals(incoming.lobbyId))) {
-                state = incoming; serverAt = incoming.serverTime; elapsedAt = SystemClock.elapsedRealtime();
+                retiredLobbies.remove(incoming.lobbyId);
+                state = incoming; serverAt = incoming.serverTime; elapsedAt = runtime.elapsedRealtime();
+                entries.acknowledged(rid, true);
                 if (incoming.is("FINISHED")) finished = incoming;
                 if (!key(incoming).equals(leaseKey)) { lease = null; loadedIntent = null; reportedLevel = 0; completed = false; }
                 error = null;
+            } else if (incoming != null && state != null && state.lobbyId.equals(incoming.lobbyId)
+                    && !retiredLobbies.contains(incoming.lobbyId) && incoming.stateVersion <= state.stateVersion) {
+                // Broadcast can arrive before the command reply. We already hold this room's
+                // equal/newer authority, so consume the receipt without rolling state back.
+                entries.acknowledged(rid, true);
             }
         } else if ("party_left".equals(type)) {
             PartyState.Left left = OnlineMessages.payloadOf(json, PartyState.Left.class);
+            if (left != null) entries.acknowledged(rid, true);
             if (left != null && clearsLobby(state, left.lobbyId, requestedLobby)) {
                 if (state != null && left.lobbyId != null) retiredLobbies.add(state.lobbyId);
                 state = null; lease = null; loadedIntent = null;
@@ -233,7 +312,7 @@ public final class PartySession {
     public void leave(Intent i) { if (owns(i)) leave(); }
     public void reset() {
         state = null; finished = null; lease = null; loadedIntent = null; leavingLobby = null; leavingMatch = null;
-        queuedType = null; queuedData = null; pendingHistory = false; serverAt = 0; error = null;
+        entries.reset(); pendingHistory = false; serverAt = 0; error = null;
         requests.clear(); correlations.clear(); requestLobbies.clear(); retiredLobbies.clear(); history = new PartyState.History[0]; changed();
     }
 }
