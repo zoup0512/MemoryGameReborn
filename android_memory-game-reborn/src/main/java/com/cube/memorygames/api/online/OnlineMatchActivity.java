@@ -119,7 +119,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private TextView ratingDelta;
     private TextView ratingTotal;
     private TextView resultSubtitle;
-    private TextView okButton;
+    private LinearLayout roundResults;
     // Bottom bar (activity_play_online.xml buttonsContainer).
     private LinearLayout bottomBar;
     private TextView bottomButton;
@@ -847,12 +847,12 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         rewards.addView(ratingReward, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
-        this.okButton = OnlineUi.secondaryButton(this, R.string.ok);
-        LinearLayout.LayoutParams okParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                OnlineUi.dim(this, R.dimen.online_button_height));
-        okParams.topMargin = dp(22);
-        card.addView(this.okButton, okParams);
+        this.roundResults = new LinearLayout(this);
+        this.roundResults.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams resultsParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        resultsParams.topMargin = dp(22);
+        card.addView(this.roundResults, resultsParams);
         return card;
     }
 
@@ -1245,17 +1245,10 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         this.ratingTotal.setText(String.valueOf(end.elo));
         this.myAvatar.rating.setText(String.valueOf(end.elo));
 
-        showScrollableBoard(this.card,
-                OnlineUi.dim(this, R.dimen.online_result_card_width));
-        // OK drops the result card onto the per-round results list, exactly
-        // like the original dialog revealed the results screen underneath.
-        this.okButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showScrollableBoard(buildResultsBoard(end),
-                        ViewGroup.LayoutParams.MATCH_PARENT);
-            }
-        });
+        this.roundResults.removeAllViews();
+        this.roundResults.addView(buildResultsBoard(end), new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        showScrollableBoard(this.card, ViewGroup.LayoutParams.MATCH_PARENT);
         this.bottomBar.setVisibility(View.VISIBLE);
         this.bottomButton.setText(R.string.nextDuel);
         this.bottomButton.setTextColor(Color.WHITE);
