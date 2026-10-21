@@ -31,6 +31,6 @@ public class PartyHistory {
                         + "from pk_party_match m join pk_party_participant p on p.match_id=m.match_id where p.player_id=? "
                         + "order by m.settled_at desc, m.match_id desc limit 20",
                 (rs, n) -> new PartyProtocol.HistoryEntry(rs.getString(1), rs.getLong(2), rs.getString(3),
-                        rs.getInt(4), rs.getInt(5), rs.getInt(6), rs.getInt(7), rs.getInt(8)), userId);
+                        rs.getInt(4), rs.getInt(5), rs.getInt(6), rs.getLong(7), rs.getInt(8)), userId);
     }
 }

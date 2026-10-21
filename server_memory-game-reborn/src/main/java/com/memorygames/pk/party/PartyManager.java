@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class PartyManager {
     private static final Logger log = LoggerFactory.getLogger(PartyManager.class);
+    private static final long SCORE_BROADCAST_MS = 250;
     public record Timing(long loadingMs, long countdownMs, long intermissionMs,
                          long disconnectMs, long hostTransferMs, long idleMs, long graceMs) { }
     private static class Member {
@@ -41,7 +42,8 @@ public class PartyManager {
     private static class Seat {
         final Member member;
         boolean withdrawn, loaded, eligible, done;
-        int score, points2, firstPlaces, rank, lastLevel;
+        int score, firstPlaces, rank, lastLevel;
+        long points2;
         long lastLevelAt, nextAllowedAt;
         Seat(Member m) { member=m; }
     }
@@ -54,6 +56,8 @@ public class PartyManager {
         List<GameCatalog.ProtocolRound> rounds = List.of();
         long hostId, version, lastActivity, startAt, deadlineAt, phaseDeadlineAt;
         int roundCount, roundIndex = -1;
+        boolean scoreDirty;
+        long scoreBroadcastAt;
         String phase = "LOBBY", matchId, status, reason;
         Lobby(String code, int rounds, long now) { this.code=code; roundCount=rounds; lastActivity=now; }
     }
@@ -165,7 +169,6 @@ public class PartyManager {
                 require(l!=null,404,"lobby not found");
                 if (byUser.get(user.id)==l) { send(endpoint,"party_state",snapshot(l),rid); return; }
                 require(l.phase.equals("LOBBY"),409,"match in progress");
-                require(l.members.size()<6,409,"lobby full");
                 require(!byUser.containsKey(user.id) && lifecycle.claimOwned(user.id,PlayerLifecycle.PARTY_LOBBY,l.id),409,"player busy");
                 l.members.put(user.id,new Member(user,endpoint)); byUser.put(user.id,l); clearReady(l);
                 touch(l); changed(l); send(endpoint,"party_state",snapshot(l),rid); return;
@@ -198,7 +201,7 @@ public class PartyManager {
                     host(l,user.id);
                     // A lost start receipt is safe to retry, never begins a second match.
                     if (!l.phase.equals("LOBBY")) { send(endpoint,"party_state",snapshot(l),rid); return; }
-                    require(l.members.size()>=3,409,"need at least 3 players");
+                    require(l.members.size()>=2,409,"need at least 2 players");
                     require(l.members.values().stream().allMatch(x->x.connected && (x.id==l.hostId || x.ready)),409,"players not ready");
                     l.matchId=UUID.randomUUID().toString(); l.status="IN_PROGRESS"; l.reason=null;
                     l.seats.clear(); l.results.clear(); l.rounds=catalog.planRounds(random.nextLong(),l.roundCount);
@@ -212,7 +215,14 @@ public class PartyManager {
                         if (active(l).stream().allMatch(x->x.loaded)) beginCountdown(l);
                     } else require(s.loaded && (l.phase.equals("COUNTDOWN") || l.phase.equals("PLAYING")),409,"loading closed");
                 }
-                case "party_level" -> level(l,c,user.id);
+                case "party_level" -> {
+                    level(l,c,user.id);
+                    touch(l);
+                    Seat seat=l.seats.get(user.id);
+                    send(endpoint,"party_ack",new PartyProtocol.Ack(l.id,l.matchId,l.roundIndex,
+                            user.id,l.version,seat.score),rid);
+                    return;
+                }
                 case "party_complete" -> {
                     Seat s=round(l,c,user.id);
                     require(l.phase.equals("PLAYING") && clock.millis()>=l.startAt && clock.millis()<=l.deadlineAt+timing.graceMs,409,"round not playing");
@@ -250,10 +260,15 @@ public class PartyManager {
         require(c.level>s.lastLevel && c.level<=spec.maxLevel() && c.level<=elapsed/floor+3,
                 409,"invalid level progression");
         require(effectiveNow>=s.nextAllowedAt && (s.lastLevel==0 || effectiveNow-s.lastLevelAt>=floor),409,"level too fast");
+        // Compute before mutating cadence/progression. Neither per-level multiplication
+        // nor cumulative int overflow may partially consume an otherwise valid report.
+        long score=(long)s.score+(c.success ? (spec.flatScore ? spec.baseScore : spec.baseScore+2L*c.level) : 0);
+        require(score>=0 && score<=Integer.MAX_VALUE,409,"score overflow");
         s.lastLevel=c.level; s.lastLevelAt=effectiveNow;
         s.nextAllowedAt=effectiveNow+(c.success?0:spec.failureDelayMs());
-        if (c.success) s.score=Math.addExact(s.score,spec.levelScore(c.level));
-        changed(l);
+        s.score=(int)score;
+        l.version++;
+        if(!l.scoreDirty) { l.scoreDirty=true; l.scoreBroadcastAt=now+SCORE_BROADCAST_MS; }
     }
     private Seat round(Lobby l,PartyProtocol.Command c,long id) {
         require(c.matchId!=null && c.matchId.equals(l.matchId) && c.roundIndex!=null && c.roundIndex==l.roundIndex,409,"stale round");
@@ -285,7 +300,8 @@ public class PartyManager {
         Map<Long,PartyProtocol.Entry> entries=new HashMap<>();
         for (int i=0;i<sorted.size();) {
             int end=i+1; while(end<sorted.size() && sorted.get(end).score==sorted.get(i).score) end++;
-            int rank=i+1, points=sorted.get(i).score>0 ? 2*(l.seats.size()-rank)-(end-i-1) : 0;
+            int rank=i+1;
+            long points=sorted.get(i).score>0 ? 2L*(l.seats.size()-rank)-(end-i-1L) : 0;
             for(int j=i;j<end;j++) {
                 Seat s=sorted.get(j); s.points2+=points;
                 if (rank==1 && s.score>0) s.firstPlaces++;
@@ -304,7 +320,7 @@ public class PartyManager {
     }
     private void updateRanks(Lobby l) {
         List<Seat> sorted=l.seats.values().stream().sorted(Comparator.comparing((Seat s)->s.withdrawn)
-                .thenComparing(Comparator.comparingInt((Seat s)->s.points2).reversed())
+                .thenComparing(Comparator.comparingLong((Seat s)->s.points2).reversed())
                 .thenComparing(Comparator.comparingInt((Seat s)->s.firstPlaces).reversed())).toList();
         Seat previous=null; int rank=0;
         for(int i=0;i<sorted.size();i++) {
@@ -379,6 +395,7 @@ public class PartyManager {
                 continue;
             }
             advancePhase(l,now);
+            if(l.scoreDirty && now>=l.scoreBroadcastAt) broadcast(l);
         }
         joins.entrySet().removeIf(e->now-e.getValue().start>=60000);
     }
@@ -402,7 +419,12 @@ public class PartyManager {
         throw fail(503,"code capacity reached");
     }
     private void changed(Lobby l) {
-        l.version++; PartyProtocol.State state=snapshot(l);
+        l.version++;
+        broadcast(l);
+    }
+    private void broadcast(Lobby l) {
+        l.scoreDirty=false;
+        PartyProtocol.State state=snapshot(l);
         String frame=ProtocolCodec.encode("party_state",state);
         for(Member m:l.members.values()) if(m.connected) m.endpoint.send(frame);
     }

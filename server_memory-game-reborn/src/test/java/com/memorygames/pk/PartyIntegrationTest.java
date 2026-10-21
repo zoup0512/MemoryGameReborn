@@ -7,6 +7,8 @@ import com.memorygames.pk.protocol.ProtocolCodec;
 import com.memorygames.pk.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -34,6 +36,7 @@ class PartyIntegrationTest {
     @Autowired PartyManager manager;
     @Autowired PlayerLifecycle lifecycle;
     @Autowired UserRepository users;
+    @Autowired com.memorygames.pk.user.UserService userService;
     @Autowired JdbcTemplate jdbc;
     @org.springframework.boot.test.mock.mockito.SpyBean com.memorygames.pk.party.PartyHistory partyHistory;
     TestWsClient client()throws Exception{TestWsClient c=new TestWsClient(URI.create("ws://127.0.0.1:"+port+"/ws"));c.connect();return c;}
@@ -54,6 +57,25 @@ class PartyIntegrationTest {
         fail("state condition not reached");return null;
     }
     Map<String,Object> ref(PartyProtocol.State s){return Map.of("lobbyId",s.lobbyId,"matchId",s.matchId,"roundIndex",s.roundIndex);}
+    @Test void flywayBigintPointsPersistAndReadWithoutTruncation(){
+        var account=userService.register(UUID.randomUUID().toString(),null);
+        PartyProtocol.State state=new PartyProtocol.State();state.matchId=UUID.randomUUID().toString();
+        state.serverTime=System.currentTimeMillis();state.status="COMPLETED";state.roundCount=3;
+        PartyProtocol.Participant participant=new PartyProtocol.Participant();participant.playerId=account.id;
+        participant.nickname=account.nickname;participant.avatarValue=account.avatarValue;participant.rank=1;
+        participant.points2=(long)Integer.MAX_VALUE+17;state.participants.add(participant);
+        PartyProtocol.RoundResult result=new PartyProtocol.RoundResult();result.gameId="0";
+        PartyProtocol.Entry entry=new PartyProtocol.Entry();entry.playerId=account.id;entry.rank=1;
+        entry.points2=(long)Integer.MAX_VALUE+3;entry.eligible=true;result.entries.add(entry);state.results.add(result);
+        partyHistory.save(state);partyHistory.save(state);
+        assertEquals(1,jdbc.queryForObject("select count(*) from pk_party_participant where match_id=?",Integer.class,state.matchId));
+        assertEquals(participant.points2,jdbc.queryForObject("select points2 from pk_party_participant where match_id=?",Long.class,state.matchId));
+        assertEquals(participant.points2,partyHistory.recent(account.id).get(0).points2());
+        String json=jdbc.queryForObject("select snapshot_json from pk_party_match where match_id=?",String.class,state.matchId);
+        PartyProtocol.State decoded=ProtocolCodec.convert(ProtocolCodec.parse(json).d,PartyProtocol.State.class);
+        assertEquals(participant.points2,decoded.participants.get(0).points2);
+        assertEquals(entry.points2,decoded.results.get(0).entries.get(0).points2);
+    }
     @Test void slowHistoryDoesNotBlockOtherAuthenticationAndRegisterReattachesParty()throws Exception{
         TestWsClient original=client(), replacement=null, other=null;
         java.util.concurrent.CountDownLatch entered=new java.util.concurrent.CountDownLatch(1), release=new java.util.concurrent.CountDownLatch(1);
@@ -73,34 +95,42 @@ class PartyIntegrationTest {
             request(replacement,"party_leave",Map.of("lobbyId",lobby.lobbyId));
         } finally {release.countDown();original.close();if(replacement!=null)replacement.close();if(other!=null)other.close();}
     }
-    @Test void realSocketFlywaySixPlayersIndependentHistoryAndReplacement()throws Exception{
+    @org.springframework.test.annotation.DirtiesContext(methodMode=org.springframework.test.annotation.DirtiesContext.MethodMode.AFTER_METHOD)
+    @ParameterizedTest @ValueSource(ints={2,6,7,12,24})
+    void realSocketFlywayUncappedPlayersIndependentHistoryAndReplacement(int n)throws Exception{
         List<TestWsClient> clients=new ArrayList<>();List<ProtocolCodec.AuthOk> profiles=new ArrayList<>();
         try{
-            for(int i=0;i<6;i++){TestWsClient c=client();clients.add(c);profiles.add(register(c));}
+            // Provision accounts through the real service, then exercise actual socket auth.
+            // Registration flood guards are deliberately NOT disabled for a many-player test.
+            for(int i=0;i<n;i++){
+                var account=userService.register(UUID.randomUUID().toString(),null);
+                TestWsClient c=client();clients.add(c);c.send("auth",Map.of("token",account.token));
+                TestWsClient.Frame auth=c.await("auth_ok",5000);assertNotNull(auth);profiles.add(auth.as(ProtocolCodec.AuthOk.class));
+            }
             long host=profiles.get(0).userId;
             PartyProtocol.State s=request(clients.get(0),"party_create",Map.of("roundCount",3)).as(PartyProtocol.State.class);
-            assertTrue(s.code.matches("[0-9]{6}"));String lobby=s.lobbyId;
-            for(int i=1;i<6;i++)assertEquals("party_state",request(clients.get(i),"party_join",Map.of("code",s.code)).type);
+            assertTrue(s.code.matches("[0-9]{6}"));assertEquals(0,s.capacity);String lobby=s.lobbyId;
+            for(int i=1;i<n;i++)assertEquals("party_state",request(clients.get(i),"party_join",Map.of("code",s.code)).type);
             // Legacy matchmaking cannot steal PARTY_LOBBY occupancy.
             assertEquals(409,request(clients.get(1),"bot_match_request",Map.of()).as(ProtocolCodec.ErrorMsg.class).code);
-            for(int i=1;i<6;i++)request(clients.get(i),"party_ready",Map.of("lobbyId",lobby,"ready",true));
+            for(int i=1;i<n;i++)request(clients.get(i),"party_ready",Map.of("lobbyId",lobby,"ready",true));
             s=request(clients.get(0),"party_start",Map.of("lobbyId",lobby)).as(PartyProtocol.State.class);String match=s.matchId;
             for(int r=0;r<3;r++){
                 final int round=r;s=state(host,x->x.phase.equals("LOADING") && x.roundIndex==round);
                 for(TestWsClient c:clients)assertEquals("party_state",request(c,"party_round_ready",ref(s)).type);
                 s=state(host,x->x.phase.equals("PLAYING") && x.roundIndex==round);
-                for(int i=0;i<2;i++){Map<String,Object>d=new HashMap<>(ref(s));d.put("level",1);d.put("success",true);d.put("score",99999999);assertEquals("party_state",request(clients.get(i),"party_level",d).type);}
+                for(int i=0;i<2;i++){Map<String,Object>d=new HashMap<>(ref(s));d.put("level",1);d.put("success",true);d.put("score",99999999);assertEquals("party_ack",request(clients.get(i),"party_level",d).type);}
                 for(TestWsClient c:clients)assertEquals("party_state",request(c,"party_complete",ref(s)).type);
             }
-            s=state(host,x->x.phase.equals("FINISHED"));assertEquals(6,s.participants.size());assertEquals(27,s.participants.get(0).points2);
-            assertEquals(27,s.participants.get(1).points2);assertEquals(0,s.participants.get(2).points2);assertEquals(3,s.participants.get(0).firstPlaces);
+            s=state(host,x->x.phase.equals("FINISHED"));assertEquals(n,s.participants.size());assertEquals(3L*(2L*n-3),s.participants.get(0).points2);
+            assertEquals(3L*(2L*n-3),s.participants.get(1).points2);if(n>2)assertEquals(0,s.participants.get(2).points2);assertEquals(3,s.participants.get(0).firstPlaces);
             assertEquals(1,s.participants.get(0).rank);assertEquals(1,s.participants.get(1).rank);
             long until=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
             while(jdbc.queryForObject("select count(*) from pk_party_match where match_id=?",Integer.class,match)==0 && System.nanoTime()<until)Thread.sleep(20);
             assertEquals(1,jdbc.queryForObject("select count(*) from pk_party_match where match_id=?",Integer.class,match));
-            assertEquals(6,jdbc.queryForObject("select count(*) from pk_party_participant where match_id=?",Integer.class,match));
+            assertEquals(n,jdbc.queryForObject("select count(*) from pk_party_participant where match_id=?",Integer.class,match));
             PartyProtocol.History h=request(clients.get(0),"party_history",Map.of()).as(PartyProtocol.History.class);
-            assertEquals(match,h.matches().get(0).matchId());assertEquals(27,h.matches().get(0).points2());assertEquals(1,h.matches().get(0).rank());
+            assertEquals(match,h.matches().get(0).matchId());assertEquals(3L*(2L*n-3),h.matches().get(0).points2());assertEquals(n,h.matches().get(0).participantCount());assertEquals(1,h.matches().get(0).rank());
             assertEquals(0,jdbc.queryForObject("select count(*) from pk_match_record where player_a=? or player_b=?",Integer.class,host,host));
             for(ProtocolCodec.AuthOk p:profiles){var u=users.findById(p.userId).orElseThrow();assertEquals(p.balance,u.balance);assertEquals(p.elo,u.elo);assertEquals(p.wins,u.wins);}
             request(clients.get(0),"party_return",Map.of("lobbyId",lobby,"matchId",match));

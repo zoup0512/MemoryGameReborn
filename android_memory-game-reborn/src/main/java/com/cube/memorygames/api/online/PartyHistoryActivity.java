@@ -1,6 +1,6 @@
 package com.cube.memorygames.api.online;
 
-import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -29,10 +29,15 @@ public final class PartyHistoryActivity extends android.support.v7.app.AppCompat
         if (party.error() != null) box.addView(PartyUi.text(this, PartyUi.error(this, party.error())));
         android.widget.TextView refresh = OnlineUi.secondaryButton(this, R.string.party_refresh);
         box.addView(refresh); refresh.setOnClickListener(v -> { party.sync(); party.requestHistory(); });
-        box.addView(PartyUi.text(this, getString(R.string.party_history_note)));
+        box.addView(PartyUi.text(this, getString(R.string.party_history_current_note)));
+        android.widget.TextView legacy = OnlineUi.secondaryButton(this, R.string.party_legacy_history);
+        box.addView(legacy, OnlineUi.cardParams(this));
+        legacy.setOnClickListener(v -> startActivity(new Intent(this, OnlineHistoryActivity.class)
+                .putExtra(OnlineHistoryActivity.EXTRA_MODE_FILTER, OnlineSession.MODE_FRIEND)));
         PartyState.History[] history = party.history();
         if (history.length == 0) box.addView(PartyUi.text(this, getString(R.string.party_history_empty)));
         for (PartyState.History entry : history) {
+            if (entry == null) continue;
             LinearLayout card = OnlineUi.card(this); box.addView(card, OnlineUi.cardParams(this));
             card.addView(PartyUi.text(this, DateFormat.getDateTimeInstance().format(new Date(entry.ts))));
             card.addView(PartyUi.text(this, getString(R.string.party_history_row, entry.participantCount,

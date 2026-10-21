@@ -171,17 +171,17 @@ public final class OnlineDialogs {
         return dialog;
     }
 
-    /** Four-digit friend-room entry. Invalid input keeps the dialog open. */
+    /** Unified room entry: six-digit rooms and compatible four-digit legacy duels. */
     public static void showJoinRoomCode(final Context context, final CodeListener listener) {
         final Dialog dialog = baseDialog(context);
         LinearLayout card = dialogCard(context, false);
 
-        TextView title = OnlineUi.text(context, context.getString(R.string.online_enter_code),
+        TextView title = OnlineUi.text(context, context.getString(R.string.party_enter_code),
                 20.0f, R.color.dialog_text, OnlineUi.medium(context));
         title.setGravity(Gravity.CENTER);
         card.addView(title, matchWrap());
 
-        TextView hint = OnlineUi.body(context, R.string.online_friend_subtitle);
+        TextView hint = OnlineUi.body(context, R.string.party_code_note);
         hint.setGravity(Gravity.CENTER);
         hint.setPadding(0, dp(context, 6), 0, 0);
         card.addView(hint, matchWrap());
@@ -196,7 +196,8 @@ public final class OnlineDialogs {
         label.setLabelFor(input.getId());
         input.setSaveEnabled(false);
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
+        input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
+        input.setHint(R.string.party_code_hint);
         input.setTypeface(OnlineUi.medium(context));
         input.setTextSize(28.0f);
         input.setTextColor(OnlineUi.color(context, R.color.dialog_text));
@@ -215,7 +216,7 @@ public final class OnlineDialogs {
         card.addView(input, inputParams);
 
         final TextView error = OnlineUi.text(context,
-                context.getString(R.string.online_room_invalid), 13.0f,
+                context.getString(R.string.party_code_invalid), 13.0f,
                 R.color.dialog_danger, OnlineUi.medium(context));
         error.setGravity(Gravity.CENTER);
         error.setPadding(0, dp(context, 8), 0, 0);
@@ -255,9 +256,9 @@ public final class OnlineDialogs {
             public void onClick(View v) {
                 if (submitted[0]) return;
                 String code = input.getText().toString().trim();
-                if (!code.matches("\\d{4}")) {
+                if (PartyState.roomCodeDigits(code) == 0) {
                     error.setVisibility(View.VISIBLE);
-                    input.setError(context.getString(R.string.online_room_invalid));
+                    input.setError(context.getString(R.string.party_code_invalid));
                     input.requestFocus();
                     error.announceForAccessibility(error.getText());
                     return;

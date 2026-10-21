@@ -175,6 +175,172 @@ public class PartyIntegrationSourceTest {
         assertTrue(source.contains("if (!connected()) { pendingHistory = true; sync(); return; }"));
         assertTrue(source.contains("if (pendingHistory) { pendingHistory = false; requestHistory(); }"));
     }
+    @Test public void unifiedLobbyHasOneFriendsCardWithDiscoverableCreateJoinAndHistory() throws Exception {
+        String lobby = source("api/online/OnlineLobbyAdapter.java");
+        int start = lobby.indexOf("// Old FRIEND W/L/D");
+        int end = lobby.indexOf("return new ModePage", start);
+        String friends = lobby.substring(start, end);
+        assertTrue(friends.contains("R.string.party_create"));
+        assertTrue(friends.contains("R.string.party_join"));
+        assertTrue(friends.contains("R.string.party_history"));
+        assertTrue(friends.contains("PartyActivity.class"));
+        assertTrue(friends.contains("PartyHistoryActivity.class"));
+        assertTrue(friends.contains("showJoinDialog()"));
+        assertTrue(friends.contains("stats.setVisibility(View.GONE)"));
+        assertFalse(lobby.contains("party_duel_"));
+        assertFalse(lobby.contains("createFriendRoom()"));
+        assertFalse(friends.contains("sectionTitle"));
+        assertTrue(lobby.contains(".putExtra(PartyActivity.EXTRA_JOIN_CODE, code)"));
+        assertTrue(lobby.contains("if (i == 2) {"));
+    }
+    @Test public void unifiedJoinValidatesFourOrSixAndOwnsLegacyPendingListener() throws Exception {
+        String dialogs = source("api/online/OnlineDialogs.java");
+        assertTrue(dialogs.contains("InputFilter.LengthFilter(6)"));
+        assertTrue(dialogs.contains("PartyState.roomCodeDigits(code) == 0"));
+        String activity = source("api/online/PartyActivity.java");
+        int start = activity.indexOf("private void joinRoom(String code)");
+        int end = activity.indexOf("private void cancelLegacyJoin()", start);
+        String join = activity.substring(start, end);
+        assertTrue(join.contains("if (digits == 4)"));
+        assertTrue(join.indexOf("claimLegacyListener()") < join.indexOf("session.joinFriendRoom(code)"));
+        assertTrue(join.indexOf("legacyJoinPending = true") < join.indexOf("session.joinFriendRoom(code)"));
+        assertTrue(join.contains("else party.join(code)"));
+        assertTrue(activity.contains("implements PartySession.Listener, OnlineSession.MatchListener"));
+        assertTrue(activity.contains("if (OnlineSession.get().ownsAcceptedMatch(match)) openAcceptedMatch()"));
+        assertTrue(activity.contains("startActivity(new Intent(this, OnlineMatchActivity.class))"));
+        assertTrue(activity.contains("getIntent().removeExtra(EXTRA_JOIN_CODE)"));
+        assertTrue(activity.contains("if (session.getMatchListener() == this) session.setMatchListener(previousMatchListener)"));
+        String session = source("api/online/OnlineSession.java");
+        int room = session.indexOf("public void joinFriendRoom(String code)");
+        int cancel = session.indexOf("public void cancelFriendRoom()", room);
+        String command = session.substring(room, cancel);
+        assertTrue(command.indexOf("friendRoomPending = true") < command.indexOf("sendRoomCommand(OnlineMessages.T_ROOM_JOIN, join)"));
+        assertTrue(session.contains("&& !this.friendRoomPending && !this.practicePending"));
+    }
+    @Test public void joinDialogUsesNeutralTitleAndShortPlaceholderInsteadOfLegacyFourDigitTitle() throws Exception {
+        String dialogs = source("api/online/OnlineDialogs.java");
+        int start = dialogs.indexOf("public static void showJoinRoomCode(");
+        int end = dialogs.indexOf("public static void showBotDifficulty(", start);
+        String join = dialogs.substring(start, end);
+        assertTrue(join.contains("context.getString(R.string.party_enter_code)"));
+        assertFalse(join.contains("R.string.online_enter_code"));
+        assertTrue(join.contains("input.setHint(R.string.party_code_hint)"));
+        assertTrue(join.contains("OnlineUi.body(context, R.string.party_code_note)"));
+        for (String locale : new String[]{"values", "values-zh"}) {
+            String xml = new String(Files.readAllBytes(Paths.get("src/main/res", locale, "strings_party.xml")), StandardCharsets.UTF_8);
+            assertTrue(xml.contains("<string name=\"party_code_hint\">000000</string>"));
+            assertTrue(xml.contains("<string name=\"party_enter_code\">"
+                    + (locale.equals("values") ? "Enter room code" : "输入房间码") + "</string>"));
+        }
+    }
+    @Test public void createEntrySelectsRoundsAndRequiresConfirmationWithoutIntentReplay() throws Exception {
+        String lobby = source("api/online/OnlineLobbyAdapter.java");
+        assertTrue(lobby.contains(".putExtra(PartyActivity.EXTRA_ENTRY_ACTION, PartyActivity.ENTRY_CREATE)"));
+        String activity = source("api/online/PartyActivity.java");
+        assertTrue(activity.contains("ENTRY_CREATE.equals(getIntent().getStringExtra(EXTRA_ENTRY_ACTION))"));
+        assertTrue(activity.contains("getIntent().removeExtra(EXTRA_ENTRY_ACTION)"));
+        assertTrue(activity.contains("b.putBoolean(\"createSetup\", createSetup)"));
+        int setup = activity.indexOf("if (createSetup) {");
+        int end = activity.indexOf("action(R.string.party_join", setup);
+        String confirm = activity.substring(setup, end);
+        assertTrue(confirm.contains("R.string.party_create_setup_note"));
+        assertTrue(confirm.contains("rounds == 3 ? R.string.party_rounds_three"));
+        assertTrue(confirm.indexOf("action(R.string.party_create_confirm") < confirm.indexOf("party.create(rounds)"));
+        assertTrue(confirm.contains("if (!guardOtherOnlineFlow() || party.occupied()) return"));
+        assertEquals(1, activity.split("party.create\\(rounds\\)", -1).length - 1);
+    }
+    @Test public void partyEntryCannotStealPracticeRankedOrUnownedLegacyRequestListener() throws Exception {
+        String session = source("api/online/OnlineSession.java");
+        int gate = session.indexOf("public boolean hasNonPartyFlow()");
+        int endGate = session.indexOf("public boolean ownsAcceptedMatch", gate);
+        String busy = session.substring(gate, endGate);
+        for (String pending : new String[]{"practicePending", "friendRoomPending", "pendingQueueRejoin",
+                "queueRequestPending", "pendingRoomAck != null", "state == STATE_MATCH", "state == STATE_QUEUE"})
+            assertTrue(pending, busy.contains(pending));
+        String activity = source("api/online/PartyActivity.java");
+        int create = activity.indexOf("protected void onCreate(");
+        int destroy = activity.indexOf("protected void onDestroy()", create);
+        String lifecycle = activity.substring(create, destroy);
+        assertFalse(lifecycle.contains("setMatchListener(this)"));
+        assertFalse(lifecycle.contains("legacyJoinPending = OnlineSession.get().hasPendingFriendRoom()"));
+        assertTrue(lifecycle.contains("if (!guardOtherOnlineFlow()) return"));
+        assertTrue(lifecycle.contains("if (isFinishing() || !guardOtherOnlineFlow()) return"));
+        assertTrue(activity.contains("if (session.hasNonPartyFlow() && !ownLegacyFlow)"));
+        assertTrue(activity.contains("previousMatchListener = current instanceof PartyActivity"));
+        assertTrue(activity.contains("if (session.getMatchListener() == this) session.setMatchListener(previousMatchListener)"));
+        int found = activity.indexOf("public void onMatchFound(");
+        int cancelled = activity.indexOf("public void onMatchCancelled(", found);
+        String route = activity.substring(found, cancelled);
+        assertTrue(route.contains("ownsAcceptedMatch(match)"));
+        assertFalse(route.contains("legacyJoinPending &&"));
+        assertFalse(route.contains("MODE_FRIEND.equals(match.mode)"));
+        String lobby = source("api/online/OnlineLobbyAdapter.java");
+        assertTrue(lobby.contains("if (!canOpenFriendsEntry()) return"));
+        assertTrue(lobby.contains("if (!OnlineSession.get().hasNonPartyFlow()) return true"));
+    }
+    @Test public void onlyAcceptedMatchIdentityRoutesEveryLegitimateModeAndRejectsStaleCallbacks() {
+        for (String mode : new String[]{OnlineSession.MODE_FRIEND, OnlineSession.MODE_PRACTICE, OnlineSession.MODE_RANKED}) {
+            OnlineMessages.MatchFound found = new OnlineMessages.MatchFound();
+            found.matchId = "accepted"; found.mode = mode;
+            assertTrue(OnlineSession.acceptedMatchIdentity("accepted", mode, found));
+            assertFalse(OnlineSession.acceptedMatchIdentity("newer", mode, found));
+            assertFalse(OnlineSession.acceptedMatchIdentity(null, mode, found));
+            assertFalse(OnlineSession.acceptedMatchIdentity("accepted", "OTHER", found));
+            found.matchId = null;
+            assertFalse(OnlineSession.acceptedMatchIdentity("accepted", mode, found));
+        }
+        assertFalse(OnlineSession.acceptedMatchIdentity("accepted", OnlineSession.MODE_FRIEND, null));
+    }
+    @Test public void filteredHistoryIsSentToServerWithoutChangingUnfilteredCallers() throws Exception {
+        String session = source("api/online/OnlineSession.java");
+        int start = session.indexOf("public void requestHistory()");
+        int end = session.indexOf("public boolean hasRequestedMatchStart()", start);
+        String history = session.substring(start, end);
+        assertTrue(history.contains("requestHistory(null)"));
+        assertTrue(history.contains("public void requestHistory(String mode)"));
+        assertTrue(history.contains("MODE_FRIEND.equals(mode) || MODE_RANKED.equals(mode) || MODE_PRACTICE.equals(mode)"));
+        assertTrue(history.contains("request.addProperty(\"mode\", mode)"));
+        assertTrue(history.contains("send(OnlineMessages.T_HISTORY_REQUEST, request)"));
+    }
+    @Test public void partyResourcesHaveNoFixedLimitAndKeepLegacyRulesSeparate() throws Exception {
+        for (String locale : new String[]{"values", "values-zh"}) {
+            String xml = new String(Files.readAllBytes(Paths.get("src/main/res", locale, "strings_party.xml")), StandardCharsets.UTF_8);
+            assertFalse(xml.contains("3–6")); assertFalse(xml.contains("3-6"));
+            assertFalse(xml.contains("/6")); assertFalse(xml.contains("多人"));
+            if (locale.equals("values"))
+                assertTrue(xml.contains("<string name=\"party_room\">Room %1$s · Players: %2$d</string>"));
+            assertTrue(xml.contains("name=\"party_legacy_history\""));
+            assertTrue(xml.contains("name=\"party_history_current_note\""));
+            assertTrue(xml.contains("name=\"party_legacy_join_note\""));
+        }
+    }
+    @Test public void lightweightAckClearsOnlyItsOwnRequestWithoutNotifyingSnapshotListeners() throws Exception {
+        Transport transport = new Transport(); PartySession party = new PartySession(transport);
+        party.join("123456"); snapshot(party, transport.rid("party_join"), "A", 8);
+        java.lang.reflect.Method send = PartySession.class.getDeclaredMethod("send", String.class, com.google.gson.JsonObject.class);
+        send.setAccessible(true);
+        assertEquals(true, send.invoke(party, "party_level", new com.google.gson.JsonObject()));
+        String rid = transport.rid("party_level");
+        java.lang.reflect.Field requests = PartySession.class.getDeclaredField("requests");
+        requests.setAccessible(true);
+        assertTrue(((java.util.Map<?, ?>) requests.get(party)).containsKey(rid));
+        final int[] changed = {0}; party.addListener(() -> changed[0]++);
+        assertTrue(party.receive("party_ack", "{\"rid\":\"" + rid + "\",\"d\":{\"lobbyId\":\"A\",\"score\":200,\"stateVersion\":9}}"));
+        assertFalse(((java.util.Map<?, ?>) requests.get(party)).containsKey(rid));
+        assertEquals(0, changed[0]); assertEquals(8, party.state().stateVersion);
+    }
+    @Test public void delayedLightweightAckDoesNotChangeStateScoresVersionsOrResurrectRoom() {
+        Transport transport = new Transport(); PartySession party = new PartySession(transport);
+        party.join("123456"); snapshot(party, transport.rid("party_join"), "A", 8);
+        PartyState authority = party.state();
+        assertTrue(party.receive("party_ack", "{\"rid\":\"party-stale-level\",\"d\":{\"lobbyId\":\"old\",\"matchId\":\"old\",\"roundIndex\":9,\"playerId\":1,\"stateVersion\":99,\"score\":999}}"));
+        assertSame(authority, party.state()); assertEquals(8, party.state().stateVersion);
+        party.leave(); left(party, transport.rid("party_leave"), "A");
+        assertNull(party.state()); assertFalse(party.occupied());
+        assertTrue(party.receive("party_ack", "{\"rid\":\"party-stale-level\",\"d\":{\"lobbyId\":\"A\",\"stateVersion\":100}}"));
+        assertNull(party.state()); assertFalse(party.occupied());
+        transport.advance(8000); assertNull(party.error());
+    }
     @Test public void sixRealGamesUseOneHeldFlowAndAllThreePrivateTimersAreGated() throws Exception {
         String base = source("games/Game1MemoryGridActivity.java");
         assertTrue(base.contains("if (partyWaiting) this.stateTimer.setHeld(true)"));

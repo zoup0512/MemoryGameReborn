@@ -1,16 +1,10 @@
 package com.cube.memorygames.api.online;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.InputFilter;
-import android.text.InputType;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -20,8 +14,15 @@ import com.cube.memorygames.MainMenuActivity;
 import com.cube.memorygames.model.GameInfo;
 import com.memory.brain.training.games.R;
 
-/** Persistent 3–6 seat friend lobby, round board and retained final results. */
-public final class PartyActivity extends android.support.v7.app.AppCompatActivity implements PartySession.Listener {
+/** Unified friends room entry, persistent lobby, round board and retained final results. */
+public final class PartyActivity extends android.support.v7.app.AppCompatActivity
+        implements PartySession.Listener, OnlineSession.MatchListener {
+    public static final String EXTRA_JOIN_CODE = "friendsJoinCode";
+    public static final String EXTRA_ENTRY_ACTION = "friendsEntryAction";
+    public static final String ENTRY_CREATE = "create";
+    private boolean legacyJoinPending, createSetup;
+    private OnlineSession.MatchListener previousMatchListener;
+    private String entryError;
     private final PartySession party = PartySession.get();
     private final Handler main = new Handler();
     private LinearLayout box;
@@ -53,12 +54,41 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
                 new LinearLayout.LayoutParams(-1, OnlineUi.dp(this, 56)));
         scroll = new ScrollView(this); scroll.setFillViewport(true);
         box = OnlineUi.page(this); scroll.addView(box); root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        setContentView(root); party.addListener(this); render();
+        setContentView(root); party.addListener(this);
+        // A pending request belongs to this screen only when it was saved by this screen.
+        legacyJoinPending = saved != null && saved.getBoolean("legacyJoinPending", false);
+        createSetup = saved != null ? saved.getBoolean("createSetup", false)
+                : ENTRY_CREATE.equals(getIntent().getStringExtra(EXTRA_ENTRY_ACTION));
+        String code = getIntent().getStringExtra(EXTRA_JOIN_CODE);
+        getIntent().removeExtra(EXTRA_JOIN_CODE); // A recreated Activity must never resend an entry.
+        getIntent().removeExtra(EXTRA_ENTRY_ACTION);
+        if (!guardOtherOnlineFlow()) return;
+        if (legacyJoinPending && OnlineSession.get().hasPendingFriendRoom()) claimLegacyListener();
+        if (saved == null && code != null) joinRoom(code);
+        render();
     }
-    @Override protected void onResume() { super.onResume(); resumed = true; party.sync(); render(); main.post(tick); }
+    @Override protected void onResume() {
+        super.onResume(); resumed = true;
+        if (isFinishing() || !guardOtherOnlineFlow()) return;
+        OnlineSession session = OnlineSession.get();
+        if (legacyJoinPending && session.isInMatch() && session.isFriendMode()) {
+            openAcceptedMatch(); return;
+        }
+        if (legacyJoinPending && session.hasPendingFriendRoom()) claimLegacyListener();
+        else { legacyJoinPending = false; releaseLegacyListener(); }
+        party.sync(); render(); main.post(tick);
+    }
     @Override protected void onPause() { resumed = false; main.removeCallbacks(tick); super.onPause(); }
-    @Override protected void onDestroy() { party.removeListener(this); main.removeCallbacksAndMessages(null); super.onDestroy(); }
-    @Override protected void onSaveInstanceState(Bundle b) { super.onSaveInstanceState(b); b.putString("launched", launchedKey); b.putInt("rounds", rounds); }
+    @Override protected void onDestroy() {
+        party.removeListener(this); main.removeCallbacksAndMessages(null);
+        releaseLegacyListener();
+        super.onDestroy();
+    }
+    @Override protected void onSaveInstanceState(Bundle b) {
+        super.onSaveInstanceState(b); b.putString("launched", launchedKey); b.putInt("rounds", rounds);
+        b.putBoolean("legacyJoinPending", legacyJoinPending);
+        b.putBoolean("createSetup", createSetup);
+    }
     @Override public void onPartyChanged() {
         if (exitRequested && party.state() == null && !party.occupied()) { finish(); return; }
         render();
@@ -82,26 +112,35 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
             return;
         }
         if (!party.connected()) { text(R.string.party_disconnected); action(R.string.party_reconnect, () -> party.sync()); }
+        if (entryError != null) text(entryError);
         if (party.error() != null) text(PartyUi.error(this, party.error()));
+        if (legacyJoinPending) {
+            text(R.string.party_waiting);
+            text(R.string.party_legacy_join_note);
+            action(R.string.party_cancel_entry, () -> { cancelLegacyJoin(); render(); });
+            return;
+        }
         PartyState s = party.state(); PartyState result = party.finished();
         // Other players may already have returned/reconfigured. Keep this player's result until explicit acknowledgement.
-        if (result != null && !returnRequested && (s == null || s.is("FINISHED") || s.is("LOBBY"))) {
+        if (result != null && !returnRequested && !(createSetup && s == null)
+                && (s == null || s.is("FINISHED") || s.is("LOBBY"))) {
             finalBoard(result); scroll.post(() -> scroll.scrollTo(0, y)); return;
         }
         if (s == null) {
             text(R.string.party_rules);
             if (!party.occupied()) {
-                action(rounds == 3 ? R.string.party_rounds_three : R.string.party_rounds_five,
-                        () -> { rounds = rounds == 3 ? 5 : 3; render(); });
-                action(R.string.party_create, () -> { returnRequested = false; party.dismissFinished(); party.create(rounds); });
-                EditText code = new EditText(this); code.setHint(R.string.party_code_hint);
-                code.setInputType(InputType.TYPE_CLASS_NUMBER); code.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
-                box.addView(code, new LinearLayout.LayoutParams(-1, -2));
-                action(R.string.party_join, () -> {
-                    String value = code.getText().toString().trim();
-                    if (!value.matches("[0-9]{6}")) { code.setError(getString(R.string.party_code_invalid)); return; }
-                    returnRequested = false; party.dismissFinished(); party.join(value);
-                });
+                if (createSetup) {
+                    text(R.string.party_create_setup);
+                    text(R.string.party_create_setup_note);
+                    action(rounds == 3 ? R.string.party_rounds_three : R.string.party_rounds_five,
+                            () -> { rounds = rounds == 3 ? 5 : 3; render(); });
+                    action(R.string.party_create_confirm, () -> {
+                        if (!guardOtherOnlineFlow() || party.occupied()) return;
+                        entryError = null; returnRequested = false;
+                        party.dismissFinished(); createSetup = false; party.create(rounds);
+                    });
+                } else action(R.string.party_create, () -> { createSetup = true; render(); });
+                action(R.string.party_join, () -> OnlineDialogs.showJoinRoomCode(this, this::joinRoom));
             } else if (party.canCancelEntry()) {
                 text(R.string.party_connecting);
                 action(R.string.party_cancel_entry, () -> party.cancelEntry());
@@ -200,7 +239,88 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data); if (request == 701) { gameOpen = false; render(); }
     }
+    private void joinRoom(String code) {
+        int digits = PartyState.roomCodeDigits(code);
+        if (digits == 0) { entryError = getString(R.string.party_code_invalid); render(); return; }
+        OnlineSession session = OnlineSession.get();
+        if (session.requiresAccountLogin()) { render(); return; }
+        if (party.occupied() || !session.canChangeAccount()) {
+            entryError = getString(R.string.party_busy); render(); return;
+        }
+        entryError = null; returnRequested = false; party.dismissFinished();
+        if (digits == 4) {
+            // Keep the real room_join pending gate and own its UI listener before sending.
+            legacyJoinPending = true;
+            claimLegacyListener();
+            session.joinFriendRoom(code);
+            legacyJoinPending = session.hasPendingFriendRoom();
+            if (!legacyJoinPending) releaseLegacyListener();
+        } else party.join(code);
+        render();
+    }
+    private boolean guardOtherOnlineFlow() {
+        OnlineSession session = OnlineSession.get();
+        boolean ownLegacyFlow = legacyJoinPending
+                && (session.hasPendingFriendRoom() || (session.isInMatch() && session.isFriendMode()));
+        if (session.hasNonPartyFlow() && !ownLegacyFlow) {
+            // Do not replace the listener that is about to receive practice/ranked match_found.
+            Toast.makeText(this, R.string.party_busy, Toast.LENGTH_SHORT).show();
+            finish(); return false;
+        }
+        return true;
+    }
+    private void claimLegacyListener() {
+        OnlineSession session = OnlineSession.get();
+        OnlineSession.MatchListener current = session.getMatchListener();
+        if (current == this) return;
+        previousMatchListener = current instanceof PartyActivity
+                ? ((PartyActivity) current).previousMatchListener : current;
+        session.setMatchListener(this);
+    }
+    private void releaseLegacyListener() {
+        OnlineSession session = OnlineSession.get();
+        if (session.getMatchListener() == this) session.setMatchListener(previousMatchListener);
+        previousMatchListener = null;
+    }
+    private void cancelLegacyJoin() {
+        legacyJoinPending = false;
+        OnlineSession.get().cancelFriendRoom();
+        releaseLegacyListener();
+    }
+    private void openAcceptedMatch() {
+        if (isFinishing() || !OnlineSession.get().isInMatch()) return;
+        legacyJoinPending = false;
+        releaseLegacyListener();
+        startActivity(new Intent(this, OnlineMatchActivity.class));
+        finish();
+    }
+    @Override public void onStateChanged(int state) { render(); }
+    @Override public void onAuthOk(OnlineMessages.AuthOk profile) { render(); }
+    @Override public void onMatchFound(OnlineMessages.MatchFound match) {
+        // The dispatcher already accepted this identity. Route every legitimate mode;
+        // a stale/foreign callback must never navigate just because it names FRIEND.
+        if (OnlineSession.get().ownsAcceptedMatch(match)) openAcceptedMatch();
+    }
+    @Override public void onMatchCancelled(MatchAcceptance.Action action, String mode) {
+        legacyJoinPending = false; releaseLegacyListener(); render();
+    }
+    @Override public void onError(int code, String message) {
+        legacyJoinPending = false; releaseLegacyListener();
+        entryError = message == null ? getString(R.string.online_error_connection) : message;
+        render();
+    }
+    @Override public void onRoundStart(OnlineMessages.RoundStart round) { }
+    @Override public void onOpponentScore(OnlineMessages.OpponentScore score) { }
+    @Override public void onRoundEnd(OnlineMessages.RoundEnd round) { }
+    @Override public void onMatchEnd(OnlineMessages.MatchEnd end) { }
+    @Override public void onOpponentStart() { }
+    @Override public void onRoomCreated(String code) { }
+    @Override public void onHistory(OnlineMessages.HistoryEntry[] entries) { }
+    @Override public void onTop(OnlineMessages.TopEntry[] entries) { }
+    @Override public void onOpponentDisconnected() { }
+    @Override public void onOpponentReconnected() { }
     @Override public void onBackPressed() {
+        if (legacyJoinPending) { cancelLegacyJoin(); finish(); return; }
         if (party.state() == null) {
             if (party.canCancelEntry()) party.cancelEntry();
             if (party.occupied()) { party.sync(); text(R.string.party_waiting); return; }

@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="party_entry">3–6人亲友赛</string>
-    <string name="party_title">多人亲友赛</string>
-    <string name="party_entry_note">双人房间使用4位码；3–6人请使用下方多人亲友赛入口及6位码。</string>
-    <string name="party_duel_create">双人建房</string>
-    <string name="party_duel_join">双人加入</string>
-    <string name="party_free_note">3–6人 · 6位码 · 免金币，不影响排位分</string>
-    <string name="party_rules">3–6位亲友 · 同题同时间 · 3或5轮\n不扣金币，不改排位分。正分按名次获得积分，同分平分。弃赛不计当前未完成轮成绩。</string>
+    <string name="party_entry">亲友赛</string>
+    <string name="party_title">亲友赛</string>
+    <string name="party_entry_note">创建房间或输入房间码加入。2人起赛，无固定人数上限。</string>
+    <string name="party_free_note">2人起 · 6位码 · 免费参赛 · 不扣金币，不改评分</string>
+    <string name="party_rules">2人起赛 · 无固定人数上限 · 同题同时间 · 3或5轮
+免费参赛，不扣金币，不改评分。正分按名次获得积分，同分平分。弃赛不计当前未完成轮成绩。</string>
     <string name="party_rounds_three">3轮 · 点击切换为5轮</string>
     <string name="party_rounds_five">5轮 · 点击切换为3轮</string>
     <string name="party_rounds_label">共%1$d轮</string>
-    <string name="party_create">创建多人房间</string>
-    <string name="party_join">加入多人房间</string>
-    <string name="party_code_hint">输入6位房间码</string>
-    <string name="party_code_invalid">请输入完整的6位数字</string>
-    <string name="party_room">房间 %1$s · %2$d/6人</string>
+    <string name="party_create">创建房间</string>
+    <string name="party_create_setup">创建房间 · 选择赛制</string>
+    <string name="party_create_setup_note">选择3轮或5轮后确认创建。仅在确认后生成6位房间码。</string>
+    <string name="party_create_confirm">确认并创建房间</string>
+    <string name="party_join">加入房间</string>
+    <string name="party_enter_code">输入房间码</string>
+    <string name="party_code_hint">000000</string>
+    <string name="party_code_invalid">请输入6位房间码或旧版4位房间码</string>
+    <string name="party_room">房间 %1$s · 当前%2$d人</string>
     <string name="party_copy">复制房间码</string>
     <string name="party_copied">已复制房间码</string>
     <string name="party_member">%1$s · %2$s %3$s</string>
@@ -26,7 +29,7 @@
     <string name="party_kick">移出房间</string>
     <string name="party_transfer">转让房主</string>
     <string name="party_start">房主开始比赛</string>
-    <string name="party_start_rule">至少3人在线，所有非房主成员准备后可开始。</string>
+    <string name="party_start_rule">至少2人在线，所有非房主成员准备后可开始。</string>
     <string name="party_loading">正在加载游戏 · 等待成员加载</string>
     <string name="party_starting">所有成员统一开始</string>
     <string name="party_countdown">%1$d秒后开始</string>
@@ -62,16 +65,20 @@
     <string name="party_kicked">房主已将你移出房间。</string>
     <string name="party_expired">房间已过期。</string>
     <string name="party_error_detail">操作未完成：%1$s</string>
-    <string name="party_room_missing">未找到房间，请检查6位房间码。</string>
-    <string name="party_full">房间已满，最多6人。</string>
+    <string name="party_room_missing">未找到房间，请检查房间码。</string>
+    <string name="party_full">当前房间无法接受更多成员。</string>
     <string name="party_phase_error">房间已不在大厅阶段，请同步并等待本局结束。</string>
     <string name="party_host_only">只有当前房主可以执行此操作。</string>
     <string name="party_not_enough">剩余活跃玩家不足，比赛中断，无正式冠军。</string>
     <string name="party_loading_failed">按时加载的玩家不足2人，比赛中断，无正式冠军。</string>
     <string name="party_history_unavailable">历史暂时无法读取，请稍后刷新。</string>
-    <string name="party_history">多人亲友赛历史</string>
+    <string name="party_history">亲友赛战绩</string>
     <string name="party_refresh">刷新</string>
-    <string name="party_history_note">仅显示多人亲友赛，不影响金币与排位分。</string>
-    <string name="party_history_empty">暂无多人亲友赛记录。</string>
+    <string name="party_history_note">仅显示新房积分赛。免费参赛，不扣金币，不改评分；旧版双人战绩单独查看。</string>
+    <string name="party_history_empty">暂无亲友赛记录。</string>
     <string name="party_history_row">%1$d人 · %2$d轮 · 第%3$s名\n累计积分 %4$s · 第一名次数 %5$d\n%6$s</string>
+    <string name="party_code_note">新房间使用6位码，也支持加入旧版4位码房间。</string>
+    <string name="party_legacy_join_note">正在加入旧版双人房间，沿用其原有规则，不适用新房免费积分赛规则。</string>
+    <string name="party_legacy_history">旧版双人亲友赛战绩</string>
+    <string name="party_history_current_note">新房为积分赛；旧版双人战绩单独查看，不合并统计与评分规则。</string>
 </resources>

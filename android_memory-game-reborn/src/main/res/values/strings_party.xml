@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="party_entry">3–6 player friend party</string>
-    <string name="party_title">Friend party</string>
-    <string name="party_entry_note">Duel rooms use 4-digit codes. For 3–6 players, use the party section and its 6-digit code.</string>
-    <string name="party_duel_create">Create 2-player room</string>
-    <string name="party_duel_join">Join 2-player room</string>
-    <string name="party_free_note">3–6 players · 6-digit code · No coin cost or ranked-rating changes</string>
-    <string name="party_rules">3–6 friends • Same questions and time • 3 or 5 rounds\nNo coins charged and no rating changes. Positive scores earn placement points; ties share points. Leaving forfeits the current round.</string>
+    <string name="party_entry">Friends match</string>
+    <string name="party_title">Friends match</string>
+    <string name="party_entry_note">Create a room or join by code. Play with 2 or more friends, with no fixed player limit.</string>
+    <string name="party_free_note">2+ players · 6-digit code · Free entry · No coins charged or rating changes</string>
+    <string name="party_rules">2 or more friends · No fixed player limit · Same questions and time · 3 or 5 rounds
+Free entry: no coins charged and no rating changes. Positive scores earn placement points; ties share points. Leaving forfeits the current round.</string>
     <string name="party_rounds_three">3 rounds · Tap to switch to 5</string>
     <string name="party_rounds_five">5 rounds · Tap to switch to 3</string>
     <string name="party_rounds_label">%1$d rounds</string>
-    <string name="party_create">Create party room</string>
-    <string name="party_join">Join party room</string>
-    <string name="party_code_hint">6-digit room code</string>
-    <string name="party_code_invalid">Enter exactly 6 digits</string>
-    <string name="party_room">Room %1$s · %2$d/6 players</string>
+    <string name="party_create">Create room</string>
+    <string name="party_create_setup">Create room · Choose rounds</string>
+    <string name="party_create_setup_note">Choose 3 or 5 rounds, then confirm. Your 6-digit room code is generated only after confirmation.</string>
+    <string name="party_create_confirm">Confirm and create room</string>
+    <string name="party_join">Join room</string>
+    <string name="party_enter_code">Enter room code</string>
+    <string name="party_code_hint">000000</string>
+    <string name="party_code_invalid">Enter a 6-digit room code or a legacy 4-digit code</string>
+    <string name="party_room">Room %1$s · Players: %2$d</string>
     <string name="party_copy">Copy room code</string>
     <string name="party_copied">Room code copied</string>
     <string name="party_member">%1$s · %2$s %3$s</string>
@@ -25,8 +28,8 @@
     <string name="party_offline">Disconnected</string>
     <string name="party_kick">Remove player</string>
     <string name="party_transfer">Transfer host</string>
-    <string name="party_start">Start party</string>
-    <string name="party_start_rule">At least 3 online players; everyone except the host must be ready.</string>
+    <string name="party_start">Start match</string>
+    <string name="party_start_rule">At least 2 online players; everyone except the host must be ready.</string>
     <string name="party_loading">Loading game · Waiting for players</string>
     <string name="party_starting">Everyone starts together</string>
     <string name="party_countdown">Starting in %1$d</string>
@@ -62,16 +65,20 @@
     <string name="party_kicked">The host removed you from the room.</string>
     <string name="party_expired">This room has expired.</string>
     <string name="party_error_detail">Unable to complete this action: %1$s</string>
-    <string name="party_room_missing">Room not found. Check the 6-digit code.</string>
-    <string name="party_full">This room is full (6 players).</string>
+    <string name="party_room_missing">Room not found. Check the room code.</string>
+    <string name="party_full">This room cannot accept more players.</string>
     <string name="party_phase_error">The room is not in the lobby. Sync and wait for this match to finish.</string>
     <string name="party_host_only">Only the current host can do this.</string>
     <string name="party_not_enough">Too few active players remain. No official champion.</string>
     <string name="party_loading_failed">Fewer than two players loaded in time. No official champion.</string>
     <string name="party_history_unavailable">History is temporarily unavailable. Please refresh later.</string>
-    <string name="party_history">Party history</string>
+    <string name="party_history">Friends match history</string>
     <string name="party_refresh">Refresh</string>
-    <string name="party_history_note">Party matches only. No coin or ranked-rating changes.</string>
-    <string name="party_history_empty">No party records available.</string>
+    <string name="party_history_note">Placement-points matches only. Free entry, no coin cost or rating changes. Legacy duel records are separate.</string>
+    <string name="party_history_empty">No friends match records available.</string>
     <string name="party_history_row">%1$d players · %2$d rounds · #%3$s\n%4$s points · %5$d first places\n%6$s</string>
+    <string name="party_code_note">New rooms use 6-digit codes. Legacy 4-digit duel codes are also accepted.</string>
+    <string name="party_legacy_join_note">Joining a legacy duel. Its original rules apply, not the new free placement-points rules.</string>
+    <string name="party_legacy_history">Legacy friends duel history</string>
+    <string name="party_history_current_note">New rooms use placement points. View legacy duel records separately; statistics and rating rules are not combined.</string>
 </resources>

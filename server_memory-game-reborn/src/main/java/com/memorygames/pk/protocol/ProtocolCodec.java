@@ -318,6 +318,11 @@ public final class ProtocolCodec {
         public String code;
     }
 
+    /** Optional exact mode filter; absent, null or empty preserves all-mode history. */
+    public static class HistoryRequest {
+        public String mode;
+    }
+
     public static class HistoryEntry {
         public String matchId;
         public long opponentUserId;

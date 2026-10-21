@@ -79,7 +79,8 @@ final class PartyUi {
             case "room full": case "lobby full": res = R.string.party_full; break;
             case "match in progress": case "not in lobby phase": res = R.string.party_phase_error; break;
             case "host only": case "not host": res = R.string.party_host_only; break;
-            case "players not ready": case "not all ready": case "need 3 players": case "need at least 3 players": res = R.string.party_start_rule; break;
+            case "players not ready": case "not all ready": case "need 2 players": case "need at least 2 players":
+            case "need 3 players": case "need at least 3 players": res = R.string.party_start_rule; break;
             case "not_enough_players": res = R.string.party_not_enough; break;
             case "loading_failed": res = R.string.party_loading_failed; break;
             case "history unavailable": res = R.string.party_history_unavailable; break;

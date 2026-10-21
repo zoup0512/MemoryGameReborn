@@ -471,8 +471,26 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                 this.matchmaker.cancelFriendRoom(userId);
                 return;
             case ProtocolCodec.T_HISTORY_REQUEST: {
-                java.util.List<MatchRecord> recent = this.records.findRecentForUser(userId,
-                        org.springframework.data.domain.PageRequest.of(0, 20));
+                ProtocolCodec.HistoryRequest request;
+                try {
+                    request = ProtocolCodec.convert(envelope.d, ProtocolCodec.HistoryRequest.class);
+                } catch (IllegalArgumentException malformed) {
+                    reply(session, rid, ProtocolCodec.T_ERROR, error(400, "bad history request"));
+                    return;
+                }
+                String mode = request != null ? request.mode : null;
+                if (mode != null && !mode.isEmpty()
+                        && !ProtocolCodec.MODE_RANKED.equals(mode)
+                        && !ProtocolCodec.MODE_PRACTICE.equals(mode)
+                        && !ProtocolCodec.MODE_FRIEND.equals(mode)) {
+                    reply(session, rid, ProtocolCodec.T_ERROR, error(400, "bad history mode"));
+                    return;
+                }
+                org.springframework.data.domain.PageRequest limit =
+                        org.springframework.data.domain.PageRequest.of(0, 20);
+                java.util.List<MatchRecord> recent = mode == null || mode.isEmpty()
+                        ? this.records.findRecentForUser(userId, limit)
+                        : this.records.findRecentForUserAndMode(userId, mode, limit);
                 ProtocolCodec.HistoryResponse response = new ProtocolCodec.HistoryResponse();
                 response.matches = new ProtocolCodec.HistoryEntry[recent.size()];
                 for (int i = 0; i < recent.size(); i++) {

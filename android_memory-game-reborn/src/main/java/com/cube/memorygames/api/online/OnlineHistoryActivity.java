@@ -23,6 +23,7 @@ import java.util.Locale;
 /** Recent online matches grouped by day. */
 public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSession.MatchListener {
 
+    public static final String EXTRA_MODE_FILTER = "historyModeFilter";
     private static final String DATE_FORMAT = "EEEE, dd.MM.yy";
     private static final long RESPONSE_TIMEOUT_MS = 10000L;
 
@@ -93,7 +94,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
             return;
         }
         this.requested = true;
-        OnlineSession.get().requestHistory();
+        OnlineSession.get().requestHistory(getIntent().getStringExtra(EXTRA_MODE_FILTER));
     }
 
     private View buildView() {
@@ -103,7 +104,9 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        OnlineUi.ToolbarBlock toolbar = OnlineUi.toolbar(this, R.string.title_online_history,
+        int title = OnlineSession.MODE_FRIEND.equals(getIntent().getStringExtra(EXTRA_MODE_FILTER))
+                ? R.string.party_legacy_history : R.string.title_online_history;
+        OnlineUi.ToolbarBlock toolbar = OnlineUi.toolbar(this, title,
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -182,8 +185,9 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
         String myName = myName();
         long lastDay = Long.MIN_VALUE;
         Calendar calendar = Calendar.getInstance();
+        String modeFilter = getIntent().getStringExtra(EXTRA_MODE_FILTER);
         for (HistoryEntry entry : entries) {
-            if (entry == null) {
+            if (entry == null || (modeFilter != null && !modeFilter.equals(entry.mode))) {
                 continue;
             }
             calendar.setTimeInMillis(entry.ts);
@@ -260,6 +264,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
 
         players.addView(playerColumn(safeName(entry.opponent), entry.oppScore, !win && !draw, true),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
         return card;
     }
 

@@ -1,6 +1,6 @@
 """Loopback-only, real HTTP/WebSocket acceptance for multiplayer friend rooms.
 
-Creates six disposable guest accounts, plays three rounds, checks independent
+Creates a configurable number of disposable guests, plays three rounds, checks independent
 history/economy, then starts a rematch and verifies withdrawal isolation.
 Requires websocket-client. Use a disposable local server with accelerated
 round timing (at least 3000 ms) and a low min-level-interval override (50 ms).
@@ -119,6 +119,7 @@ class Client:
 def play(clients, first_state):
     match_id = first_state["matchId"]
     lobby_id = first_state["lobbyId"]
+    tied_points2 = 2 * len(clients) - 3
     for round_index in range(3):
         for index, client in enumerate(clients):
             if not (round_index == 0 and index == 0 and first_state["phase"] == "LOADING"):
@@ -147,7 +148,7 @@ def play(clients, first_state):
         positive = [entry for entry in entries if entry["playerId"] in
                     (clients[0].user_id, clients[1].user_id)]
         assert len(positive) == 2
-        assert all(entry["score"] > 0 and entry["rank"] == 1 and entry["points2"] == 9
+        assert all(entry["score"] > 0 and entry["rank"] == 1 and entry["points2"] == tied_points2
                    for entry in positive), positive
         assert all(entry["points2"] == 0 for entry in entries if entry["score"] == 0)
     end = result if result["phase"] == "FINISHED" else clients[0].state(
@@ -156,7 +157,7 @@ def play(clients, first_state):
     assert {player["playerId"] for player in end["participants"]} == {client.user_id for client in clients}
     for player in end["participants"]:
         if player["playerId"] in (clients[0].user_id, clients[1].user_id):
-            assert player["points2"] == 27 and player["rank"] == 1, player
+            assert player["points2"] == 3 * tied_points2 and player["rank"] == 1, player
         else:
             assert player["points2"] == 0, player
     return end
@@ -165,7 +166,11 @@ def play(clients, first_state):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:18091")
+    parser.add_argument("--players", type=int, default=6,
+                        help="Number of guests (at least 2); server rate limits remain enabled")
     options = parser.parse_args()
+    if options.players < 2:
+        parser.error("A friend match needs at least 2 players")
     parsed = urllib.parse.urlparse(options.base_url)
     if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
         parser.error("Only a disposable local HTTP server is permitted")
@@ -174,7 +179,7 @@ def main():
     checks = []
     with ExitStack() as stack:
         clients = []
-        for _ in range(6):
+        for _ in range(options.players):
             client = Client(base)
             stack.callback(client.close)
             clients.append(client)
@@ -187,8 +192,8 @@ def main():
         for client in clients[1:]:
             joined = client.command("party_join", {"code": lobby["code"]})
             assert joined["t"] == "party_state", joined
-        host.state(lambda state: len(state["members"]) == 6)
-        checks.append("six-person persistent lobby with six-digit code")
+        host.state(lambda state: len(state["members"]) == options.players and state["capacity"] == 0)
+        checks.append(str(options.players) + "-person persistent lobby without a fixed player cap")
         denied = clients[1].command("party_config", {"lobbyId": lobby_id, "roundCount": 5})
         assert denied["t"] == "error", denied
         premature = host.command("party_start", {"lobbyId": lobby_id})
@@ -206,7 +211,7 @@ def main():
             history = client.wait(lambda frame: frame["t"] == "party_history" and frame.get("rid") == rid)
             stored = next(entry for entry in history["d"]["matches"] if entry["matchId"] == end["matchId"])
             result = next(player for player in end["participants"] if player["playerId"] == client.user_id)
-            assert stored["status"] == "COMPLETED" and stored["participantCount"] == 6
+            assert stored["status"] == "COMPLETED" and stored["participantCount"] == options.players
             assert stored["roundCount"] == 3
             for field in ("rank", "points2", "firstPlaces"):
                 assert stored[field] == result[field], (field, stored[field], result[field])

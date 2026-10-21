@@ -351,9 +351,9 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         page.addView(card, matchWrap());
 
         int[] titles = {R.string.online_ranked_title, R.string.online_practice_title,
-                R.string.online_friend_title};
+                R.string.party_title};
         int[] details = {R.string.online_ranked_subtitle, R.string.online_practice_subtitle,
-                R.string.online_friend_subtitle};
+                R.string.party_entry_note};
         card.addView(OnlineUi.sectionTitle(this.context, titles[position]), matchWrap());
         TextView detail = OnlineUi.body(this.context, details[position]);
         card.addView(detail, matchWrap());
@@ -428,20 +428,22 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
                 }
             });
         } else {
-            detail.setText(R.string.party_entry_note);
-            TextView createRoom = OnlineUi.primaryButton(this.context, R.string.party_duel_create);
+            // Old FRIEND W/L/D belongs to legacy duels, not the new placement-points rooms.
+            stats.setVisibility(View.GONE);
+            unavailable.setVisibility(View.GONE);
+            card.addView(OnlineUi.body(this.context, R.string.party_free_note), matchWrap());
+            TextView createRoom = OnlineUi.primaryButton(this.context, R.string.party_create);
             createRoom.setId(R.id.online_create_room);
             addAction(card, createRoom);
-            createRoom.setOnClickListener(v -> OnlineSession.get().createFriendRoom());
-            TextView joinRoom = OnlineUi.secondaryButton(this.context, R.string.party_duel_join);
+            createRoom.setOnClickListener(v -> {
+                if (!canOpenFriendsEntry()) return;
+                this.context.startActivity(new Intent(this.context, PartyActivity.class)
+                        .putExtra(PartyActivity.EXTRA_ENTRY_ACTION, PartyActivity.ENTRY_CREATE));
+            });
+            TextView joinRoom = OnlineUi.secondaryButton(this.context, R.string.party_join);
             joinRoom.setId(R.id.online_join_room);
             addAction(card, joinRoom);
             joinRoom.setOnClickListener(v -> showJoinDialog());
-            card.addView(OnlineUi.sectionTitle(this.context, R.string.party_title), OnlineUi.cardParams(this.context));
-            card.addView(OnlineUi.body(this.context, R.string.party_free_note), matchWrap());
-            TextView party = OnlineUi.primaryButton(this.context, R.string.party_entry);
-            addAction(card, party);
-            party.setOnClickListener(v -> this.context.startActivity(new Intent(this.context, PartyActivity.class)));
             TextView partyHistory = OnlineUi.textButton(this.context, R.string.party_history);
             addAction(card, partyHistory);
             partyHistory.setOnClickListener(v -> this.context.startActivity(new Intent(this.context, PartyHistoryActivity.class)));
@@ -463,6 +465,11 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         AccountManager.UserProfile cached = AccountManager.get(this.context).profile();
         for (int i = 0; i < holder.pages.length; i++) {
             ModePage page = holder.pages[i];
+            if (i == 2) {
+                page.stats.setVisibility(View.GONE);
+                page.unavailable.setVisibility(View.GONE);
+                continue;
+            }
             OnlineModeStats stats = OnlineModeStats.forMode(this.profile, cached, MODES[i]);
             page.stats.bind(stats);
             page.unavailable.setVisibility(stats == null ? View.VISIBLE : View.GONE);
@@ -532,11 +539,20 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         this.waitingDialog = null;
     }
 
+    private boolean canOpenFriendsEntry() {
+        if (!OnlineSession.get().hasNonPartyFlow()) return true;
+        Toast.makeText(this.context, R.string.party_busy, Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
     private void showJoinDialog() {
+        if (!canOpenFriendsEntry()) return;
         OnlineDialogs.showJoinRoomCode(this.context, new OnlineDialogs.CodeListener() {
             @Override
             public void onCode(String code) {
-                OnlineSession.get().joinFriendRoom(code);
+                if (!canOpenFriendsEntry()) return;
+                context.startActivity(new Intent(context, PartyActivity.class)
+                        .putExtra(PartyActivity.EXTRA_JOIN_CODE, code));
             }
         });
     }

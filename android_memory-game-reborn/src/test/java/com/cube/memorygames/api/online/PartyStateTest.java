@@ -97,25 +97,63 @@ public class PartyStateTest {
         b.roundIndex = 0; b.matchId = "next-match";
         assertNotEquals(PartySession.key(a), PartySession.key(b));
     }
-    @Test public void readyGateRequiresThreeOnlinePlayersAndOnlyNonHostsReady() {
-        PartyState s = state("room", 1); s.members = new PartyState.Member[3];
-        for (int i = 0; i < 3; i++) { s.members[i] = new PartyState.Member(); s.members[i].playerId = i + 1; s.members[i].connected = true; s.members[i].ready = i != 0; }
-        assertTrue(s.canStart(1)); assertFalse(s.canStart(2));
-        s.members[2].ready = false; assertFalse(s.canStart(1));
-        s.members[2].ready = true; s.members[2].connected = false; assertFalse(s.canStart(1));
-        s.members[2].connected = true; s.phase = "PLAYING"; assertFalse(s.canStart(1));
+    private PartyState readyRoom(int count) {
+        PartyState s = state("room", 1); s.capacity = 0;
+        s.members = new PartyState.Member[count];
+        for (int i = 0; i < count; i++) {
+            s.members[i] = new PartyState.Member(); s.members[i].playerId = i + 1;
+            s.members[i].connected = true; s.members[i].ready = i != 0;
+        }
+        return s;
     }
-    @Test public void allSixParticipantsRemainVisibleAndWithdrawnSortLast() {
-        PartyState s = state("room", 1); s.participants = new PartyState.Participant[6];
-        for (int i = 0; i < 6; i++) { PartyState.Participant p = new PartyState.Participant(); p.playerId = i; p.points2 = i; s.participants[i] = p; }
-        s.participants[5].withdrawn = true;
-        assertEquals(6, s.leaderboard().size());
-        assertEquals(4, s.leaderboard().get(0).playerId);
-        assertEquals(5, s.leaderboard().get(5).playerId);
+    @Test public void readyGateAllowsTwoSevenAndTwentyFourWithUnlimitedCapacity() {
+        for (int count : new int[]{2, 7, 24}) {
+            PartyState s = readyRoom(count);
+            assertEquals(0, s.capacity);
+            assertTrue(s.canStart(1)); assertFalse(s.canStart(2));
+            s.members[count - 1].ready = false; assertFalse(s.canStart(1));
+            s.members[count - 1].ready = true;
+            s.members[count - 1].connected = false; assertFalse(s.canStart(1));
+            s.members[count - 1].connected = true;
+            s.phase = "PLAYING"; assertFalse(s.canStart(1));
+        }
+    }
+    @Test public void fewerThanTwoAndDisconnectedHostCannotStart() {
+        assertFalse(readyRoom(0).canStart(1)); assertFalse(readyRoom(1).canStart(1));
+        PartyState s = readyRoom(2); s.members[0].connected = false;
+        assertFalse(s.canStart(1)); s.members = null; assertFalse(s.canStart(1));
+    }
+    @Test public void allTwentyFourParticipantsRemainVisibleAndLongPointsSortExactly() {
+        PartyState s = state("room", 1); s.participants = new PartyState.Participant[24];
+        for (int i = 0; i < 24; i++) {
+            PartyState.Participant p = new PartyState.Participant(); p.playerId = i;
+            p.points2 = (long) Integer.MAX_VALUE + i; s.participants[i] = p;
+        }
+        s.participants[23].withdrawn = true;
+        assertEquals(24, s.leaderboard().size());
+        assertEquals(22, s.leaderboard().get(0).playerId);
+        assertEquals(23, s.leaderboard().get(23).playerId);
+    }
+    @Test public void unifiedCodeValidationKeepsLegacyFourAndNewSixDigitProtocols() {
+        assertEquals(4, PartyState.roomCodeDigits("0123"));
+        assertEquals(6, PartyState.roomCodeDigits("012345"));
+        for (String code : new String[]{null, "", "123", "12345", "1234567", " 1234", "1234 ", "abcd", "１２３４"})
+            assertEquals(0, PartyState.roomCodeDigits(code));
+    }
+    @Test public void unlimitedCapacityAndLongPointsParseAcrossAllWireModels() {
+        PartyState s = OnlineMessages.payloadOf("{\"d\":{\"capacity\":0,\"participants\":[{\"playerId\":1,\"points2\":4294967295}],\"results\":[{\"entries\":[{\"playerId\":1,\"points2\":4294967295}]}]}}", PartyState.class);
+        assertEquals(0, s.capacity);
+        assertEquals(4294967295L, s.participant(1).points2);
+        assertEquals(4294967295L, s.results[0].entries[0].points2);
+        PartyState.HistoryResponse h = OnlineMessages.payloadOf("{\"d\":{\"matches\":[{\"points2\":4294967295}]}}", PartyState.HistoryResponse.class);
+        assertEquals(4294967295L, h.matches[0].points2);
     }
     @Test public void exactHalfPointsNeverRoundTies() {
         assertEquals("0", PartyState.points(0)); assertEquals("1", PartyState.points(2));
         assertEquals("2.5", PartyState.points(5));
+        assertEquals("2147483647.5", PartyState.points(4294967295L));
+        assertEquals("4611686018427387903.5", PartyState.points(Long.MAX_VALUE));
+        assertEquals("4611686018427387903", PartyState.points(Long.MAX_VALUE - 1));
     }
     @Test public void parsesFullAuthoritativeSnapshotIncludingZeroBasedRoundAndSeed() {
         PartyState s = OnlineMessages.payloadOf("{\"t\":\"party_state\",\"d\":{\"lobbyId\":\"l\",\"phase\":\"LOADING\",\"roundIndex\":0,\"rounds\":[{\"gameId\":\"22\",\"durationMs\":45000,\"seed\":-9223372036854775807}],\"participants\":[{\"playerId\":12,\"points2\":5,\"withdrawn\":false}]}}", PartyState.class);

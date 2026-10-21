@@ -21,11 +21,13 @@ public final class PartyProtocol {
         public long playerId;
         public String nickname, avatarValue;
         public boolean connected, withdrawn, roundEligible;
-        public int score, points2, firstPlaces, rank;
+        public int score, firstPlaces, rank;
+        public long points2;
     }
     public static class Entry {
         public long playerId;
-        public int score, rank, points2;
+        public int score, rank;
+        public long points2;
         public boolean eligible;
     }
     public static class RoundResult {
@@ -36,14 +38,19 @@ public final class PartyProtocol {
     public static class State {
         public String lobbyId, code, phase, matchId, status, reason;
         public long hostId, stateVersion, serverTime, startAt, deadlineAt, phaseDeadlineAt;
-        public int roundCount, capacity = 6, rulesVersion = 1, roundIndex = -1;
+        /** Zero means no product-level room capacity limit, not a full or disabled room. */
+        public int capacity = 0;
+        public int roundCount, rulesVersion = 1, roundIndex = -1;
         public List<com.memorygames.pk.protocol.ProtocolCodec.RoundDesc> rounds = new ArrayList<>();
         public List<Member> members = new ArrayList<>();
         public List<Participant> participants = new ArrayList<>();
         public List<RoundResult> results = new ArrayList<>();
     }
+    /** Correlated O(1) receipt for party_level; full authoritative states are coalesced. */
+    public record Ack(String lobbyId, String matchId, int roundIndex, long playerId,
+                      long stateVersion, int score) { }
     public record Left(String lobbyId, String reason) { }
     public record HistoryEntry(String matchId, long ts, String status, int roundCount,
-                               int participantCount, int rank, int points2, int firstPlaces) { }
+                               int participantCount, int rank, long points2, int firstPlaces) { }
     public record History(List<HistoryEntry> matches) { }
 }

@@ -216,6 +216,10 @@ public final class PartySession {
             changed(); return true;
         }
         if (!type.startsWith("party_")) return false;
+        // Lightweight level receipt only clears the request/correlation above. The next
+        // authoritative party_state owns scores, versions and lobby/round identity.
+        // A delayed ack must never mutate a newer state or resurrect a departed room.
+        if ("party_ack".equals(type)) return true;
         if ("party_state".equals(type)) {
             PartyState incoming = OnlineMessages.payloadOf(json, PartyState.class);
             // Keep explicit join authority through lost acks and correlation expiry. A sync may

@@ -200,9 +200,25 @@ public class OnlineSession {
     }
 
     public boolean canChangeAccount() {
-        return !PartySession.get().occupied() && matchId == null && state != STATE_MATCH && state != STATE_QUEUE
-                && !pendingQueueRejoin && !queueRequestPending && !friendRoomPending
-                && !practicePending && pendingRoomAck == null;
+        return !PartySession.get().occupied() && !hasNonPartyFlow();
+    }
+
+    /** Includes sent-but-not-yet-matched requests, not just STATE_QUEUE/STATE_MATCH. */
+    public boolean hasNonPartyFlow() {
+        return matchId != null || state == STATE_MATCH || state == STATE_QUEUE
+                || pendingQueueRejoin || queueRequestPending || friendRoomPending
+                || practicePending || pendingRoomAck != null;
+    }
+
+    /** Navigation can only consume a match already admitted by this session's dispatcher. */
+    public boolean ownsAcceptedMatch(MatchFound found) {
+        String mode = practiceMode ? MODE_PRACTICE : friendMode ? MODE_FRIEND : MODE_RANKED;
+        return acceptedMatchIdentity(matchId, mode, found);
+    }
+
+    static boolean acceptedMatchIdentity(String acceptedId, String acceptedMode, MatchFound found) {
+        return acceptedId != null && found != null && acceptedId.equals(found.matchId)
+                && acceptedMode != null && acceptedMode.equals(found.mode);
     }
 
     public int getOnlineCoins() {
@@ -621,6 +637,11 @@ public class OnlineSession {
         sendRoomCommand(OnlineMessages.T_BOT_MATCH_REQUEST, request);
     }
 
+    /** Legacy room ownership used by the unified entry screen across Activity recreation. */
+    public boolean hasPendingFriendRoom() {
+        return friendRoomPending;
+    }
+
     public void joinFriendRoom(String code) {
         if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
         OnlineMessages.RoomJoin join = new OnlineMessages.RoomJoin();
@@ -701,7 +722,16 @@ public class OnlineSession {
 
     /** Match history (PRD F-11); response arrives via MatchListener.onHistory. */
     public void requestHistory() {
-        send(OnlineMessages.T_HISTORY_REQUEST, new Object());
+        requestHistory(null);
+    }
+
+    /** Filter on the server before its recent-record limit; old callers retain all modes. */
+    public void requestHistory(String mode) {
+        com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+        if (MODE_FRIEND.equals(mode) || MODE_RANKED.equals(mode) || MODE_PRACTICE.equals(mode)) {
+            request.addProperty("mode", mode);
+        }
+        send(OnlineMessages.T_HISTORY_REQUEST, request);
     }
 
     public boolean hasRequestedMatchStart() {

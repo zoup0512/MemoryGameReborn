@@ -29,7 +29,7 @@ class PartyManagerTest {
     }
     static class Endpoint implements PlayerEndpoint {
         final List<ProtocolCodec.Envelope> messages=new CopyOnWriteArrayList<>();
-        public void send(String json){messages.add(ProtocolCodec.parse(json));}
+        public void send(String json){messages.add(ProtocolCodec.parse(json));if(messages.size()>4)messages.remove(0);}
         public boolean isOpen(){return true;}
         ProtocolCodec.Envelope last(){return messages.get(messages.size()-1);}
     }
@@ -49,7 +49,7 @@ class PartyManagerTest {
     }
     @AfterEach void close(){manager.shutdown();}
     void player(long id){ UserAccount u=new UserAccount(); u.id=id; u.nickname="P"+id; u.avatarValue="a"; users.put(id,u); endpoints.put(id,new Endpoint()); }
-    void cmd(long id,String type,Map<String,Object> data){manager.command(users.get(id),endpoints.get(id),"test",type,data,"r");}
+    void cmd(long id,String type,Map<String,Object> data){manager.command(users.get(id),endpoints.get(id),"test-"+id,type,data,"r");}
     PartyProtocol.State state(){return manager.stateFor(1);}
     PartyProtocol.State lobby(int count){
         for(long i=1;i<=count;i++) player(i);
@@ -65,7 +65,7 @@ class PartyManagerTest {
     void level(long id,int level,boolean success){Map<String,Object> d=new HashMap<>(ref());d.put("level",level);d.put("success",success);cmd(id,"party_level",d);}
     int error(long id){return ProtocolCodec.convert(endpoints.get(id).last().d,ProtocolCodec.ErrorMsg.class).code;}
 
-    @ParameterizedTest @ValueSource(ints={3,4,6})
+    @ParameterizedTest @ValueSource(ints={2,3,4,6,7,12,24,64})
     void tiesZeroFrozenNHistoryAndContinuousLobby(int n){
         lobby(n); readyAndStart(); String match=state().matchId;
         long version=state().stateVersion;cmd(1,"party_start",Map.of("lobbyId",state().lobbyId));assertEquals(version,state().stateVersion);
@@ -75,7 +75,7 @@ class PartyManagerTest {
             for(long id:users.keySet())cmd(id,"party_complete",ref());
             PartyProtocol.State s=state();assertEquals(r+1,s.results.size());
             assertEquals(2*n-3,s.results.get(r).entries.get(0).points2);
-            assertEquals(0,s.results.get(r).entries.get(2).points2);
+            if(n>2) assertEquals(0,s.results.get(r).entries.get(2).points2);
             if(r<2)advance(60);
         }
         assertEquals("FINISHED",state().phase);assertEquals("COMPLETED",state().status);
@@ -116,7 +116,7 @@ class PartyManagerTest {
         Map<String,Object>d=new HashMap<>(ref());d.put("level",1);d.put("success","true");cmd(1,"party_level",d);assertEquals(400,error(1));
         level(1,1,true);assertTrue(state().participants.get(0).score>0);
         level(1,3,true);assertEquals(409,error(1));
-        advance(10);level(1,3,true);assertEquals("party_state",endpoints.get(1L).last().t);
+        advance(10);level(1,3,true);assertEquals("party_ack",endpoints.get(1L).last().t);
         Map<String,Object> stale=new HashMap<>(ref());stale.put("roundIndex",0);cmd(1,"party_complete",stale);assertEquals(409,error(1));
     }
     @Test void disconnectedHostTransferGraceReconnectAndOwnedClaims(){
@@ -148,25 +148,26 @@ class PartyManagerTest {
         cmd(1,"party_sync",Map.of());assertEquals("party_state",endpoints.get(1L).last().t);
         advance(18000);assertNull(state());assertFalse(lifecycle.isClaimed(1));
     }
-    @Test void withdrawalPreservesCompletedPointsDoesNotStealRank(){
-        lobby(4);readyAndStart();loadAll();level(1,1,true);level(2,1,true);level(3,1,true);
+    @ParameterizedTest @ValueSource(ints={4,7,12,24,64})
+    void withdrawalPreservesCompletedPointsDoesNotStealRank(int n){
+        lobby(n);readyAndStart();loadAll();level(1,1,true);level(2,1,true);level(3,1,true);
         for(long id:users.keySet())cmd(id,"party_complete",ref());
-        int points=state().participants.get(2).points2;advance(60);loadAll();level(3,1,true);
+        long points=state().participants.get(2).points2;advance(60);loadAll();level(3,1,true);
         cmd(3,"party_leave",Map.of("lobbyId",state().lobbyId,"matchId",state().matchId));
-        level(1,1,true);for(long id:List.of(1L,2L,4L))cmd(id,"party_complete",ref());
+        level(1,1,true);for(long id:users.keySet())if(id!=3)cmd(id,"party_complete",ref());
         PartyProtocol.Entry withdrawn=state().results.get(1).entries.get(2);
         assertEquals(0,withdrawn.points2);assertEquals(0,withdrawn.score);assertFalse(withdrawn.eligible);
         assertEquals(points,state().participants.get(2).points2);assertTrue(state().participants.get(2).withdrawn);
-        assertEquals(6,state().results.get(1).entries.get(0).points2,"frozen N=4");
+        assertEquals(2L*(n-1),state().results.get(1).entries.get(0).points2,"frozen starting N");
     }
-    @Test void parallelAdmissionsNeverOverfillAndBadCodesRateLimit() throws Exception{
+    @Test void parallelAdmissionsDoNotImposeRoomLimitAndBadCodesRateLimit() throws Exception{
         lobby(1);String code=state().code;
-        for(long id=2;id<=12;id++)player(id);
-        ExecutorService pool=Executors.newFixedThreadPool(11);CountDownLatch go=new CountDownLatch(1);
+        for(long id=2;id<=24;id++)player(id);
+        ExecutorService pool=Executors.newFixedThreadPool(23);CountDownLatch go=new CountDownLatch(1);
         List<Future<?>> work=new ArrayList<>();
-        for(long id=2;id<=12;id++){long p=id;work.add(pool.submit(()->{try{go.await();cmd(p,"party_join",Map.of("code",code));}catch(InterruptedException e){Thread.currentThread().interrupt();}}));}
-        go.countDown();for(Future<?> f:work)f.get();pool.shutdownNow();assertEquals(6,state().members.size());
-        long outside=users.keySet().stream().filter(id->manager.stateFor(id)==null).findFirst().orElseThrow();
+        for(long id=2;id<=24;id++){long p=id;work.add(pool.submit(()->{try{go.await();cmd(p,"party_join",Map.of("code",code));}catch(InterruptedException e){Thread.currentThread().interrupt();}}));}
+        go.countDown();for(Future<?> f:work)f.get();pool.shutdownNow();assertEquals(24,state().members.size());
+        long outside=100;player(outside);
         for(int i=0;i<11;i++)cmd(outside,"party_join",Map.of("code","invalid"));assertEquals(429,error(outside));
     }
     @Test void pendingHistoryImmediatelyVisibleRetryAndFiveRounds(){
@@ -205,6 +206,113 @@ class PartyManagerTest {
         advance(900);assertEquals(next,state().matchId);assertEquals("PLAYING",state().phase);
         manager.disconnect(2);advance(500);manager.reconnect(2,endpoints.get(2L));advance(400);
         assertNotNull(manager.stateFor(2));assertEquals(PlayerLifecycle.PARTY_LOBBY,lifecycle.stateOf(2));
+    }
+    @Test void sixthMemberDoesNotMakeRoomFullAndStartStillRequiresTwoPlayers(){
+        lobby(1);String lobby=state().lobbyId;
+        cmd(1,"party_start",Map.of("lobbyId",lobby));assertEquals(409,error(1));
+        for(long id=2;id<=7;id++){
+            player(id);cmd(id,"party_join",Map.of("code",state().code));
+            assertEquals("party_state",endpoints.get(id).last().t);
+            assertEquals(id,state().members.size());assertEquals(0,state().capacity);
+        }
+        readyAndStart();assertEquals(7,state().participants.size());assertEquals("LOADING",state().phase);
+    }
+    @ParameterizedTest @ValueSource(ints={2,7,12,24,64})
+    void withdrawalsReachSameInterruptionAtOneRemainingPlayer(int n){
+        lobby(n);readyAndStart();loadAll();level(1,1,true);
+        String lobby=state().lobbyId, match=state().matchId;
+        for(long id=n;id>=2;id--){
+            cmd(id,"party_leave",Map.of("lobbyId",lobby,"matchId",match));
+            assertNull(manager.stateFor(id));assertFalse(lifecycle.isClaimed(id));
+            if(id>2) assertEquals("PLAYING",state().phase);
+        }
+        assertEquals("INTERRUPTED",state().status);assertEquals("not_enough_players",state().reason);
+        assertEquals(n,state().participants.size());assertEquals(1,state().members.size());
+        assertTrue(state().participants.stream().allMatch(p->p.rank==0 && p.score==0));
+        assertEquals(n-1,state().participants.stream().filter(p->p.withdrawn).count());
+        manager.flushHistory();verify(history).save(argThat(s->s.participants.size()==n && s.status.equals("INTERRUPTED")));
+    }
+    @Test void twoPlayerDisconnectAllowsReconnectButExpiryInterruptsLikeExplicitLeave(){
+        lobby(2);readyAndStart();loadAll();String match=state().matchId;
+        manager.disconnect(2);advance(500);assertEquals("PLAYING",state().phase);
+        manager.reconnect(2,endpoints.get(2L));advance(400);assertNotNull(manager.stateFor(2));
+        assertTrue(state().members.get(1).connected);
+        cmd(1,"party_complete",ref());cmd(2,"party_complete",ref());advance(60);loadAll();
+        manager.disconnect(2);advance(899);assertEquals("PLAYING",state().phase);advance(1);
+        assertNull(manager.stateFor(2));assertFalse(lifecycle.isClaimed(2));
+        assertEquals(match,state().matchId);assertEquals("INTERRUPTED",state().status);
+        assertEquals("not_enough_players",state().reason);assertTrue(state().participants.stream().allMatch(p->p.rank==0));
+    }
+    @Test void scoreReportsUseConstantSizeReceiptsAndOneCoalescedBroadcastPerTickWindow(){
+        lobby(24);readyAndStart();loadAll();
+        endpoints.values().forEach(e->e.messages.clear());long before=state().stateVersion;
+        for(long id=1;id<=24;id++)level(id,1,true);
+        advance(10);level(1,2,true);
+        for(long id=1;id<=24;id++){
+            Endpoint e=endpoints.get(id);assertEquals(id==1?2:1,e.messages.size());
+            assertTrue(e.messages.stream().allMatch(f->f.t.equals("party_ack") && f.rid.equals("r")));
+        }
+        PartyProtocol.Ack ack=ProtocolCodec.convert(endpoints.get(1L).last().d,PartyProtocol.Ack.class);
+        assertEquals(before+25,ack.stateVersion());assertEquals(state().participants.get(0).score,ack.score());
+        assertEquals(1,ack.playerId());assertEquals(state().matchId,ack.matchId());
+        advance(239);assertEquals(1,endpoints.get(2L).messages.size());advance(1);
+        for(Endpoint e:endpoints.values())assertEquals(1,e.messages.stream().filter(f->f.t.equals("party_state")).count());
+        assertEquals(before+25,state().stateVersion);advance(100);
+        for(Endpoint e:endpoints.values())assertEquals(1,e.messages.stream().filter(f->f.t.equals("party_state")).count());
+        level(1,2,true);assertEquals(409,error(1));assertEquals("r",endpoints.get(1L).last().rid);
+    }
+    @SuppressWarnings("unchecked")
+    @Test void globalRoomGuardAndHistoryBackpressureRemainIndependentOfRoomSize()throws Exception{
+        lobby(24);player(100);String lobby=state().lobbyId,code=state().code;
+        var field=PartyManager.class.getDeclaredField("lobbies");field.setAccessible(true);
+        Map<String,Object> rooms=(Map<String,Object>)field.get(manager);Object original=rooms.get(lobby);
+        try{
+            for(int i=1;i<10000;i++)rooms.put("guard-"+i,original);
+            cmd(100,"party_create",Map.of());assertEquals(503,error(100));assertFalse(lifecycle.isClaimed(100));
+            cmd(100,"party_join",Map.of("code",code));assertEquals(25,state().members.size());
+        }finally{rooms.entrySet().removeIf(e->!e.getKey().equals(lobby));}
+        field=PartyManager.class.getDeclaredField("pending");field.setAccessible(true);
+        Map<String,PartyProtocol.State> backlog=(Map<String,PartyProtocol.State>)field.get(manager);
+        try{
+            for(int i=0;i<1000;i++)backlog.put("backlog-"+i,new PartyProtocol.State());
+            player(101);cmd(101,"party_create",Map.of());assertEquals(503,error(101));
+            cmd(101,"party_join",Map.of("code",code));assertEquals(503,error(101));
+            cmd(1,"party_start",Map.of("lobbyId",lobby));assertEquals(503,error(1));
+            cmd(1,"party_sync",Map.of());assertEquals("party_state",endpoints.get(1L).last().t);
+        }finally{backlog.clear();}
+    }
+    @Test void sharedIpJoinRateLimitStillProtectsUncappedRooms(){
+        lobby(1);String code=state().code;
+        for(long id=2;id<=42;id++){
+            player(id);manager.command(users.get(id),endpoints.get(id),"shared-ip","party_join",Map.of("code",code),"r");
+            if(id<=41)assertEquals("party_state",endpoints.get(id).last().t);
+        }
+        assertEquals(429,error(42));assertEquals(41,state().members.size());
+        clock.now.addAndGet(60000);cmd(42,"party_join",Map.of("code",code));assertEquals(42,state().members.size());
+    }
+    private Object firstSeat()throws Exception{
+        var field=PartyManager.class.getDeclaredField("lobbies");field.setAccessible(true);
+        Object lobby=((Map<?,?>)field.get(manager)).values().iterator().next();
+        field=lobby.getClass().getDeclaredField("seats");field.setAccessible(true);
+        return ((Map<?,?>)field.get(lobby)).get(1L);
+    }
+    @Test void scoreOverflowIsRejectedBeforeConsumingProgressOrCadence()throws Exception{
+        lobby(2);readyAndStart();loadAll();Object seat=firstSeat();
+        var scoreField=seat.getClass().getDeclaredField("score");scoreField.setAccessible(true);scoreField.setInt(seat,Integer.MAX_VALUE);
+        long version=state().stateVersion;
+        level(1,1,true);assertEquals(409,error(1));assertEquals(Integer.MAX_VALUE,state().participants.get(0).score);
+        assertEquals(version,state().stateVersion);
+        level(1,1,false);assertEquals("party_ack",endpoints.get(1L).last().t);
+        assertEquals(Integer.MAX_VALUE,state().participants.get(0).score);
+    }
+    @Test void pointsAccumulateAndSerializeBeyondIntegerRange()throws Exception{
+        lobby(2);readyAndStart();loadAll();Object seat=firstSeat();
+        var pointsField=seat.getClass().getDeclaredField("points2");pointsField.setAccessible(true);pointsField.setLong(seat,Integer.MAX_VALUE);
+        level(1,1,true);for(long id:users.keySet())cmd(id,"party_complete",ref());
+        assertEquals((long)Integer.MAX_VALUE+2,state().participants.get(0).points2);
+        assertEquals(1,state().participants.get(0).rank);
+        PartyProtocol.State decoded=ProtocolCodec.convert(ProtocolCodec.parse(ProtocolCodec.encode("party_state",state())).d,PartyProtocol.State.class);
+        assertEquals((long)Integer.MAX_VALUE+2,decoded.participants.get(0).points2);
     }
     @Test void historyRetryImmutableAndShutdownDoesNotPersistInFlight(){
         lobby(3);readyAndStart();loadAll();
