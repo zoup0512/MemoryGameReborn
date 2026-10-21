@@ -75,6 +75,15 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name="com.cube.memorygames.api.online.PartyActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.cube.memorygames.api.online.PartyHistoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name="com.cube.memorygames.api.online.OnlineHistoryActivity"
             android:screenOrientation="portrait" />
         <activity

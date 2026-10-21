@@ -147,7 +147,8 @@ class DiagnosticLoggingTest {
                 mock(com.memorygames.pk.admin.AdminState.class), events,
                 new com.memorygames.pk.admin.SessionStats(),
                 new com.memorygames.pk.admin.AdminMetrics(),
-                mock(com.memorygames.pk.user.AccountService.class));
+                mock(com.memorygames.pk.user.AccountService.class),
+                mock(com.memorygames.pk.party.PartyManager.class));
         WebSocketSession socket = socket();
         handler.afterConnectionEstablished(socket);
         @SuppressWarnings("unchecked")
@@ -196,7 +197,7 @@ class DiagnosticLoggingTest {
             }
             assertEquals(1, overflows.get());
             assertSafe("SEND_OVERFLOW");
-            verify(socket).close();
+            verify(socket, timeout(2000)).close();
         } finally {
             release.countDown();
             endpoint.shutdown();

@@ -192,6 +192,7 @@ public class OnlineSession {
 
     public void init(Context context) {
         this.appContext = context.getApplicationContext();
+        PartySession.get().init(context);
     }
 
     public int getState() {
@@ -199,7 +200,7 @@ public class OnlineSession {
     }
 
     public boolean canChangeAccount() {
-        return matchId == null && state != STATE_MATCH && state != STATE_QUEUE
+        return !PartySession.get().occupied() && matchId == null && state != STATE_MATCH && state != STATE_QUEUE
                 && !pendingQueueRejoin && !queueRequestPending && !friendRoomPending
                 && !practicePending && pendingRoomAck == null;
     }
@@ -218,6 +219,7 @@ public class OnlineSession {
     }
 
     public void resetForAccountChange() {
+        PartySession.get().reset();
         disconnect();
         reconnectBlocked=false;
         lastProfile=null;
@@ -272,6 +274,9 @@ public class OnlineSession {
      * / production defaults when no server value is known.
      */
     public long roundDurationMs(Context context, long defaultMs) {
+        if (context instanceof android.app.Activity && PartySession.isParty(((android.app.Activity) context).getIntent())) {
+            return Math.max(1L, PartySession.get().remaining());
+        }
         if (roundClock.hasStarted()) {
             return Math.max(1L, roundRemainingMs());
         }
@@ -472,6 +477,7 @@ public class OnlineSession {
 
     private void stopAuthorization(String message) {
         reconnectBlocked=true;
+        PartySession.get().reset();
         disconnect();
         notifyError(401,message == null ? "会话失效，请打开账户中心重新登录" : message);
     }
@@ -529,6 +535,7 @@ public class OnlineSession {
     private Runnable queuedWatchdog;
 
     public void startMatchmaking() {
+        if (PartySession.get().occupied()) return;
         if (!canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
         if (this.appContext != null
                 && !com.cube.memorygames.security.IntegritySentinel.isIntact(this.appContext)) {
@@ -759,6 +766,33 @@ public class OnlineSession {
 
     // -------------------------------------------------------- game bridge
 
+    /** Every party callback keeps the originating Activity's immutable identity. */
+    public void reportLevel(android.app.Activity owner, int level, int score, boolean success) {
+        if (PartySession.isParty(owner.getIntent())) PartySession.get().level(owner.getIntent(), level, success);
+        else if (success) reportLevelWin(level, score);
+    }
+
+    public void finishRound(android.app.Activity owner, int score) {
+        if (PartySession.isParty(owner.getIntent())) PartySession.get().complete(owner.getIntent());
+        else onRoundFinished(score);
+    }
+
+    public void resign(android.app.Activity owner) {
+        if (PartySession.isParty(owner.getIntent())) PartySession.get().leave(owner.getIntent());
+        else resign();
+    }
+
+    boolean isAuthenticatedSocket() {
+        return client != null && client.isConnected() && (state == STATE_IDLE || state == STATE_MATCH);
+    }
+
+    void sendParty(String type, Object data, String rid) {
+        com.google.gson.JsonObject root = new com.google.gson.JsonParser()
+                .parse(OnlineMessages.envelope(type, data)).getAsJsonObject();
+        root.addProperty("rid", rid);
+        if (client != null) client.send(root.toString());
+    }
+
     /** Called from Game1MemoryGridActivity.updateOnlineScore() in online mode. */
     public void reportLevelWin(int level, int totalScore) {
         android.util.Log.d("OnlinePK", "reportLevelWin round=" + currentRound
@@ -835,6 +869,8 @@ public class OnlineSession {
             diagnostic("frame_dropped", "reason", "bad_type");
             return;
         }
+        if ((type.startsWith("party_") || OnlineMessages.T_ERROR.equals(type))
+                && PartySession.get().receive(type, json)) return;
         if (DiagnosticSanitizer.businessType(type)) diagnosticFrame(json, type);
         // Match-scoped frames carry the owning matchId; anything addressed to
         // a match we are not in (e.g. an orphan room from a server-side
@@ -875,6 +911,7 @@ public class OnlineSession {
                 } catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
+                PartySession.get().authenticated();
                 if (resumeMatch && this.resigningMatchId != null) {
                     this.resignRetries = RESIGN_RETRY_MAX;
                     sendResign(this.resigningMatchId);
@@ -1199,6 +1236,7 @@ public class OnlineSession {
         if (state != newState) {
             diagnostic("session_state", "from", state, "to", newState);
             state = newState;
+            PartySession.get().connectionChanged();
             if (listener != null) {
                 try {
                     listener.onStateChanged(newState);

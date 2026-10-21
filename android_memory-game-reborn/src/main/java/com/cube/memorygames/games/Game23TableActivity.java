@@ -132,7 +132,7 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
                 Game23TableActivity.this.gridContainer.addView(game23Grid, 0, params);
             }
         });
-        if (this.startedTime <= 0) {
+        if (!isPartyWaiting() && this.startedTime <= 0) {
             this.progressBar.setVisibility(0);
             this.startedTime = System.currentTimeMillis();
             if (this.progression.getLevelNumber() == 1) {
@@ -147,6 +147,14 @@ public class Game23TableActivity extends Game1MemoryGridActivity {
             this.timerHandler.postDelayed(this.timerRunnable, 0);
         }
         this.stateTimer.start();
+    }
+
+    @Override protected void onPartyClockStart() {
+        this.startedTime = System.currentTimeMillis();
+        this.gameTime = com.cube.memorygames.api.online.PartySession.get().remaining();
+        this.progressBar.setVisibility(0);
+        this.progressBar.setMax((int) (gameTime / 10));
+        this.timerHandler.post(this.timerRunnable);
     }
 
     protected void exitFromPauseClicked() {

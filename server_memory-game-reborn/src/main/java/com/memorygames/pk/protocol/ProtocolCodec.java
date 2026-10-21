@@ -40,6 +40,23 @@ public final class ProtocolCodec {
     public static final String T_HISTORY_RESPONSE = "history_response";
     public static final String T_PING = "ping";
 
+    public static final String T_PARTY_CREATE = "party_create";
+    public static final String T_PARTY_JOIN = "party_join";
+    public static final String T_PARTY_CONFIG = "party_config";
+    public static final String T_PARTY_READY = "party_ready";
+    public static final String T_PARTY_START = "party_start";
+    public static final String T_PARTY_TRANSFER = "party_transfer";
+    public static final String T_PARTY_KICK = "party_kick";
+    public static final String T_PARTY_LEAVE = "party_leave";
+    public static final String T_PARTY_SYNC = "party_sync";
+    public static final String T_PARTY_ROUND_READY = "party_round_ready";
+    public static final String T_PARTY_LEVEL = "party_level";
+    public static final String T_PARTY_COMPLETE = "party_complete";
+    public static final String T_PARTY_RETURN = "party_return";
+    public static final String T_PARTY_HISTORY = "party_history";
+    public static final String T_PARTY_STATE = "party_state";
+    public static final String T_PARTY_LEFT = "party_left";
+
     public static final String T_AUTH_OK = "auth_ok";
     public static final String T_SESSION_REPLACED = "session_replaced";
     /** Immediate receipt for a match_join (client search watchdog). */
@@ -60,6 +77,7 @@ public final class ProtocolCodec {
     /** Match modes (MatchFound.mode / MatchRecord.mode). */
     public static final String MODE_RANKED = "RANKED";
     public static final String MODE_FRIEND = "FRIEND";
+    public static final String MODE_FRIEND_PARTY = "FRIEND_PARTY";
     /** Explicit play-vs-bot practice duel: no entry fee, no ELO, capped coins. */
     public static final String MODE_PRACTICE = "PRACTICE";
 

@@ -27,6 +27,8 @@
 -keep class com.cube.memorygames.model.** { *; }
 -keep class com.cube.memorygames.api.online.OnlineMessages { *; }
 -keep class com.cube.memorygames.api.online.OnlineMessages$* { *; }
+-keep class com.cube.memorygames.api.online.PartyState { *; }
+-keep class com.cube.memorygames.api.online.PartyState$* { *; }
 # REST and encrypted identity Gson models (including private fields/constructors).
 -keep class com.cube.memorygames.api.online.AccountManager$Identity { *; }
 -keep class com.cube.memorygames.api.online.AccountManager$UserProfile { *; }

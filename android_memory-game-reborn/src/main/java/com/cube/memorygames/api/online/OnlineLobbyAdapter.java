@@ -428,14 +428,23 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
                 }
             });
         } else {
-            TextView createRoom = OnlineUi.primaryButton(this.context, R.string.online_create_room);
+            detail.setText(R.string.party_entry_note);
+            TextView createRoom = OnlineUi.primaryButton(this.context, R.string.party_duel_create);
             createRoom.setId(R.id.online_create_room);
             addAction(card, createRoom);
             createRoom.setOnClickListener(v -> OnlineSession.get().createFriendRoom());
-            TextView joinRoom = OnlineUi.secondaryButton(this.context, R.string.online_join_room);
+            TextView joinRoom = OnlineUi.secondaryButton(this.context, R.string.party_duel_join);
             joinRoom.setId(R.id.online_join_room);
             addAction(card, joinRoom);
             joinRoom.setOnClickListener(v -> showJoinDialog());
+            card.addView(OnlineUi.sectionTitle(this.context, R.string.party_title), OnlineUi.cardParams(this.context));
+            card.addView(OnlineUi.body(this.context, R.string.party_free_note), matchWrap());
+            TextView party = OnlineUi.primaryButton(this.context, R.string.party_entry);
+            addAction(card, party);
+            party.setOnClickListener(v -> this.context.startActivity(new Intent(this.context, PartyActivity.class)));
+            TextView partyHistory = OnlineUi.textButton(this.context, R.string.party_history);
+            addAction(card, partyHistory);
+            partyHistory.setOnClickListener(v -> this.context.startActivity(new Intent(this.context, PartyHistoryActivity.class)));
         }
         return new ModePage(scroller, stats, unavailable, detail, rankedMeta);
     }

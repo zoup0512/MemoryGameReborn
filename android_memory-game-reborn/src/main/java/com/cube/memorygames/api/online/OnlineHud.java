@@ -44,6 +44,10 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
             if (header == null || !(header instanceof RelativeLayout)) {
                 return;
             }
+            if (PartySession.isParty(activity.getIntent())) {
+                attachParty(activity, (RelativeLayout) header);
+                return;
+            }
             final OnlineHud hud = new OnlineHud(activity);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -70,6 +74,30 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
         } catch (RuntimeException ignored) {
             // Header structure differs on an unexpected layout: HUD is optional.
         }
+    }
+
+    private static void attachParty(Activity activity, RelativeLayout header) {
+        TextView strip = new TextView(activity);
+        strip.setTextColor(OnlineUi.color(activity, R.color.online_text_primary));
+        strip.setTextSize(12); strip.setGravity(Gravity.CENTER);
+        strip.setBackgroundResource(R.drawable.online_score_pill);
+        strip.setPadding(OnlineUi.dp(activity, 8), 0, OnlineUi.dp(activity, 8), 0);
+        strip.setOnClickListener(v -> PartyUi.showStandings(activity));
+        PartySession.Listener listener = () -> {
+            PartyState s = PartySession.get().state();
+            PartyState.Participant p = s == null ? null : s.participant(PartySession.get().userId());
+            strip.setText(p == null ? activity.getString(R.string.party_standings)
+                    : activity.getString(R.string.party_hud, p.score, PartyState.points(p.points2)));
+        };
+        listener.onPartyChanged();
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, OnlineUi.dp(activity, 40));
+        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT); params.addRule(RelativeLayout.CENTER_VERTICAL);
+        header.addView(strip, params);
+        PartySession.get().addListener(listener);
+        strip.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            public void onViewAttachedToWindow(View v) { }
+            public void onViewDetachedFromWindow(View v) { PartySession.get().removeListener(listener); }
+        });
     }
 
     @Override

@@ -122,7 +122,7 @@ public class Game20ColorsActivity extends Game1MemoryGridActivity {
         params.addRule(13, -1);
         this.gridContainer.addView(game20Grid, 0, params);
         this.grid = game20Grid;
-        if (this.startedTime <= 0) {
+        if (!isPartyWaiting() && this.startedTime <= 0) {
             this.progressBar.setVisibility(0);
             this.progressBar.setMax(res.facebook);
             this.startedTime = System.currentTimeMillis();
@@ -133,6 +133,14 @@ public class Game20ColorsActivity extends Game1MemoryGridActivity {
             this.timerHandler.postDelayed(this.timerRunnable, 0);
         }
         this.stateTimer.start();
+    }
+
+    @Override protected void onPartyClockStart() {
+        this.startedTime = System.currentTimeMillis();
+        this.gameTime = com.cube.memorygames.api.online.PartySession.get().remaining();
+        this.progressBar.setVisibility(0);
+        this.progressBar.setMax((int) (gameTime / 10));
+        this.timerHandler.post(this.timerRunnable);
     }
 
     protected void createGameFlowStates() {

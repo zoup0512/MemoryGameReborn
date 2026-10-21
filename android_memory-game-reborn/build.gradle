@@ -100,7 +100,8 @@ android {
 
     buildTypes {
         debug {
-            if (accountUiTest) applicationIdSuffix '.accounttest'
+            if (project.findProperty('partyUiTest')?.toString() == 'true') applicationIdSuffix '.partytest'
+            else if (accountUiTest) applicationIdSuffix '.accounttest'
         }
         release {
             signingConfig signingConfigs.release

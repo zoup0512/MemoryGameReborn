@@ -441,7 +441,20 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         }
     }
 
+    private boolean partyWaiting;
+    private com.cube.memorygames.api.online.PartyGameBridge partyBridge;
+
+    public final boolean isPartyWaiting() { return partyWaiting; }
+    protected void onPartyClockStart() { startOnlineLevelTimer(); }
+    public final void startPartyClock() {
+        if (!partyWaiting || isFinishing()) return;
+        partyWaiting = false;
+        onPartyClockStart();
+        this.stateTimer.setHeld(false);
+    }
+
     protected void startOnlineLevelTimer() {
+        if (partyWaiting) return;
         if (this.isOnlineGame && isEnableLevelTimer()) {
             this.startedOnlineTime = System.currentTimeMillis();
             this.levelOnlineTime = OnlineSession.get().roundDurationMs(this,
@@ -483,6 +496,11 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         // branches kept in this class are re-enabled by this extra; without
         // it the single-player behaviour is bit-for-bit unchanged.
         this.isOnlineGame = getIntent().getBooleanExtra(OnlineSession.EXTRA_ONLINE_GAME, false);
+        this.partyWaiting = com.cube.memorygames.api.online.PartySession.isParty(getIntent());
+        if (this.partyWaiting && (savedInstanceState != null || !com.cube.memorygames.api.online.PartySession.get().owns(getIntent()))) {
+            // A regenerated Activity cannot restore RNG/grid state safely. Never replay this question.
+            finish(); return;
+        }
         this.gameSeed = System.currentTimeMillis();
         if (this.isOnlineGame) {
             this.gameSeed = getIntent().getLongExtra(OnlineSession.EXTRA_ONLINE_SEED, this.gameSeed);
@@ -528,6 +546,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         createProgression();
         this.progression.startGame();
         createGameFlowStates();
+        if (partyWaiting) this.stateTimer.setHeld(true);
         this.gameSession = new LocalGameSession();
         this.gameSession.startLevel = getStartingLevel();
         for (int i = 1; i < this.gameSession.startLevel; i++) {
@@ -544,6 +563,10 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         startGame();
         SoundUtils.playBackgroundSound(this);
         updateColors();
+        if (partyWaiting) {
+            partyBridge = new com.cube.memorygames.api.online.PartyGameBridge(this);
+            partyBridge.attach();
+        }
     }
 
     private void updateColors() {
@@ -675,7 +698,20 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     protected void hidePause() {
     }
 
+    protected void onResume() {
+        super.onResume();
+        if (com.cube.memorygames.api.online.PartySession.isParty(getIntent()))
+            com.cube.memorygames.api.online.PartySession.get().sync();
+    }
+
+    private boolean isStalePartyGame() {
+        return com.cube.memorygames.api.online.PartySession.isParty(getIntent())
+                && (isFinishing() || !com.cube.memorygames.api.online.PartySession.get().mayPlay(getIntent()));
+    }
+
     protected void onDestroy() {
+        if (partyBridge != null) partyBridge.detach();
+        if (com.cube.memorygames.api.online.PartySession.isParty(getIntent()) && stateTimer != null) stateTimer.cancel();
         killOnlineTimer();
         super.onDestroy();
     }
@@ -884,6 +920,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     public void restartLevel(boolean takeMoney) {
+        if (isStalePartyGame()) return;
         if (this.grid != null) {
             this.gridContainer.removeView((View) this.grid);
         }
@@ -896,6 +933,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void startNextLevel() {
+        if (isStalePartyGame()) return;
         if (this.grid != null) {
             this.gridContainer.removeView((View) this.grid);
         }
@@ -1141,7 +1179,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         }
         this.onlineScore += levelScore;
         if (this.isOnlineGame) {
-            OnlineSession.get().reportLevelWin(level, this.onlineScore);
+            OnlineSession.get().reportLevel(this, level, this.onlineScore, true);
         }
     }
 
@@ -1224,6 +1262,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void showFailureDialog() {
+        if (isOnlineGame) OnlineSession.get().reportLevel(this, progression.getLevelNumber(), onlineScore, false);
         this.grid.disableAllCells();
         this.grid.showChallengeCells();
         showAppropriateDialog();
@@ -1421,7 +1460,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
             // paths of every game funnel through here (backPressClickListener).
             killOnlineTimer();
             diagnosticOnline("game_back_confirm");
-            OnlineSession.get().resign();
+            OnlineSession.get().resign(this);
             SoundUtils.stopBackgroundSound();
             finish();
             return;
@@ -1479,7 +1518,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         // return to OnlineMatchActivity, which shows the intermission board
         // until the server broadcast round_end / match_end.
         killOnlineTimer();
-        OnlineSession.get().onRoundFinished(this.onlineScore);
+        OnlineSession.get().finishRound(this, this.onlineScore);
         SoundUtils.stopBackgroundSound();
         finish();
     }

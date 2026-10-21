@@ -64,6 +64,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final EventRing events;
     private final SessionStats stats;
     private final AdminMetrics metrics;
+    private final com.memorygames.pk.party.PartyManager parties;
 
     /** ws session id -> authenticated user id. */
     private final Map<String, Long> authenticated = new ConcurrentHashMap<>();
@@ -83,6 +84,32 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, SocketContext> closingContexts = new ConcurrentHashMap<>();
     /** user id -> room_join failures inside the current window (code guessing). */
     private final Map<Long, int[]> joinFailures = new ConcurrentHashMap<>();
+
+    private final java.util.concurrent.ScheduledThreadPoolExecutor closeReaper =
+            new java.util.concurrent.ScheduledThreadPoolExecutor(1, r -> {
+                Thread t = new Thread(r, "pk-close-reaper"); t.setDaemon(true); return t;
+            });
+
+    @jakarta.annotation.PostConstruct
+    public void startCloseReaper() {
+        this.closeReaper.scheduleWithFixedDelay(() -> {
+            try { reapClosingEndpoints(); }
+            catch (RuntimeException e) { log.error("socket close reaper failed", e); }
+        }, 100, 100, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    @jakarta.annotation.PreDestroy
+    public void stopCloseReaper() { this.closeReaper.shutdownNow(); }
+
+    /** No additional endpoint backlog: scan the existing live transport registry. */
+    private void reapClosingEndpoints() {
+        for (Map.Entry<String, PlayerEndpoint.WebSocket> entry : this.endpoints.entrySet()) {
+            PlayerEndpoint.WebSocket target = entry.getValue();
+            if (!target.hasPendingClose()) continue;
+            synchronized (this.sessionLock) { detachSession(entry.getKey()); }
+            target.retryPendingClose();
+        }
+    }
 
     private final WsRateLimiter registerPerSession = new WsRateLimiter(60_000L, 5);
     private final WsRateLimiter registerPerIp = new WsRateLimiter(60_000L, 30);
@@ -115,7 +142,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                               PlayerLifecycle lifecycle, Rating rating, PkProperties properties,
                               MatchRecordRepository records, SeasonService seasons,
                               AdminState adminState, EventRing events, SessionStats stats,
-                              AdminMetrics metrics, AccountService accounts) {
+                              AdminMetrics metrics, AccountService accounts,
+                              com.memorygames.pk.party.PartyManager parties) {
+        this.parties = parties;
         this.users = users;
         this.accounts = accounts;
         this.matchmaker = matchmaker;
@@ -142,6 +171,12 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        PlayerEndpoint.WebSocket inbound = this.endpoints.get(session.getId());
+        if (inbound != null && inbound.isClosing()) {
+            synchronized (this.sessionLock) { detachSession(session.getId()); }
+            inbound.retryPendingClose();
+            return;
+        }
         if (message.getPayloadLength() > MAX_FRAME_BYTES) {
             socketEvent("WS_KICK", session.getId(),
                     "reason=oversized_frame closeCode=" + CloseStatus.POLICY_VIOLATION.getCode());
@@ -213,6 +248,9 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     }
                     socketEvent("AUTH_OK", session.getId(), "frame=register");
                     reply(session, rid, ProtocolCodec.T_AUTH_OK, authOk(account, account.token));
+                    MatchRoom existing = this.manager.roomFor(account.id);
+                    if (existing != null) existing.onReconnect(account.id, endpoint(session));
+                    this.parties.reconnect(account.id, endpoint(session));
                 }
                 return;
             }
@@ -260,6 +298,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
                     if (room != null) {
                         room.onReconnect(accountGet.id, endpoint(session));
                     }
+                    this.parties.reconnect(accountGet.id, endpoint(session));
                 }
                 return;
             }
@@ -268,6 +307,34 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
         }
         if (userId == null) {
             reply(session, rid, ProtocolCodec.T_ERROR, error(401, "not authenticated"));
+            return;
+        }
+        // Serialize authenticated party commands with controller replacement. An old
+        // socket cannot issue commands after a new auth has taken ownership.
+        if (envelope.t.startsWith("party_")) {
+            if (ProtocolCodec.T_PARTY_HISTORY.equals(envelope.t)) {
+                final long historyUser = userId;
+                PlayerEndpoint target = endpoint(session);
+                // JDBC is deliberately outside the global session replacement lock.
+                // Re-check ownership when the eventual response is queued.
+                this.parties.history(historyUser, new PlayerEndpoint() {
+                    @Override public void send(String json) {
+                        synchronized (sessionLock) {
+                            if (session.getId().equals(sessionByUser.get(historyUser))) target.send(json);
+                        }
+                    }
+                    @Override public boolean isOpen() { return target.isOpen(); }
+                }, rid);
+                return;
+            }
+            synchronized (this.sessionLock) {
+                if (!session.getId().equals(this.sessionByUser.get(userId))) return;
+                if (!this.manager.acceptingMatches()) {
+                    reply(session, rid, ProtocolCodec.T_ERROR, error(503, "server shutting down"));
+                } else {
+                    this.parties.command(liveAccount, endpoint(session), remoteIp(session), envelope.t, envelope.d, rid);
+                }
+            }
             return;
         }
         UserAccount account = liveAccount;
@@ -550,7 +617,8 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
     private boolean bindSession(WebSocketSession session, UserAccount account,
                                 String token, String accountSessionId) {
         synchronized (this.sessionLock) {
-            if (!session.isOpen() || !this.connectedSessions.contains(session.getId())) {
+            if (!session.isOpen() || !this.connectedSessions.contains(session.getId())
+                    || endpointFor(session).isClosing()) {
                 return false;
             }
             String previousId = this.sessionByUser.put(account.id, session.getId());
@@ -606,6 +674,7 @@ public class PkWebSocketHandler extends TextWebSocketHandler {
             if (room != null) {
                 room.onDisconnect(userId);
             }
+            this.parties.disconnect(userId);
             this.joinFailures.remove(userId);
         }
     }

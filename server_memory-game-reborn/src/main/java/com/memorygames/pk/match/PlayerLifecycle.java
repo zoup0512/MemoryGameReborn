@@ -24,7 +24,19 @@ public class PlayerLifecycle {
     /** Seated in a live registered room. */
     public static final String IN_MATCH = "IN_MATCH";
 
-    private final ConcurrentHashMap<Long, String> states = new ConcurrentHashMap<>();
+    /** Persistent multiplayer lobby ownership; never released by legacy duel callbacks. */
+    public static final String PARTY_LOBBY = "PARTY_LOBBY";
+
+    private record Claim(String state, String owner) { }
+    private final ConcurrentHashMap<Long, Claim> states = new ConcurrentHashMap<>();
+
+    public boolean claimOwned(long userId, String state, String owner) {
+        return this.states.putIfAbsent(userId, new Claim(state, owner)) == null;
+    }
+
+    public void releaseOwned(long userId, String state, String owner) {
+        this.states.remove(userId, new Claim(state, owner));
+    }
 
     /**
      * Atomically claims the user for {@code to}.
@@ -32,7 +44,7 @@ public class PlayerLifecycle {
      * @return false when the user is already claimed in any state (busy)
      */
     public boolean claim(long userId, String to) {
-        return this.states.putIfAbsent(userId, to) == null;
+        return claimOwned(userId, to, null);
     }
 
     /**
@@ -41,17 +53,17 @@ public class PlayerLifecycle {
      * which means somebody else moved or released the claim first.
      */
     public boolean transition(long userId, String from, String to) {
-        return this.states.replace(userId, from, to);
+        return this.states.replace(userId, new Claim(from, null), new Claim(to, null));
     }
 
     /** Releases the claim only if it currently is {@code expected}. */
     public void releaseIf(long userId, String expected) {
-        this.states.remove(userId, expected);
+        this.states.remove(userId, new Claim(expected, null));
     }
 
     /** Unconditional release (settlement / terminal cleanup). */
     public void release(long userId) {
-        this.states.remove(userId);
+        this.states.computeIfPresent(userId, (id, claim) -> claim.owner() == null ? null : claim);
     }
 
     public boolean isClaimed(long userId) {
@@ -59,6 +71,7 @@ public class PlayerLifecycle {
     }
 
     public String stateOf(long userId) {
-        return this.states.get(userId);
+        Claim claim = this.states.get(userId);
+        return claim == null ? null : claim.state();
     }
 }

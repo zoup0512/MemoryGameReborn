@@ -25,6 +25,11 @@ public interface PlayerEndpoint {
         /** Hard cap on one blocking send; enforced by the Spring decorator. */
         private static final int SEND_TIME_LIMIT_MS = 5000;
         private static final int SEND_BUFFER_LIMIT_BYTES = 512 * 1024;
+        /** Closing invokes gateway callbacks: never run it on a domain/room lock. */
+        private static final ThreadPoolExecutor CLOSER = new ThreadPoolExecutor(
+                1, 2, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(256), r -> {
+                    Thread t = new Thread(r, "pk-socket-close"); t.setDaemon(true); return t;
+                }, new ThreadPoolExecutor.AbortPolicy());
 
         private final WebSocketSession session;
         private final ConcurrentWebSocketSessionDecorator guarded;
@@ -56,6 +61,11 @@ public interface PlayerEndpoint {
                             + " class=" + failure.getClass().getName());
         }
         private final java.util.concurrent.atomic.AtomicBoolean closing =
+                new java.util.concurrent.atomic.AtomicBoolean();
+        /** Retry state lives on the already-registered endpoint, never in another queue/set. */
+        private final java.util.concurrent.atomic.AtomicBoolean closePending =
+                new java.util.concurrent.atomic.AtomicBoolean();
+        private final java.util.concurrent.atomic.AtomicBoolean closeInFlight =
                 new java.util.concurrent.atomic.AtomicBoolean();
         /**
          * Sends must never run on the room/scheduler threads: a half-dead
@@ -134,11 +144,7 @@ public interface PlayerEndpoint {
                         diagnostic("SEND_CALLBACK_FAILED", json, ignored);
                     }
                 }
-                try {
-                    this.session.close();
-                } catch (IOException | RuntimeException ignored) {
-                    diagnostic("SEND_CLOSE_FAILED", json, ignored);
-                }
+                closeAsynchronously(json);
             }
         }
 
@@ -178,12 +184,39 @@ public interface PlayerEndpoint {
                         diagnostic("SEND_CALLBACK_FAILED", json, ignored);
                     }
                 }
-                try {
-                    this.session.close(status);
-                } catch (IOException | RuntimeException ignored) {
-                    diagnostic("SEND_CLOSE_FAILED", json, ignored);
-                }
-                this.sender.shutdownNow();
+                closeAsynchronously(json);
+            }
+        }
+
+        private void closeAsynchronously(String json) {
+            this.closing.set(true);
+            this.closePending.set(true);
+            this.sender.shutdownNow();
+            retryPendingClose();
+        }
+
+        /** Gateway drops authentication/commands even while the transport close pool is stuck. */
+        public boolean isClosing() { return this.closing.get(); }
+        public boolean hasPendingClose() { return this.closePending.get(); }
+
+        /** Nonblocking and safe under room locks. The gateway reaper retries saturation. */
+        public void retryPendingClose() {
+            if (!this.closePending.get() || !this.closeInFlight.compareAndSet(false, true)) return;
+            try {
+                CLOSER.execute(() -> {
+                    try {
+                        this.session.close();
+                        this.closePending.set(false);
+                    } catch (IOException | RuntimeException e) {
+                        diagnostic("SEND_CLOSE_FAILED", "{}", e);
+                    } finally {
+                        this.closeInFlight.set(false);
+                    }
+                });
+            } catch (RejectedExecutionException overloaded) {
+                this.closeInFlight.set(false);
+                // Keep closePending=true. No inline close/callback, no new thread,
+                // no unbounded backlog: the existing endpoint registry owns retries.
             }
         }
 
