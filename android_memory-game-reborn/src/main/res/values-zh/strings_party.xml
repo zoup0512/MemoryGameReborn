@@ -42,7 +42,8 @@
     <string name="party_result_entry">%1$s · 原始分 %2$d · 第%3$s名 · +%4$s积分 %5$s</string>
     <string name="party_ineligible">未取得本轮资格</string>
     <string name="party_withdrawn">已弃赛</string>
-    <string name="party_hud">本轮 %1$d · 积分 %2$s\n点击查看全员排行</string>
+    <string name="party_hud">本轮 %1$d 分\n总积分 %2$s · 排行 ›</string>
+    <string name="party_self_name">%1$s（我）</string>
     <string name="party_final">最终结果</string>
     <string name="party_interrupted">比赛中断 · 无正式冠军</string>
     <string name="party_completed">已完成</string>

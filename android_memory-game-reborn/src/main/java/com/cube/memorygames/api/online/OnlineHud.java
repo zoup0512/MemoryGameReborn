@@ -80,6 +80,8 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
         TextView strip = new TextView(activity);
         strip.setTextColor(OnlineUi.color(activity, R.color.online_text_primary));
         strip.setTextSize(12); strip.setGravity(Gravity.CENTER);
+        strip.setMaxLines(2);
+        strip.setMinHeight(OnlineUi.dp(activity, 44));
         strip.setBackgroundResource(R.drawable.online_score_pill);
         strip.setPadding(OnlineUi.dp(activity, 8), 0, OnlineUi.dp(activity, 8), 0);
         strip.setOnClickListener(v -> PartyUi.showStandings(activity));
@@ -90,8 +92,10 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
                     : activity.getString(R.string.party_hud, p.score, PartyState.points(p.points2)));
         };
         listener.onPartyChanged();
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, OnlineUi.dp(activity, 40));
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, OnlineUi.dp(activity, 44));
         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT); params.addRule(RelativeLayout.CENTER_VERTICAL);
+        params.rightMargin = activity.getResources()
+                .getDimensionPixelOffset(R.dimen.toolbar_padding);
         header.addView(strip, params);
         PartySession.get().addListener(listener);
         strip.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
@@ -106,7 +110,7 @@ public final class OnlineHud implements OnlineSession.ScoreListener {
     }
 
     private void update(int myScore, int oppScore) {
-        final String text = "OPP " + oppScore + " : " + myScore + " ME";
+        final String text = view.getContext().getString(R.string.online_hud_score, oppScore, myScore);
         if (view != null) {
             view.post(new Runnable() {
                 @Override

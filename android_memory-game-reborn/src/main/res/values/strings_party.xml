@@ -42,7 +42,8 @@
     <string name="party_result_entry">%1$s · Score %2$d · #%3$s · +%4$s points %5$s</string>
     <string name="party_ineligible">Not eligible</string>
     <string name="party_withdrawn">Withdrawn</string>
-    <string name="party_hud">Score %1$d · %2$s pts\nTap for all players</string>
+    <string name="party_hud">Round score %1$d\nTotal pts %2$s · Standings ›</string>
+    <string name="party_self_name">%1$s (You)</string>
     <string name="party_final">Final results</string>
     <string name="party_interrupted">Interrupted · No official champion</string>
     <string name="party_completed">Completed</string>

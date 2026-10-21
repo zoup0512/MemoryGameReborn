@@ -29,8 +29,12 @@ final class PartyUi {
             String rank = p.rank > 0 ? Integer.toString(p.rank) : "—";
             String suffix = p.withdrawn ? c.getString(R.string.party_withdrawn)
                     : !p.connected ? c.getString(R.string.party_offline) : "";
-            box.addView(text(c, c.getString(R.string.party_score_row, rank, p.nickname,
-                    p.score, PartyState.points(p.points2), p.firstPlaces, suffix)));
+            boolean self = p.playerId == PartySession.get().userId();
+            String nickname = self ? c.getString(R.string.party_self_name, p.nickname) : p.nickname;
+            TextView row = text(c, c.getString(R.string.party_score_row, rank, nickname,
+                    p.score, PartyState.points(p.points2), p.firstPlaces, suffix));
+            if (self) row.setTypeface(OnlineUi.medium(c));
+            box.addView(row);
         }
     }
     static void results(Context c, LinearLayout box, PartyState s) {
