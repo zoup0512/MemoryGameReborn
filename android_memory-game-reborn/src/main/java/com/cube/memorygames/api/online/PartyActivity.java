@@ -27,12 +27,17 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
     private LinearLayout box;
     private ScrollView scroll;
     private TextView countdown;
+    private RoundWaitCard intermissionCard;
     private boolean resumed, gameOpen, exitRequested, returnRequested;
     private String launchedKey;
+    private String renderedIntermissionKey;
     private int rounds = 5;
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             PartyState s = party.state();
+            if (intermissionCard != null && s != null && s.is("ROUND_RESULT")) {
+                intermissionCard.showState(RoundWaitState.party(s.phaseDeadlineAt, party.now()));
+            }
             if (countdown != null && s != null) {
                 long end = s.is("COUNTDOWN") ? s.startAt : s.is("PLAYING") ? s.deadlineAt : s.phaseDeadlineAt;
                 countdown.setText(getString(R.string.party_seconds, Math.max(0, (end - party.now() + 999) / 1000)));
@@ -66,7 +71,11 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
     }
     private void render() {
         if (box == null || isFinishing()) return;
-        int y = scroll.getScrollY(); box.removeAllViews(); countdown = null;
+        PartyState visible = party.state();
+        String intermissionKey = visible != null && visible.is("ROUND_RESULT") ? PartySession.key(visible) : null;
+        int y = intermissionKey != null && !intermissionKey.equals(renderedIntermissionKey) ? 0 : scroll.getScrollY();
+        renderedIntermissionKey = intermissionKey;
+        box.removeAllViews(); countdown = null; intermissionCard = null;
         if (OnlineSession.get().requiresAccountLogin()) {
             text(R.string.party_login_required);
             action(R.string.online_account_title, () -> startActivity(new Intent(this, AccountActivity.class)));
@@ -103,12 +112,14 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
             action(R.string.party_history, () -> startActivity(new Intent(this, PartyHistoryActivity.class)));
             return;
         }
-        text(getString(R.string.party_room, s.code, s.members == null ? 0 : s.members.length));
-        action(R.string.party_copy, () -> {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            if (clipboard != null) clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.party_title), s.code));
-            Toast.makeText(this, R.string.party_copied, Toast.LENGTH_SHORT).show();
-        });
+        if (!s.is("ROUND_RESULT")) {
+            text(getString(R.string.party_room, s.code, s.members == null ? 0 : s.members.length));
+            action(R.string.party_copy, () -> {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                if (clipboard != null) clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.party_title), s.code));
+                Toast.makeText(this, R.string.party_copied, Toast.LENGTH_SHORT).show();
+            });
+        }
         if (party.leaving()) { text(R.string.party_leaving); action(R.string.party_reconnect, () -> party.sync()); return; }
         if (s.is("LOBBY")) {
             returnRequested = false;
@@ -138,14 +149,28 @@ public final class PartyActivity extends android.support.v7.app.AppCompatActivit
             if (host) { TextView start = action(R.string.party_start, () -> party.start()); start.setEnabled(s.canStart(party.userId()) && party.connected()); text(R.string.party_start_rule); }
             else { PartyState.Member me = s.member(party.userId()); if (me != null) action(me.ready ? R.string.party_unready : R.string.party_ready, () -> party.ready(!me.ready)); }
         } else if (s.is("FINISHED")) finalBoard(s);
-        else {
+        else if (s.is("ROUND_RESULT")) {
+            intermissionCard = new RoundWaitCard(this);
+            String nextId = RoundWaitState.nextPartyGameId(s);
+            GameInfo next = nextId == null ? null : Games.get().getGameBiId(nextId);
+            PartyState.Participant me = s.participant(party.userId());
+            intermissionCard.bind(s.roundIndex + 1, s.roundCount, next,
+                    me == null ? null : getString(R.string.round_wait_party_score, me.score, PartyState.points(me.points2)));
+            intermissionCard.showState(RoundWaitState.party(s.phaseDeadlineAt, party.now()));
+            box.addView(intermissionCard.view, OnlineUi.cardParams(this));
+            LinearLayout standings = OnlineUi.card(this);
+            PartyUi.standings(this, standings, s);
+            box.addView(standings, OnlineUi.cardParams(this));
+            LinearLayout results = OnlineUi.card(this);
+            PartyUi.results(this, results, s, true);
+            box.addView(results, OnlineUi.cardParams(this));
+        } else {
             text(getString(R.string.party_round_header, s.roundIndex + 1, s.roundCount,
                     s.round() == null ? "" : PartyUi.game(this, s.round().gameId)));
             text(s.is("LOADING") ? R.string.party_loading : s.is("COUNTDOWN") ? R.string.party_starting
-                    : s.is("ROUND_RESULT") ? R.string.party_round_result : R.string.party_playing);
+                    : R.string.party_playing);
             countdown = PartyUi.text(this, ""); box.addView(countdown);
             PartyUi.standings(this, box, s);
-            if (s.is("ROUND_RESULT")) PartyUi.results(this, box, s);
             if (s.is("LOADING")) tryLaunch(s);
             if (!gameOpen && (s.is("PLAYING") || s.is("COUNTDOWN"))) text(R.string.party_resume_wait);
         }

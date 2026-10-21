@@ -38,8 +38,12 @@ final class PartyUi {
         }
     }
     static void results(Context c, LinearLayout box, PartyState s) {
+        results(c, box, s, false);
+    }
+    static void results(Context c, LinearLayout box, PartyState s, boolean currentOnly) {
         if (s.results == null) return;
         for (PartyState.Result r : s.results) {
+            if (currentOnly && r.roundIndex != s.roundIndex) continue;
             box.addView(text(c, c.getString(R.string.party_result_round, r.roundIndex + 1, game(c, r.gameId))));
             if (r.entries != null) for (PartyState.Entry e : r.entries) box.addView(text(c,
                     c.getString(R.string.party_result_entry, name(s, e.playerId), e.score,

@@ -93,13 +93,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
     private GameInfo pendingTutorialInfo;
     private int pendingTutorialRequestCode = -1;
     private TimerView gameListTimer;
-    // Intermission card between rounds (dialog_online_progress.xml).
-    private View intermissionBoard;
-    private TextView interTitle;
-    private TextView interGameNumber;
-    private TextView interScore;
-    private TextView interStatus;
-    private TextView interNextGame;
+    private RoundWaitCard intermissionCard;
     private boolean intermissionVisible;
     private boolean activityStarted;
     private LinearLayout waitingCard;
@@ -980,61 +974,8 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     /** Round completion feedback stays visible until the server starts the next round. */
     private void showIntermissionUi() {
-        if (this.intermissionBoard == null) {
-            LinearLayout board = OnlineUi.card(this);
-            board.setGravity(Gravity.CENTER_HORIZONTAL);
-
-            this.interTitle = OnlineUi.text(this, getString(R.string.game_finished), 24.0f,
-                    R.color.online_text_primary, OnlineUi.medium(this));
-            this.interTitle.setGravity(Gravity.CENTER);
-            board.addView(this.interTitle, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            this.interScore = OnlineUi.text(this, "", 30.0f,
-                    R.color.online_accent, OnlineUi.bold(this));
-            this.interScore.setGravity(Gravity.CENTER);
-            this.interScore.setBackgroundResource(R.drawable.online_score_pill);
-            this.interScore.setPadding(dp(20), dp(8), dp(20), dp(8));
-            LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            scoreParams.gravity = Gravity.CENTER_HORIZONTAL;
-            scoreParams.topMargin = dp(14);
-            board.addView(this.interScore, scoreParams);
-
-            this.interGameNumber = OnlineUi.text(this, "", 14.0f,
-                    R.color.online_text_secondary, OnlineUi.medium(this));
-            this.interGameNumber.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams gameParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            gameParams.topMargin = dp(12);
-            board.addView(this.interGameNumber, gameParams);
-
-            this.interNextGame = OnlineUi.text(this, "", 18.0f,
-                    R.color.online_text_primary, OnlineUi.medium(this));
-            this.interNextGame.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams nextParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            nextParams.topMargin = dp(20);
-            board.addView(this.interNextGame, nextParams);
-
-            this.interStatus = OnlineUi.body(this, R.string.online_round_confirming);
-            this.interStatus.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            statusParams.topMargin = dp(10);
-            statusParams.bottomMargin = dp(12);
-            board.addView(this.interStatus, statusParams);
-            this.intermissionBoard = board;
-        }
-        this.interTitle.setText(R.string.game_finished);
-        OnlineMessages.RoundDesc[] rounds = OnlineSession.get().getRounds();
-        int total = rounds != null ? rounds.length : 0;
-        this.interGameNumber.setText(String.format(Locale.US, "%s %d/%d",
-                getString(R.string.game), Math.max(OnlineSession.get().getCurrentRound(), 1),
-                Math.max(total, 1)));
-        this.interScore.setText(String.format(Locale.US, "%s: %d",
-                getString(R.string.your_score), OnlineSession.get().getMyScore()));
-        showScrollableBoard(this.intermissionBoard, ViewGroup.LayoutParams.MATCH_PARENT);
+        if (this.intermissionCard == null) this.intermissionCard = new RoundWaitCard(this);
+        showScrollableBoard(this.intermissionCard.view, ViewGroup.LayoutParams.MATCH_PARENT);
         this.bottomBar.setVisibility(View.GONE);
         this.intermissionVisible = true;
         updateIntermissionStatus();
@@ -1053,24 +994,16 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         if (nextGameId == null && rounds != null && round > 0 && round < rounds.length) {
             nextGameId = rounds[round].gameId;
         }
-        GameInfo nextGame = nextGameId == null ? null : Games.get().getGameBiId(nextGameId);
-        this.interNextGame.setVisibility(nextGame == null ? View.GONE : View.VISIBLE);
-        if (nextGame != null) {
-            this.interNextGame.setText(getString(R.string.online_round_next_game,
-                    getString(nextGame.getGameNameRes())));
-        }
-        if (end == null) {
-            this.interStatus.setText(R.string.online_round_confirming);
-        } else if (rounds != null && round >= rounds.length) {
-            this.interStatus.setText(R.string.online_match_settling);
-        } else if (session.hasIntermissionCountdown()) {
-            long seconds = RoundIntermission.secondsRemaining(session.intermissionRemainingMs());
-            this.interStatus.setText(seconds > 0L
-                    ? getString(R.string.online_round_starts_in, seconds)
-                    : getString(R.string.online_round_waiting_start));
-        } else {
-            this.interStatus.setText(R.string.online_round_waiting_start);
-        }
+        int total = rounds == null ? 0 : rounds.length;
+        RoundWaitState state = RoundWaitState.duel(end, total,
+                session.hasIntermissionCountdown(), session.intermissionRemainingMs());
+        GameInfo nextGame = nextGameId == null || state.phase == RoundWaitState.Phase.SETTLING
+                ? null : Games.get().getGameBiId(nextGameId);
+        String summary = getString(R.string.round_wait_total) + " · "
+                + getString(R.string.round_wait_you) + " " + session.getMyScore() + " : "
+                + session.getOpponentScore() + " " + getString(R.string.round_wait_opponent);
+        this.intermissionCard.bind(round, total, nextGame, summary);
+        this.intermissionCard.showState(state);
     }
 
     /**

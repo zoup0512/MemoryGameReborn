@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="round_wait_title">Between rounds</string>
+    <string name="round_wait_round">Round %1$d of %2$d complete</string>
+    <string name="round_wait_next">Up next</string>
+    <string name="round_wait_auto">Next round opens automatically</string>
+    <string name="round_wait_total">Total score</string>
+    <string name="round_wait_you">You</string>
+    <string name="round_wait_opponent">Opponent</string>
+    <string name="round_wait_party_score">Round score %1$d · Total points %2$s</string>
+    <string name="round_wait_seconds">%1$d s</string>
+    <string name="round_wait_loading">Waiting for server sync. Stay connected.</string>
+    <string name="round_wait_results">View round results</string>
+</resources>

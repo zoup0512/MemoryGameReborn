@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="round_wait_title">轮间休息</string>
+    <string name="round_wait_round">第%1$d/%2$d轮已结束</string>
+    <string name="round_wait_next">下一轮</string>
+    <string name="round_wait_auto">无需操作，下一轮将自动进入</string>
+    <string name="round_wait_total">累计得分</string>
+    <string name="round_wait_you">我</string>
+    <string name="round_wait_opponent">对手</string>
+    <string name="round_wait_party_score">本轮 %1$d 分 · 总积分 %2$s</string>
+    <string name="round_wait_seconds">%1$d 秒</string>
+    <string name="round_wait_loading">正在等待服务器同步，请保持连接</string>
+    <string name="round_wait_results">查看本轮结果</string>
+</resources>
