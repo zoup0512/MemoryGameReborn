@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="profile_editor_page">#F5F6FA</color>
+    <color name="profile_editor_hint">#999DA5</color>
+    <color name="profile_editor_accent">#65A5ED</color>
+</resources>

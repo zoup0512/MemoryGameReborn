@@ -21,6 +21,10 @@ public final class ProfileRules {
         String normalized=normalize(draft);
         return same(original,normalized) ? null : normalized;
     }
+    public static int nicknameLength(String name) {
+        String normalized=normalize(name);
+        return normalized.codePointCount(0,normalized.length());
+    }
     public static boolean validNickname(String name) {
         if(name==null) return false;
         name=normalize(name);

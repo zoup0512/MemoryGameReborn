@@ -15,6 +15,15 @@ public class ProfileRulesTest {
         assertFalse(ProfileRules.validNickname(null));
         assertFalse(ProfileRules.validNickname(""));
     }
+    @Test public void editorCounterMatchesNormalizedNicknamePolicy() {
+        assertEquals(0,ProfileRules.nicknameLength(""));
+        assertEquals(0,ProfileRules.nicknameLength("   "));
+        assertEquals(2,ProfileRules.nicknameLength(" e\u0301猫 "));
+        assertEquals(3,ProfileRules.nicknameLength("清 风"));
+        String supplementary=new String(Character.toChars(0x20000));
+        assertEquals(16,ProfileRules.nicknameLength(repeat(supplementary,16)));
+        assertEquals(17,ProfileRules.nicknameLength(repeat(supplementary,17)));
+    }
     @Test public void refusesControlsInvisibleAndMalformedUnicode() {
         String[] bad={"清\n风","清\t风","清\u200b风","清\u202e风","清\ufeff风","清\u00a0风",
                 "清\u3000风","清\ud800风","清\ue000风","清\u034f风","清\u3164风","清\ufe0f风","清\u2800风"};
@@ -42,6 +51,17 @@ public class ProfileRulesTest {
             assertTrue(ProfileRules.validNickname(name)); assertFalse(name.startsWith("Player")); names.add(name);
         }
         assertTrue(names.size()>100);
+    }
+    @Test public void separateEditorsOnlyPatchTheirOwnField() {
+        com.google.gson.JsonObject nickname=AccountManager.profilePatch("清风小鹿",null);
+        assertEquals(1,nickname.entrySet().size());
+        assertEquals("清风小鹿",nickname.get("nickname").getAsString());
+        assertFalse(nickname.has("avatarValue"));
+        com.google.gson.JsonObject avatar=AccountManager.profilePatch(null,"avatar_2");
+        assertEquals(1,avatar.entrySet().size());
+        assertEquals("avatar_2",avatar.get("avatarValue").getAsString());
+        assertFalse(avatar.has("nickname"));
+        assertEquals(2,AccountManager.profilePatch("清风小鹿","avatar_2").entrySet().size());
     }
     @Test public void avatarMappingIsBoundedAndExplicit() {
         for(int i=1;i<=12;i++) { assertTrue(ProfileRules.validAvatar("avatar_"+i)); assertEquals(i-1,ProfileRules.avatarIndex("avatar_"+i)); }

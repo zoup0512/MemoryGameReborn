@@ -5,6 +5,9 @@ The package under test defaults to the isolated .accounttest variant; pass
 Loopback runs use the in-process SMTP fixture; remote runs pass
 --mail-command to read verification codes from the deployment mail sink.
 It never installs, clears data, or writes credentials to test output.
+Running it does register a disposable account and update its profile: use only
+an isolated test deployment. Nickname and avatar editors are checked separately
+from both the account/security and profile-only summaries.
 """
 import argparse
 import json
@@ -140,6 +143,123 @@ def main():
     def screenshot(label):
         (destination / (label + ".png")).write_bytes(adb("exec-out", "screencap", "-p"))
 
+    def edit_fields(root):
+        return [n for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
+
+    def avatar_choices(root):
+        return [n for n in root.iter("node")
+                if (n.get("content-desc") or "").startswith("选择头像")]
+
+    def assert_split_actions(root):
+        labels = {n.get("text") for n in root.iter("node")}
+        assert {"修改昵称", "更换内置头像"} <= labels, "Independent profile actions are missing"
+        assert "修改昵称 / 内置头像" not in labels, "Combined profile entry is still present"
+
+    def assert_nickname_editor(expected=None):
+        root = tree()
+        fields = edit_fields(root)
+        assert len(fields) == 1, "Nickname editor must contain exactly one name input"
+        assert not avatar_choices(root), "Nickname editor contains avatar choices"
+        assert not any(n.get("text") in {"修改昵称", "更换内置头像", "修改昵称 / 内置头像", "账户与安全", "我的资料"}
+                       for n in root.iter("node")), "Nickname editor is not an independent full-screen page"
+        title = visible_node(root, "编辑名字")
+        save = visible_node(root, "保存")
+        assert title is not None and save is not None, "Nickname page title or toolbar save is missing"
+        assert center(title)[1] < center(fields[0])[1], "Nickname title is not above the input"
+        assert center(save)[0] > center(title)[0] and center(save)[1] < center(fields[0])[1], \
+            "Nickname save must be in the top-right toolbar, not below the form"
+        draft = fields[0].get("text", "")
+        if expected is not None:
+            assert draft == expected, "Nickname editor changed or discarded the draft"
+        # Python len counts Unicode code points, not UTF-16 units or UTF-8 bytes.
+        counter = r"\s*" + str(len(draft)) + r"\s*/\s*16\s*"
+        assert any(re.fullmatch(counter, n.get("text", "")) for n in root.iter("node")), \
+            "Nickname Unicode counter does not match the current draft"
+        return draft
+
+    def wait_summary(nickname, heading):
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            root = tree()
+            labels = [n.get("text", "") for n in root.iter("node")]
+            # A dialog can expose its underlying summary; identity text alone is not completion.
+            if (not edit_fields(root) and not avatar_choices(root) and "编辑名字" not in labels
+                    and heading in "\n".join(labels)
+                    and any(nickname in label.splitlines() for label in labels)):
+                assert_split_actions(root)
+                return
+            time.sleep(.5)
+        raise AssertionError("Editor did not close and refresh the original account summary")
+
+    def back_from_editor():
+        if ime_shown():
+            adb("shell", "input", "keyevent", "4")
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(.35)
+
+    def discard_nickname(original, heading):
+        back_from_editor()
+        wait_contains("放弃修改")
+        click("放弃修改")
+        wait_summary(original, heading)
+        click("修改昵称")
+        assert_nickname_editor(original)
+        # An unchanged editor should finish directly, without another discard prompt.
+        back_from_editor()
+        wait_summary(original, heading)
+
+    def inspect_avatars():
+        back_to_top()
+        choices = {}
+        selected = set()
+        for _ in range(6):
+            root = tree()
+            assert not edit_fields(root), "Avatar-only dialog must not contain an EditText"
+            assert visible_node(root, "编辑名字") is None, "Avatar dialog opened the nickname editor"
+            for node in avatar_choices(root):
+                label = node.get("content-desc")
+                choices[label] = node
+                if node.get("selected") == "true" or visible_node(node, "✓") is not None:
+                    selected.add(label)
+            reveal_lower_content()
+        assert len(choices) == 12, "Avatar-only dialog must offer exactly 12 presets"
+        assert len(selected) == 1, "Avatar dialog must identify exactly one selected preset"
+        return choices, selected.pop()
+
+    def change_avatar(nickname, heading, label):
+        click("更换内置头像")
+        choices, original_avatar = inspect_avatars()
+        target = next(choice for choice in choices if choice != original_avatar)
+        back_to_top()
+        for _ in range(6):
+            root = tree()
+            node = next((n for n in avatar_choices(root)
+                         if n.get("content-desc") == target and n.get("bounds") != "[0,0][0,0]"), None)
+            if node is not None:
+                tap_node(node)
+                break
+            reveal_lower_content()
+        else:
+            raise AssertionError("Cannot reach the alternate avatar preset")
+        root = tree()
+        assert not edit_fields(root), "Selecting an avatar exposed a nickname field"
+        # inspect_avatars leaves the dialog scrolled to its bottom action.
+        _, selected = inspect_avatars()
+        assert selected == target, "Avatar selection did not update"
+        save = visible_node(tree(), "保存")
+        assert save is not None and save.get("enabled") == "true", "Avatar bottom save is unavailable"
+        assert center(save)[1] > size()[1] // 2, "Avatar save is not at the bottom of the dialog"
+        screenshot(label + "-avatar-dialog")
+        tap_node(save)
+        wait_summary(nickname, heading)
+        click("更换内置头像")
+        _, persisted = inspect_avatars()
+        assert persisted == target, "Avatar-only save did not persist the new preset"
+        adb("shell", "input", "keyevent", "4")
+        wait_summary(nickname, heading)
+        checks.append(label + ": avatar-only dialog has 12 presets, no EditText; save preserves nickname")
+        return target
+
     smtp = None
     mailbox = MAILBOX
     if options.mail_command:
@@ -170,34 +290,72 @@ def main():
         checks.append("verified-email registration preserves guest userId")
         screenshot("02-registered")
 
-        click("修改昵称 / 内置头像")
-        nickname_nodes = [n for n in tree().iter("node") if n.get("class") == "android.widget.EditText"]
-        original_nickname = nickname_nodes[0].get("text")
+        heading = "邮箱账号 #" + old_id
+        assert_split_actions(tree())
+        click("修改昵称")
+        original_nickname = assert_nickname_editor()
+        # Count the original Unicode name as well as empty and ASCII drafts;
+        # adb input text cannot reliably inject supplementary-plane characters.
+        clear_field(0)
+        if ime_shown():
+            adb("shell", "input", "keyevent", "4")
+        assert_nickname_editor("")
+        fill(0, "UiAccountDraft16X")
+        assert_nickname_editor("UiAccountDraft16X")
+        screenshot("03-nickname-draft")
+        discard_nickname(original_nickname, heading)
+        checks.append("nickname-only full-screen editor, top-right save, Unicode counter; Back discards draft")
+
+        click("修改昵称")
+        assert_nickname_editor(original_nickname)
         clear_field(0)
         fill(0, "UiAccount")
-        click("审核并保存")
+        assert_nickname_editor("UiAccount")
+        click("保存")
         if options.expect_nickname_approval:
-            wait_contains("邮箱账号 #" + old_id)
-            assert "UiAccount" in text(), "Profile update did not reach account summary"
-            checks.append("Android moderated nickname save")
+            # Do not refresh or press Back: the child must finish and the parent's onResume
+            # must expose the cached approved name on the original summary.
+            wait_summary("UiAccount", heading)
+            current_nickname = "UiAccount"
+            checks.append("approved nickname save finishes editor and refreshes original account summary")
         else:
             wait_contains("昵称审核暂不可用")
-            assert "UiAccount" in text(), "Moderation failure discarded the nickname draft"
+            assert_nickname_editor("UiAccount")
+            save = visible_node(tree(), "保存")
+            assert save is not None and save.get("enabled") == "true", "Moderation failure left Save disabled"
             screenshot("03-moderation-unavailable")
-            # Return to the approved value without typing Chinese through adb input.
-            adb("shell", "input", "keyevent", "4")
-            click("放弃修改")
-            click("修改昵称 / 内置头像")
-            nodes = tree()
-            choices = [n for n in nodes.iter("node")
-                       if (n.get("content-desc") or "").startswith("选择头像")]
-            assert len(choices) >= 2, "Preset avatar choices are missing"
-            tap_node(choices[1])
-            click("审核并保存")
-            wait_contains("邮箱账号 #" + old_id)
-            assert original_nickname in text(), "Avatar-only save changed the nickname"
-            checks.append("unavailable moderation preserves draft; avatar-only save succeeds")
-        screenshot("04-profile")
+            # Prove that a failed save leaves the field editable, not just visually present.
+            clear_field(0)
+            fill(0, "UiRetry")
+            assert_nickname_editor("UiRetry")
+            discard_nickname(original_nickname, heading)
+            current_nickname = original_nickname
+            checks.append("unavailable moderation retains editable nickname draft and re-enables Save")
+
+        change_avatar(current_nickname, heading, "04-security")
+        screenshot("04-account-summary")
+
+        # Exercise the same independent actions from the profile-only summary. This
+        # launches only the account UI, not an editor extra or a data-changing API.
+        adb("shell", "am", "start", "-n", package + "/com.cube.memorygames.api.online.AccountActivity",
+            "--ez", "profileOnly", "true")
+        wait_summary(current_nickname, "我的资料")
+        click("修改昵称")
+        assert_nickname_editor(current_nickname)
+        if options.expect_nickname_approval:
+            # A successful save may have started the nickname cooldown; no second rename.
+            back_from_editor()
+            wait_summary(current_nickname, "我的资料")
+        else:
+            clear_field(0)
+            fill(0, "UiProfileDraft")
+            assert_nickname_editor("UiProfileDraft")
+            discard_nickname(current_nickname, "我的资料")
+        checks.append("profile summary exposes independent nickname and avatar actions")
+        change_avatar(current_nickname, "我的资料", "04-profile")
+        screenshot("04-profile-summary")
+        adb("shell", "input", "keyevent", "4")
+        wait_summary(current_nickname, heading)
 
         click("设备与会话")
         wait_contains("当前设备")

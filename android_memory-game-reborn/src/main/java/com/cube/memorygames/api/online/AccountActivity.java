@@ -27,15 +27,23 @@ import com.memory.brain.training.games.R;
 public final class AccountActivity extends AppCompatActivity {
     private static final String EXTRA_PROFILE="profileOnly";
     private static final String EXTRA_ENTRY="accountEntry";
-    private boolean profileOnly, entryHandled;
+    private static final String EXTRA_AVATAR="avatarEditor";
+    private static final String EXTRA_NICKNAME="nicknameEditor";
+    private boolean profileOnly, entryHandled, nicknameEditor;
     public static android.content.Intent profileIntent(android.content.Context context) {
         return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_PROFILE,true);
+    }
+    public static android.content.Intent avatarIntent(android.content.Context context) {
+        return profileIntent(context).putExtra(EXTRA_AVATAR,true);
+    }
+    public static android.content.Intent nicknameIntent(android.content.Context context) {
+        return profileIntent(context).putExtra(EXTRA_NICKNAME,true);
     }
     static android.content.Intent entryIntent(android.content.Context context,AccountEntry entry) {
         return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_ENTRY,entry.name());
     }
     private AccountManager manager;
-    private LinearLayout page;
+    private LinearLayout root, page;
     private TextView status;
     private boolean loading;
     private AccountManager.UserProfile user;
@@ -58,7 +66,7 @@ public final class AccountActivity extends AppCompatActivity {
     private final Runnable cooldownTick=new Runnable() { public void run() {
         if(profileEditing && active()) { updateCooldown(); cooldownHandler.postDelayed(this,1000); }
     }};
-    private TextView cooldownText, inspiration;
+    private TextView cooldownText;
     private final java.util.List<View> avatarChoices=new java.util.ArrayList<>();
     private final java.util.List<TextView> avatarChecks=new java.util.ArrayList<>();
     private interface FormAction { void run(EditText[] fields); }
@@ -68,11 +76,14 @@ public final class AccountActivity extends AppCompatActivity {
         manager=AccountManager.get(this);
         user=manager.profile();
         profileOnly=getIntent().getBooleanExtra(EXTRA_PROFILE,false);
+        nicknameEditor=getIntent().getBooleanExtra(EXTRA_NICKNAME,false);
         entryHandled=state!=null && state.getBoolean("entryHandled");
         loading=true;
-        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
+        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(OnlineUi.color(this,R.color.online_page));
-        root.addView(OnlineUi.toolbar(this,profileOnly ? R.string.profile_my : R.string.online_account_title,v -> onBackPressed()).view);
+        root.addView(OnlineUi.toolbar(this,nicknameEditor ? R.string.profile_edit_name
+                : profileOnly ? R.string.profile_my : R.string.online_account_title,v -> onBackPressed()).view);
+        status=text("");
         ScrollView scroll=new ScrollView(this);
         page=OnlineUi.page(this); scroll.addView(page);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1)); setContentView(root);
@@ -86,10 +97,12 @@ public final class AccountActivity extends AppCompatActivity {
             public void onSuccess(AccountManager.UserProfile value) {
                 if(!active())return; loading=false; user=value; render();
                 if(restoredDraft && (restoredOnline ? user!=null && user.userId==profileUserId : user==null)) {
-                    entryHandled=true; profileForm();
+                    entryHandled=true;
+                    if(nicknameEditor) nicknameForm(); else avatarForm();
                 } else {
+                    if(nicknameEditor && (restoredDraft || entryHandled)) { finish(); return; }
                     restoredDraft=false;
-                    if(!openEntry() && value!=null) refresh();
+                    if(!openEntry() && value!=null && !nicknameEditor) refresh();
                 }
             }
             public void onError(String message) { restoredDraft=false; fail(message); }
@@ -98,10 +111,17 @@ public final class AccountActivity extends AppCompatActivity {
     @Override protected void onSaveInstanceState(Bundle state) {
         super.onSaveInstanceState(state);
         state.putBoolean("entryHandled",entryHandled);
-        if(profileEditing && profileNickname!=null) {
-            state.putBoolean("profileEditing",true); state.putString("profileNickname",value(profileNickname));
+        if(profileEditing) {
+            state.putBoolean("profileEditing",true);
+            state.putString("profileNickname",profileNickname==null ? null : value(profileNickname));
             state.putString("profileAvatar",profileAvatar); state.putLong("profileUserId",profileUserId);
             state.putBoolean("profileOnline",user!=null);
+        }
+    }
+    @Override protected void onRestart() {
+        super.onRestart();
+        if(!nicknameEditor && !profileEditing && !loading) {
+            user=manager.profile(); render();
         }
     }
     @Override protected void onDestroy() { cooldownHandler.removeCallbacksAndMessages(null); super.onDestroy(); }
@@ -117,7 +137,9 @@ public final class AccountActivity extends AppCompatActivity {
             if(!OnlineSession.get().canChangeAccount() || manager.isBusy()) {
                 status.setText(R.string.online_account_busy); return false;
             }
-            profileForm(); return true;
+            if(nicknameEditor) { nicknameForm(); return true; }
+            if(getIntent().getBooleanExtra(EXTRA_AVATAR,false)) { avatarForm(); return true; }
+            return false;
         }
         if(!OnlineSession.get().canChangeAccount() || manager.isBusy())return false;
         String entry=getIntent().getStringExtra(EXTRA_ENTRY);
@@ -147,12 +169,14 @@ public final class AccountActivity extends AppCompatActivity {
         });
     }
     private void render() {
-        if (!active()) return;
+        if (!active() || (nicknameEditor && profileEditing)) return;
         page.removeAllViews();
         LinearLayout card=OnlineUi.emphasisCard(this);
         if (user != null) {
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
             OnlineUi.applyAvatar(this,avatar,user.avatarValue); card.addView(avatar.view);
+            avatar.view.setContentDescription(getString(R.string.profile_change_avatar));
+            avatar.view.setOnClickListener(v -> openAvatarEditor());
             card.addView(text(profileOnly ? user.nickname : getString(user.isGuest() ? R.string.account_guest : R.string.account_registered)
                     + " #" + user.userId + "\n" + user.nickname + "\n" + (user.email == null ? "" : user.email)
                     + "\n" + getString(R.string.online_account_rating,getString(R.string.online_elo),user.elo)
@@ -161,6 +185,8 @@ public final class AccountActivity extends AppCompatActivity {
             OnlineMessages.AuthOk old=OnlineSession.get().getLastProfile();
             OnlineUi.AvatarBlock avatar=OnlineUi.avatar(this,64,false);
             OnlineUi.applyAvatar(this,avatar,old==null ? LocalProfile.avatar(this) : old.avatarValue); card.addView(avatar.view);
+            avatar.view.setContentDescription(getString(R.string.profile_change_avatar));
+            avatar.view.setOnClickListener(v -> openAvatarEditor());
             card.addView(text(old==null ? LocalProfile.nickname(this)+"\n"+getString(R.string.profile_local_note)
                     : profileOnly ? old.nickname : getString(R.string.account_guest)+" #"+old.userId+"\n"+old.nickname));
         }
@@ -171,9 +197,11 @@ public final class AccountActivity extends AppCompatActivity {
         statusTechnical=text(""); statusTechnical.setTextSize(12);
         statusTechnical.setVisibility(View.GONE); card.addView(statusTechnical);
         page.addView(card,OnlineUi.cardParams(this));
+        if(nicknameEditor)return;
         LinearLayout actions=OnlineUi.card(this);
+        action(actions,R.string.profile_change_nickname,() -> startActivity(nicknameIntent(this)));
+        action(actions,R.string.profile_change_avatar,this::avatarForm);
         if(profileOnly) {
-            action(actions,R.string.account_profile,this::profileForm);
             action(actions,R.string.account_retry,this::refresh);
             page.addView(actions,OnlineUi.cardParams(this));
             return;
@@ -243,7 +271,7 @@ public final class AccountActivity extends AppCompatActivity {
         if (profileEditing && profileUserId==0 && user!=null) {
             profileUserId=user.userId;
             // Guest creation can precede a rejected PATCH; keep any custom nickname/avatar draft.
-            if (ProfileRules.same(value(profileNickname),LocalProfile.nickname(this))) {
+            if (profileNickname!=null && ProfileRules.same(value(profileNickname),LocalProfile.nickname(this))) {
                 profileNickname.setText(user.nickname); profileOriginalNickname=user.nickname;
             }
         }
@@ -260,7 +288,7 @@ public final class AccountActivity extends AppCompatActivity {
         }
         setFormLoading(false);
         if (profileEditing) {
-            profileSaving=false; formSubmit.setText(R.string.profile_save);
+            profileSaving=false; formSubmit.setText(R.string.profile_editor_save);
             updateCooldown(); updateAvatarSelection();
         }
     }
@@ -339,7 +367,7 @@ public final class AccountActivity extends AppCompatActivity {
     private void clearForm() {
         cooldownHandler.removeCallbacks(cooldownTick);
         profileEditing=false; profileSaving=false; profileNickname=null;
-        cooldownText=null; inspiration=null; avatarChoices.clear(); avatarChecks.clear();
+        cooldownText=null; avatarChoices.clear(); avatarChecks.clear();
         form=null; formError=null; formTechnical=null; formSubmit=null; formSend=null;
         formFields=null; formHints=null;
     }
@@ -548,31 +576,112 @@ public final class AccountActivity extends AppCompatActivity {
             start(); manager.request("POST","/auth/password-reset/request",AccountManager.body("email",value(fields[0]).trim()),false,false,messageCallback(false));
         });
     }
-    private void profileForm() {
+    private void beginProfileEdit() {
         closeForm(); profileEditing=true; profileUserId=user==null ? 0 : user.userId;
         profileOriginalNickname=user==null ? LocalProfile.draft(this) : user.nickname;
         profileOriginalAvatar=user==null ? LocalProfile.avatar(this) : user.avatarValue;
-        profileAvatar=restoredDraft ? restoredAvatar : profileOriginalAvatar;
+        profileAvatar=restoredDraft && ProfileRules.validAvatar(restoredAvatar) ? restoredAvatar : profileOriginalAvatar;
+    }
+    private void nicknameForm() {
+        beginProfileEdit();
+        root.removeAllViews();
+        root.setBackgroundColor(OnlineUi.color(this,R.color.profile_editor_page));
+        getWindow().setStatusBarColor(OnlineUi.color(this,R.color.profile_editor_page));
+        getWindow().setNavigationBarColor(OnlineUi.color(this,R.color.profile_editor_page));
+        if(android.os.Build.VERSION.SDK_INT>=23)
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                | android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        FrameLayout bar=new FrameLayout(this);
+        TextView title=OnlineUi.text(this,getString(R.string.profile_edit_name),18,R.color.online_text_primary,OnlineUi.medium(this));
+        title.setGravity(Gravity.CENTER); title.setSingleLine(true);
+        FrameLayout.LayoutParams titleParams=new FrameLayout.LayoutParams(-1,-1);
+        titleParams.leftMargin=OnlineUi.dp(this,80); titleParams.rightMargin=OnlineUi.dp(this,80);
+        bar.addView(title,titleParams);
+        ImageView back=new ImageView(this); back.setImageResource(R.drawable.ic_arrow_back_white);
+        back.setColorFilter(OnlineUi.color(this,R.color.online_text_primary));
+        back.setPadding(OnlineUi.dp(this,16),OnlineUi.dp(this,16),OnlineUi.dp(this,16),OnlineUi.dp(this,16));
+        back.setContentDescription(getString(R.string.back)); back.setOnClickListener(v -> onBackPressed());
+        bar.addView(back,new FrameLayout.LayoutParams(OnlineUi.dp(this,56),-1,Gravity.START));
+        formSubmit=OnlineUi.text(this,getString(R.string.profile_editor_save),16,R.color.profile_editor_accent,OnlineUi.regular(this));
+        formSubmit.setGravity(Gravity.CENTER); formSubmit.setOnClickListener(v -> saveProfile());
+        bar.addView(formSubmit,new FrameLayout.LayoutParams(OnlineUi.dp(this,72),-1,Gravity.END));
+        root.addView(bar,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,64)));
+        ScrollView scroll=new ScrollView(this);
+        LinearLayout content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(OnlineUi.dp(this,18),OnlineUi.dp(this,24),OnlineUi.dp(this,18),OnlineUi.dp(this,24));
+        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        LinearLayout row=new LinearLayout(this); row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(OnlineUi.dp(this,16),0,OnlineUi.dp(this,16),0);
+        row.setBackground(OnlineUi.roundedBackground(this,R.color.online_surface,10));
+        TextView name=OnlineUi.text(this,getString(R.string.profile_name_label),16,R.color.profile_editor_hint,OnlineUi.regular(this));
+        profileNickname=new EditText(this); profileNickname.setSingleLine(true);
+        profileNickname.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        profileNickname.setTextSize(16); profileNickname.setTextColor(OnlineUi.color(this,R.color.online_text_primary));
+        profileNickname.setTypeface(OnlineUi.regular(this)); profileNickname.setBackground(null);
+        profileNickname.setPadding(0,0,OnlineUi.dp(this,8),0); profileNickname.setSaveEnabled(false);
+        profileNickname.setId(View.generateViewId()); name.setLabelFor(profileNickname.getId());
+        profileNickname.setContentDescription(getString(R.string.account_nickname));
+        profileNickname.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+        profileNickname.setText(restoredDraft ? restoredNickname : profileOriginalNickname); restoredDraft=false;
+        profileNickname.setSelection(profileNickname.length());
+        row.addView(name,new LinearLayout.LayoutParams(OnlineUi.dp(this,80),-2));
+        row.addView(profileNickname,new LinearLayout.LayoutParams(0,OnlineUi.dp(this,60),1));
+        final TextView counter=OnlineUi.text(this,"",16,R.color.profile_editor_hint,OnlineUi.regular(this));
+        row.addView(counter,new LinearLayout.LayoutParams(-2,-2));
+        content.addView(row,new LinearLayout.LayoutParams(-1,-2));
+        Runnable update=() -> {
+            int length=ProfileRules.nicknameLength(value(profileNickname));
+            counter.setText(getString(R.string.profile_name_count,length));
+            counter.setTextColor(OnlineUi.color(this,length>16 ? R.color.dialog_danger : R.color.profile_editor_hint));
+            updateProfileSubmit();
+        };
+        profileNickname.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
+            public void onTextChanged(CharSequence s,int start,int before,int count) { update.run(); }
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+        formFields=new EditText[]{profileNickname}; formHints=new int[]{R.string.account_nickname};
+        TextView help=text(getString(R.string.profile_format));
+        help.setTextColor(OnlineUi.color(this,R.color.profile_editor_hint));
+        help.setPadding(0,OnlineUi.dp(this,14),0,0); content.addView(help);
+        cooldownText=text(""); content.addView(cooldownText);
+        addProfileMessages(content);
+        if(user==null) content.addView(text(getString(R.string.profile_online_required)));
+        profileNickname.setOnEditorActionListener((v,action,event) -> {
+            if(action!=android.view.inputmethod.EditorInfo.IME_ACTION_DONE)return false;
+            if(formSubmit.isEnabled())saveProfile();
+            return true;
+        });
+        update.run(); updateCooldown(); cooldownHandler.post(cooldownTick);
+        profileNickname.requestFocus();
+        profileNickname.post(() -> {
+            if(active() && profileNickname!=null && profileNickname.isEnabled())
+                ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
+                        .showSoftInput(profileNickname,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        });
+    }
+    private void addProfileMessages(LinearLayout content) {
+        formError=text(""); formError.setTextColor(OnlineUi.color(this,R.color.dialog_danger));
+        formError.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(formError);
+        formTechnical=text(""); formTechnical.setTextSize(12);
+        formTechnical.setTextColor(OnlineUi.color(this,R.color.dialog_text_secondary));
+        formTechnical.setVisibility(View.GONE); content.addView(formTechnical);
+    }
+    private void openAvatarEditor() {
+        if(loading || nicknameEditor || profileEditing)return;
+        if(!OnlineSession.get().canChangeAccount() || manager.isBusy()) {
+            status.setText(R.string.online_account_busy); return;
+        }
+        avatarForm();
+    }
+    private void avatarForm() {
+        beginProfileEdit(); restoredDraft=false;
         LinearLayout content=dialogContent();
         final OnlineUi.AvatarBlock preview=OnlineUi.avatar(this,80,false);
         OnlineUi.applyAvatar(this,preview,profileAvatar);
         LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(OnlineUi.dp(this,80),OnlineUi.dp(this,80));
         previewParams.gravity=Gravity.CENTER_HORIZONTAL; content.addView(preview.view,previewParams);
-        profileNickname=field(content,R.string.account_nickname,InputType.TYPE_CLASS_TEXT);
-        formFields=new EditText[]{profileNickname}; formHints=new int[]{R.string.account_nickname};
-        profileNickname.setText(restoredDraft ? restoredNickname : profileOriginalNickname); restoredDraft=false;
-        profileNickname.setContentDescription(getString(R.string.account_nickname));
-        profileNickname.addTextChangedListener(new android.text.TextWatcher() {
-            public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
-            public void onTextChanged(CharSequence s,int start,int before,int count) { updateProfileSubmit(); }
-            public void afterTextChanged(android.text.Editable s) {}
-        });
-        content.addView(text(getString(R.string.profile_format)));
-        cooldownText=text(""); content.addView(cooldownText);
-        inspiration=OnlineUi.secondaryButton(this,R.string.profile_inspiration);
-        content.addView(inspiration,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,48)));
-        inspiration.setOnClickListener(v -> { if(!loading)profileNickname.setText(ProfileRules.inspiration(new java.security.SecureRandom())); });
-        content.addView(text(getString(R.string.profile_inspiration_note)));
         TextView avatarLabel=OnlineUi.text(this,getString(R.string.dialog_account_avatar_label),15,
                 R.color.dialog_text,OnlineUi.medium(this));
         avatarLabel.setPadding(0,OnlineUi.dp(this,12),0,OnlineUi.dp(this,6)); content.addView(avatarLabel);
@@ -596,29 +705,13 @@ public final class AccountActivity extends AppCompatActivity {
                 line.addView(choice,new LinearLayout.LayoutParams(0,OnlineUi.dp(this,68),1));
             }
         }
-        if(user==null) content.addView(text(getString(R.string.profile_online_required)));
-        formError=text(""); formError.setTextColor(OnlineUi.color(this,R.color.dialog_danger));
-        formError.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(formError);
-        formTechnical=text(""); formTechnical.setTextSize(12);
-        formTechnical.setTextColor(OnlineUi.color(this,R.color.dialog_text_secondary));
-        formTechnical.setVisibility(View.GONE); content.addView(formTechnical);
-        formSubmit=OnlineUi.primaryButton(this,R.string.profile_save);
+        if(user==null) content.addView(text(getString(R.string.profile_avatar_online_required)));
+        addProfileMessages(content);
+        formSubmit=OnlineUi.primaryButton(this,R.string.profile_editor_save);
         content.addView(formSubmit,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,52)));
         formSubmit.setOnClickListener(v -> saveProfile());
-        if(user==null) {
-            TextView local=OnlineUi.secondaryButton(this,R.string.profile_local_draft);
-            formSend=local; // Disable device-only saving along with all other actions during the PATCH.
-            content.addView(local,new LinearLayout.LayoutParams(-1,OnlineUi.dp(this,52)));
-            local.setOnClickListener(v -> {
-                if(loading)return;
-                if(!ProfileRules.validNickname(value(profileNickname))) { formError.setText(R.string.profile_invalid); return; }
-                if(LocalProfile.saveDraft(this,ProfileRules.normalize(value(profileNickname)),profileAvatar)) {
-                    closeForm(); render(); status.setText(R.string.profile_draft_saved);
-                } else formError.setText(R.string.profile_local_failed);
-            });
-        }
         ScrollView scroll=new ScrollView(this); scroll.addView(content);
-        final AlertDialog dialog=DialogUi.builder(this).setTitle(R.string.account_profile).setView(scroll)
+        final AlertDialog dialog=DialogUi.builder(this).setTitle(R.string.profile_change_avatar).setView(scroll)
                 .setNegativeButton(R.string.cancel,null).create();
         form=dialog;
         dialog.setOnDismissListener(d -> { if (form==dialog) clearForm(); });
@@ -628,7 +721,7 @@ public final class AccountActivity extends AppCompatActivity {
             if(key==android.view.KeyEvent.KEYCODE_BACK && event.getAction()==android.view.KeyEvent.ACTION_UP) { dismissProfile(); return true; }
             return key==android.view.KeyEvent.KEYCODE_BACK;
         });
-        updateAvatarSelection(); cooldownHandler.post(cooldownTick);
+        updateAvatarSelection();
     }
     private void updateAvatarSelection() {
         for(int i=0;i<avatarChoices.size();i++) {
@@ -639,42 +732,55 @@ public final class AccountActivity extends AppCompatActivity {
         updateProfileSubmit();
     }
     private void updateProfileSubmit() {
-        if(!profileEditing || formSubmit==null || profileNickname==null)return;
-        String change=ProfileRules.nicknameChange(profileOriginalNickname,value(profileNickname));
-        boolean changed=change!=null || !ProfileRules.same(profileAvatar,profileOriginalAvatar);
-        // Before an online identity exists even an untouched draft can be submitted for its FIRST review.
-        formSubmit.setEnabled(!loading && !profileSaving && (user==null || changed));
+        if(!profileEditing || formSubmit==null)return;
+        String change=profileNickname==null ? null : ProfileRules.nicknameChange(profileOriginalNickname,value(profileNickname));
+        boolean changed=nicknameEditor ? change!=null : !ProfileRules.same(profileAvatar,profileOriginalAvatar);
+        boolean valid=!nicknameEditor || ProfileRules.validNickname(value(profileNickname));
+        boolean cooling=nicknameEditor && user!=null
+                && ProfileRules.coolingDown(user.nextNicknameChangeAt,System.currentTimeMillis());
+        boolean enabled=!loading && !profileSaving && !cooling && valid && (user==null || changed);
+        formSubmit.setEnabled(enabled);
+        if(nicknameEditor)formSubmit.setAlpha(enabled ? 1f : .45f);
     }
     private void updateCooldown() {
         if(!profileEditing || profileNickname==null)return;
         boolean cooling=user!=null && ProfileRules.coolingDown(user.nextNicknameChangeAt,System.currentTimeMillis());
-        profileNickname.setEnabled(!loading && !cooling); inspiration.setEnabled(!loading && !cooling);
+        profileNickname.setEnabled(!loading && !cooling);
         cooldownText.setText(cooling ? getString(R.string.profile_cooldown,
-                java.text.DateFormat.getDateTimeInstance().format(new java.util.Date(user.nextNicknameChangeAt)))
-                : getString(R.string.profile_cooldown_ready));
+                java.text.DateFormat.getDateTimeInstance().format(new java.util.Date(user.nextNicknameChangeAt))) : "");
+        cooldownText.setVisibility(cooling ? View.VISIBLE : View.GONE);
+        updateProfileSubmit();
     }
     private void dismissProfile() {
-        if(loading || !profileEditing || profileNickname==null)return;
-        if(!ProfileRules.same(profileOriginalNickname,value(profileNickname)) || !ProfileRules.same(profileOriginalAvatar,profileAvatar)) {
-            confirm(R.string.account_profile,R.string.profile_discard,R.string.profile_unsaved,true,this::closeForm);
-        } else closeForm();
+        if(loading || !profileEditing)return;
+        Runnable close=nicknameEditor ? this::finish : this::closeForm;
+        boolean changed=nicknameEditor ? !ProfileRules.same(profileOriginalNickname,value(profileNickname))
+                : !ProfileRules.same(profileOriginalAvatar,profileAvatar);
+        if(changed) {
+            confirm(nicknameEditor ? R.string.profile_edit_name : R.string.profile_change_avatar,
+                    R.string.profile_discard,R.string.profile_unsaved,true,close);
+        } else close.run();
     }
     private void saveProfile() {
         if(loading || profileSaving)return;
-        final String nickname=ProfileRules.nicknameChange(user==null ? LocalProfile.nickname(this) : user.nickname,value(profileNickname));
-        final String avatar=profileAvatar;
+        final String nickname=nicknameEditor ? user==null ? ProfileRules.normalize(value(profileNickname))
+                : ProfileRules.nicknameChange(user.nickname,value(profileNickname)) : null;
+        final String avatar=nicknameEditor ? null : profileAvatar;
         boolean changed=nickname!=null;
         if(changed && !ProfileRules.validNickname(nickname)) { formError.setText(R.string.profile_invalid); return; }
         if(user!=null && changed && ProfileRules.coolingDown(user.nextNicknameChangeAt,System.currentTimeMillis())) {
             formError.setText(R.string.profile_cooldown_error); return;
         }
         if(!OnlineSession.get().canChangeAccount()) { formError.setText(R.string.online_account_busy); return; }
-        profileSaving=true; start(); formSubmit.setText(R.string.profile_saving); updateCooldown(); updateAvatarSelection();
+        profileSaving=true; start();
+        formSubmit.setText(R.string.profile_avatar_saving);
+        updateCooldown(); updateAvatarSelection();
         manager.updateProfile(profileUserId,changed ? nickname : null,avatar,new AccountManager.Callback<AccountManager.UserProfile>() {
             public void onSuccess(AccountManager.UserProfile value) {
                 user=value;
                 if(!active())return;
-                done(); OnlineSession.get().connect();
+                if(nicknameEditor) { loading=false; finish(); } else done();
+                OnlineSession.get().connect();
             }
             public void onError(String message) { fail(message); }
         });

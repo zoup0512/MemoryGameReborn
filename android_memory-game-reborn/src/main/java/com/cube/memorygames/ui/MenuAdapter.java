@@ -171,7 +171,12 @@ public class MenuAdapter extends Adapter<ViewHolder> {
             com.cube.memorygames.api.online.AvatarCatalog.apply(mainMenuActivity,userViewHolder.profilePicture,avatar);
             userViewHolder.itemView.setContentDescription(mainMenuActivity.getString(R.string.profile_my));
             userViewHolder.itemView.setOnClickListener(v -> openProfile());
-            userViewHolder.profilePicture.setOnClickListener(v -> openProfile());
+            userViewHolder.profilePicture.setContentDescription(mainMenuActivity.getString(R.string.profile_change_avatar));
+            userViewHolder.profilePicture.setOnClickListener(v -> mainMenuActivity.startActivity(
+                    com.cube.memorygames.api.online.AccountActivity.avatarIntent(mainMenuActivity)));
+            userViewHolder.userName.setContentDescription(mainMenuActivity.getString(R.string.profile_change_nickname));
+            userViewHolder.userName.setOnClickListener(v -> mainMenuActivity.startActivity(
+                    com.cube.memorygames.api.online.AccountActivity.nicknameIntent(mainMenuActivity)));
         }
     }
 

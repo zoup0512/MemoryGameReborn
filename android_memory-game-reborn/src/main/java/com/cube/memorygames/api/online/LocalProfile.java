@@ -18,8 +18,4 @@ public final class LocalProfile {
     }
     public static String avatar(Context c) { return prefs(c).getString("avatar","avatar_1"); }
     public static String draft(Context c) { return prefs(c).getString("draft",nickname(c)); }
-    public static boolean saveDraft(Context c,String nickname,String avatar) {
-        return ProfileRules.validNickname(nickname) && ProfileRules.validAvatar(avatar)
-                && prefs(c).edit().putString("draft",nickname).putString("avatar",avatar).commit();
-    }
 }

@@ -281,7 +281,8 @@ public final class AccountManager {
     }
     /** A single atomic profile request; no optimistic cache or second avatar-only request on failure. */
     public void updateProfile(long expectedUser,String nickname,String avatar,Callback<UserProfile> callback) {
-        if ((nickname!=null && !ProfileRules.validNickname(nickname)) || !ProfileRules.validAvatar(avatar)) {
+        if ((nickname!=null && !ProfileRules.validNickname(nickname))
+                || (avatar!=null && !ProfileRules.validAvatar(avatar)) || (nickname==null && avatar==null)) {
             callback.onError(context.getString(com.memory.brain.training.games.R.string.profile_invalid)); return;
         }
         submit(true, () -> {
@@ -289,12 +290,11 @@ public final class AccountManager {
             long expected=identity.auth.user.userId;
             if(expectedUser>0 && !ProfileRules.matchesUser(expectedUser,expected))
                 throw new IllegalStateException(context.getString(com.memory.brain.training.games.R.string.profile_response_error));
-            JsonObject data=body("avatarValue",avatar);
-            if(nickname!=null && !ProfileRules.same(nickname,identity.auth.user.nickname)) data.addProperty("nickname",nickname);
+            JsonObject data=profilePatch(nickname,avatar);
             JsonObject response=authenticatedRequest("PATCH","/me/profile",data);
             UserProfile user=gson.fromJson(response,UserProfile.class);
             if(user==null || !ProfileRules.matchesUser(expected,user.userId) || user.nickname==null
-                    || !ProfileRules.validAvatar(user.avatarValue) || !avatar.equals(user.avatarValue)
+                    || !ProfileRules.validAvatar(user.avatarValue) || (avatar!=null && !avatar.equals(user.avatarValue))
                     || (data.has("nickname") && !nickname.equals(user.nickname)))
                 throw new IllegalStateException(context.getString(com.memory.brain.training.games.R.string.profile_response_error));
             Identity next=gson.fromJson(gson.toJson(identity),Identity.class); next.auth.user=user;
@@ -303,6 +303,12 @@ public final class AccountManager {
             public void onSuccess(UserProfile value) { OnlineSession.get().profileUpdated(value); callback.onSuccess(value); }
             public void onError(String message) { callback.onError(message); }
         });
+    }
+    static JsonObject profilePatch(String nickname,String avatar) {
+        JsonObject data=new JsonObject();
+        if(nickname!=null)data.addProperty("nickname",nickname);
+        if(avatar!=null)data.addProperty("avatarValue",avatar);
+        return data;
     }
     private String friendlyError(AccountError error) {
         String kind=ProfileRules.moderationError(error.status,error.code);
