@@ -1465,6 +1465,9 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
         intent.putExtra(OnlineSession.EXTRA_ONLINE_GAME, true);
         intent.putExtra(OnlineSession.EXTRA_ONLINE_SEED, roundSeed(start.round));
         intent.putExtra(OnlineSession.EXTRA_ONLINE_ROUND, start.round);
+        intent.putExtra(com.cube.memorygames.diagnostics.GameDiagnostics.EXTRA_MATCH, start.matchId);
+        intent.putExtra(com.cube.memorygames.diagnostics.GameDiagnostics.EXTRA_MODE, session.isPracticeMode() ? OnlineSession.MODE_PRACTICE
+                : session.isFriendMode() ? OnlineSession.MODE_FRIEND : OnlineSession.MODE_RANKED);
         diagnostic("game_launch","gameId",start.gameId,"round",start.round);
         startActivityForResult(intent, REQUEST_ROUND);
         overridePendingTransition(R.anim.slide_to_left, R.anim.no_change);

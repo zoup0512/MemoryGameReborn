@@ -19,8 +19,13 @@ public class DiagnosticSanitizer {
             "frame_received","frame_dropped","snapshot_clear","queue_timeout","room_timeout","accept_timeout",
             "resign","resign_send","round_complete","match_end","match_cancelled","match_create","match_destroy","match_finish",
             "exit_dialog","exit_confirm","exit_cancel","game_launch","tutorial_launch","unknown_game","game_return",
-            "game_back_dialog","game_back_confirm","game_back_cancel","game_round_finished","session_send_failed","log_dropped");
-    private static final Set<String> NUMBERS=Set.of("ts","seq","round","gameId","epoch","attempt","delayMs","score","durationMs");
+            "game_back_dialog","game_back_confirm","game_back_cancel","game_round_finished","session_send_failed","log_dropped",
+            "question_generated","question_visible","question_hidden","question_options","question_answer",
+            "question_transition","question_callback","flow_start","flow_state","flow_pause","flow_resume","flow_cancel","game_activity");
+    private static final Set<String> NUMBERS=Set.of("ts","seq","round","gameId","epoch","attempt","delayMs","score","durationMs",
+            "question","level","targetQuestion","flowRun","flowStep","generation","elapsedMs","callbackId");
+    private static final Set<String> PHASES=Set.of("create","recreate","resume","pause","destroy","request","held","apply",
+            "schedule","execute","skipped","visible","hidden","options","correct","wrong","intent","generated");
     private static final Set<String> CODES=Set.of("state","from","to","mode","reason","code","remote");
     private static final Pattern SECRET=Pattern.compile("(?i)(token|bearer|password|secret|authorization|cookie|credential|installation|refresh|access[_-]?key)|[A-Za-z0-9_-]{28,}");
     private static final Pattern FRAME=Pattern.compile("[A-Za-z_$][A-Za-z0-9_$.]{0,180}\\.(?:[A-Za-z_$][A-Za-z0-9_$]{0,80}|<init>|<clinit>):(?:[0-9]{1,7}|-[12])");
@@ -64,6 +69,9 @@ public class DiagnosticSanitizer {
                     String key=entry.getKey(); JsonNode value=entry.getValue();
                     if("gameId".equals(key) && value.isTextual() && value.textValue().matches("[0-9]{1,3}")) safe.put(key,value.textValue());
                     else if(NUMBERS.contains(key) && value.isIntegralNumber() && value.canConvertToLong()) safe.put(key,value.longValue());
+                    else if(("activityId".equals(key) || "fingerprint".equals(key)) && value.isTextual()
+                            && value.textValue().matches("[a-f0-9]{16}")) safe.put(key,value.textValue());
+                    else if("phase".equals(key) && value.isTextual() && PHASES.contains(value.textValue())) safe.put(key,value.textValue());
                     else if(CODES.contains(key)) {
                         if(value.isTextual()) safe.put(key,safeCode(value.textValue()));
                         else if(value.isBoolean() || (value.isIntegralNumber() && value.canConvertToLong())) safe.set(key,value);

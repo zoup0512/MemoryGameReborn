@@ -18,6 +18,7 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.GridLayout;
 import android.widget.GridLayout.LayoutParams;
 import android.widget.ToggleButton;
+import com.cube.memorygames.diagnostics.GameDiagnostics;
 import com.cube.memorygames.logic.GameRandom;
 import com.github.florent37.viewanimator.AnimationListener.Stop;
 import com.github.florent37.viewanimator.ViewAnimator;
@@ -28,6 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CountAllGrid extends GridLayout implements GameGrid {
+    private GameDiagnostics diagnostics;
+    private List<Integer> diagnosticDrawableIds;
+    public void setDiagnostics(GameDiagnostics diagnostics) { this.diagnostics = diagnostics; }
+
     private static final float DIVIDER_COEFFICIENT = 0.1f;
     private static final float SHADOW_COEFFICIENT = 0.04f;
     private View[][] buttons;
@@ -103,6 +108,7 @@ public class CountAllGrid extends GridLayout implements GameGrid {
     }
 
     public void showChallengeCells() {
+        if (diagnostics != null) diagnostics.questionEvent("question_visible", "visible", "grid_show");
         for (int i = 0; i < getChildCount(); i++) {
             ToggleButton button = (ToggleButton) getChildAt(i);
             button.setOnCheckedChangeListener(null);
@@ -123,6 +129,7 @@ public class CountAllGrid extends GridLayout implements GameGrid {
     }
 
     public void hideAllCells() {
+        if (diagnostics != null) diagnostics.questionEvent("question_hidden", "hidden", "grid_hide");
         for (int i = 0; i < getChildCount(); i++) {
             getChildAt(i).setVisibility(4);
         }
@@ -226,25 +233,36 @@ public class CountAllGrid extends GridLayout implements GameGrid {
                 this.buttons[i][j] = button;
             }
         }
+        int[] diagnosticCells = diagnostics == null ? null : new int[getChildCount()];
         int currentSelectedDrawableIndex = 0;
         while (successCellsPlaced < this.successCells) {
             ToggleButton winButton = (ToggleButton) getChildAt(GameRandom.nextInt(getChildCount() - 1));
             if (winButton.getTag() == null) {
                 winButton.setTag("Success");
+                int diagnosticIdentity;
                 if (!this.useDrawablesAsCells) {
+                    diagnosticIdentity = R.drawable.drawable_cell_default;
                     winButton.setBackgroundResource(R.drawable.drawable_cell_default);
                 } else if (this.cellDrawables.size() == 1) {
+                    diagnosticIdentity = diagnosticDrawableIds == null ? 1 : diagnosticDrawableIds.get(0);
                     winButton.setBackgroundDrawable((Drawable) this.cellDrawables.get(0));
                 } else if (this.userEachDrawableOnlyOnce || currentSelectedDrawableIndex < this.cellDrawables.size()) {
+                    diagnosticIdentity = diagnosticDrawableIds == null ? currentSelectedDrawableIndex + 1
+                            : diagnosticDrawableIds.get(currentSelectedDrawableIndex);
                     winButton.setBackgroundDrawable((Drawable) this.cellDrawables.get(currentSelectedDrawableIndex));
                     currentSelectedDrawableIndex++;
                 } else {
-                    winButton.setBackgroundDrawable((Drawable) this.cellDrawables.get(GameRandom.nextInt(this.cellDrawables.size() - 1)));
+                    int selectedDrawableIndex = GameRandom.nextInt(this.cellDrawables.size() - 1);
+                    diagnosticIdentity = diagnosticDrawableIds == null ? selectedDrawableIndex + 1
+                            : diagnosticDrawableIds.get(selectedDrawableIndex);
+                    winButton.setBackgroundDrawable((Drawable) this.cellDrawables.get(selectedDrawableIndex));
                 }
+                if (diagnosticCells != null) diagnosticCells[indexOfChild(winButton)] = diagnosticIdentity;
                 winButton.setOnCheckedChangeListener(this.successCellClickListener);
                 successCellsPlaced++;
             }
         }
+        if (diagnostics != null) diagnostics.generated(GameDiagnostics.fingerprint(colCount, rowCount, diagnosticCells));
     }
 
     public void animateCells() {
@@ -302,6 +320,7 @@ public class CountAllGrid extends GridLayout implements GameGrid {
     }
 
     public void setDrawableIdsToUse(List<Integer> drawableIdsToUse) {
+        this.diagnosticDrawableIds = new ArrayList<>(drawableIdsToUse);
         List<Drawable> drawablesToUse = new ArrayList();
         for (Integer resIs : drawableIdsToUse) {
             drawablesToUse.add(getContext().getResources().getDrawable(resIs.intValue()));
@@ -311,6 +330,7 @@ public class CountAllGrid extends GridLayout implements GameGrid {
     }
 
     public void setDrawablesToUse(List<Drawable> drawablesToUse) {
+        this.diagnosticDrawableIds = null;
         this.cellDrawables = drawablesToUse;
         this.useDrawablesAsCells = true;
     }

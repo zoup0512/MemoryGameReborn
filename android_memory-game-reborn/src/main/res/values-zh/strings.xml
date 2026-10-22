@@ -443,4 +443,9 @@
     <string name="rate_dialog_title_format">%1$s “%2$s”？</string>
     <string name="feedback_subject_format">%1$s 反馈</string>
     <string name="send_feedback">发送反馈</string>
+    <string name="online_history_match_id">对局编号：%1$s</string>
+    <string name="online_history_copy_match_id">复制对局编号</string>
+    <string name="online_history_copy_match_id_accessibility">复制对局编号 %1$s</string>
+    <string name="online_history_match_id_copied">对局编号已复制</string>
+    <string name="online_history_match_id_unavailable">暂无对局编号</string>
 </resources>

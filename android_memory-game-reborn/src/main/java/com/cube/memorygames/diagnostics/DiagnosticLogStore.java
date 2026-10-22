@@ -10,7 +10,7 @@ import java.util.regex.*;
 
 /** Private app directory, four complete-record files. All disk work is off the caller thread. */
 public final class DiagnosticLogStore {
-    public static final int FILE_BYTES=128*1024, FILE_COUNT=4, SNAPSHOT_BYTES=192*1024;
+    public static final int FILE_BYTES=128*1024, FILE_COUNT=4, SNAPSHOT_BYTES=192*1024, SNAPSHOT_RECORDS=2047;
     public static final long RETENTION_MS=7L*24*60*60*1000;
     public interface Callback { void done(Snapshot snapshot, Exception error); }
     public static final class Snapshot {
@@ -36,7 +36,7 @@ public final class DiagnosticLogStore {
             new ArrayBlockingQueue<Runnable>(256),r -> { Thread t=new Thread(r,"diagnostic-log");t.setDaemon(true);return t; },new ThreadPoolExecutor.AbortPolicy());
     private long lastPrune;
     private static final Pattern TS=Pattern.compile("^\\{\"ts\":([0-9]+),");
-    private static final Pattern MATCH=Pattern.compile("\"matchId\":\"([A-Za-z0-9]{12})\"");
+    private static final Pattern MATCH=Pattern.compile("\"matchId\":\"("+DiagnosticSanitizer.MATCH_ID_PATTERN+")\"");
     public DiagnosticLogStore(File directory) {
         dir=directory;
         execute(() -> { try { if (!dir.exists() && !dir.mkdirs()) throw new IOException(); prune(); cleanupPending(); } catch(Exception ignored) { } });
@@ -109,7 +109,7 @@ public final class DiagnosticLogStore {
                 for(int i=records.size()-1;i>=0;i--) {
                     String line=records.get(i);int n=line.getBytes(StandardCharsets.UTF_8).length;
                     int encoded=DiagnosticSanitizer.quote(line).getBytes(StandardCharsets.UTF_8).length-2;
-                    if(size+n>SNAPSHOT_BYTES || escaped+encoded>250*1024) break;
+                    if(size+n>SNAPSHOT_BYTES || escaped+encoded>250*1024 || records.size()-i>SNAPSHOT_RECORDS) break;
                     size+=n;escaped+=encoded;start=i;
                 }
                 if(start==records.size()) throw new IOException("empty");
@@ -135,7 +135,7 @@ public final class DiagnosticLogStore {
             if(in.readInt()!=1) throw new IOException();
             String id=in.readUTF(),match=in.readUTF();UUID.fromString(id);
             long start=in.readLong(),end=in.readLong();int count=in.readInt(),n=in.readInt();
-            if(n<=0 || n>SNAPSHOT_BYTES || count<=0 || start<=0 || end<start || (!match.isEmpty() && !match.matches("[A-Za-z0-9]{12}"))) throw new IOException();
+            if(n<=0 || n>SNAPSHOT_BYTES || count<=0 || count>SNAPSHOT_RECORDS || start<=0 || end<start || (!match.isEmpty() && !match.matches(DiagnosticSanitizer.MATCH_ID_PATTERN))) throw new IOException();
             byte[] bytes=new byte[n];in.readFully(bytes);if(in.read()!=-1) throw new IOException();
             String content=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
             if(!content.endsWith("}\n")) throw new IOException();

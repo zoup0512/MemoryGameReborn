@@ -177,6 +177,26 @@ class DiagnosticsIntegrationTest {
         assertEquals("22",parsed.get("gameId").textValue()); assertEquals(3,parsed.get("state").intValue());
         assertTrue(parsed.get("stack").textValue().contains("<init>:-1")); assertTrue(parsed.get("stack").textValue().contains("<clinit>:-2"));
     }
+    @Test void uploadedQuestionTracePreservesCrossQuestionCallbackWithoutRawQuestionData() throws Exception {
+        var old=legacy();
+        String content=json.writeValueAsString(Map.ofEntries(
+                Map.entry("event","question_callback"),Map.entry("matchId","abcdef123456"),
+                Map.entry("activityId","0123456789abcdef"),Map.entry("fingerprint","fedcba9876543210"),
+                Map.entry("round",4),Map.entry("gameId","4"),Map.entry("question",3),
+                Map.entry("targetQuestion",2),Map.entry("callbackId",7),Map.entry("elapsedMs",12345),
+                Map.entry("phase","execute"),Map.entry("reason","answer_correct"),
+                Map.entry("rightAnswer",7),Map.entry("seed",8840975373404224582L),Map.entry("layout","private-layout")));
+        JsonNode result=receipt(old.token,upload(content));
+        JsonNode stored=json.readTree(db.queryForObject("select content from pk_diagnostic where id=?",String.class,result.get("id").textValue()));
+        assertEquals("question_callback",stored.path("event").asText());
+        assertEquals("0123456789abcdef",stored.path("activityId").asText());
+        assertEquals("fedcba9876543210",stored.path("fingerprint").asText());
+        assertEquals(3,stored.path("question").asInt());
+        assertEquals(2,stored.path("targetQuestion").asInt());
+        assertEquals(7,stored.path("callbackId").asInt());
+        assertEquals("execute",stored.path("phase").asText());
+        for(String raw:List.of("rightAnswer","seed","layout")) assertFalse(stored.has(raw));
+    }
     @Test void sequentialIdempotencyAndChangedOriginalConflictWithoutExtraQuota() throws Exception {
         var old=legacy(); var input=upload(); JsonNode first=receipt(old.token,input);
         assertEquals(first,receipt(old.token,input));

@@ -461,4 +461,9 @@ Schalten Sie aus!"</string>
     <string name="rate_dialog_title_format">%1$s %2$s?</string>
     <string name="feedback_subject_format">Feedback zu %1$s</string>
     <string name="send_feedback">Feedback senden</string>
+    <string name="online_history_match_id">Match-ID: %1$s</string>
+    <string name="online_history_copy_match_id">Match-ID kopieren</string>
+    <string name="online_history_copy_match_id_accessibility">Match-ID %1$s kopieren</string>
+    <string name="online_history_match_id_copied">Match-ID kopiert</string>
+    <string name="online_history_match_id_unavailable">Match-ID nicht verfügbar</string>
 </resources>

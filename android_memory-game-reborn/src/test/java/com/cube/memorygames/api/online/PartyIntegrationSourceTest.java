@@ -27,7 +27,8 @@ public class PartyIntegrationSourceTest {
         int start = source.indexOf("private void stopAuthorization(");
         int end = source.indexOf("private void handleDisconnected", start);
         String stop = source.substring(start, end);
-        assertTrue(stop.indexOf("PartySession.get().reset()") < stop.indexOf("disconnect()"));
+        assertTrue(stop.indexOf("runtime.party().reset()") >= 0);
+        assertTrue(stop.indexOf("runtime.party().reset()") < stop.indexOf("disconnect()"));
         assertTrue(stop.contains("reconnectBlocked=true"));
     }
     private static final class Transport implements PartySession.Runtime {

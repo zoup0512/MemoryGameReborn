@@ -491,4 +491,9 @@ your coins?"</string>
     <string name="rate_dialog_title_format">%1$s %2$s?</string>
     <string name="feedback_subject_format">%1$s Feedback</string>
     <string name="send_feedback">Send Feedback</string>
+    <string name="online_history_match_id">Match ID: %1$s</string>
+    <string name="online_history_copy_match_id">Copy match ID</string>
+    <string name="online_history_copy_match_id_accessibility">Copy match ID %1$s</string>
+    <string name="online_history_match_id_copied">Match ID copied</string>
+    <string name="online_history_match_id_unavailable">Match ID unavailable</string>
 </resources>

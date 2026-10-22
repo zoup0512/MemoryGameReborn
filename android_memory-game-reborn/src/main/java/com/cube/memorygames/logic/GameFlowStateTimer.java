@@ -15,6 +15,32 @@ public class GameFlowStateTimer {
     private Timer timer = new Timer();
     private final Handler uiHandler;
     private final GameFlowGeneration generation = new GameFlowGeneration();
+    /** Optional diagnostics only. Observer failures never participate in game control flow. */
+    public interface Observer {
+        void flow(String event, String phase, long run, int step, int generation);
+        Object scheduled(String reason, long delay, long run, int step, int generation);
+        void executed(Object captured, boolean accepted);
+    }
+    private Observer observer;
+    private long flowRun;
+    private int flowStep;
+    public void setObserver(Observer observer) { this.observer = observer; }
+    private void observe(String event, String phase) {
+        try { if (observer != null) observer.flow(event, phase, flowRun, flowStep, generation.token()); }
+        catch (RuntimeException ignored) { }
+    }
+    private Object scheduled(String reason, long delay) {
+        try { return observer == null ? null : observer.scheduled(reason, delay, flowRun, flowStep, generation.token()); }
+        catch (RuntimeException ignored) { return null; }
+    }
+    private void executed(Object captured, boolean accepted) {
+        try { if (observer != null) observer.executed(captured, accepted); }
+        catch (RuntimeException ignored) { }
+    }
+    private void scheduleState() {
+        long delay = (long) currentState.getDuration();
+        this.timer.schedule(new StateChangingTimerTask(scheduled("flow_advance", delay)), delay);
+    }
     private boolean held;
     private boolean startPending;
     private final java.util.List<Runnable> heldTasks = new java.util.ArrayList<>();
@@ -30,12 +56,15 @@ public class GameFlowStateTimer {
     }
 
     private class StateChangingTimerTask extends TimerTask {
-        private StateChangingTimerTask() {
+        private final Object captured;
+        private StateChangingTimerTask(Object captured) {
+            this.captured = captured;
         }
 
         private final int token = generation.token();
         public void run() {
             GameFlowStateTimer.this.uiHandler.post(() -> {
+                executed(captured, generation.accepts(token));
                 if (generation.accepts(token)) stateChangingUIThreadRunnable.run();
             });
         }
@@ -58,8 +87,11 @@ public class GameFlowStateTimer {
     }
 
     public void start() {
+        observe("flow_start", "request");
         if (generation.isCancelled()) return;
-        if (held) { startPending = true; return; }
+        if (held) { observe("flow_start", "held"); startPending = true; return; }
+        ++flowRun;
+        flowStep = 0;
         this.timer.purge();
         this.iterator = this.gameFlowStates.iterator();
         if (this.iterator.hasNext()) {
@@ -70,8 +102,10 @@ public class GameFlowStateTimer {
     private void startNextState() {
         if (generation.isCancelled()) return;
         this.currentState = (GameFlowState) this.iterator.next();
+        ++flowStep;
+        observe("flow_state", "apply");
         this.currentState.applyState();
-        if (!generation.isCancelled() && currentState != null) this.timer.schedule(new StateChangingTimerTask(), (long) this.currentState.getDuration());
+        if (!generation.isCancelled() && currentState != null) scheduleState();
     }
 
     public GameFlowState getCurrentState() {
@@ -81,20 +115,23 @@ public class GameFlowStateTimer {
     public void pause() {
         if (generation.isCancelled()) return;
         generation.pause();
+        observe("flow_pause", "pause");
         this.uiHandler.removeCallbacksAndMessages(null);
         this.timer.cancel();
         this.timer = new Timer();
     }
 
     public void resume() {
+        observe("flow_resume", "resume");
         if (generation.isCancelled()) return;
         this.timer.purge();
         this.iterator = this.gameFlowStates.iterator();
         if (this.currentState != null) {
             while (this.iterator.hasNext()) {
                 if (this.iterator.next() == this.currentState) {
+                    observe("flow_state", "apply");
                     this.currentState.applyState();
-                    this.timer.schedule(new StateChangingTimerTask(), (long) this.currentState.getDuration());
+                    scheduleState();
                     return;
                 }
             }
@@ -103,6 +140,7 @@ public class GameFlowStateTimer {
 
     public void cancel() {
         generation.cancel();
+        observe("flow_cancel", "destroy");
         this.currentState = null;
         this.timer.cancel();
         this.uiHandler.removeCallbacksAndMessages(null);

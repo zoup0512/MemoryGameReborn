@@ -459,4 +459,9 @@
     <string name="rate_dialog_title_format">%1$s %2$s ?</string>
     <string name="feedback_subject_format">Commentaires sur %1$s</string>
     <string name="send_feedback">Envoyer des commentaires</string>
+    <string name="online_history_match_id">Identifiant du match : %1$s</string>
+    <string name="online_history_copy_match_id">Copier l\'identifiant du match</string>
+    <string name="online_history_copy_match_id_accessibility">Copier l\'identifiant du match %1$s</string>
+    <string name="online_history_match_id_copied">Identifiant du match copié</string>
+    <string name="online_history_match_id_unavailable">Identifiant du match indisponible</string>
 </resources>

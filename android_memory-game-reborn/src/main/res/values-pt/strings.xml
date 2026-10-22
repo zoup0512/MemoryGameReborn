@@ -466,4 +466,9 @@ Pró-versão com 50% de desconto."</string>
     <string name="rate_dialog_title_format">%1$s %2$s?</string>
     <string name="feedback_subject_format">Comentários sobre %1$s</string>
     <string name="send_feedback">Enviar comentários</string>
+    <string name="online_history_match_id">ID da partida: %1$s</string>
+    <string name="online_history_copy_match_id">Copiar ID da partida</string>
+    <string name="online_history_copy_match_id_accessibility">Copiar ID da partida %1$s</string>
+    <string name="online_history_match_id_copied">ID da partida copiado</string>
+    <string name="online_history_match_id_unavailable">ID da partida indisponível</string>
 </resources>

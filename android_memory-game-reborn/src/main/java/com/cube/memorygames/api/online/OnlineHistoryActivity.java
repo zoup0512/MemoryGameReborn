@@ -265,6 +265,7 @@ public class OnlineHistoryActivity extends AppCompatActivity implements OnlineSe
         players.addView(playerColumn(safeName(entry.opponent), entry.oppScore, !win && !draw, true),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
+        card.addView(new OnlineHistoryMatchIdView(this, entry.matchId));
         return card;
     }
 

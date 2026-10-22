@@ -11,5 +11,7 @@ fi
 src="$root/src/main/java/com/cube/memorygames/diagnostics"
 "$javac" -encoding UTF-8 -source 8 -target 8 -d "$work" \
   "$src/DiagnosticSanitizer.java" "$src/DiagnosticLogStore.java" \
-  "$src/DiagnosticUploadPolicy.java" "$root/tools/DiagnosticCoreTest.java"
+  "$src/DiagnosticUploadPolicy.java" "$src/GameDiagnostics.java" \
+  "$root/tools/DiagnosticCoreTest.java" "$root/tools/GameDiagnosticsTest.java"
 "$java" -cp "$work" DiagnosticCoreTest
+"$java" -cp "$work" GameDiagnosticsTest

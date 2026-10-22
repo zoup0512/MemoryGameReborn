@@ -38,6 +38,9 @@
             android:name="com.cube.memorygames.DebugCoinsHintActivity"
             android:exported="true" />
         <activity
+            android:name="com.cube.memorygames.api.online.DebugHistoryPreviewActivity"
+            android:exported="true" />
+        <activity
             android:name="com.cube.memorygames.api.online.DebugRoundWaitPreviewActivity"
             android:exported="true" />
     </application>

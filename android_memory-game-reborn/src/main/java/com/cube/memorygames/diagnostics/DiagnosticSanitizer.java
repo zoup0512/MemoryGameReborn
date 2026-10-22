@@ -9,13 +9,17 @@ import java.util.Set;
 public final class DiagnosticSanitizer {
     private static final Set<String> EVENTS = set("log_dropped application_start fatal ws_connect ws_connected ws_close ws_error ws_ping_timeout ws_send_failed session_state session_connect session_disconnect session_reconnect reconnect_exhausted frame_received frame_dropped snapshot_clear queue_timeout room_timeout accept_timeout resign resign_send round_complete match_end match_cancelled match_create match_destroy match_finish exit_dialog exit_confirm exit_cancel game_launch tutorial_launch unknown_game game_return game_back_dialog game_back_confirm game_back_cancel game_round_finished session_send_failed");
     private static final Set<String> CODES = set("RANKED FRIEND PRACTICE create recreate destroy configuration finish framework back_no_match user_resign search_cancel unknown_game match_cancelled bad_type wrong_match unexpected_match stale_epoch reconnect_window queue_ack room_ack accept_gate not_connected ping_timeout runtime tls send class_error round_complete exit_confirm exit_cancel launch_cancelled");
-    private static final Set<String> NUMBER = set("round state from to epoch attempt delayMs code score durationMs");
+    private static final Set<String> GAME_EVENTS = set("question_generated question_visible question_hidden question_options question_answer question_transition question_callback flow_start flow_state flow_pause flow_resume flow_cancel game_activity");
+    private static final Set<String> PHASES = set("create recreate resume pause destroy request held apply schedule execute skipped visible hidden options correct wrong intent generated");
+    private static final Set<String> GAME_REASONS = set("count_all grid_show grid_hide dialog_show answer_correct answer_wrong hide_cells failure_feedback failure_dialog win_feedback next_level restart_level retry_game round_timeout activity_exit flow_advance flow_task finishing cancelled stale_generation configuration framework finish");
+    private static final Set<String> NUMBER = set("round state from to epoch attempt delayMs code score durationMs question level targetQuestion flowRun flowStep generation elapsedMs callbackId");
+    public static final String MATCH_ID_PATTERN = "(?:[A-Za-z0-9]{12}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
     private static final Set<String> FRAME_TYPES = set("resume match_join bot_match_request match_cancel level_win round_complete resign match_start opponent_start top_request top_response room_create room_join room_cancel room_created history_request history_response session_replaced match_queued match_found match_cancelled round_start opponent_score round_end match_end opponent_disconnected opponent_reconnected error");
     public static boolean businessType(String type) { return FRAME_TYPES.contains(type); }
     private DiagnosticSanitizer() { }
     private static Set<String> set(String text) { return new HashSet<>(Arrays.asList(text.split(" "))); }
     public static String record(long ts, long seq, String run, String event, Object... fields) {
-        if (!EVENTS.contains(event) || !run.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) return null;
+        if ((!EVENTS.contains(event) && !GAME_EVENTS.contains(event)) || !run.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) return null;
         StringBuilder out=new StringBuilder("{\"ts\":").append(ts).append(",\"seq\":").append(seq)
                 .append(",\"run\":").append(quote(run)).append(",\"event\":").append(quote(event));
         Set<String> seen=new HashSet<>();
@@ -28,8 +32,14 @@ public final class DiagnosticSanitizer {
             else if ("remote".equals(key) && value instanceof Boolean) safe=value.toString();
             else if (value instanceof String) {
                 String s=(String)value;
-                if ("matchId".equals(key) && s.matches("[A-Za-z0-9]{12}")) safe=quote(s);
+                if ("matchId".equals(key) && s.matches(MATCH_ID_PATTERN)) safe=quote(s);
                 else if ("gameId".equals(key) && s.matches("[0-9]{1,3}")) safe=quote(s);
+                else if (("activityId".equals(key) || "fingerprint".equals(key)) && s.matches("[0-9a-f]{16}")) safe=quote(s);
+                else if ("phase".equals(key) && PHASES.contains(s)) safe=quote(s);
+                else if ("mode".equals(key) && "PARTY".equals(s)) safe=quote(s);
+                else if ("reason".equals(key) && GAME_EVENTS.contains(event)) {
+                    if (GAME_REASONS.contains(s)) safe=quote(s);
+                }
                 else if (("reason".equals(key) || "mode".equals(key)) && (CODES.contains(s) || ("reason".equals(key) && FRAME_TYPES.contains(s)))) safe=quote(s);
                 else if ("reason".equals(key) && s.matches("(?:java|javax|android|org\\.java_websocket|com\\.google\\.gson)\\.[a-zA-Z0-9_.$]*(?:Exception|Error)")) safe=quote(s.substring(0,Math.min(s.length(),160)));
                 else if ("stack".equals(key) && validStack(s)) safe=quote(s);

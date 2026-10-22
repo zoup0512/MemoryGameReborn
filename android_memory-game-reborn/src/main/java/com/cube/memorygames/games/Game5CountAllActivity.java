@@ -19,6 +19,7 @@ import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.SoundUtils;
 import com.cube.memorygames.SoundUtils.SOUND;
 import com.cube.memorygames.games.Game1MemoryGridActivity.ReadyFlowState;
+import com.cube.memorygames.diagnostics.GameDiagnostics;
 import com.cube.memorygames.logic.CountAnswerOptions;
 import com.cube.memorygames.logic.GameFlowState;
 import com.cube.memorygames.logic.GameFlowStateTimer;
@@ -40,13 +41,15 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
                 return;
             }
             boolean correct = Game5CountAllActivity.this.dialog.showAnswerFeedback((TextView) v);
+            diagnosticQuestion("question_answer", correct ? "correct" : "wrong",
+                    correct ? "answer_correct" : "answer_wrong");
             Game5CountAllActivity.this.disablePausePanel();
             if (correct) {
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button1).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button2).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button3).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                 ViewAnimator.animate(Game5CountAllActivity.this.dialog.button4).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
-                Game5CountAllActivity.this.dialog.button1.postDelayed(new Runnable() {
+                Game5CountAllActivity.this.dialog.button1.postDelayed(diagnosticCallback("win_feedback", 200, new Runnable() {
                     public void run() {
                         if (!Game5CountAllActivity.this.isFinishing()) {
                             Game5CountAllActivity.this.dialog.dismiss();
@@ -54,7 +57,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
                             Game5CountAllActivity.this.showWin();
                         }
                     }
-                }, 200);
+                }), 200);
                 Game5CountAllActivity.this.disablePausePanel();
                 return;
             }
@@ -64,7 +67,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             Handler handler = new Handler();
             Game5CountAllActivity.this.timerContainer.setVisibility(0);
             Game5CountAllActivity.this.textLevelReady.setText("");
-            handler.postDelayed(new Runnable() {
+            handler.postDelayed(diagnosticCallback("failure_dialog", 2000, new Runnable() {
                 public void run() {
                     if (!Game5CountAllActivity.this.isFinishing()) {
                         Game5CountAllActivity.this.dialog.dismiss();
@@ -72,8 +75,8 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
                         Game5CountAllActivity.this.showFailureDialog();
                     }
                 }
-            }, 2000);
-            Game5CountAllActivity.this.dialog.button1.postDelayed(new Runnable() {
+            }), 2000);
+            Game5CountAllActivity.this.dialog.button1.postDelayed(diagnosticCallback("failure_feedback", 1800, new Runnable() {
                 public void run() {
                     if (!Game5CountAllActivity.this.isFinishing()) {
                         ViewAnimator.animate(Game5CountAllActivity.this.dialog.button1).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
@@ -82,7 +85,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
                         ViewAnimator.animate(Game5CountAllActivity.this.dialog.button4).scale(DefaultRetryPolicy.DEFAULT_BACKOFF_MULT, 0.0f).duration(200).start();
                     }
                 }
-            }, 1800);
+            }), 1800);
         }
     };
     private int currentWinCells;
@@ -142,6 +145,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             });
             setOnShowListener(new DialogInterface.OnShowListener() {
                 public void onShow(DialogInterface dialog) {
+                    diagnosticQuestion("question_options", "options", "dialog_show");
                     CellsCountDialog.this.updateSoundState();
                     ViewAnimator.animate(CellsCountDialog.this.button1).scale(0.0f, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT).duration(200).start();
                     ViewAnimator.animate(CellsCountDialog.this.button2).scale(0.0f, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT).duration(200).start();
@@ -235,6 +239,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
             this.answerLocked = false;
             this.feedback.setText(R.string.count_choose_answer);
             this.feedback.setTextColor(ContextCompat.getColor(getContext(), R.color.dialog_text_secondary));
+            diagnosticQuestion("question_options", "generated", "dialog_show");
             TextView[] buttons = answerButtons();
             for (int i = 0; i < buttons.length; i++) {
                 buttons[i].setText(Integer.toString(answers[i]));
@@ -252,11 +257,11 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
 
         public void applyState() {
             Game5CountAllActivity.this.grid.animateFinishCells();
-            Game5CountAllActivity.this.foreground.postDelayed(new Runnable() {
+            Game5CountAllActivity.this.foreground.postDelayed(diagnosticCallback("hide_cells", 200, new Runnable() {
                 public void run() {
                     Game5CountAllActivity.this.grid.hideAllCells();
                 }
-            }, 200);
+            }), 200);
         }
 
         public int getDuration() {
@@ -304,6 +309,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
     }
 
     protected void startLevel() {
+        if (gameDiagnostics != null) gameDiagnostics.beginQuestion(this.progression.getLevelNumber());
         displayLevelNumber();
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
@@ -337,6 +343,7 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
         if (!drawableIdsToUse.isEmpty()) {
             this.grid.setDrawableIdsToUse(drawableIdsToUse);
         }
+        if (gameDiagnostics != null && gameDiagnostics.detailed()) rectangularGrid.setDiagnostics(gameDiagnostics);
         this.grid.buildGrid();
         this.grid.hideAllCells();
         this.stateTimer.start();
@@ -362,6 +369,19 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
         states.add(new HideAllCellsFlowState());
         states.add(new ShowDialogFlowState());
         this.stateTimer = new GameFlowStateTimer(states);
+        if (gameDiagnostics != null && gameDiagnostics.detailed()) {
+            this.stateTimer.setObserver(new GameFlowStateTimer.Observer() {
+                public void flow(String event, String phase, long run, int step, int generation) {
+                    gameDiagnostics.flow(event, phase, run, step, generation);
+                }
+                public Object scheduled(String reason, long delay, long run, int step, int generation) {
+                    return gameDiagnostics.scheduled(reason, delay, run, step, generation);
+                }
+                public void executed(Object captured, boolean accepted) {
+                    gameDiagnostics.executed((GameDiagnostics.Callback) captured, accepted);
+                }
+            });
+        }
     }
 
     protected void showFailure() {

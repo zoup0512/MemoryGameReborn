@@ -44,6 +44,7 @@ public final class PartyHistoryActivity extends android.support.v7.app.AppCompat
                     entry.roundCount, entry.rank > 0 ? Integer.toString(entry.rank) : "—",
                     PartyState.points(entry.points2), entry.firstPlaces,
                     getString("COMPLETED".equals(entry.status) ? R.string.party_completed : R.string.party_interrupted))));
+            card.addView(new OnlineHistoryMatchIdView(this, entry.matchId));
         }
     }
 }

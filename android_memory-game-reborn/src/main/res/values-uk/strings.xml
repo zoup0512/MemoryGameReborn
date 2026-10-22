@@ -464,4 +464,9 @@
     <string name="feedback_subject_format">Відгук про %1$s</string>
     <string name="send_feedback">Надіслати відгук</string>
     <string name="messenger_send_button_text">Надіслати</string>
+    <string name="online_history_match_id">ID матчу: %1$s</string>
+    <string name="online_history_copy_match_id">Копіювати ID матчу</string>
+    <string name="online_history_copy_match_id_accessibility">Копіювати ID матчу %1$s</string>
+    <string name="online_history_match_id_copied">ID матчу скопійовано</string>
+    <string name="online_history_match_id_unavailable">ID матчу недоступний</string>
 </resources>

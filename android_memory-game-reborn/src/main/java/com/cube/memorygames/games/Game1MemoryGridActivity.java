@@ -55,6 +55,8 @@ import com.cube.memorygames.api.local.model.LocalUser;
 import com.cube.memorygames.api.local.workout.LevelInfo;
 import com.cube.memorygames.api.online.OnlineHud;
 import com.cube.memorygames.api.online.OnlineSession;
+import com.cube.memorygames.diagnostics.GameDiagnostics;
+import com.cube.memorygames.diagnostics.DiagnosticLog;
 import com.cube.memorygames.logic.GameFlowState;
 import com.cube.memorygames.logic.GameFlowStateTimer;
 import com.cube.memorygames.logic.GameProgression1;
@@ -441,6 +443,14 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         }
     }
 
+    protected GameDiagnostics gameDiagnostics;
+    protected final Runnable diagnosticCallback(String reason, long delay, Runnable task) {
+        return gameDiagnostics == null ? task : gameDiagnostics.callback(reason, delay, task);
+    }
+    protected final void diagnosticQuestion(String event, String phase, String reason) {
+        if (gameDiagnostics != null) gameDiagnostics.questionEvent(event, phase, reason);
+    }
+
     private boolean partyWaiting;
     private com.cube.memorygames.api.online.PartyGameBridge partyBridge;
 
@@ -497,6 +507,15 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         // it the single-player behaviour is bit-for-bit unchanged.
         this.isOnlineGame = getIntent().getBooleanExtra(OnlineSession.EXTRA_ONLINE_GAME, false);
         this.partyWaiting = com.cube.memorygames.api.online.PartySession.isParty(getIntent());
+        // Snapshot only Intent ownership; an old Activity must never consult the current session.
+        this.gameDiagnostics = new GameDiagnostics(isOnlineGame, this instanceof Game5CountAllActivity,
+                getIntent().getStringExtra(partyWaiting
+                        ? com.cube.memorygames.api.online.PartySession.EXTRA_MATCH : GameDiagnostics.EXTRA_MATCH),
+                gameInfo == null ? null : gameInfo.getId(),
+                getIntent().getIntExtra(OnlineSession.EXTRA_ONLINE_ROUND, -1),
+                partyWaiting ? "PARTY" : getIntent().getStringExtra(GameDiagnostics.EXTRA_MODE),
+                android.os.SystemClock::elapsedRealtime, DiagnosticLog::event);
+        gameDiagnostics.lifecycle(savedInstanceState == null ? "create" : "recreate", "framework");
         if (this.partyWaiting && (savedInstanceState != null || !com.cube.memorygames.api.online.PartySession.get().owns(getIntent()))) {
             // A regenerated Activity cannot restore RNG/grid state safely. Never replay this question.
             finish(); return;
@@ -700,6 +719,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
 
     protected void onResume() {
         super.onResume();
+        if (gameDiagnostics != null) gameDiagnostics.lifecycle("resume", "framework");
         if (com.cube.memorygames.api.online.PartySession.isParty(getIntent()))
             com.cube.memorygames.api.online.PartySession.get().sync();
     }
@@ -709,7 +729,14 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                 && (isFinishing() || !com.cube.memorygames.api.online.PartySession.get().mayPlay(getIntent()));
     }
 
+    protected void onPause() {
+        if (gameDiagnostics != null) gameDiagnostics.lifecycle("pause", "framework");
+        super.onPause();
+    }
+
     protected void onDestroy() {
+        if (gameDiagnostics != null) gameDiagnostics.lifecycle("destroy",
+                isChangingConfigurations() ? "configuration" : isFinishing() ? "finish" : "framework");
         if (partyBridge != null) partyBridge.detach();
         if (com.cube.memorygames.api.online.PartySession.isParty(getIntent()) && stateTimer != null) stateTimer.cancel();
         killOnlineTimer();
@@ -747,6 +774,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     public void retryGame() {
+        diagnosticQuestion("question_transition", "intent", "retry_game");
         this.buyStarsClickedCountCount = 0;
         this.videoWatchedCount = 0;
         this.pausedDuration = 0;
@@ -920,6 +948,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     public void restartLevel(boolean takeMoney) {
+        diagnosticQuestion("question_transition", "intent", "restart_level");
         if (isStalePartyGame()) return;
         if (this.grid != null) {
             this.gridContainer.removeView((View) this.grid);
@@ -933,6 +962,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void startNextLevel() {
+        diagnosticQuestion("question_transition", "intent", "next_level");
         if (isStalePartyGame()) return;
         if (this.grid != null) {
             this.gridContainer.removeView((View) this.grid);
@@ -1200,11 +1230,13 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
             this.textLevelReady.setText("");
             this.levelHint.setVisibility(0);
             this.timerContainer.setVisibility(0);
+            final Runnable diagnosticNextLevel = diagnosticCallback("answer_correct", 800,
+                    () -> Game1MemoryGridActivity.this.startNextLevel());
             this.stateTimer.scheduleAndRunTask(new TimerTask() {
                 public void run() {
                     Game1MemoryGridActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
-                            Game1MemoryGridActivity.this.startNextLevel();
+                            diagnosticNextLevel.run();
                         }
                     });
                 }
@@ -1277,7 +1309,8 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         }
         saveGameSession();
         disablePausePanel();
-        new Handler().postDelayed(new Runnable() {
+        final long diagnosticDelay = this.isOnlineGame ? getStartDialogOnlineDelay() : (long) this.startDialogDelay;
+        new Handler().postDelayed(diagnosticCallback("answer_wrong", diagnosticDelay, new Runnable() {
             public void run() {
                 if (!Game1MemoryGridActivity.this.isFinishing()) {
                     Game1MemoryGridActivity.this.enablePausePanel();
@@ -1304,7 +1337,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                     }
                 }
             }
-        }, this.isOnlineGame ? getStartDialogOnlineDelay() : (long) this.startDialogDelay);
+        }), diagnosticDelay);
     }
 
     protected void attachBaseContext(Context newBase) {
@@ -1451,7 +1484,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void diagnosticOnline(String event) {
-        try {com.cube.memorygames.diagnostics.DiagnosticLog.event(event,"matchId",OnlineSession.get().getMatchId(),"round",OnlineSession.get().getCurrentRound(),"gameId",gameInfo==null?null:gameInfo.getId(),"score",onlineScore);}catch(RuntimeException ignored){}
+        if (gameDiagnostics != null) gameDiagnostics.event(event, "score", onlineScore);
     }
 
     protected void openMainMenu() {
@@ -1459,6 +1492,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
             // Leaving an online round mid-play forfeits the match; the exit
             // paths of every game funnel through here (backPressClickListener).
             killOnlineTimer();
+            diagnosticQuestion("question_transition", "intent", "activity_exit");
             diagnosticOnline("game_back_confirm");
             OnlineSession.get().resign(this);
             SoundUtils.stopBackgroundSound();
@@ -1513,6 +1547,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void showOnlineReplayDialog() {
+        diagnosticQuestion("question_transition", "intent", "round_timeout");
         diagnosticOnline("game_round_finished");
         // Online PK: the round timer ran out. Report the final score and
         // return to OnlineMatchActivity, which shows the intermission board

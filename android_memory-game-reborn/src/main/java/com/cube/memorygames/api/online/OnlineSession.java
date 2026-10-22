@@ -59,6 +59,8 @@ public class OnlineSession {
     /** Server accept timeout (30s) plus one second for the cancellation frame. */
     private static final long MATCH_ACCEPT_FALLBACK_MS = 31000L;
     private static final long POST_AUTH_MATCH_GRACE_MS = 3000L;
+    /** Seat release must not lock admission while asynchronous accounting finishes. */
+    private static final long PENDING_TERMINAL_MS = 90000L;
 
     /** UI callback invoked on the main thread. */
     public interface MatchListener {
@@ -101,9 +103,36 @@ public class OnlineSession {
 
     private static OnlineSession instance;
 
+    /** Transport/main-loop boundary; tests drive the real dispatcher without Android stubs. */
+    interface Runtime {
+        boolean connected();
+        boolean accountBusy();
+        boolean send(String json);
+        void postDelayed(Runnable task, long delayMs);
+        void removeCallbacks(Runnable task);
+        long elapsedRealtime();
+        PartySession party();
+        void debug(String message, Throwable trace);
+    }
+
+    private final class AndroidRuntime implements Runtime {
+        private final Handler main = new Handler(Looper.getMainLooper());
+        public boolean connected() { return client != null && client.isConnected(); }
+        public boolean accountBusy() { return AccountManager.get(appContext).isBusy(); }
+        public boolean send(String json) { return client != null && client.send(json); }
+        public void postDelayed(Runnable task, long delayMs) { main.postDelayed(task, delayMs); }
+        public void removeCallbacks(Runnable task) { main.removeCallbacks(task); }
+        public long elapsedRealtime() { return SystemClock.elapsedRealtime(); }
+        public PartySession party() { return PartySession.get(); }
+        public void debug(String message, Throwable trace) {
+            if (trace == null) android.util.Log.d("OnlinePK", message);
+            else android.util.Log.d("OnlinePK", message, trace);
+        }
+    }
+
     private Context appContext;
     private OnlineClient client;
-    private final Handler main = new Handler(Looper.getMainLooper());
+    private final Runtime runtime;
     private MatchListener listener;
     private ScoreListener scoreListener;
 
@@ -161,6 +190,23 @@ public class OnlineSession {
     private final MatchAcceptance matchAcceptance = new MatchAcceptance();
     /** Match id whose resign retry chain is currently active. */
     private String resigningMatchId;
+    private MatchListener resigningListener;
+    /** A released seat may still receive one authoritative, match-tagged terminal frame. */
+    private PendingTerminal pendingTerminal;
+    private Runnable pendingTerminalExpiry;
+    private static final class PendingTerminal {
+        final String matchId, mode;
+        final AuthOk profile;
+        final MatchListener owner;
+        final OnlineMessages.RoundDesc[] rounds;
+        final long expiresAt;
+        PendingTerminal(String matchId, String mode, AuthOk profile, MatchListener owner,
+                        OnlineMessages.RoundDesc[] rounds, long expiresAt) {
+            this.matchId = matchId; this.mode = mode; this.profile = profile;
+            this.owner = owner; this.rounds = rounds == null ? null : rounds.clone();
+            this.expiresAt = expiresAt;
+        }
+    }
     /** Local fallback for a lost match_cancelled frame during the START gate. */
     private Runnable acceptFallback;
     private long acceptDeadlineElapsed;
@@ -179,6 +225,11 @@ public class OnlineSession {
     };
 
     private OnlineSession() {
+        this.runtime = new AndroidRuntime();
+    }
+
+    OnlineSession(Runtime runtime) {
+        this.runtime = runtime;
     }
 
     public static synchronized OnlineSession get() {
@@ -192,7 +243,7 @@ public class OnlineSession {
 
     public void init(Context context) {
         this.appContext = context.getApplicationContext();
-        PartySession.get().init(context);
+        runtime.party().init(context);
     }
 
     public int getState() {
@@ -200,7 +251,7 @@ public class OnlineSession {
     }
 
     public boolean canChangeAccount() {
-        return !PartySession.get().occupied() && !hasNonPartyFlow();
+        return !runtime.party().occupied() && !hasNonPartyFlow();
     }
 
     /** Includes sent-but-not-yet-matched requests, not just STATE_QUEUE/STATE_MATCH. */
@@ -235,7 +286,7 @@ public class OnlineSession {
     }
 
     public void resetForAccountChange() {
-        PartySession.get().reset();
+        runtime.party().reset();
         disconnect();
         reconnectBlocked=false;
         lastProfile=null;
@@ -291,7 +342,7 @@ public class OnlineSession {
      */
     public long roundDurationMs(Context context, long defaultMs) {
         if (context instanceof android.app.Activity && PartySession.isParty(((android.app.Activity) context).getIntent())) {
-            return Math.max(1L, PartySession.get().remaining());
+            return Math.max(1L, runtime.party().remaining());
         }
         if (roundClock.hasStarted()) {
             return Math.max(1L, roundRemainingMs());
@@ -309,7 +360,7 @@ public class OnlineSession {
      * opponent may still be playing. 0 when no round is running.
      */
     public long roundRemainingMs() {
-        return roundClock.remainingMs(SystemClock.elapsedRealtime());
+        return roundClock.remainingMs(runtime.elapsedRealtime());
     }
 
     public RoundEnd getLastRoundEnd() {
@@ -317,7 +368,7 @@ public class OnlineSession {
     }
 
     public long intermissionRemainingMs() {
-        return intermission.remainingMs(SystemClock.elapsedRealtime());
+        return intermission.remainingMs(runtime.elapsedRealtime());
     }
 
     public boolean hasIntermissionCountdown() {
@@ -399,7 +450,7 @@ public class OnlineSession {
         try { endpoint=OnlineConfig.getEndpoint(appContext); }
         catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
         final long attempt=++connectionEpoch;
-        main.removeCallbacks(reconnectRunnable);
+        runtime.removeCallbacks(reconnectRunnable);
         if (client != null) {
             client.close();
             client = null;
@@ -426,6 +477,7 @@ public class OnlineSession {
     }
 
     public synchronized void disconnect() {
+        clearPendingTerminal();
         diagnostic("session_disconnect", "reason", "framework");
         ++connectionEpoch;
         ++roomCommandEpoch;
@@ -442,7 +494,7 @@ public class OnlineSession {
         practicePending = false;
         cancelAcceptFallback();
         cancelRoomAck();
-        main.removeCallbacks(reconnectRunnable);
+        runtime.removeCallbacks(reconnectRunnable);
         if (client != null) {
             client.close();
             client = null;
@@ -493,12 +545,13 @@ public class OnlineSession {
 
     private void stopAuthorization(String message) {
         reconnectBlocked=true;
-        PartySession.get().reset();
+        runtime.party().reset();
         disconnect();
         notifyError(401,message == null ? "会话失效，请打开账户中心重新登录" : message);
     }
 
     private void handleDisconnected(int code, String reason) {
+        clearPendingTerminal();
         if ("session_replaced".equals(reason)) {
             stopAuthorization("当前在线连接已被另一设备替换，请明确重新登录后再连接");
             return;
@@ -531,7 +584,7 @@ public class OnlineSession {
             reconnectAttempt++;
             diagnostic("session_reconnect", "attempt", reconnectAttempt, "delayMs", delay);
             setState(STATE_DISCONNECTED);
-            main.postDelayed(reconnectRunnable, delay);
+            runtime.postDelayed(reconnectRunnable, delay);
             return;
         }
         diagnostic("reconnect_exhausted", "reason", "reconnect_window");
@@ -551,8 +604,8 @@ public class OnlineSession {
     private Runnable queuedWatchdog;
 
     public void startMatchmaking() {
-        if (PartySession.get().occupied()) return;
-        if (!canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
+        if (runtime.party().occupied()) return;
+        if (!canAutoConnect() || runtime.accountBusy()) return;
         if (this.appContext != null
                 && !com.cube.memorygames.security.IntegritySentinel.isIntact(this.appContext)) {
             // Repackaged build (hardening design §5.1): ranked queue stays
@@ -562,17 +615,18 @@ public class OnlineSession {
         // Stack trace kept deliberately: an intermittent phantom match_join
         // (queue entry appearing around match-exit moments) is still open;
         // the next occurrence will identify the call site. Debug tag only.
-        android.util.Log.d("OnlinePK", "startMatchmaking from state=" + state,
-                new IllegalStateException("trace"));
+        runtime.debug("startMatchmaking from state=" + state, new IllegalStateException("trace"));
         if (state == STATE_IDLE || state == STATE_QUEUE) {
             if (state == STATE_QUEUE) {
                 return;
             }
+            clearPendingTerminal();
             queueRequestPending=false;
             setState(STATE_QUEUE);
             send(OnlineMessages.T_MATCH_JOIN, new Object());
             armQueuedWatchdog();
         } else if (state == STATE_DISCONNECTED || state == STATE_CONNECTING || state == STATE_AUTHORIZING) {
+            clearPendingTerminal();
             queueRequestPending=true;
             pendingQueueRejoin=true;
             if (state == STATE_DISCONNECTED) connect();
@@ -597,7 +651,7 @@ public class OnlineSession {
                     return;
                 }
                 diagnostic("queue_timeout", "reason", "queue_ack");
-                android.util.Log.d("OnlinePK", "join unacknowledged — zombie socket, reconnecting");
+                runtime.debug("join unacknowledged — zombie socket, reconnecting", null);
                 OnlineSession.this.pendingQueueRejoin = true;
                 OnlineClient dead = OnlineSession.this.client;
                 OnlineSession.this.client = null;
@@ -607,19 +661,19 @@ public class OnlineSession {
                 handleDisconnected(-1, "join unacknowledged");
             }
         };
-        this.main.postDelayed(this.queuedWatchdog, 5000L);
+        this.runtime.postDelayed(this.queuedWatchdog, 5000L);
     }
 
     private void cancelQueuedWatchdog() {
         if (this.queuedWatchdog != null) {
-            this.main.removeCallbacks(this.queuedWatchdog);
+            this.runtime.removeCallbacks(this.queuedWatchdog);
             this.queuedWatchdog = null;
         }
     }
 
     /** Friend rooms (PRD F-12). */
     public void createFriendRoom() {
-        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
+        if (!canChangeAccount() || !canAutoConnect() || runtime.accountBusy()) return;
         friendRoomPending=true;
         sendRoomCommand(OnlineMessages.T_ROOM_CREATE, new Object());
     }
@@ -630,7 +684,7 @@ public class OnlineSession {
      * mode=PRACTICE on the same socket.
      */
     public void sendBotMatchRequest(String difficulty) {
-        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
+        if (!canChangeAccount() || !canAutoConnect() || runtime.accountBusy()) return;
         OnlineMessages.BotMatchRequest request = new OnlineMessages.BotMatchRequest();
         request.difficulty = difficulty;
         practicePending = true;
@@ -643,7 +697,7 @@ public class OnlineSession {
     }
 
     public void joinFriendRoom(String code) {
-        if (!canChangeAccount() || !canAutoConnect() || AccountManager.get(appContext).isBusy()) return;
+        if (!canChangeAccount() || !canAutoConnect() || runtime.accountBusy()) return;
         OnlineMessages.RoomJoin join = new OnlineMessages.RoomJoin();
         join.code = code;
         friendRoomPending = true;
@@ -663,22 +717,21 @@ public class OnlineSession {
      * acked command also arms a response timeout that surfaces an error.
      */
     private void sendRoomCommand(final String type, final Object data) {
+        clearPendingTerminal();
         cancelRoomAck();
         final long command=++roomCommandEpoch;
-        OnlineClient c = this.client;
-        if (c != null && c.isConnected() && state == STATE_IDLE) {
+        if (runtime.connected() && state == STATE_IDLE) {
             send(type, data);
             scheduleRoomAck(type);
             return;
         }
         if (state == STATE_DISCONNECTED) connect();
         final long attempt=connectionEpoch;
-        main.postDelayed(new Runnable() {
+        runtime.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (attempt != connectionEpoch || command != roomCommandEpoch || reconnectBlocked) return;
-                OnlineClient retry = OnlineSession.this.client;
-                if (retry != null && retry.isConnected() && state == STATE_IDLE) {
+                if (runtime.connected() && state == STATE_IDLE) {
                     send(type, data);
                     scheduleRoomAck(type);
                 } else {
@@ -710,12 +763,12 @@ public class OnlineSession {
                 }
             }
         };
-        main.postDelayed(this.pendingRoomAck, 3000L);
+        runtime.postDelayed(this.pendingRoomAck, 3000L);
     }
 
     private void cancelRoomAck() {
         if (this.pendingRoomAck != null) {
-            main.removeCallbacks(this.pendingRoomAck);
+            runtime.removeCallbacks(this.pendingRoomAck);
             this.pendingRoomAck = null;
         }
     }
@@ -798,37 +851,37 @@ public class OnlineSession {
 
     /** Every party callback keeps the originating Activity's immutable identity. */
     public void reportLevel(android.app.Activity owner, int level, int score, boolean success) {
-        if (PartySession.isParty(owner.getIntent())) PartySession.get().level(owner.getIntent(), level, success);
+        if (PartySession.isParty(owner.getIntent())) runtime.party().level(owner.getIntent(), level, success);
         else if (success) reportLevelWin(level, score);
     }
 
     public void finishRound(android.app.Activity owner, int score) {
-        if (PartySession.isParty(owner.getIntent())) PartySession.get().complete(owner.getIntent());
+        if (PartySession.isParty(owner.getIntent())) runtime.party().complete(owner.getIntent());
         else onRoundFinished(score);
     }
 
     public void resign(android.app.Activity owner) {
-        if (PartySession.isParty(owner.getIntent())) PartySession.get().leave(owner.getIntent());
+        if (PartySession.isParty(owner.getIntent())) runtime.party().leave(owner.getIntent());
         else resign();
     }
 
     boolean isAuthenticatedSocket() {
-        return client != null && client.isConnected() && (state == STATE_IDLE || state == STATE_MATCH);
+        return runtime.connected() && (state == STATE_IDLE || state == STATE_MATCH);
     }
 
     boolean sendParty(String type, Object data, String rid) {
+        if ("party_create".equals(type) || "party_join".equals(type)) clearPendingTerminal();
         com.google.gson.JsonObject root = new com.google.gson.JsonParser()
                 .parse(OnlineMessages.envelope(type, data)).getAsJsonObject();
         root.addProperty("rid", rid);
-        OnlineClient target = client;
-        return target != null && target.send(root.toString());
+        return runtime.send(root.toString());
     }
 
     /** Called from Game1MemoryGridActivity.updateOnlineScore() in online mode. */
     public void reportLevelWin(int level, int totalScore) {
-        android.util.Log.d("OnlinePK", "reportLevelWin round=" + currentRound
+        runtime.debug("reportLevelWin round=" + currentRound
                 + " level=" + level + " score=" + totalScore
-                + " matchId=" + (matchId == null ? "null" : matchId));
+                + " matchId=" + (matchId == null ? "null" : matchId), null);
         if (matchId == null || currentRound < 0 || roundReported || roundClock.isPreparing()) {
             return;
         }
@@ -863,6 +916,7 @@ public class OnlineSession {
         diagnostic("resign", "reason", "user_resign");
         if (this.matchId != null) {
             cancelAcceptFallback();
+            if (!this.matchId.equals(this.resigningMatchId)) this.resigningListener = this.listener;
             this.resigningMatchId = this.matchId;
             this.resignRetries = RESIGN_RETRY_MAX;
             sendResign(this.resigningMatchId);
@@ -872,14 +926,13 @@ public class OnlineSession {
     /** Retry until the server confirms seat release or sends a legacy terminal frame. */
     private void sendResign(final String targetMatchId) {
         diagnostic("resign_send", "attempt", RESIGN_RETRY_MAX-resignRetries);
-        OnlineClient c = client;
-        android.util.Log.d("OnlinePK", "sendResign matchId=" + targetMatchId
-                + " connected=" + (c != null && c.isConnected())
-                + " retriesLeft=" + resignRetries);
+        runtime.debug("sendResign matchId=" + targetMatchId
+                + " connected=" + runtime.connected()
+                + " retriesLeft=" + resignRetries, null);
         OnlineMessages.Resign request = new OnlineMessages.Resign();
         request.matchId = targetMatchId;
         send(OnlineMessages.T_RESIGN, request);
-        this.main.postDelayed(new Runnable() {
+        this.runtime.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (targetMatchId.equals(OnlineSession.this.matchId)
@@ -901,8 +954,9 @@ public class OnlineSession {
             return;
         }
         if ((type.startsWith("party_") || OnlineMessages.T_ERROR.equals(type))
-                && PartySession.get().receive(type, json)) return;
+                && runtime.party().receive(type, json)) return;
         if (DiagnosticSanitizer.businessType(type)) diagnosticFrame(json, type);
+        if (receivePendingTerminal(type, json)) return;
         // Match-scoped frames carry the owning matchId; anything addressed to
         // a match we are not in (e.g. an orphan room from a server-side
         // double-queue) must be dropped before it corrupts our state.
@@ -942,7 +996,7 @@ public class OnlineSession {
                 } catch (RuntimeException e) { stopAuthorization(e.getMessage()); return; }
                 boolean resumeMatch = this.matchId != null;
                 setState(resumeMatch ? STATE_MATCH : STATE_IDLE);
-                PartySession.get().authenticated();
+                runtime.party().authenticated();
                 if (resumeMatch && this.resigningMatchId != null) {
                     this.resignRetries = RESIGN_RETRY_MAX;
                     sendResign(this.resigningMatchId);
@@ -951,7 +1005,7 @@ public class OnlineSession {
                         sendMatchStartRequest();
                     }
                     long remaining = this.acceptDeadlineElapsed > 0L
-                            ? this.acceptDeadlineElapsed - SystemClock.elapsedRealtime() : 0L;
+                            ? this.acceptDeadlineElapsed - runtime.elapsedRealtime() : 0L;
                     armAcceptFallback(Math.max(POST_AUTH_MATCH_GRACE_MS, remaining));
                 }
                 if (listener != null) {
@@ -1009,9 +1063,10 @@ public class OnlineSession {
                 diagnostic("frame_dropped", "reason", "unexpected_match");
                 return;
             }
-            android.util.Log.d("OnlinePK", "match_found handling, state=" + state);
+            runtime.debug("match_found handling, state=" + state, null);
             MatchFound found = OnlineMessages.payloadOf(json, MatchFound.class);
             if (found != null) {
+                clearPendingTerminal();
                 this.friendRoomPending = false;
                 this.practicePending = false;
                 cancelRoomAck();
@@ -1031,13 +1086,14 @@ public class OnlineSession {
                 this.roundReported = false;
                 this.matchEndSeen = false;
                 this.resigningMatchId = null;
+                this.resigningListener = null;
                 this.localEntryFeeCharged = 0;
                 this.matchAcceptance.clear();
                 this.disconnectedAt = 0L;
                 if (!this.practiceMode) {
                     chargeEntryFee();
                 }
-                this.acceptDeadlineElapsed = SystemClock.elapsedRealtime()
+                this.acceptDeadlineElapsed = runtime.elapsedRealtime()
                         + MATCH_ACCEPT_FALLBACK_MS;
                 armAcceptFallback(MATCH_ACCEPT_FALLBACK_MS);
                 setState(STATE_MATCH);
@@ -1053,6 +1109,7 @@ public class OnlineSession {
         if (OnlineMessages.T_RESIGN_ACK.equals(type)) {
             OnlineMessages.ResignAck ack = OnlineMessages.payloadOf(json, OnlineMessages.ResignAck.class);
             if (ack != null && ack.confirms(this.matchId, this.resigningMatchId)) {
+                rememberPendingTerminal();
                 clearMatchSnapshot("resign_ack");
                 this.pendingQueueRejoin = false;
                 this.queueRequestPending = false;
@@ -1087,7 +1144,7 @@ public class OnlineSession {
                 if (this.matchId == null || this.resigningMatchId != null) return;
                 // Only explicit bot practice participates; ranked/friend retain their old launch flow.
                 start.preparing = preparesPracticeRounds() && start.preparing;
-                if (!roundClock.accept(start, preparesPracticeRounds(), SystemClock.elapsedRealtime())) return;
+                if (!roundClock.accept(start, preparesPracticeRounds(), runtime.elapsedRealtime())) return;
                 intermission.clear();
                 cancelAcceptFallback();
                 this.currentRound = start.round;
@@ -1118,7 +1175,7 @@ public class OnlineSession {
         }
         if (OnlineMessages.T_ROUND_END.equals(type)) {
             RoundEnd end = OnlineMessages.payloadOf(json, RoundEnd.class);
-            if (intermission.accept(end, currentRound, SystemClock.elapsedRealtime())) {
+            if (intermission.accept(end, currentRound, runtime.elapsedRealtime())) {
                 cancelAcceptFallback();
                 this.currentRound = end.round;
                 this.roundReported = true;
@@ -1147,12 +1204,13 @@ public class OnlineSession {
         }
         if (OnlineMessages.T_MATCH_END.equals(type)) {
             MatchEnd end = OnlineMessages.payloadOf(json, MatchEnd.class);
-            if (end != null) {
+            if (end != null && this.matchId != null && !this.matchEndSeen) {
                 diagnostic("match_end", "score", end.myScore);
                 cancelAcceptFallback();
                 applySettlement(end);
                 this.matchEndSeen = true;
                 this.resigningMatchId = null;
+                this.resigningListener = null;
                 refreshProfileRecord(end);
                 this.matchId = null;
                 this.friendMode = false;
@@ -1249,6 +1307,60 @@ public class OnlineSession {
         } catch(RuntimeException ignored) { }
     }
 
+    private void rememberPendingTerminal() {
+        clearPendingTerminal();
+        final PendingTerminal pending = new PendingTerminal(this.matchId,
+                this.practiceMode ? MODE_PRACTICE : this.friendMode ? MODE_FRIEND : MODE_RANKED,
+                this.lastProfile, this.resigningListener, this.rounds,
+                runtime.elapsedRealtime() + PENDING_TERMINAL_MS);
+        this.pendingTerminal = pending;
+        this.pendingTerminalExpiry = () -> {
+            if (this.pendingTerminal == pending) clearPendingTerminal();
+        };
+        runtime.postDelayed(this.pendingTerminalExpiry, PENDING_TERMINAL_MS);
+    }
+
+    private void clearPendingTerminal() {
+        if (this.pendingTerminalExpiry != null) runtime.removeCallbacks(this.pendingTerminalExpiry);
+        this.pendingTerminalExpiry = null;
+        this.pendingTerminal = null;
+    }
+
+    /** Only a released match's terminal may bypass the active-match guard, never its gameplay. */
+    private boolean receivePendingTerminal(String type, String json) {
+        PendingTerminal pending = this.pendingTerminal;
+        if (pending == null) return false;
+        if (runtime.elapsedRealtime() >= pending.expiresAt || hasNonPartyFlow()
+                || runtime.party().occupied() || pending.profile != this.lastProfile) {
+            clearPendingTerminal();
+            return false;
+        }
+        boolean ended = OnlineMessages.T_MATCH_END.equals(type);
+        if (!ended && !OnlineMessages.T_MATCH_CANCELLED.equals(type)) return false;
+        OnlineMessages.ResignAck ref = OnlineMessages.payloadOf(json, OnlineMessages.ResignAck.class);
+        // Legacy untagged/malformed frames can never claim a detached match's result.
+        if (ref == null || !pending.matchId.equals(ref.matchId)) return false;
+        MatchEnd end = ended ? OnlineMessages.payloadOf(json, MatchEnd.class) : null;
+        if (ended && end == null) return true;
+        clearPendingTerminal(); // Consume before callbacks, including reentrant UI navigation.
+        this.matchEndSeen = true;
+        if (ended) {
+            // Settlement rows need the game labels, not an occupied/launchable match snapshot.
+            this.rounds = pending.rounds;
+            diagnostic("match_end", "score", end.myScore);
+            applySettlement(end);
+            refreshProfileRecord(end);
+        }
+        MatchListener target = this.listener;
+        if (target != null && target == pending.owner) {
+            try {
+                if (ended) target.onMatchEnd(end);
+                else target.onMatchCancelled(MatchAcceptance.Action.RETURN_TO_LOBBY, pending.mode);
+            } catch (RuntimeException ignored) { }
+        }
+        return true;
+    }
+
     private static boolean isMatchScoped(String type) {
         return OnlineMessages.T_ROUND_START.equals(type)
                 || OnlineMessages.T_OPPONENT_SCORE.equals(type)
@@ -1267,7 +1379,7 @@ public class OnlineSession {
         if (state != newState) {
             diagnostic("session_state", "from", state, "to", newState);
             state = newState;
-            PartySession.get().connectionChanged();
+            runtime.party().connectionChanged();
             if (listener != null) {
                 try {
                     listener.onStateChanged(newState);
@@ -1322,7 +1434,7 @@ public class OnlineSession {
 
     private void armAcceptFallback(long delayMs) {
         if (this.acceptFallback != null) {
-            this.main.removeCallbacks(this.acceptFallback);
+            this.runtime.removeCallbacks(this.acceptFallback);
             this.acceptFallback = null;
         }
         final String targetMatchId = this.matchId;
@@ -1337,19 +1449,18 @@ public class OnlineSession {
                         || OnlineSession.this.currentRound >= 0) {
                     return;
                 }
-                OnlineClient active = OnlineSession.this.client;
-                if (active == null || !active.isConnected()) {
+                if (!runtime.connected()) {
                     return;
                 }
                 handleMatchCancelled("accept_gate");
             }
         };
-        this.main.postDelayed(this.acceptFallback, delayMs);
+        this.runtime.postDelayed(this.acceptFallback, delayMs);
     }
 
     private void cancelAcceptFallback() {
         if (this.acceptFallback != null) {
-            this.main.removeCallbacks(this.acceptFallback);
+            this.runtime.removeCallbacks(this.acceptFallback);
             this.acceptFallback = null;
         }
         this.acceptDeadlineElapsed = 0L;
@@ -1374,6 +1485,7 @@ public class OnlineSession {
         this.localEntryFeeCharged = 0;
         this.matchAcceptance.clear();
         this.resigningMatchId = null;
+        this.resigningListener = null;
         this.resignRetries = 0;
     }
 
@@ -1405,10 +1517,10 @@ public class OnlineSession {
     }
 
     private void send(String type, Object data) {
-        OnlineClient c = client;
-        if (c != null) {
-            if (!c.send(OnlineMessages.envelope(type, data))) diagnostic("session_send_failed", "reason", DiagnosticSanitizer.businessType(type) ? type : "send");
-        } else diagnostic("session_send_failed", "reason", "not_connected");
+        if (!runtime.send(OnlineMessages.envelope(type, data))) {
+            diagnostic("session_send_failed", "reason", runtime.connected()
+                    ? DiagnosticSanitizer.businessType(type) ? type : "send" : "not_connected");
+        }
     }
 
     /** Entry debit/refund is server-owned: never infer deltas from an old snapshot after reconnect. */
