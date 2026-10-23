@@ -109,11 +109,4 @@ public final class SecurityMac {
         tainted = true;
     }
 
-    /**
-     * Session-scoped economy taint: local money/privilege columns were edited
-     * outside the app or their tag was stripped. Consumers degrade silently.
-     */
-    public static boolean isTainted() {
-        return tainted;
-    }
 }

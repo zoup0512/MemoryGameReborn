@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Game16LikePreviousActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 30000;
     @BindView(R.id.correct_hint)
     View correctHint;
     private long gameTime = 30000;

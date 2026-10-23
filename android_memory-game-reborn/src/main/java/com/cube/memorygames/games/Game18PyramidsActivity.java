@@ -19,9 +19,6 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Game18PyramidsActivity extends Game1MemoryGridActivity {
-    public static final int FIGURE_COUNT = 3;
-    private static final int GAME_TIME = 60000;
-    public static final int MAX_CIRCLES = 8;
     private long gameTime;
     private long startedTime;
     private Handler timerHandler = new Handler();

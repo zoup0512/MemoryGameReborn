@@ -10,5 +10,4 @@
     <string name="round_wait_party_score">Round score %1$d · Total points %2$s</string>
     <string name="round_wait_seconds">%1$d s</string>
     <string name="round_wait_loading">Waiting for server sync. Stay connected.</string>
-    <string name="round_wait_results">View round results</string>
 </resources>

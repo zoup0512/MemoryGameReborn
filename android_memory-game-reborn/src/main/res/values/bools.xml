@@ -1,4 +1,4 @@
-<resources><bool name="bb_bottom_bar_is_tablet_mode">false</bool>
+<resources>
     <bool name="isTablet">false</bool>
     <bool name="default_circle_indicator_centered">true</bool>
     <bool name="default_circle_indicator_snap">false</bool>

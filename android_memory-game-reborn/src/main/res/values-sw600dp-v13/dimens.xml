@@ -1,24 +1,9 @@
-<resources><dimen name="card_stack_margin">10.0dip</dimen>
+<resources>
+    <dimen name="card_stack_margin">10.0dip</dimen>
     <dimen name="count_button_size">110.0dip</dimen>
     <dimen name="cup_size">240.0dip</dimen>
-    <dimen name="cup_star_width">68.0dip</dimen>
-    <dimen name="fail_dialog_text_title">32.0sp</dimen>
     <dimen name="game16_figure_size">240.0dip</dimen>
-    <dimen name="login_button_min_height">54.0dip</dimen>
-    <dimen name="login_button_text">20.0sp</dimen>
-    <dimen name="padding_horizontal_win_xlarge">78.0dip</dimen>
     <dimen name="text_big">25.0sp</dimen>
-    <dimen name="win_dialog_padding_large">78.0dip</dimen>
-    <dimen name="button_bottom_layout_margin">70.0dip</dimen>
-    <dimen name="button_retry_side_length">100.0dip</dimen>
-    <dimen name="buttons_top_layout_margin">40.0dip</dimen>
-    <dimen name="buttons_vertical_layout_margin">16.0dip</dimen>
-    <dimen name="buttons_width">240.0dip</dimen>
-    <dimen name="cup_logo_horizontal_padding">20.0dip</dimen>
-    <dimen name="fail_dialog_button_text">16.0sp</dimen>
-    <dimen name="fail_dialog_buttons_bottom_layout_margin">32.0dip</dimen>
-    <dimen name="fail_dialog_buttons_side_length">78.0dip</dimen>
-    <dimen name="fail_dialog_inner_text_title">20.0sp</dimen>
     <dimen name="game_11_game_container_horizontal_layout_margin">60.0dip</dimen>
     <dimen name="game_12_equals_side_length">100.0dip</dimen>
     <dimen name="game_20_button_height">135.0dip</dimen>
@@ -26,13 +11,5 @@
     <dimen name="game_20_image_color_side_length">130.0dip</dimen>
     <dimen name="game_5_button_layout_margin">8.0dip</dimen>
     <dimen name="game_5_button_text_size">36.0sp</dimen>
-    <dimen name="game_name_bottom_padding">18.0dip</dimen>
-    <dimen name="horizontal_layout_margin_edit_text">120.0dip</dimen>
-    <dimen name="logo_layout_margin_bottom">30.0dip</dimen>
-    <dimen name="logo_layout_margin_top">60.0dip</dimen>
-    <dimen name="logo_side_length">200.0dip</dimen>
     <dimen name="padding_game_20_controls">40.0dip</dimen>
-    <dimen name="suggestion_image_horizontal_layout_margin">48.0dip</dimen>
-    <dimen name="suggestion_image_vertical_layout_margin">24.0dip</dimen>
-    <dimen name="timer_view_side_length">130.0dip</dimen>
 </resources>

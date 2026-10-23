@@ -27,13 +27,7 @@ public class CategoryInfo {
         return this.colorResId;
     }
 
-    public int getBackgroundColorResId() {
-        return this.backgroundColorResId;
-    }
 
-    public int getGridColorResId() {
-        return this.gridColorResId;
-    }
 
     public boolean equals(Object o) {
         if (this == o) {

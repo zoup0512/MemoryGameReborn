@@ -20,12 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game23Grid extends View implements GameGrid {
-    public static final int COLUMN_COUNT = 6;
     private static final float DIVIDER_COEFFICIENT = 0.05f;
-    public static final int ROW_COUNT = 8;
-    private static final int STATE_GAME = 1;
-    private static final int STATE_LOSE = 3;
-    private static final int STATE_WIN = 2;
     private List<ElementGame14> elements;
     private boolean enableClick;
     private int failNumber = -1;

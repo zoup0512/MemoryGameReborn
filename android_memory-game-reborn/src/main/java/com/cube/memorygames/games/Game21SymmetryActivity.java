@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game21SymmetryActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 80000;
     protected static int miniLevelTime = 5700;
     private long gameTime;
     private long startedTime;

@@ -259,7 +259,6 @@ public class Game22MirrorsActivity extends Game1MemoryGridActivity {
                 mirrors.add(CellType.MIRROR1);
             }
         }
-        System.err.println("mirrors = " + mirrors);
         return mirrors;
     }
 
@@ -313,7 +312,6 @@ public class Game22MirrorsActivity extends Game1MemoryGridActivity {
             point = new Point(i, prevPoint.y);
         }
         points.add(point);
-        System.err.println("points = " + points);
         return points;
     }
 

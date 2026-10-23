@@ -383,9 +383,6 @@ public class OnlineSession {
         return serverWinCoins;
     }
 
-    public int getServerDrawCoins() {
-        return serverDrawCoins;
-    }
 
     /** Consecutive practice (vs-bot) wins, from auth_ok / match_end. */
     public int getPracticeStreak() {

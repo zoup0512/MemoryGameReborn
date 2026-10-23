@@ -17,14 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SquareLoading extends ViewGroup {
-    private static final int DEFAULT_DIVIDER_SIZE = 8;
-    private static final int DEFAULT_FIRST_INDEX = 8;
-    private static final int DEFAULT_LAST_INDEX = 3;
-    private static final int DEFAULT_SQUARE_COLOR = -1;
-    private static final int DEFAULT_SQUARE_CORNER = 8;
-    private static final int DEFAULT_SQUARE_SIZE = 36;
-    private static final int DEFUALT_X_COUNT = 4;
-    private static final int DEFUALT_Y_COUNT = 3;
     private int mDividerSize = 8;
     private int mFirstIndex = 8;
     private int mLastIndex = 3;

@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game17_248Activity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 60000;
     private static final long FIRST_COIN_SCORE = 1024L;
     @BindView(R.id.currentScore)
     TextView currentScoreText;

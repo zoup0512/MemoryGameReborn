@@ -162,11 +162,9 @@ public class Game20Grid extends FrameLayout implements GameGrid {
     public void hideChallengeCells() {
         this.correct.setVisibility(8);
         this.incorrect.setVisibility(8);
-        System.err.println("hideChallengeCells");
     }
 
     public void showChallengeCells() {
-        System.err.println("showChallengeCells");
     }
 
     public void disableAllCells() {
@@ -234,11 +232,9 @@ public class Game20Grid extends FrameLayout implements GameGrid {
     }
 
     public void buildGrid() {
-        System.err.println("buildGrid");
     }
 
     public void animateCells() {
-        System.err.println("animateCells");
     }
 
     public void clearWrongCells() {

@@ -14,7 +14,6 @@ import com.memory.brain.training.games.R;
 import com.cube.memorygames.ui.DialogUi;
 
 public class DialogTryWorkout extends AppCompatDialog {
-    public static final int STARTS_COUNT = 3;
     public static final String STARTS_COUNT_BEFORE_SHOW_KEY = "starts_before_show_workout";
     public static final String TRY_WORKOUT_DIALOG_SHOW_KEY = "try_workout_dialog_show";
     private View.OnClickListener mConfirmListener;

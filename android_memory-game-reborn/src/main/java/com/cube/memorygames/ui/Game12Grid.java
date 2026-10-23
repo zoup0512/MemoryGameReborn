@@ -56,7 +56,6 @@ public class Game12Grid extends FrameLayout implements GameGrid {
         }
 
         public View getView(int position, View contentView, @NonNull ViewGroup parent) {
-            System.err.println("getView1 " + position);
             View gameContainer = contentView.findViewById(R.id.gameContainer);
             TextView text = (TextView) contentView.findViewById(R.id.text);
             text.setTextColor(-16777216);
@@ -94,7 +93,6 @@ public class Game12Grid extends FrameLayout implements GameGrid {
         }
 
         public View getView(int position, View contentView, @NonNull ViewGroup parent) {
-            System.err.println("getView2 " + position);
             View gameContainer = contentView.findViewById(R.id.gameContainer);
             TextView text = (TextView) contentView.findViewById(R.id.text);
             text.setTextColor(-16777216);
@@ -154,7 +152,6 @@ public class Game12Grid extends FrameLayout implements GameGrid {
 
     private void highlightClick(int clicked) {
         this.clicked = clicked;
-        System.err.println("notifyDataSetChanged");
         this.cardsDataAdapter1.notifyDataSetChanged();
         this.cardsDataAdapter2.notifyDataSetChanged();
         if (this.correct == 1 && clicked != 1) {
@@ -180,7 +177,6 @@ public class Game12Grid extends FrameLayout implements GameGrid {
     }
 
     public void setGameParams(String str1, String str2, int correct) {
-        System.err.println("setGameParams str1 = " + str1 + ", str2 = " + str2 + ", correct = " + correct);
         this.str1 = str1;
         this.str2 = str2;
         this.correct = correct;
@@ -226,14 +222,12 @@ public class Game12Grid extends FrameLayout implements GameGrid {
     }
 
     public void showChallengeCells() {
-        System.err.println("showChallengeCells");
     }
 
     public void disableAllCells() {
         this.click1.setOnClickListener(null);
         this.click2.setOnClickListener(null);
         this.click3.setOnClickListener(null);
-        System.err.println("disableAllCells");
     }
 
     public void enableAllCells() {
@@ -285,7 +279,6 @@ public class Game12Grid extends FrameLayout implements GameGrid {
                 }
             }
         });
-        System.err.println("enableAllCells");
     }
 
     public int getCurrentSuccessCellsClicked() {

@@ -35,9 +35,7 @@ import java.util.Random;
 import java.util.Stack;
 
 public class TwoFoldGrid extends GridLayout implements GameGrid, OnGestureListener {
-    private static final int COLUMN_COUNT = 8;
     private static final float DIVIDER_COEFFICIENT = 0.1f;
-    private static final int ROW_COUNT = 8;
     private static final int[] cellDrawables = new int[]{R.drawable.background_cell_twofold1, R.drawable.background_cell_twofold2, R.drawable.background_cell_twofold3, R.drawable.background_cell_twofold4};
     private static final int[] cellColors = new int[cellDrawables.length];
     private OnClickListener arrowDownClickListener = new OnClickListener() {
@@ -107,11 +105,9 @@ public class TwoFoldGrid extends GridLayout implements GameGrid, OnGestureListen
         this.mDetector.setIsLongpressEnabled(false);
         setOnSequenceListener(new OnSequenceListener() {
             public void onSequenceSizeChanged(int size) {
-                System.err.println("new size = " + size);
             }
 
             public void onSequenceFinished() {
-                System.err.println("onSequenceFinished");
                 Log.e("SNAKE", "onSequenceFinished()");
                 if (TwoFoldGrid.this.sequence.size() > 1) {
                     TwoFoldGrid.this.clearSequenceAndGenerateCells();
@@ -269,9 +265,7 @@ public class TwoFoldGrid extends GridLayout implements GameGrid, OnGestureListen
         button.setWidth(cellSize);
         button.setSoundEffectsEnabled(false);
         generateAndSetupCell(button);
-        if (VERSION.SDK_INT >= 21) {
-            button.setStateListAnimator(null);
-        }
+        button.setStateListAnimator(null);
         button.setTag(R.id.tag_cell_x, Integer.valueOf(x));
         button.setTag(R.id.tag_cell_y, Integer.valueOf(y));
         return button;

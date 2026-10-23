@@ -31,10 +31,6 @@ import java.util.List;
 public class ChallengeAdapter extends Adapter<ViewHolder> {
     private static final double ITEM_RATIO = 2.31d;
     private static final double STAR_RATION = 0.6d;
-    private static final int TYPE_BOTTOM_BUTTON = 4;
-    private static final int TYPE_LEFT = 1;
-    private static final int TYPE_RIGHT = 2;
-    private static final int TYPE_TOP_BUTTON = 3;
     private MemoryApplicationModel application = MemoryApplicationModel.getInstance();
     private int finishedGames = 0;
     private List<ChallengeJsonGame> games;

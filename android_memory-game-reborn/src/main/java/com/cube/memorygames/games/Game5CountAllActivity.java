@@ -133,10 +133,6 @@ public class Game5CountAllActivity extends Game1MemoryGridActivity {
                         Game5CountAllActivity.this.soundClick();
                     } else {
                         boolean enabled = !SoundUtils.isPlaySound(getContext());
-                        Game5CountAllActivity.this.application.logEvent(Game5CountAllActivity.this,
-                                MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL,
-                                enabled ? MemoryApplicationModel.ANALYTICS_EVENT_SOUND_ON
-                                        : MemoryApplicationModel.ANALYTICS_EVENT_SOUND_OFF);
                         SoundUtils.setPlaySound(getContext(), enabled);
                     }
                     updateSoundState();

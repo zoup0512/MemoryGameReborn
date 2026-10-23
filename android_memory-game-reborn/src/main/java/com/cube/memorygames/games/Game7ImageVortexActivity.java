@@ -23,35 +23,11 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Game7ImageVortexActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 61000;
     private int failCount = 0;
-    private long gameTime;
     private CountDownTimer gameTimer;
     private Drawable nextCellImage;
     private List<Integer> remainingUnusedCellImageIds = new ArrayList();
-    private long startedTime;
     private long timeLeft = 61000;
-    private Handler timerHandler = new Handler();
-    private Runnable timerRunnable = new Runnable() {
-        public void run() {
-            final long time = Game7ImageVortexActivity.this.gameTime - (System.currentTimeMillis() - Game7ImageVortexActivity.this.startedTime);
-            if (time > 0) {
-                Game7ImageVortexActivity.this.runOnUiThread(new Runnable() {
-                    public void run() {
-                        Game7ImageVortexActivity.this.updateTimerText(time);
-                    }
-                });
-                Game7ImageVortexActivity.this.timerHandler.postDelayed(this, 20);
-                return;
-            }
-            Game7ImageVortexActivity.this.startedTime = 0;
-            Game7ImageVortexActivity.this.progressBar.setVisibility(4);
-            if (!Game7ImageVortexActivity.this.isFinishing()) {
-                Game7ImageVortexActivity.this.killTimer();
-                Game7ImageVortexActivity.this.showFailure();
-            }
-        }
-    };
     private List<Drawable> usedCellImages = new ArrayList();
 
     private class GameTimer extends CountDownTimer {
@@ -68,7 +44,6 @@ public class Game7ImageVortexActivity extends Game1MemoryGridActivity {
 
         public GameTimer(long millisInFuture, long countDownInterval) {
             super(millisInFuture, countDownInterval);
-            System.err.println("millisInFuture = " + millisInFuture);
         }
 
         public void onTick(long millisUntiFinish) {

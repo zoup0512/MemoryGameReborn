@@ -110,9 +110,6 @@ public class Polygon {
         return false;
     }
 
-    public List<Line> getSides() {
-        return this._sides;
-    }
 
     private boolean intersect(Line ray, Line side) {
         Point intersectPoint;

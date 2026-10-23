@@ -99,9 +99,7 @@ public class PauseDialog extends AppCompatDialog {
         MemoryApplicationModel application = MemoryApplicationModel.getInstance();
         this.sound.setChecked(!this.sound.isChecked());
         if (this.sound.isChecked()) {
-            application.logEvent(getClass().getSimpleName(), MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_SOUND_ON);
         } else {
-            application.logEvent(getClass().getSimpleName(), MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_SOUND_OFF);
         }
         SoundUtils.setPlaySound(getContext(), this.sound.isChecked());
         updateSoundDescription();

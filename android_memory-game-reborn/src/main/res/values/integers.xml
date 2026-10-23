@@ -1,8 +1,8 @@
-<resources><integer name="animation_duration">250</integer>
+<resources>
+    <integer name="animation_duration">250</integer>
     <integer name="default_circle_indicator_orientation">0</integer>
     <integer name="default_title_indicator_footer_indicator_style">2</integer>
     <integer name="default_title_indicator_line_position">0</integer>
     <integer name="default_underline_indicator_fade_delay">300</integer>
     <integer name="default_underline_indicator_fade_length">400</integer>
-    <integer name="google_play_services_version">9452000</integer>
     </resources>

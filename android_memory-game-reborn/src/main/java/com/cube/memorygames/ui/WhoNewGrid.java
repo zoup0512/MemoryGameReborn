@@ -28,7 +28,6 @@ import java.util.List;
 
 public class WhoNewGrid extends GridLayout implements GameGrid {
     private static final float DIVIDER_COEFFICIENT = 0.1f;
-    private static final float SHADOW_COEFFICIENT = 0.04f;
     private View[][] buttons;
     private List<Drawable> cellDrawables;
     private int cellTypes;
@@ -221,9 +220,7 @@ public class WhoNewGrid extends GridLayout implements GameGrid {
                 button.setSoundEffectsEnabled(false);
                 button.setBackgroundResource(R.drawable.drawable_cell_wrong);
                 button.setOnCheckedChangeListener(this.wrongCellListener);
-                if (VERSION.SDK_INT >= 21) {
-                    button.setStateListAnimator(null);
-                }
+                button.setStateListAnimator(null);
                 button.setEnabled(false);
                 if (this.showAnimation) {
                     button.setAlpha(0.0f);

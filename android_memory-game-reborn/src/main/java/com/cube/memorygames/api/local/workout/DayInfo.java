@@ -23,9 +23,6 @@ public class DayInfo {
         this.dayOfWeek = dayOfWeek;
     }
 
-    public List<DbLevelInfo> getDayGames() {
-        return this.dayGames;
-    }
 
     public void setDayGames(List<DbLevelInfo> dayGames) {
         this.dayGames = dayGames;

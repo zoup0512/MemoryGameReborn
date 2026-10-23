@@ -47,7 +47,6 @@ final class OnlineUi {
         }
     }
 
-    private static Typeface light;
     private static Typeface regular;
     private static Typeface medium;
     private static Typeface bold;
@@ -55,12 +54,6 @@ final class OnlineUi {
     private OnlineUi() {
     }
 
-    static Typeface light(Context context) {
-        if (light == null) {
-            light = Typeface.createFromAsset(context.getApplicationContext().getAssets(), "Roboto-Light.ttf");
-        }
-        return light;
-    }
 
     static Typeface regular(Context context) {
         if (regular == null) {
@@ -206,9 +199,6 @@ final class OnlineUi {
         AvatarCatalog.apply(context,avatar.image,value);
     }
 
-    static TextView menuButton(Context context, Typeface ignored, int textRes) {
-        return primaryButton(context, textRes);
-    }
 
     static TextView primaryButton(Context context, int textRes) {
         TextView button = actionButton(context, textRes);

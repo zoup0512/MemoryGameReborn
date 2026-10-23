@@ -41,10 +41,4 @@
         <item>@color/game20_color4</item>
         <item>@color/game20_color5</item>
     </array>
-    <array name="game23_colors">
-        <item>@color/game23_color0</item>
-        <item>@color/game23_color1</item>
-        <item>@color/game23_color2</item>
-        <item>@color/game23_color3</item>
-    </array>
 </resources>

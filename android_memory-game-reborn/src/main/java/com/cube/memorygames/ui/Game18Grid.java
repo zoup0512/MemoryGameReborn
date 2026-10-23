@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game18Grid extends View implements GameGrid {
-    private static final int STATE_GAME = 1;
-    private static final int STATE_LOSE = 3;
-    private static final int STATE_WIN = 2;
     private List<List<Integer>> colors;
     private int correctCircle;
     private boolean enableClick;

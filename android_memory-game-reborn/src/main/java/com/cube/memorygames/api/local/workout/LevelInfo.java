@@ -15,9 +15,6 @@ public class LevelInfo {
         return this.gameInfo;
     }
 
-    public void setGameInfo(GameInfo gameInfo) {
-        this.gameInfo = gameInfo;
-    }
 
     public int getLevel() {
         return this.level;

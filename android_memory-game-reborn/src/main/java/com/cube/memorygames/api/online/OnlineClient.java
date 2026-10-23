@@ -31,7 +31,6 @@ public class OnlineClient {
     }
 
     private static final long PING_INTERVAL_MS = 10000L;
-    private static final long CONNECT_TIMEOUT_MS = 10000L;
 
     private final Listener listener;
     private final Handler main = new Handler(Looper.getMainLooper());

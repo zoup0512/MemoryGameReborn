@@ -1,28 +1,8 @@
-<resources><string name="messenger_send_button_text">Отпр</string>
-    <string name="all_games">Все игры</string>
+<resources>
     <string name="all_games_text">все игры</string>
-    <string name="already_shared">Спасибо. Вы уже распространили информацию об игре.</string>
     <string name="app_name">Тренировка памяти</string>
-    <string name="at_current_level_placeholder">на уровне %1$d</string>
     <string name="average_level">Средний уровень</string>
     <string name="back">Назад</string>
-    <string name="banner_remove_ads">● Удаляем рекламу, везде где только Вы ее видели. Этой гадости больше не будет!</string>
-    <string name="banner_remove_ads2">Удаляем рекламу и Вы ее больше никогда не увидите!</string>
-    <string name="banner_text">"● Удаляем рекламу, везде где только Вы ее видели. Этой гадости больше не будет! 
-
-● Переигровки уровня без просмотра рекламы!
-
-● Разблокируем все игры. Текущие и все новые последующие игры будут разблокированы
-
-● +1000 монет в качестве приятного бонуса;)
-
-"</string>
-    <string name="banner_text2_1">Удаляем рекламу :)</string>
-    <string name="banner_text2_2">Разблокируем все игры</string>
-    <string name="banner_text2_3">+1000 монет</string>
-    <string name="bets">СТАВКИ</string>
-    <string name="brain_games">РАЗВИВАЮЩИЕ ИГРЫ</string>
-    <string name="button_text_ok">Ок</string>
     <string name="categoryAttention">ВНИМАНИЕ</string>
     <string name="categoryFlexibility">ГИБКОСТЬ</string>
     <string name="categoryImagination">ПРОСТРАНСТВЕННОЕ ВООБРАЖЕНИЕ</string>
@@ -31,44 +11,16 @@
     <string name="categorySpeed">СКОРОСТЬ</string>
     <string name="challenge">Челлендж</string>
     <string name="choose_answer">Выберите правильную</string>
-    <string name="choose_photo">Выбрать Фото</string>
-    <string name="coins">монеток</string>
-    <string name="congratulations">Поздравляем!</string>
-    <string name="continueText">Продолжить</string>
-    <string name="current_level_placeholder">Текущий уровень %1$d</string>
-    <string name="dialog_fail">Ты проиграл :(</string>
     <string name="dialog_feedback_title">Хотите написать нам отзыв, что нужно улучшить??</string>
     <string name="dialog_leave_feedback_no">Не сейчас</string>
     <string name="dialog_leave_feedback_yes">Да</string>
-    <string name="dialog_look_ranks">Залогинтесь, чтобы увидеть ТОП игроков</string>
-    <string name="dialog_lose_bet">Вы потеряете ставку, если выйдете. Вы уверены?</string>
     <string name="dialog_new_like_title">Вам нравится</string>
     <string name="dialog_new_like_us_no">Не очень</string>
     <string name="dialog_new_like_us_yes">Ок</string>
-    <string name="dialog_new_rate_title">Как на счет небольшого отзыва на Google Play?</string>
     <string name="dialog_new_rate_title_2">Пожалуйста, оцените нас!</string>
-    <string name="dialog_new_rate_us_no">Нет, спасибо</string>
-    <string name="dialog_new_rate_us_yes">Да, конечно</string>
-    <string name="dialog_replay_options_1">Продолжить</string>
-    <string name="dialog_replay_options_2">игру</string>
     <string name="dialog_timeout_title">Время вышло:)</string>
-    <string name="dialog_try_workout_confirm_button_text">Перейти к Тренировке</string>
     <string name="dialog_unlock_online_warning">У вас недостаточно монеток для Онлайн игры</string>
-    <string name="dialog_unlock_title">Хотите разблокировать игру?</string>
-    <string name="dialog_unlock_warning">У Вас нет достаточного количества монет, чтобы разблокировать игру</string>
-    <string name="dialog_win">Очень хорошо!</string>
     <string name="dialog_you_finished_game">Игра окончена</string>
-    <string name="earnings">Доходы</string>
-    <string name="edit_profile">Редактировать Профайл</string>
-    <string name="exit">Выйти</string>
-    <string name="explore">По очереди</string>
-    <string name="facebook_login">Войти</string>
-    <string name="facebook_share_messages">Тренировка мозга - легко и просто, все в игровой форме. Я очень доволен и рекомендую скачать это приложение:</string>
-    <string name="fail">Неверно</string>
-    <string name="fail_dialog_game_suggestion_text">Вот еще одна игра для Вас</string>
-    <string name="fail_title">Вы не закончили</string>
-    <string name="finish">Финиш</string>
-    <string name="game">Игра</string>
     <string name="game20_color0">Желтый</string>
     <string name="game20_color1">Красный</string>
     <string name="game20_color2">Коричневый</string>
@@ -76,11 +28,6 @@
     <string name="game20_color4">Синий</string>
     <string name="game20_color5">Черный</string>
     <string name="game5_dialog_text">Сколько?</string>
-    <string name="game7_success_text">Правильно!</string>
-    <string name="game7_timer_prefix">Время:</string>
-    <string name="game_dexcription_banner">"- thousands of wallpapers
-- only HD and QHD images
-- new images every day"</string>
     <string name="game_finished">Игра завершена</string>
     <string name="game_name_1">Мозаика Памяти</string>
     <string name="game_name_10">Уникальный</string>
@@ -105,61 +52,24 @@
     <string name="game_name_7">Вихрь Иконок</string>
     <string name="game_name_8">Поймай Их</string>
     <string name="game_name_9">Найди Картинку</string>
-    <string name="game_name_banner">Wallpapers HD</string>
-    <string name="game_paused">Пауза</string>
     <string name="game_statistic">Игровая статистика</string>
     <string name="generating_game_list">Генерируем игры для Тренировки…</string>
-    <string name="get_coins">Больше монеток</string>
-    <string name="get_more_coins">Больше монеток</string>
-    <string name="get_pro">Получить ПРО</string>
     <string name="get_ready">Правила:</string>
-    <string name="get_unlimited_online">"Получите Неограниченный Онлайн
- без ставок монеток всего за 1.5$"</string>
-    <string name="get_unlimited_online2">"Получите Неограниченный Онлайн
- без ставок монеток всего за"</string>
-    <string name="help_games_in_workout_description">Каждый день будет генерироваться 4 игры</string>
-    <string name="help_games_in_workout_title">ИГРЫ ДЛЯ ТРЕНИРОВКИ</string>
-    <string name="help_level_description">Показывая хорошие результаты, ты повышаешь свой уровень навыков</string>
-    <string name="help_level_title">УРОВЕНЬ</string>
-    <string name="help_smart_points_description">СО - уникальная система, которая измеряет твой уровень интеллекта</string>
-    <string name="help_smart_points_title">СМАРТ ОЧКИ</string>
-    <string name="help_workout_calendar_description">В календаре показаны законченные тренировки</string>
-    <string name="help_workout_calendar_title">КАЛЕНДАРЬ ТРЕНИРОВОК</string>
-    <string name="hint_nick_name">Имя</string>
-    <string name="home">Меню</string>
-    <string name="internet_warning">Отсутствует подключение к интернету</string>
     <string name="iq_level_text">Уровень %1$s</string>
     <string name="last_games">Последние игры</string>
     <string name="level_number_248">Уровень %1$d (%2$d Очков)</string>
     <string name="level_number_prefix">Уровень</string>
     <string name="level_ready">Готов?</string>
-    <string name="loading">Загрузка…</string>
     <string name="locked_warning">Игра заблокирована</string>
-    <string name="login_title">Пожалуйста, введите свой Nickname</string>
     <string name="maximum_level">Максимальный уровень</string>
-    <string name="menu">Меню</string>
     <string name="tab_profile">Я</string>
-    <string name="menuOnlineHistory">История</string>
     <string name="menuOnlinePlay">Играть Онлайн</string>
-    <string name="menuOnlineTop">Онлайн Рейтинг</string>
     <string name="message_type_1">Игроки ждут! Вперед к победам!</string>
     <string name="message_type_2">Тренируй свой мозг. Покажи отличные результаты</string>
     <string name="message_type_3">Сегодня отличный день. Тренируй свой мозг</string>
     <string name="message_type_4">Покажи на что ты способен. Играй и побеждай!</string>
-    <string name="money_statistic">Статистика монет</string>
-    <string name="new_current_level_placeholder">уровень %1$d</string>
-    <string name="new_puzzle_game">"- новая игра головоломка 
- от Pixing"</string>
     <string name="next">Дальше</string>
     <string name="nextDuel">Следующая Игра</string>
-    <string name="next_level">Далее</string>
-    <string name="next_level_placeholder">Следующий уровень %1$d</string>
-    <string name="no_ads_message">Реклама отсутствует. Попробуйте позже.</string>
-    <string name="no_internet_info">"Для игры Онлайн
- необходимо подключение к Интернету"</string>
-    <string name="no_internet_message">Отсутствует соединение с интернетом.</string>
-    <string name="no_internet_ooops">Ууупс…</string>
-    <string name="no_internet_settings">Настройки</string>
     <string name="not_enough_coins">Не хватает монет? Получи бесплатно здесь!</string>
     <string name="ok">Да</string>
     <string name="online_draw">Ничья!</string>
@@ -170,8 +80,6 @@
     <string name="online_title_wins">Побед</string>
     <string name="online_top_title">TOP Онлайн</string>
     <string name="online_tutorial_1">Вам необходимо иметь &lt;b&gt;30 монеток&lt;/b&gt; для игры в Онлайн</string>
-    <string name="online_tutorial_2">Если вы выиграли, вы получаете монетки</string>
-    <string name="online_tutorial_3">Если вы проиграли, вы теряете монетки</string>
     <string name="online_tutorial_4">Если вы выиграли, ваш рейтинг растет</string>
     <string name="online_tutorial_5">Если вы проиграли, ваш рейтинг падает</string>
     <string name="online_tutorial_bets">Ставки</string>
@@ -182,56 +90,23 @@
  готов"</string>
     <string name="opponent_waiting">"Ожидаем 
  соперника"</string>
-    <string name="performance">Ваши достижения</string>
     <string name="play">Играть</string>
     <string name="popup_top">Здесь вы можете сравнить ваш рейтинг с другими</string>
-    <string name="pro_discount_upgrade_for">УЛУЧШИТЬ за 1.5$</string>
-    <string name="pro_discount_upgrade_for2">УЛУЧШИТЬ за</string>
-    <string name="pro_discount_version_title">Отличная новость! ПРО-версия со скидкой 50%!</string>
-    <string name="pro_upgrade_for">УЛУЧШИТЬ до ПРО 2.49$</string>
-    <string name="pro_upgrade_for2">УЛУЧШИТЬ за</string>
-    <string name="pro_version">ПРО-версия</string>
-    <string name="pro_version_title">ПРО-версия без рекламы</string>
     <string name="rank">Ваш рейтинг</string>
-    <string name="remove_ads">Убрать рекламу</string>
-    <string name="remove_ads_dialog_title">Вам надоела реклама? Отключите ее!</string>
-    <string name="remove_for">Отключить за 1$</string>
-    <string name="remove_for2">Отключить за</string>
     <string name="replay">Переиграть</string>
-    <string name="replay_from_this_level">Переиграть этот уровень</string>
-    <string name="restart">Рестарт</string>
     <string name="restart_game">Рестарт Игры</string>
-    <string name="resume">Продолжить</string>
-    <string name="score">Результат</string>
     <string name="searching_for_opponents">Поиск соперника...</string>
-    <string name="secret_game_button">Пригласить</string>
-    <string name="secret_game_description">"● Пригласи друга
-
-● Когда он установит и запустит игру - вы оба получите секретную игру!"</string>
-    <string name="secret_game_opened_txt">Вы открыли секретную игру</string>
-    <string name="secret_game_title">Хочешь секретную игру?</string>
-    <string name="settings">Настройки аккаунта</string>
     <string name="skip">Пропустить</string>
-    <string name="smart">Смарт</string>
-    <string name="spent">Расходы</string>
     <string name="sprint">Спринт</string>
     <string name="stars_to_next_level">" до следующего уровня"</string>
     <string name="start">Старт</string>
     <string name="stats">СТАТИСТИКА</string>
     <string name="tab_online">Онлайн</string>
-    <string name="take_photo">Сделать Фото</string>
-    <string name="tell_friends">Рассказать друзьям</string>
     <string name="text_today">Сегодня</string>
     <string name="text_yesterday">Вчера</string>
-    <string name="textview_start_game_top">Как играть</string>
     <string name="title_online_history">История Онлайн</string>
     <string name="toast_game_not_accepted">Игра не принята</string>
-    <string name="top_ranks_text">TOP Игроков</string>
-    <string name="transfer_title">Конвертируем данные в новый формат</string>
     <string name="trophies_title">Кубки</string>
-    <string name="try_another_game">Попробуйте другую игру:</string>
-    <string name="try_workout_dialog_cancel_button_text">Больше не показывать</string>
-    <string name="tutorial">Правила</string>
     <string name="tutorial_game10_slide1">На игровом поле появляются геометрические фигуры</string>
     <string name="tutorial_game10_slide2">Найдите уникальную фигуру</string>
     <string name="tutorial_game11_slide1">Посчитайте математическое выражение</string>
@@ -314,21 +189,8 @@
     <string name="tutorial_game9_slide1">Запомните все иконки на игровом поле.</string>
     <string name="tutorial_game9_slide2">Над игровым полем показывается иконка.</string>
     <string name="tutorial_game9_slide3">Укажите расположение иконки на игровом поле.</string>
-    <string name="unlimited_upgrade_for">Получить за 1.0$</string>
-    <string name="unlimited_upgrade_for2">Получить за</string>
-    <string name="unlock_games">Разблокировать все игры</string>
     <string name="unlock_text">Открыть</string>
-    <string name="upgrade_pro">ПРО-версия</string>
-    <string name="video_hint">Вы можете посмотреть рекламу чтоб начать этот уровень снова</string>
-    <string name="video_limit_message">Спасибо. Вы исчерпали лимит просмотров рекламы в день.</string>
     <string name="view_all">ПОСМОТРЕТЬ ВСЕ КУБКИ</string>
-    <string name="view_video_ads">Посмотреть рекламу</string>
-    <string name="wallpapers">Лучшие обои для вас</string>
-    <string name="want_online_without_coins">"Хотите Онлайн
- без монеток?"</string>
-    <string name="want_save_your_coins">"Вы хотите сберечь
- свои монетки?"</string>
-    <string name="watch_ad">Посмотреть рекламу</string>
     <string name="won_bronze">Вы выиграли бронзовый кубок!</string>
     <string name="won_glass">Вы выиграли хрустальный кубок!</string>
     <string name="won_gold">Вы выиграли золотой кубок!</string>
@@ -338,37 +200,20 @@
     <string name="workout_games_title">Игры на сегодня:</string>
     <string name="workout_sp_title">Твои СО:</string>
     <string name="workout_sp_to_next_level">%1$s до следующего уровня</string>
-    <string name="your_score">Вы набрали</string>
     <string name="your_trophies">Кубки</string>
     <string name="your_trophy">Твой Кубок</string>
     <string name="menu_online_play_bot">Играть с ботом</string>
     <string name="online_bot_pick">Выберите соперника</string>
     <string name="online_bot_streak">Серия побед: %1$d</string>
-    <string name="online_lobby_eyebrow">ИНТЕЛЛЕКТУАЛЬНЫЕ ДУЭЛИ ОНЛАЙН</string>
-    <string name="online_lobby_title">Готовы к следующему матчу?</string>
-    <string name="online_lobby_subtitle">Проходите короткие игры на память и поднимайтесь в онлайн-рейтинге.</string>
-    <string name="online_connection_connecting">Подключение…</string>
-    <string name="online_connection_authorizing">Готовим ваш профиль…</string>
-    <string name="online_connection_ready">Онлайн и готов</string>
-    <string name="online_connection_reconnecting">Переподключение…</string>
-    <string name="online_connection_offline">Вы офлайн</string>
     <string name="online_retry">Повторить</string>
     <string name="online_entry_fee">Взнос %1$d</string>
     <string name="online_ranked_title">Ранговый матч</string>
     <string name="online_ranked_subtitle">Зарабатывайте монетки и повышайте рейтинг в быстрой дуэли один на один.</string>
     <string name="online_practice_title">Тренировочная арена</string>
     <string name="online_practice_subtitle">Бесплатная тренировка · без риска для рейтинга</string>
-    <string name="online_friend_title">Играйте с другом</string>
-    <string name="online_friend_subtitle">Создайте приватную комнату или введите четырёхзначный код.</string>
     <string name="online_overview_title">Ваш сезон</string>
     <string name="online_win_rate">Процент побед</string>
     <string name="online_shortcuts_title">Ваши соперники</string>
-    <string name="online_rules_title">Как работает Онлайн</string>
-    <string name="online_rule_one">Выберите ранговый матч, тренировку или приватную комнату.</string>
-    <string name="online_rule_two">Оба игрока проходят одни и те же игры с одинаковым сидом.</string>
-    <string name="online_rule_three">Наберите больше очков до конца таймера раунда.</string>
-    <string name="online_profile_offline">Подключитесь, чтобы загрузить профиль</string>
-    <string name="online_profile_rank_line">%1$s · рейтинг %2$d</string>
     <string name="online_percent">%1$d%%</string>
     <string name="online_practice_with_streak">Бесплатная тренировка · без риска для рейтинга · Серия побед: %1$d</string>
     <string name="online_game_tutorial_title">Обучение: %1$s</string>
@@ -386,10 +231,7 @@
     <string name="online_stake_title">Ставка матча</string>
     <string name="online_free_match">Бесплатный матч</string>
     <string name="online_ranked_rating_note">На кону рейтинг</string>
-    <string name="online_rounds_label">Раундов: %1$d</string>
-    <string name="online_round_score">Счёт %1$d : %2$d</string>
     <string name="online_waiting_subtitle">Матч начнётся, как только оба игрока будут готовы.</string>
-    <string name="online_opponent_back">Соперник вернулся</string>
     <string name="online_match_complete">Матч завершён</string>
     <string name="online_result_win_subtitle">Отличная концентрация. Вы выиграли дуэль.</string>
     <string name="online_result_draw_subtitle">Равная борьба. Ещё разок?</string>
@@ -408,9 +250,6 @@
     <string name="online_top_empty">Ранговых игроков пока нет.</string>
     <string name="online_top_podium">Лучшие игроки</string>
     <string name="online_current_player">Вы</string>
-    <string name="online_room_expires">Комната закроется через десять минут</string>
-    <string name="online_room_copy_hint">Поделитесь этим кодом с другом</string>
-    <string name="online_room_invalid">Введите все четыре цифры</string>
     <string name="online_bot_reward">Рейтинг %1$d · победа +%2$d</string>
     <string name="online_tutorial_fee">Для входа в ранговый матч нужно &lt;b&gt;%1$d монеток&lt;/b&gt;</string>
     <string name="online_tutorial_win_fee">Выиграйте матч и получите монетки</string>
@@ -424,39 +263,15 @@
     <string name="online_elo">Рейтинг</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Раунд</string>
-    <string name="online_again">Играть снова</string>
-    <string name="online_exit">Выйти</string>
-    <string name="online_not_connected">Подключитесь к Онлайн-игре, чтобы получить профиль</string>
     <string name="online_opponent_reconnecting">Соперник переподключается…</string>
-    <string name="online_quit_practice">Покинуть тренировочный матч? Победа достанется боту.</string>
     <string name="online_error_connection">Ошибка соединения</string>
-    <string name="online_create_room">Создать комнату</string>
-    <string name="online_join_room">Войти в комнату</string>
     <string name="online_room_code_prefix">Код комнаты:</string>
     <string name="online_room_waiting">Ожидаем друга…</string>
-    <string name="online_enter_code">Введите 4-значный код комнаты</string>
     <string name="online_season_line">Сезон %1$d · осталось %2$d дн.</string>
     <string name="online_history_empty">Матчей пока нет — сыграйте!</string>
-    <string name="online_friend_tag">друг</string>
-    <string name="online_practice_tag">тренировка</string>
     <string name="cancel">Отмена</string>
-    <string name="download">Продолжить</string>
-    <string name="downloading">Загрузка...</string>
-    <string name="gps_prompt_context">Скачать через мобильную сеть?</string>
-    <string name="gps_prompt_title">Подсказка</string>
-    <string name="accept">Принять</string>
-    <string name="create_calendar_message">Разрешить объявлению создать событие в календаре?</string>
-    <string name="create_calendar_title">Создать событие в календаре</string>
-    <string name="decline">Отклонить</string>
-    <string name="gained_stars_placeholder">+%1$d</string>
-    <string name="initial_text_rating">0.0</string>
     <string name="initial_text_stars_count">0</string>
-    <string name="plus">+</string>
-    <string name="plus100">+100</string>
-    <string name="plus50">+50</string>
     <string name="plus_one_url">https://market.android.com/details?id=</string>
-    <string name="store_picture_message">Разрешить объявлению сохранить изображение в галерею?</string>
-    <string name="store_picture_title">Сохранить изображение</string>
     <string name="level_number_format">Уровень %1$d</string>
     <string name="score_format">Счёт: %1$d</string>
     <string name="rate_dialog_title_format">%1$s %2$s?</string>

@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game15PaperPlanesActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 30000;
     @BindView(R.id.correct_hint)
     View correctHint;
     private long gameTime = 30000;

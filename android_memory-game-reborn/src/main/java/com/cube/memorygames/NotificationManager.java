@@ -133,21 +133,9 @@ public class NotificationManager {
         }
     }
 
-    public void addNotificationListener(OnNotificationListener onNotificationListener) {
-        this.listeners.add(onNotificationListener);
-    }
 
-    public void removeNotificationListener(OnNotificationListener onNotificationListener) {
-        this.listeners.remove(onNotificationListener);
-    }
 
-    public void showCancelNotifications(Context context) {
-        showNotifications(context, INTENT_ACTION_CANCEL, context.getString(R.string.cancel), context.getString(R.string.searching_for_opponents), BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher));
-    }
 
-    public void showPlayNotifications(Context context, String userName) {
-        showNotifications(context, INTENT_ACTION_PLAY, context.getString(R.string.play), userName, BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher));
-    }
 
     public void showRemindNotification(Context context, String message) {
         Bitmap largeIcon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher);
@@ -156,26 +144,8 @@ public class NotificationManager {
         ((android.app.NotificationManager) context.getSystemService("notification")).notify(NOTIFICATION_ID, new Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(context.getString(R.string.app_name)).setLargeIcon(largeIcon).setOngoing(false).setDefaults(1).setContentIntent(pendingIntent).addAction(0, context.getString(R.string.play), pendingIntent).setContentText(message).build());
     }
 
-    public void showPlayWithPhotoNotifications(Context context, String userName, Bitmap photo) {
-        showNotifications(context, INTENT_ACTION_PLAY, context.getString(R.string.play), userName, getCircleBitmap(photo));
-    }
 
-    private static Bitmap getCircleBitmap(Bitmap bitmap) {
-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-        Paint paint = new Paint();
-        Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
-        paint.setAntiAlias(true);
-        canvas.drawARGB(0, 0, 0, 0);
-        canvas.drawCircle((float) (bitmap.getWidth() / 2), (float) (bitmap.getHeight() / 2), (float) (bitmap.getWidth() / 2), paint);
-        paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-        canvas.drawBitmap(bitmap, rect, rect, paint);
-        return output;
-    }
 
-    private void showNotifications(Context context, String intentAction, String buttonText, String message, Bitmap largeIcon) {
-        ((android.app.NotificationManager) context.getSystemService("notification")).notify(NOTIFICATION_ID, new Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(context.getString(R.string.app_name)).setLargeIcon(largeIcon).setOngoing(true).setContentIntent(PendingIntent.getBroadcast(context, 0, new Intent(INTENT_ACTION_VIEW), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).addAction(0, buttonText, PendingIntent.getBroadcast(context, 0, new Intent(intentAction), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).setContentText(message).build());
-    }
 
     public void hideNotifications(Context context) {
         ((android.app.NotificationManager) context.getSystemService("notification")).cancel(NOTIFICATION_ID);

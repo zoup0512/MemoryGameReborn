@@ -1,32 +1,12 @@
-<resources><string name="messenger_send_button_text">Send</string>
+<resources>
     <string name="diagnostics_upload">Upload diagnostic logs</string>
     <string name="diagnostics_preparing">Preparing a frozen log snapshot; nothing uploaded yet</string>
     <string name="diagnostics_send">Upload over HTTPS</string>
     <string name="diagnostics_success">Logs uploaded · reference ID</string>
-    <string name="diagnostics_confirmation">Actual log range: %1$s — %2$s\nUTF-8 content: %3$d bytes · %4$d records\n\nContains connection/state events, real match IDs, round/game IDs, scores and bounded code stack frames. Excludes credentials, installation IDs, email, nickname, passwords and full protocol messages. Server associates this upload with your existing online identity.\n\nHTTPS destination:\n%5$s\n\nCancel uploads nothing. A failed upload retains this same frozen snapshot and upload ID for retry. New logs remain local.</string>
-    <string name="all_games">All Games</string>
     <string name="all_games_text">all games</string>
-    <string name="already_shared">Thanks. You already shared our game</string>
     <string name="app_name">Memory Games</string>
-    <string name="at_current_level_placeholder">at level %1$d</string>
     <string name="average_level">Average level</string>
     <string name="back">Back</string>
-    <string name="banner_remove_ads">"● Removing Ads everywhere.
-You won't see any of it again!"</string>
-    <string name="banner_remove_ads2">"Removing Ads everywhere. You won't see any of it again!"</string>
-    <string name="banner_text">"● Removing Ads
-
-● Free Replay
-
-● Unlock all games
-
-● +1000 coins"</string>
-    <string name="banner_text2_1">Removing Ads</string>
-    <string name="banner_text2_2">Unlock all games</string>
-    <string name="banner_text2_3">+1000 coins</string>
-    <string name="bets">BETS</string>
-    <string name="brain_games">BRAIN GAMES</string>
-    <string name="button_text_ok">Ok</string>
     <string name="categoryAttention">ATTENTION</string>
     <string name="categoryFlexibility">FLEXIBILITY</string>
     <string name="categoryImagination">IMAGINATION</string>
@@ -35,44 +15,16 @@ You won't see any of it again!"</string>
     <string name="categorySpeed">SPEED</string>
     <string name="challenge">Challenge</string>
     <string name="choose_answer">Choose right answer</string>
-    <string name="choose_photo">Choose Photo</string>
-    <string name="coins">coins</string>
-    <string name="congratulations">Congratulations!</string>
-    <string name="continueText">Continue</string>
-    <string name="current_level_placeholder">Current level %1$d</string>
-    <string name="dialog_fail">You lost :(</string>
     <string name="dialog_feedback_title">Would you like to leave a feedback?</string>
     <string name="dialog_leave_feedback_no">Not now</string>
     <string name="dialog_leave_feedback_yes">Okay</string>
-    <string name="dialog_look_ranks">You need to Login to watch your rank</string>
-    <string name="dialog_lose_bet">You will lose your bet if you quit. Are you sure?</string>
     <string name="dialog_new_like_title">Do you like</string>
     <string name="dialog_new_like_us_no">Not, really</string>
     <string name="dialog_new_like_us_yes">Yes</string>
-    <string name="dialog_new_rate_title">How about rate us on Google Play?</string>
     <string name="dialog_new_rate_title_2">Please, rate us!</string>
-    <string name="dialog_new_rate_us_no">No, thanks</string>
-    <string name="dialog_new_rate_us_yes">Ok, sure</string>
-    <string name="dialog_replay_options_1">Replay</string>
-    <string name="dialog_replay_options_2">from</string>
     <string name="dialog_timeout_title">Time is over</string>
-    <string name="dialog_try_workout_confirm_button_text">Go to Workout</string>
     <string name="dialog_unlock_online_warning">"You don't have enough coins for online game"</string>
-    <string name="dialog_unlock_title">Do you want to unlock?</string>
-    <string name="dialog_unlock_warning">"You don't have enough coins to unlock the game"</string>
-    <string name="dialog_win">Well done!</string>
     <string name="dialog_you_finished_game">You finished game</string>
-    <string name="earnings">Earnings</string>
-    <string name="edit_profile">Edit Profile</string>
-    <string name="exit">Exit</string>
-    <string name="explore">Explore</string>
-    <string name="facebook_login">Login</string>
-    <string name="facebook_share_messages">"Brain Training - easy and simple those cool small games. I'm glad I gave it a try, and suggest you do the same. You'll like it!"</string>
-    <string name="fail">Fail</string>
-    <string name="fail_dialog_game_suggestion_text">"Here's another game for you"</string>
-    <string name="fail_title">You not finished</string>
-    <string name="finish">Finish</string>
-    <string name="game">Game</string>
     <string name="game20_color0">Yellow</string>
     <string name="game20_color1">Red</string>
     <string name="game20_color2">Brown</string>
@@ -80,11 +32,6 @@ You won't see any of it again!"</string>
     <string name="game20_color4">Blue</string>
     <string name="game20_color5">Black</string>
     <string name="game5_dialog_text">Number of Cells?</string>
-    <string name="game7_success_text">SUCCESS!</string>
-    <string name="game7_timer_prefix">Time:</string>
-    <string name="game_dexcription_banner">"- thousands of wallpapers
-- only HD and QHD images
-- new images every day"</string>
     <string name="game_finished">Game finished</string>
     <string name="game_name_1">Memory Grid</string>
     <string name="game_name_10">One and Only</string>
@@ -109,75 +56,29 @@ You won't see any of it again!"</string>
     <string name="game_name_7">Image Vortex</string>
     <string name="game_name_8">Catch Them</string>
     <string name="game_name_9">Find the Picture</string>
-    <string name="game_name_banner">Wallpapers HD</string>
-    <string name="game_paused">Game Paused</string>
     <string name="game_statistic">Game Statistic</string>
     <string name="generating_game_list">Generating game list…</string>
-    <string name="get_coins">Get more Coins</string>
-    <string name="get_more_coins">Get more coins</string>
-    <string name="get_pro">Get PRO</string>
     <string name="get_ready">Tutorial:</string>
-    <string name="get_unlimited_online">"Get Unlimited Online
- without coins only for 1.5$"</string>
-    <string name="get_unlimited_online2">"Get Unlimited Online
- without coins only for"</string>
-    <string name="help_games_in_workout_description">Each day 4 games are generated for you</string>
-    <string name="help_games_in_workout_title">GAMES IN WORKOUT</string>
-    <string name="help_level_description">Get higher levels by showing great results</string>
-    <string name="help_level_title">LEVEL</string>
-    <string name="help_smart_points_description">SP - unique system that measures your brain skills</string>
-    <string name="help_smart_points_title">SMART POINTS</string>
-    <string name="help_workout_calendar_description">Calendar shows completed workouts</string>
-    <string name="help_workout_calendar_title">WORKOUT CALENDAR</string>
-    <string name="hint_nick_name">Name</string>
-    <string name="home">Home</string>
-    <string name="internet_warning">There is no internet connection</string>
     <string name="iq_level_text">Level %1$s</string>
     <string name="last_games">Last Games</string>
     <string name="level_number_248">Level %1$d (%2$d points)</string>
     <string name="level_number_prefix">Level</string>
     <string name="level_ready">Get Ready!</string>
-    <string name="loading">Loading…</string>
     <string name="locked_warning">The game is locked</string>
-    <string name="login_title">"Please enter your 
-Nickname"</string>
     <string name="maximum_level">Maximum level</string>
-    <string name="menu">Menu</string>
     <string name="tab_profile">Me</string>
     <string name="menu_online_play_bot">Play vs Bot</string>
-    <string name="menuOnlineHistory">History</string>
     <string name="menuOnlinePlay">Play Online</string>
-    <string name="menuOnlineTop">Online Ranks</string>
     <string name="message_type_1">Other players are waiting! Go for the victory!</string>
     <string name="message_type_2">Train your brain. Show excellent results</string>
     <string name="message_type_3">Today is a good day to train your brain!</string>
     <string name="message_type_4">Show them what you’re capable of! Play and win!</string>
-    <string name="money_statistic">Money Statistic</string>
-    <string name="new_current_level_placeholder">level %1$d</string>
-    <string name="new_puzzle_game">"- new puzzle game 
- by Pixing"</string>
     <string name="next">Next</string>
     <string name="nextDuel">Next Match</string>
-    <string name="next_level">Next</string>
-    <string name="next_level_placeholder">Next level %1$d</string>
-    <string name="no_ads_message">Ads not available. Please try again later</string>
-    <string name="no_internet_info">"Internet Connection
- is needed to play Online"</string>
-    <string name="no_internet_message">No Internet connection</string>
-    <string name="no_internet_ooops">Ooops…</string>
-    <string name="no_internet_settings">Settings</string>
     <string name="not_enough_coins">Not enough coins? Get more here!</string>
     <string name="ok">Yes</string>
     <string name="online_bot_pick">Choose your opponent</string>
     <string name="online_bot_streak">Win streak: %1$d</string>
-    <string name="online_lobby_eyebrow">LIVE BRAIN DUELS</string>
-    <string name="online_lobby_title">Ready for your next match?</string>
-    <string name="online_lobby_subtitle">Race through short memory games and climb the online ranks.</string>
-    <string name="online_connection_connecting">Connecting…</string>
-    <string name="online_connection_authorizing">Preparing your profile…</string>
-    <string name="online_connection_ready">Online and ready</string>
-    <string name="online_connection_reconnecting">Reconnecting…</string>
-    <string name="online_connection_offline">You’re offline</string>
     <string name="online_retry">Retry</string>
     <string name="online_entry_fee">Entry %1$d</string>
     <string name="online_tab_ranked">Ranked</string>
@@ -190,13 +91,10 @@ Nickname"</string>
     <string name="online_ranked_subtitle">Win coins and boost your rating in a quick head-to-head duel.</string>
     <string name="online_practice_title">Practice arena</string>
     <string name="online_practice_subtitle">Free practice · no rating risk</string>
-    <string name="online_friend_title">Play with a friend</string>
-    <string name="online_friend_subtitle">Create a private room or enter a four-digit code.</string>
     <string name="online_overview_title">Your season</string>
     <string name="online_win_rate">Win rate</string>
     <string name="online_shortcuts_title">Your competition</string>
     <string name="online_ranking_subtitle">Your rating, leaderboard and recent matches in one place.</string>
-    <string name="online_ranking_rating">Current rating</string>
     <string name="online_ranking_snapshot">Latest synced results</string>
     <string name="online_ranking_no_profile">No synced results yet</string>
     <string name="online_ranking_no_profile_hint">Open the leaderboard or match history to connect and load your results.</string>
@@ -206,12 +104,6 @@ Nickname"</string>
     <string name="online_ranking_history_hint">Review recent opponents, scores and results.</string>
     <string name="online_ranking_season_hint">Ranked matches determine your tier and rating.</string>
     <string name="online_ranking_tier_unknown">Tier available after connecting</string>
-    <string name="online_rules_title">How Online works</string>
-    <string name="online_rule_one">Choose ranked, practice, or a private room.</string>
-    <string name="online_rule_two">Both players face the same games and seed.</string>
-    <string name="online_rule_three">Score more before the round timer ends.</string>
-    <string name="online_profile_offline">Connect to load your profile</string>
-    <string name="online_profile_rank_line">%1$s · rating %2$d</string>
     <string name="online_percent">%1$d%%</string>
     <string name="online_practice_with_streak">Free practice · no rating risk · Win streak: %1$d</string>
     <string name="online_game_tutorial_title">Tutorial: %1$s</string>
@@ -229,10 +121,7 @@ Nickname"</string>
     <string name="online_stake_title">Match stake</string>
     <string name="online_free_match">Free match</string>
     <string name="online_ranked_rating_note">Rating on the line</string>
-    <string name="online_rounds_label">%1$d rounds</string>
-    <string name="online_round_score">Score %1$d : %2$d</string>
     <string name="online_waiting_subtitle">The match starts as soon as both players are ready.</string>
-    <string name="online_opponent_back">Opponent reconnected</string>
     <string name="online_match_complete">Match complete</string>
     <string name="online_result_win_subtitle">Great focus. You won the duel.</string>
     <string name="online_result_draw_subtitle">Evenly matched. One more?</string>
@@ -251,9 +140,6 @@ Nickname"</string>
     <string name="online_top_empty">No ranked players are available yet.</string>
     <string name="online_top_podium">Top competitors</string>
     <string name="online_current_player">You</string>
-    <string name="online_room_expires">Room closes in ten minutes</string>
-    <string name="online_room_copy_hint">Share this code with your friend</string>
-    <string name="online_room_invalid">Enter all four digits</string>
     <string name="online_bot_reward">Rating %1$d · win +%2$d</string>
     <string name="online_tutorial_fee">You need &lt;b&gt;%1$d coins&lt;/b&gt; to enter a ranked match</string>
     <string name="online_tutorial_win_fee">Win the match to earn coins</string>
@@ -271,29 +157,18 @@ Nickname"</string>
     <string name="online_ranking_rating_accessibility" translatable="false">%1$s: %2$d</string>
     <string name="online_vs">VS</string>
     <string name="online_round_word">Round</string>
-    <string name="online_again">Play again</string>
-    <string name="online_exit">Exit</string>
-    <string name="online_not_connected">Connect with Play Online to get your profile</string>
     <string name="online_opponent_reconnecting">Opponent is reconnecting…</string>
-    <string name="online_quit_practice">Leave the practice match? The bot takes the win.</string>
     <string name="online_error_connection">Connection error</string>
-    <string name="online_create_room">Create room</string>
-    <string name="online_join_room">Join room</string>
     <string name="online_room_code_prefix">Room code:</string>
     <string name="online_room_waiting">Waiting for your friend…</string>
-    <string name="online_enter_code">Enter 4-digit room code</string>
     <string name="online_season_line">Season %1$d · %2$dd left</string>
     <string name="online_history_empty">No matches yet — go play one!</string>
-    <string name="online_friend_tag">friend</string>
-    <string name="online_practice_tag">practice</string>
     <string name="online_title_draws">Draws</string>
     <string name="online_title_loses">Losses</string>
     <string name="online_title_ratio">Wins, %</string>
     <string name="online_title_wins">Wins</string>
     <string name="online_top_title">TOP Online</string>
     <string name="online_tutorial_1">Ranked matches use a coin entry stake</string>
-    <string name="online_tutorial_2">If you win, you get coins</string>
-    <string name="online_tutorial_3">If you lose, you also lose coins</string>
     <string name="online_tutorial_4">If you win, your rating increases</string>
     <string name="online_tutorial_5">If you lose, your rating will lower</string>
     <string name="online_tutorial_bets">Bets</string>
@@ -304,60 +179,23 @@ Nickname"</string>
  Ready"</string>
     <string name="opponent_waiting">"Waiting for
  your opponent"</string>
-    <string name="performance">Your Performance</string>
     <string name="play">Play</string>
     <string name="popup_top">Here you can see how you compare to others</string>
-    <string name="pro_discount_upgrade_for">UPGRADE for 1.99$</string>
-    <string name="pro_discount_upgrade_for2">UPGRADE for</string>
-    <string name="pro_discount_version_title">"PRO version with 50%
-discount.
-Only here and only now"</string>
-    <string name="pro_upgrade_for">UPGRADE for 3.99$</string>
-    <string name="pro_upgrade_for2">UPGRADE for</string>
-    <string name="pro_version">PRO version</string>
-    <string name="pro_version_title">"Get PRO version
-without Ads"</string>
     <string name="rank">Your Rank</string>
-    <string name="remove_ads">Remove Ads</string>
-    <string name="remove_ads_dialog_title">"Tired of Ads?
-Remove it!"</string>
-    <string name="remove_for">REMOVE for 1$</string>
-    <string name="remove_for2">REMOVE for</string>
     <string name="replay">Replay</string>
-    <string name="replay_from_this_level">Replay this level</string>
-    <string name="restart">Restart</string>
     <string name="restart_game">Restart Game</string>
-    <string name="resume">Resume</string>
-    <string name="score">Score</string>
     <string name="searching_for_opponents">Searching for opponents...</string>
-    <string name="secret_game_button">Invite</string>
-    <string name="secret_game_description">"● Invite your friend
-
-● When he launched the game - you both get an exclusive Super Secret Game!"</string>
-    <string name="secret_game_opened_txt">You opened Secret Game</string>
-    <string name="secret_game_title">Want a Secret Game?</string>
-    <string name="settings">Account settings</string>
     <string name="skip">Skip</string>
-    <string name="smart">Smart</string>
-    <string name="spent">Spent</string>
     <string name="sprint">Sprint</string>
     <string name="stars_to_next_level">" to next level"</string>
     <string name="start">Start</string>
     <string name="stats">STATISTICS</string>
     <string name="tab_online">Online</string>
-    <string name="take_photo">Take Photo</string>
-    <string name="tell_friends">Share with Friends</string>
     <string name="text_today">Today</string>
     <string name="text_yesterday">Yesterday</string>
-    <string name="textview_start_game_top">How to Play</string>
     <string name="title_online_history">Online History</string>
     <string name="toast_game_not_accepted">Game not accepted</string>
-    <string name="top_ranks_text">TOP Ranks</string>
-    <string name="transfer_title">Converting data to new format</string>
     <string name="trophies_title">Trophies</string>
-    <string name="try_another_game">Try another game:</string>
-    <string name="try_workout_dialog_cancel_button_text">Never show again</string>
-    <string name="tutorial">Tutorial</string>
     <string name="tutorial_game10_slide1">Different shapes appear on the game board</string>
     <string name="tutorial_game10_slide2">Find unique shape</string>
     <string name="tutorial_game11_slide1">Calculate expression</string>
@@ -426,21 +264,8 @@ positions"</string>
     <string name="tutorial_game9_slide1">Memorize the icon positions</string>
     <string name="tutorial_game9_slide2">The icon is displayed above</string>
     <string name="tutorial_game9_slide3">Tap on the grid where the icon is</string>
-    <string name="unlimited_upgrade_for">Get for 1.5$</string>
-    <string name="unlimited_upgrade_for2">Get for</string>
-    <string name="unlock_games">Unlock All Games</string>
     <string name="unlock_text">Unlock</string>
-    <string name="upgrade_pro">UPGRADE to PRO</string>
-    <string name="video_hint">You can watch ads and replay this level</string>
-    <string name="video_limit_message">Thanks. You reached daily limit for videos</string>
     <string name="view_all">VIEW ALL TROPHIES</string>
-    <string name="view_video_ads">View Ads</string>
-    <string name="wallpapers">Best Wallpapers for You</string>
-    <string name="want_online_without_coins">"Want Online without
- coins?"</string>
-    <string name="want_save_your_coins">"Want to save
-your coins?"</string>
-    <string name="watch_ad">Watch Ad</string>
     <string name="won_bronze">You won a Bronze Trophy!</string>
     <string name="won_glass">You won a Glass Trophy!</string>
     <string name="won_gold">You won a Gold Trophy!</string>
@@ -450,42 +275,12 @@ your coins?"</string>
     <string name="workout_games_title">Games in your Workout:</string>
     <string name="workout_sp_title">Your SP:</string>
     <string name="workout_sp_to_next_level">%1$s to next level</string>
-    <string name="your_score">Your Score</string>
     <string name="your_trophies">Your Trophies</string>
     <string name="your_trophy">Your Trophy</string>
     <string name="cancel">Cancel</string>
-    <string name="download">Continue</string>
-    <string name="downloading">Loading...</string>
-    <string name="gps_prompt_context">Downloading with mobile network?</string>
-    <string name="gps_prompt_title">Tips</string>
-    <string name="accept">Accept</string>
-    <string name="com.crashlytics.android.build_id">607562b6-121b-4e1d-b313-f938bc9fc8a5</string>
-    <string name="create_calendar_message">Allow Ad to create a calendar event?</string>
-    <string name="create_calendar_title">Create calendar event</string>
-    <string name="decline">Decline</string>
-    <string name="default_web_client_id">642573475943-vkgjl64kv1jadflg3l68r9mv9ud0okpr.apps.googleusercontent.com</string>
-    <string name="firebase_database_url">https://memory-games-android.firebaseio.com</string>
-    <string name="font_roboto_black">Roboto-Black.ttf</string>
-    <string name="font_roboto_bold">Roboto-Bold.ttf</string>
-    <string name="font_roboto_light">Roboto-Light.ttf</string>
-    <string name="font_roboto_medium">Roboto-Medium.ttf</string>
     <string name="font_roboto_regular">Roboto-Regular.ttf</string>
-    <string name="font_roboto_thin">Roboto-Thin.ttf</string>
-    <string name="ga_trackingId">UA-72531371-1</string>
-    <string name="gained_stars_placeholder">+%1$d</string>
-    <string name="gcm_defaultSenderId">642573475943</string>
-    <string name="google_api_key">AIzaSyB48sw4n06B6U0dDUG5S0yoSE95gXCFUac</string>
-    <string name="google_app_id">1:642573475943:android:95667a30311ba1bc</string>
-    <string name="google_crash_reporting_api_key">AIzaSyB48sw4n06B6U0dDUG5S0yoSE95gXCFUac</string>
-    <string name="google_storage_bucket">memory-games-android.appspot.com</string>
-    <string name="initial_text_rating">0.0</string>
     <string name="initial_text_stars_count">0</string>
-    <string name="plus">+</string>
-    <string name="plus100">+100</string>
-    <string name="plus50">+50</string>
     <string name="plus_one_url">https://market.android.com/details?id=</string>
-    <string name="store_picture_message">Allow Ad to store image in Picture gallery?</string>
-    <string name="store_picture_title">Save image</string>
     <string name="level_number_format">Level %1$d</string>
     <string name="score_format">Score: %1$d</string>
     <string name="rate_dialog_title_format">%1$s %2$s?</string>

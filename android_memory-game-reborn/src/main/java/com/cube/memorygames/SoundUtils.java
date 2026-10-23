@@ -11,9 +11,7 @@ import java.util.Map;
 
 public class SoundUtils {
     private static final float CURRENT_VOLUME = 0.2f;
-    private static final int MAX_VOLUME = 100;
     private static final String PREF_SOUND_ENABLED = "soundEnabled";
-    private static MediaPlayer mediaPlayer;
     private static Boolean playSound = null;
     private static SoundPool soundPool;
     private static Map<SOUND, Integer> soundPoolMap;

@@ -248,8 +248,6 @@ public class HexView extends View implements GameGrid {
                         canvas.drawPath(path, this.correctPaint);
                         canvas.drawPath(path, this.strokePaint);
                     } else {
-                        System.err.println("clickedCells.size() = " + this.clickedCells.size());
-                        System.err.println("successCells = " + this.successCells);
                         if (this.clickedCells.isEmpty()) {
                             canvas.drawPath(path, this.correctPaint);
                             canvas.drawPath(path, this.strokePaint);

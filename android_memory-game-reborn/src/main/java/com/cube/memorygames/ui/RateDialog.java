@@ -15,7 +15,6 @@ import com.google.android.gms.plus.PlusOneButton.OnPlusOneClickListener;
 import com.memory.brain.training.games.R;
 
 public class RateDialog extends Dialog {
-    private static final int PLUS_CLICKED_FROM_DIALOG = 1001;
     Button buttonNo;
     Button buttonYes;
     ImageView lionImage;

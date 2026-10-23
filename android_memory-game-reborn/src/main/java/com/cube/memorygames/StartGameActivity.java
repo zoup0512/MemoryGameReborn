@@ -32,9 +32,6 @@ public class StartGameActivity extends AppCompatActivity {
     public static final String EXTRA_DISABLE_PLAY_BUTTON = "disablePlayButton";
     public static final String EXTRA_FORCE_TUTORIAL = "forceTutorial";
     public static final String EXTRA_WORKOUT = "isWorkout";
-    private static final int GAMES_TO_SHOW_LOGIN = 10;
-    public static final int MIN_SESSION_COUNT = 3;
-    private static final int RESULT_LOGIN = 40001;
     PagerAdapter adapter;
     private MemoryApplicationModel application;
     @BindView(R.id.btnBack)

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_ranking_subtitle">Wertung, Bestenliste und letzte Matches auf einen Blick.</string>
-    <string name="online_ranking_rating">Aktuelle Wertung</string>
     <string name="online_ranking_snapshot">Zuletzt synchronisierte Ergebnisse</string>
     <string name="online_ranking_no_profile">Noch keine synchronisierten Ergebnisse</string>
     <string name="online_ranking_no_profile_hint">Öffne die Bestenliste oder den Matchverlauf, um dich zu verbinden und Ergebnisse zu laden.</string>

@@ -82,7 +82,4 @@ public final class OnlineConfig {
             SecurePrefs.putStrict(context,PREFS,"trustedMigrationEndpoint",value);
         }
     }
-    public static boolean hasOverride(Context context) {
-        return debug(context) && context.getSharedPreferences(PREFS,0).contains(KEY_ENDPOINT);
-    }
 }

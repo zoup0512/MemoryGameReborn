@@ -24,11 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 public class Game13Grid extends View implements GameGrid {
-    private static final int COLUMN_COUNT = 6;
     private static final float DIVIDER_COEFFICIENT = 0.01f;
-    private static final int ROW_COUNT = 8;
-    private static final int STATE_GAME = 1;
-    private static final int STATE_WIN = 2;
     private Pair<Element, Element> elementTypes;
     private List<Element> elements;
     private boolean enableClick;

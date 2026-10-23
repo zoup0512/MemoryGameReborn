@@ -422,10 +422,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.core:core:1.13.1'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.collection:collection:1.4.0'
     implementation 'androidx.viewpager:viewpager:1.0.0'
-    implementation 'androidx.customview:customview:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'
     // Game 12 retains its original percentage-based sizing in all layout variants.
     implementation 'androidx.percentlayout:percentlayout:1.0.0'

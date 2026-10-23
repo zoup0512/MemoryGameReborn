@@ -11,8 +11,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.memory.brain.training.games.R;
 
@@ -44,8 +42,6 @@ public class TrophyDialog extends AppCompatDialog {
         this.title.setTypeface(typeFaceRoboto);
         this.subTitle.setTypeface(typeFaceRoboto);
         this.subTitle.setText(textResId);
-        MemoryApplicationModel.getInstance().logEvent("TrophyDialog", MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_GAME_NEW_TROPHY);
-        Answers.getInstance().logCustom(new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_GAME_NEW_TROPHY));
     }
 
     public TrophyDialog setAchievementLevel(int level) {

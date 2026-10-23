@@ -42,14 +42,4 @@ public class DateUtils {
         return false;
     }
 
-    public static boolean isTomorrow(long time) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(6, 1);
-        int tomorrow = (calendar.get(1) * 100) + calendar.get(6);
-        calendar.setTimeInMillis(time);
-        if (tomorrow == (calendar.get(1) * 100) + calendar.get(6)) {
-            return true;
-        }
-        return false;
-    }
 }

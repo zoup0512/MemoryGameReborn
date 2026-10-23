@@ -6,19 +6,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.preference.PreferenceManager;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.memory.brain.training.games.R;
 import java.util.GregorianCalendar;
 
 public class AppReminder {
-    private static final int MESSAGE_TYPE_1 = 1;
-    private static final int MESSAGE_TYPE_2 = 2;
-    private static final int MESSAGE_TYPE_3 = 3;
-    private static final int MESSAGE_TYPE_4 = 4;
-    private static final int MESSAGE_TYPE_NONE = 0;
-    private static final long ONE_DAY = 86400000;
     private static final String PREF_LAST_GAME_TIME = "lastGameTime";
     private static final String PREF_REMINDER_SHOWED_TIME = "reminderShowedTime";
     private static final String PREF_REMINDER_SHOWED_TYPE = "reminderShowedType";
@@ -33,8 +25,6 @@ public class AppReminder {
 
     public static void logReminder(Context context) {
         if (getReminderShowedTime(context).longValue() != 0) {
-            MemoryApplicationModel.getInstance().logEvent(AppReminder.class.getSimpleName(), MemoryApplicationModel.ANALYTICS_CATEGORY_REMINDERS, "Reminder Worked emoji " + getReminderShowedType(context));
-            Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_REMINDER_WORKED).putCustomAttribute("type", Integer.valueOf(getReminderShowedType(context)))).putCustomAttribute("messageType", "emoji"));
             setReminderShowedTime(context, 0);
             setReminderShowedTime(context, 0);
         }
@@ -73,8 +63,6 @@ public class AppReminder {
         }
         setReminderShowedTime(context, System.currentTimeMillis());
         setReminderShowedType(context, messageType);
-        MemoryApplicationModel.getInstance().logEvent(AppReminder.class.getSimpleName(), MemoryApplicationModel.ANALYTICS_CATEGORY_REMINDERS, "Reminder Showed emoji " + messageType);
-        Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_REMINDER_SHOWED).putCustomAttribute("type", Integer.valueOf(messageType))).putCustomAttribute("messageType", "emoji"));
         return message;
     }
 
@@ -100,13 +88,6 @@ public class AppReminder {
     private static void setReminderShowedTime(Context context, long reminderShowedTime) {
         reminderShowedTime = Long.valueOf(reminderShowedTime);
         PreferenceManager.getDefaultSharedPreferences(context).edit().putLong(PREF_REMINDER_SHOWED_TIME, reminderShowedTime).apply();
-    }
-
-    private static int getReminderShowedType(Context context) {
-        if (reminderShowedType == null) {
-            reminderShowedType = Integer.valueOf(PreferenceManager.getDefaultSharedPreferences(context).getInt(PREF_REMINDER_SHOWED_TYPE, 0));
-        }
-        return reminderShowedType.intValue();
     }
 
     private static void setReminderShowedType(Context context, int reminderShowedType) {

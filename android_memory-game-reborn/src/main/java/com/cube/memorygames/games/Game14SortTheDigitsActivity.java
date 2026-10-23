@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Game14SortTheDigitsActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 60000;
     protected static int miniLevelTime = 3400;
     private long gameTime;
     private long startedTime;
@@ -238,14 +237,6 @@ public class Game14SortTheDigitsActivity extends Game1MemoryGridActivity {
         return colors.subList(0, colorsCount);
     }
 
-    private List<Integer> getFiguresGroups(int figuresCount) {
-        List<Integer> figures = new ArrayList();
-        for (int i = 0; i < 4; i++) {
-            figures.add(Integer.valueOf(i));
-        }
-        GameRandom.shuffle(figures);
-        return figures.subList(0, figuresCount);
-    }
 
     protected void createGameFlowStates() {
         List<GameFlowState> states = new ArrayList();

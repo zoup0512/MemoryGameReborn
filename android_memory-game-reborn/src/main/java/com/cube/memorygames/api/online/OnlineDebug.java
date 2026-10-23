@@ -17,10 +17,6 @@ public final class OnlineDebug {
     private OnlineDebug() {
     }
 
-    /** True when a test round duration is active (debug builds only). */
-    public static boolean isTestRoundActive(Context context) {
-        return testRoundMs(context) > 0L;
-    }
 
     /**
      * Returns the overridden round duration, or the passed production

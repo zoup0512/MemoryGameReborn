@@ -93,10 +93,6 @@ public class LocalUser extends Model {
         this.updated = true;
     }
 
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
-        this.updated = true;
-    }
 
     @Override
     protected void onBeforePersist() {

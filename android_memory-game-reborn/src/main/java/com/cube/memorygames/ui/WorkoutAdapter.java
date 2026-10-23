@@ -25,8 +25,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.MainMenuActivity;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.StartGameActivity;
@@ -90,8 +88,6 @@ public class WorkoutAdapter extends Adapter<WorkoutAdapter.UserViewHolder> {
                     final int finalI = i;
                     workoutGameView.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
-                            MemoryApplicationModel.getInstance().logEvent("", MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, "Game Started " + finalI);
-                            Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent("Workout Game Started ").putCustomAttribute("number", Integer.valueOf(finalI))).putCustomAttribute("game", levelInfo.getGameInfo().getAnalyticsName()));
                             Intent intent = new Intent(WorkoutAdapter.this.activity, StartGameActivity.class);
                             intent.putExtra(StartGameActivity.EXTRA_CHALLENGE, false);
                             intent.putExtra(StartGameActivity.EXTRA_WORKOUT, true);
@@ -104,8 +100,6 @@ public class WorkoutAdapter extends Adapter<WorkoutAdapter.UserViewHolder> {
             }
             this.workoutInfoButton.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    MemoryApplicationModel.getInstance().logEvent("", MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_HELP_CLICKED);
-                    Answers.getInstance().logCustom(new CustomEvent("Workout Help Clicked"));
                     new WorkoutHelpDialog(WorkoutAdapter.this.activity).show();
                 }
             });
@@ -147,8 +141,6 @@ public class WorkoutAdapter extends Adapter<WorkoutAdapter.UserViewHolder> {
             String level = String.valueOf(WorkoutAdapter.this.getLevelNumber(rating));
             String levelText = String.format(this.iqRank.getContext().getString(R.string.iq_level_text), new Object[]{level});
             if (!(TextUtils.isEmpty(this.iqRank.getText()) || levelText.equals(this.iqRank.getText().toString()))) {
-                MemoryApplicationModel.getInstance().logEvent(WorkoutAdapter.this.activity, MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, "New Level " + level);
-                Answers.getInstance().logCustom((CustomEvent) new CustomEvent("Workout New Level ").putCustomAttribute("level", level));
                 ViewAnimator.animate(this.iqRank).fadeIn().duration(400).start();
             }
             this.iqRank.setText(levelText);
@@ -171,8 +163,6 @@ public class WorkoutAdapter extends Adapter<WorkoutAdapter.UserViewHolder> {
         }
 
         void animateGames() {
-            MemoryApplicationModel.getInstance().logEvent("", MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_DAY_GENERATED);
-            Answers.getInstance().logCustom(new CustomEvent("Workout New Day Generated"));
             this.generatingLayout.setVisibility(8);
             for (int i = 0; i < this.gameViews.size(); i++) {
                 ViewAnimator.animate((WorkoutGameView) this.gameViews.get(i)).translationX(0.0f).interpolator(new DecelerateInterpolator()).duration(500).startDelay((long) (i * 100)).start();

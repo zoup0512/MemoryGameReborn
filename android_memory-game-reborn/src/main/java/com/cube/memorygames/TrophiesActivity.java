@@ -11,8 +11,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.memory.brain.training.games.R;
 
 public class TrophiesActivity extends AppCompatActivity {
@@ -29,8 +27,6 @@ public class TrophiesActivity extends AppCompatActivity {
         this.title.setTypeface(typeface);
         this.recyclerView.setLayoutManager(new GridLayoutManager((Context) this, 3, RecyclerView.VERTICAL, false));
         this.recyclerView.setAdapter(new TrophiesAdapter(this, typeface));
-        MemoryApplicationModel.getInstance().logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_GAME_OPEN_TROPHIES);
-        Answers.getInstance().logCustom(new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_GAME_OPEN_TROPHIES));
     }
 
     @OnClick({R.id.back})

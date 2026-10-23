@@ -24,16 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MenuAdapter extends Adapter<ViewHolder> {
-    public static final String PREF_SKU_DETAILS = "skuDetailsInfo";
-    public static final int PRO_COINS_AMOUNT = 1000;
-    public static final String SKU_PRO_VERSION = "pro_version";
-    public static final String SKU_PRO_VERSION_DISCOUNT = "pro_version05";
-    public static final String SKU_REMOVE_ADS = "remove_ads";
-    public static final String SKU_UNLIMITEDONLINE = "unlimitedonline";
-    public static final String SKU_UNLOCK_GAMES = "unlock_games";
-    private static final int TYPE_DIVIDER = 2;
-    private static final int TYPE_ITEM = 0;
-    private static final int TYPE_USER = 1;
     private List<Object> items;
     private MainMenuActivity mainMenuActivity;
     private Typeface typeface;

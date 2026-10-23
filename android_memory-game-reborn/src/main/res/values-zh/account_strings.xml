@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_account_title">账户与安全</string>
-    <string name="online_bind_progress">绑定邮箱，保护游戏进度</string>
-    <string name="online_login_again">重新登录</string>
     <string name="online_account_busy">请先结束排队、对局、好友房或练习请求。</string>
     <string name="online_account_balance">在线金币：%1$d</string>
     <string name="account_guest">游客账号</string>
@@ -31,7 +29,6 @@
     <string name="account_code">邮箱验证码</string>
     <string name="account_nickname">昵称</string>
     <string name="account_send_code">发送验证邮件</string>
-    <string name="account_confirm">确认</string>
     <string name="account_loading">正在处理…</string>
     <string name="account_retry">刷新账号资料</string>
     <string name="account_success">操作成功</string>
@@ -50,18 +47,12 @@
     <string name="account_environment">服务环境</string>
     <string name="account_environment_note">当前临时允许账号使用 WS/HTTP，服务端须启用 PK_AUTH_ALLOW_HTTP=true。明文连接不加密账号数据，仅用于临时兼容；建议使用 WSS/HTTPS。</string>
     <string name="account_registered_note">已验证邮箱账号可在其他设备登录。在线金币与排位分属于当前账号，离线进度保持独立。</string>
-    <string name="account_avatar">头像 %1$d</string>
     <string name="account_migrate">信任 HTTPS 地址并迁移旧游客</string>
     <string name="account_migrate_warning">原环境：%1$s\n授权目标：%2$s\n原用户 ID：%3$d\n本次迁移会把旧凭证发送到上述目标。仅在信任其运营方时确认。失败保留旧凭证和原环境；成功保持用户 ID 不变。</string>
     <string name="profile_format">昵称限 2–16 个 Unicode 字符，可含普通内部空格，不含控制符或不可见字符。</string>
     <string name="profile_invalid">请输入 2–16 个字符，可含普通内部空格，不含控制符或不可见字符。</string>
-    <string name="profile_save">审核并保存</string>
-    <string name="profile_saving">审核并保存中…</string>
-    <string name="profile_inspiration">自动灵感</string>
-    <string name="profile_inspiration_note">自动灵感仅填入草稿，修改后的昵称仍须服务端审核。</string>
     <string name="profile_choose_avatar">选择头像：%1$s</string>
     <string name="profile_cooldown">昵称可于 %1$s 后修改，期间仍可更换头像。</string>
-    <string name="profile_cooldown_ready">昵称修改遵循服务端冷却规则；仅更换头像不触发昵称审核。</string>
     <string name="profile_cooldown_error">昵称仍在冷却期。保持原昵称即可仅保存头像；可刷新资料查看最新时间。</string>
     <string name="profile_rejected">昵称未通过审核，请换一个。资料未保存，草稿已保留。</string>
     <string name="profile_pending">昵称审核尚未完成。资料未保存，草稿已保留，请稍后重试。</string>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_ranking_subtitle">Tu puntuación, clasificación y partidas recientes en un solo lugar.</string>
-    <string name="online_ranking_rating">Puntuación actual</string>
     <string name="online_ranking_snapshot">Últimos resultados sincronizados</string>
     <string name="online_ranking_no_profile">Aún no hay resultados sincronizados</string>
     <string name="online_ranking_no_profile_hint">Abre la clasificación o el historial de partidas para conectarte y cargar tus resultados.</string>

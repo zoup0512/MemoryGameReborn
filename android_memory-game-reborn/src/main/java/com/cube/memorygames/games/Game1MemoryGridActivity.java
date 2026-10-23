@@ -32,8 +32,6 @@ import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.ChallengeResultDialog;
 import com.cube.memorygames.FailDialog;
 import com.cube.memorygames.FailDialog.OnDialogClickListener;
@@ -83,41 +81,18 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 import com.cube.memorygames.api.online.OnlineDebug;
 
 public class Game1MemoryGridActivity extends AppCompatActivity implements StatisticListener, GridEventsListener, IabStatus {
-    public static final int ADS_INTERVAL_SPRINT_FIRST = 2;
-    public static final int ADS_INTERVAL_SPRINT_SECOND = 3;
-    private static final int ADS_TYPE_CHALLENGE_HOME = 31;
-    private static final int ADS_TYPE_CHALLENGE_NEXT = 33;
-    private static final int ADS_TYPE_CHALLENGE_OPEN_DIALOG = 34;
-    private static final int ADS_TYPE_CHALLENGE_REPLAY = 32;
-    private static final int ADS_TYPE_SPRINT_NONE = 10;
-    private static final int ADS_TYPE_SPRINT_TIMEOUT_BACKPRESS = 24;
-    private static final int ADS_TYPE_SPRINT_TIMEOUT_GAME_SUGGESTION = 21;
-    private static final int ADS_TYPE_SPRINT_TIMEOUT_MAIN_MENU = 22;
-    private static final int ADS_TYPE_SPRINT_TIMEOUT_RETRY = 23;
-    public static final int BUYSTARS_AMOUNT = 30;
     public static final String BUY_STARS_CLICKED_COUNT = "buyStarsClickedCountCount";
-    public static final int FADE_ANIMATION_DURATION = 300;
-    public static final int FINISH_ANIMATION_DURATION = 300;
-    public static final int FINISH_FADE_ANIMATION_DURATION = 200;
     public static final int GAME_TIME_ONLINE = 45000;
-    public static final int MAX_BUY_STARS_CLICKED = 7;
     public static final String MAX_LEVEL = "maxLevel";
-    public static final int MAX_PAUSE_COUNT = 5;
     private static final float MIN_ADVANCED_HIGH_LEVEL_PASS_KOEF = 0.9f;
     private static final float MIN_ADVANCED_LEVEL_PASS_KOEF = 0.8f;
-    public static final int MIN_GOAL_LEVEL = 6;
     protected static final double MIN_GRID_SIZE = 5.0d;
     private static final double MIN_LEVEL_PASS_KOEF = 0.665d;
-    public static final String ONLINE_PROGRESS_DELAY = "onlineProgressDelay";
     public static final String ONLINE_REPLAYED = "onlineREplayed";
     public static final String ONLINE_SCORE = "onlineScore";
     public static final String PAUSED_COUNT = "pausedCount";
     public static final String PAUSED_DURATION = "pausedDuration";
     public static final String PAUSED_TIME = "pausedTime";
-    public static final String PREF_ADS_SPRINT_LAST_NUMBER = "CountBeforeAdLastNumber";
-    public static final String PREF_COUNT_BEFORE_ADS_SPRINT = "CountBeforeAdSprint";
-    private static final int REPLAY_LEVEL_DELTA = 5;
-    public static final String SELECTED_AD_TYPE = "selectedAdType";
     public static final int START_ANIMATION_DURATION = 400;
     public static final String USER_SCORE = "userScore";
     public static final String WATCHED_COUNT = "watchedCount";
@@ -305,7 +280,6 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                 if (TimeoutDialog.this.selectedSuggestedGame == null) {
                     TimeoutDialog.this.generateSuggestion();
                 }
-                Game1MemoryGridActivity.this.application.logEvent(Game1MemoryGridActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_SUGGESTION, MemoryApplicationModel.ANALYTICS_EVENT_SUGGESTION_CLICKED_PREFIX + TimeoutDialog.this.selectedSuggestedGame.getId());
                 Intent intent = new Intent();
                 intent.putExtra(MainMenuActivity.EXTRA_GAME_INFO, TimeoutDialog.this.selectedSuggestedGame);
                 intent.setClass(Game1MemoryGridActivity.this, StartGameActivity.class);
@@ -337,20 +311,8 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         TextView restartTitle;
         View.OnClickListener retryClickListener = new View.OnClickListener() {
             public void onClick(View view) {
-                String mode;
                 Game1MemoryGridActivity.this.panelPause.setVisibility(0);
                 TimeoutDialog.this.dismiss();
-                Game1MemoryGridActivity.this.application.logEvent(Game1MemoryGridActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_GAME_STARTED_PREFIX + Game1MemoryGridActivity.this.gameInfo.getAnalyticsName());
-                if (Game1MemoryGridActivity.this.isChallenge) {
-                    mode = MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE;
-                } else if (Game1MemoryGridActivity.this.isOnlineGame) {
-                    mode = "Online";
-                } else if (Game1MemoryGridActivity.this.isWorkout) {
-                    mode = MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT;
-                } else {
-                    mode = "Sprint";
-                }
-                Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_GAME_STARTED_PREFIX).putCustomAttribute("Level Name", Game1MemoryGridActivity.this.gameInfo.getAnalyticsName())).putCustomAttribute("Mode ", mode));
                 Game1MemoryGridActivity.this.retryGame();
             }
         };
@@ -654,9 +616,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
         if (this.isOnlineGame) {
             this.soundToggle.setChecked(!this.soundToggle.isChecked());
             if (this.soundToggle.isChecked()) {
-                this.application.logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_SOUND_ON);
             } else {
-                this.application.logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_SOUND_OFF);
             }
             SoundUtils.setPlaySound(this, this.soundToggle.isChecked());
         } else if (this.pausedCount < 5) {
@@ -748,19 +708,7 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
     }
 
     protected void startGame() {
-        String mode;
         AppReminder.appStarted(this);
-        this.application.logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_GAME_STARTED_PREFIX + this.gameInfo.getAnalyticsName());
-        if (this.isChallenge) {
-            mode = MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE;
-        } else if (this.isOnlineGame) {
-            mode = "Online";
-        } else if (this.isWorkout) {
-            mode = MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT;
-        } else {
-            mode = "Sprint";
-        }
-        Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent(MemoryApplicationModel.ANALYTICS_EVENT_GAME_STARTED_PREFIX).putCustomAttribute("Level Name", this.gameInfo.getAnalyticsName())).putCustomAttribute("Mode ", mode));
         startOnlineLevelTimer();
         startLevel();
     }
@@ -1371,7 +1319,6 @@ public class Game1MemoryGridActivity extends AppCompatActivity implements Statis
                     }
                     Game1MemoryGridActivity game1MemoryGridActivity = Game1MemoryGridActivity.this;
                     game1MemoryGridActivity.buyStarsClickedCountCount++;
-                    Game1MemoryGridActivity.this.application.logEvent(Game1MemoryGridActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_BONUSES, MemoryApplicationModel.ANALYTICS_EVENT_REPLAY_USED_PREFIX + Game1MemoryGridActivity.this.gameInfo.getId());
                     Game1MemoryGridActivity.this.foreground.setVisibility(8);
                     Game1MemoryGridActivity.this.panelPause.setVisibility(0);
                     Game1MemoryGridActivity.this.restartLevel(true);

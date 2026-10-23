@@ -1106,17 +1106,6 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     // --------------------------------------------------------------- boards
 
-    private void showBoard(View board, int width, int gravity) {
-        this.content.removeAllViews();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width,
-                ViewGroup.LayoutParams.WRAP_CONTENT, gravity);
-        int margin = OnlineUi.dim(this, R.dimen.online_page_padding);
-        params.leftMargin = margin;
-        params.rightMargin = margin;
-        params.topMargin = margin;
-        params.bottomMargin = margin;
-        this.content.addView(board, params);
-    }
 
     /**
      * Same as {@link #showBoard} but the board lives in a fill-viewport

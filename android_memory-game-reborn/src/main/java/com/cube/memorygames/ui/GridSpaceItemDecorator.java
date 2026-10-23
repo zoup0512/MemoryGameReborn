@@ -14,9 +14,6 @@ public class GridSpaceItemDecorator extends ItemDecoration {
         this.space = space;
     }
 
-    public int getSpace() {
-        return this.space;
-    }
 
     public void setSpace(int space) {
         this.space = space;

@@ -6,8 +6,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import com.activeandroid.query.Delete;
 import com.activeandroid.query.Select;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.Games;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.cube.memorygames.api.local.challenge.ChallengeDbGame;
@@ -41,30 +39,18 @@ import java.util.Locale;
 import java.util.Map;
 
 public class LocalDataManager {
-    private static final int DAYS_IN_WEAK = 7;
-    private static final int MAX_CHALLENGE_LEVEL = 10;
     private static final String PREFIX_IS_PLAYED = "is_played_challenge_";
     private static final String PREF_LEVEL_NUMBER = "challengeLevelNumberNew";
     private static final String PREF_NEED_CHALLENGE_SYNCHRONIZATION = "needChallengeSynchronization";
-    public static final String TYPE_BUY = "BuyCoins";
     public static final String TYPE_BUY_GAME = "UnlockGame-";
     public static final String TYPE_BUY_LEVEL = "BuyLevel";
-    public static final String TYPE_DRAW_LEVEL = "DrawOnline";
-    public static final String TYPE_FACEBOOK = "Facebook";
     public static final String TYPE_FIRST_START = "FirstStart";
     public static final String TYPE_GAME_EARNED = "GameEarned";
-    public static final String TYPE_PRO = "BecomePro";
-    public static final String TYPE_SHARE_DIALOG_FB = "ShareDialogFb";
-    public static final String TYPE_SHARE_DIALOG_VIDEO = "ShareDialogVideo";
     public static final String TYPE_START_ONLINE = "StartOnline";
-    public static final String TYPE_USERNAME = "UserName";
-    public static final String TYPE_WIN_ONLINE = "WinOnline";
     // Online PK settlement ledger entries (mirrored from the server, PRD 3.9).
-    public static final String TYPE_LOSE_ONLINE = "LoseOnline";
     public static final int ONLINE_ENTRY_FEE = 30;
     public static final int ONLINE_WIN_COINS = 50;
     public static final int ONLINE_DRAW_COINS = 15;
-    public static final int WORKOUT_GAME_COUNT = 4;
     private List<ChallengeJsonGame> challengeJsonGames;
     private Integer currentLevelNumber;
     private LocalUser localUser = ((LocalUser) new Select().from(LocalUser.class).executeSingle());
@@ -171,20 +157,6 @@ public class LocalDataManager {
         this.localUser.save();
     }
 
-    public void setFbId(String facebookId) {
-        this.localUser.facebookId = facebookId;
-        this.localUser.updatedAt = new Date();
-        this.localUser.save();
-    }
-
-    public List<LocalGameSession> getNewGameSessions() {
-        return new Select().from(LocalGameSession.class).where("uploaded = ?", Boolean.valueOf(false)).execute();
-    }
-
-    public List<LocalCoinsTransaction> getNewLocalCoinsTransaction() {
-        return new Select().from(LocalCoinsTransaction.class).where("uploaded = ?", Boolean.valueOf(false)).execute();
-    }
-
     public void chargeForOnline() {
         chargeForOnline(ONLINE_ENTRY_FEE);
     }
@@ -203,15 +175,6 @@ public class LocalDataManager {
         if (!getLocalUser().unlimitedOnline && entryFee > 0) {
             addCoinsTransaction(TYPE_START_ONLINE, entryFee);
         }
-    }
-
-    public int getGamesSessionCount() {
-        return new Select().from(LocalGameSession.class).count();
-    }
-
-    public void resetWorkoutDay() {
-        String date = getCurrentDate();
-        new Delete().from(LocalWorkoutGame.class).where("date = ?", date).execute();
     }
 
     public void addWorkoutResult(String finishedGameId, int levelNumber) {
@@ -412,7 +375,6 @@ public class LocalDataManager {
                 is.read(buffer);
                 is.close();
                 String jsonLevels = new String(buffer, "UTF-8");
-
                 List<ChallengeJsonGame> challengeJsonGames = (List<ChallengeJsonGame>) new Gson().fromJson(jsonGames, new TypeToken<List<ChallengeJsonGame>>(){}.getType());
                 List<ChallengeJsonLevel> challengeJsonLevels = (List<ChallengeJsonLevel>) new Gson().fromJson(jsonLevels, new TypeToken<List<ChallengeJsonLevel>>(){}.getType());
                 List<ChallengeDbGame> savedGames = new Select().from(ChallengeDbGame.class).execute();

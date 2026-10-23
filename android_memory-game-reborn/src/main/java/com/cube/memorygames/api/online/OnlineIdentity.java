@@ -23,7 +23,6 @@ public final class OnlineIdentity {
     private static final String KEY_TOKEN = "token";
     private static final String KEY_USER_ID = "userId";
     private static final String KEY_NICKNAME = "nickname";
-    private static final String KEY_GIFT_GIVEN = "welcomeGiftGiven";
 
     private OnlineIdentity() {
     }
@@ -117,14 +116,6 @@ public final class OnlineIdentity {
         setString(context, KEY_NICKNAME, nickname);
     }
 
-    /** One-time welcome coins granted on first entry into the PK mode (PRD 3.9). */
-    public static boolean consumeWelcomeGift(Context context) {
-        if (getBoolean(context, KEY_GIFT_GIVEN, false)) {
-            return false;
-        }
-        setBoolean(context, KEY_GIFT_GIVEN, true);
-        return true;
-    }
 
     private static String defaultNickname() {
         return ProfileRules.inspiration(new java.security.SecureRandom());
@@ -143,7 +134,4 @@ public final class OnlineIdentity {
         return value != null ? Boolean.parseBoolean(value) : def;
     }
 
-    private static void setBoolean(Context context, String key, boolean value) {
-        setString(context, key, Boolean.toString(value));
-    }
 }

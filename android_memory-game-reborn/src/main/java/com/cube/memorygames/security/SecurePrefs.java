@@ -133,24 +133,6 @@ public final class SecurePrefs {
         }
     }
 
-    /**
-     * Re-stores a still-plaintext legacy value under the same key, encrypted.
-     * No-op when the value is already sealed, absent, or crypto is down.
-     */
-    public static void seal(Context context, String prefsName, String key) {
-        synchronized (LOCK) {
-            SharedPreferences prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE);
-            String raw = readRaw(prefs, key);
-            if (raw == null || isBlob(raw)) {
-                return;
-            }
-            SecretKey aesKey = CryptoVault.aesKey(context);
-            if (aesKey == null) {
-                return;
-            }
-            prefs.edit().putString(key, encrypt(aesKey, raw)).apply();
-        }
-    }
 
     /**
      * Reads a value regardless of how a legacy install typed it: pre-hardening

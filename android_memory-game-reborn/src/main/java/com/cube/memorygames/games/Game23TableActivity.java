@@ -20,7 +20,6 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Game23TableActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 50000;
     private List<ElementGame14> elements;
     private final Game23RoundProgress roundProgress = new Game23RoundProgress();
     private long gameTime;

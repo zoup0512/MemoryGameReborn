@@ -102,15 +102,7 @@ public class TimerView extends View {
         digitAnimator.start();
     }
 
-    public void setDigit(int digit) {
-        this.digit = Integer.valueOf(digit);
-        invalidate();
-    }
 
-    private void setAngle(float angle) {
-        this.angle = Float.valueOf(angle);
-        invalidate();
-    }
 
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);

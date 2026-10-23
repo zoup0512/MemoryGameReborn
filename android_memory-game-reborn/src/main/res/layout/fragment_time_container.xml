@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout android:id="@id/timerContainer" android:background="@android:drawable/screen_background_dark_transparent" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="fill_parent"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
-        <com.cube.memorygames.ui.TimerView android:id="@id/timerView2" android:layout_width="100.0dip" android:layout_height="100.0dip" />
-        <TextView android:textSize="20.0sp" android:textColor="@android:color/white" android:gravity="center" android:id="@id/timer_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dip" android:shadowColor="@color/text_shadow_color" android:shadowDx="-6.0" android:shadowDy="2.0" android:shadowRadius="2.0" fontPath="@string/font_roboto_light" />
-    </LinearLayout>
-</FrameLayout>

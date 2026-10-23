@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="party_entry">亲友赛</string>
     <string name="party_title">亲友赛</string>
     <string name="party_entry_note">创建房间或输入房间码加入。2人起赛，无固定人数上限。</string>
     <string name="party_free_note">2人起 · 6位码 · 免费参赛 · 不扣金币，不改评分</string>
@@ -35,7 +34,6 @@
     <string name="party_countdown">%1$d秒后开始</string>
     <string name="party_seconds">%1$d秒</string>
     <string name="party_round_header">第%1$d/%2$d轮 · %3$s</string>
-    <string name="party_round_result">本轮结果 · 即将进入下一轮</string>
     <string name="party_playing">本轮进行中</string>
     <string name="party_resume_wait">恢复后不重刷本轮题目。可查看实时排行，等待下一轮自动加载。</string>
     <string name="party_unsupported">当前版本无法加载此游戏，请更新应用。本轮不能参与。</string>
@@ -74,7 +72,6 @@
     <string name="party_history_unavailable">历史暂时无法读取，请稍后刷新。</string>
     <string name="party_history">亲友赛战绩</string>
     <string name="party_refresh">刷新</string>
-    <string name="party_history_note">仅显示新房积分赛。免费参赛，不扣金币，不改评分；旧版双人战绩单独查看。</string>
     <string name="party_history_empty">暂无亲友赛记录。</string>
     <string name="party_history_row">%1$d人 · %2$d轮 · 第%3$s名\n累计积分 %4$s · 第一名次数 %5$d\n%6$s</string>
     <string name="party_code_note">新房间使用6位码，也支持加入旧版4位码房间。</string>

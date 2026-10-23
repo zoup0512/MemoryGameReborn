@@ -22,7 +22,6 @@ import java.util.TimerTask;
 
 public class Game13AllTheSameActivity extends Game1MemoryGridActivity {
     private static final int GAME_TIME = 60000;
-    private static final int MAX_LEVEL = 46;
     private int gameTime;
     private long startedTime;
     private Handler timerHandler = new Handler();

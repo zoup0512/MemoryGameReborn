@@ -24,16 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Game22Grid extends View implements GameGrid {
-    private static final int BOTTOM = 4;
-    private static final int DEFAULT_SIZE = 64;
     private static final float DIVIDER_COEFFICIENT = 0.1f;
-    private static final int LEFT = 1;
-    private static final int MILLISECONDS_TILL_UPDATE = 90;
     private static final int NONE = 0;
-    private static final int RIGHT = 2;
-    private static final int STATE_GAME = 1;
-    private static final int STATE_WIN = 2;
-    private static final int TOP = 3;
     private List<List<Figure>> cellFigure;
     private List<List<CellType>> cells;
     private int desiredHeight;

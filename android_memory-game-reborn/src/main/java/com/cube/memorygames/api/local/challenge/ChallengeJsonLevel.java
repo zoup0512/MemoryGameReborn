@@ -43,7 +43,4 @@ public class ChallengeJsonLevel implements Parcelable {
         return this.games;
     }
 
-    public void setGames(int games) {
-        this.games = games;
-    }
 }

@@ -42,9 +42,7 @@ public class Game9Grid extends GridLayout implements GameGrid {
     private SuccessCellClickListener successCellClickListener = new SuccessCellClickListener();
     private int successCells;
     private boolean userEachDrawableOnlyOnce = false;
-    private int visibleCells;
     private int width;
-    private Drawable winCellDrawable;
     private WrongCellListener wrongCellListener = new WrongCellListener();
 
     private class SuccessCellClickListener implements OnCheckedChangeListener {
@@ -195,9 +193,7 @@ public class Game9Grid extends GridLayout implements GameGrid {
                 button.setSoundEffectsEnabled(false);
                 button.setBackgroundResource(R.drawable.drawable_circle_wrong);
                 button.setOnCheckedChangeListener(null);
-                if (VERSION.SDK_INT >= 21) {
-                    button.setStateListAnimator(null);
-                }
+                button.setStateListAnimator(null);
                 button.setEnabled(false);
                 button.setAlpha(0.0f);
                 addView(button, cellParams);

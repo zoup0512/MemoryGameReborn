@@ -9,23 +9,13 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.View.OnClickListener;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.MemoryApplicationModel;
 import com.memory.brain.training.games.R;
 
 public class AppRater {
     private static final Long DAYS_UNTIL_PROMPT = Long.valueOf(1);
     private static final Long DAY_MILLIS = Long.valueOf(86400000);
-    private static final Long LAUNCHES_UNTIL_PROMPT_NEW = Long.valueOf(2);
     private static final Long LAUNCHES_UNTIL_PROMPT_OLD = Long.valueOf(3);
-    private static final String PREF_TYPE = "prefRateUsDialogType";
-    public static final int TYPE248_AFTER_GAME = 1;
-    public static final int TYPE248_BEFORE_EXIT = 2;
-    public static final int TYPE248_NONE = 0;
-    private static final int TYPE_NEW = 2;
-    private static final int TYPE_NONE = 0;
-    private static final int TYPE_OLD = 1;
     private static Editor editor;
     private static SharedPreferences prefs;
 
@@ -39,8 +29,6 @@ public class AppRater {
         }
 
         public void onClick(View v) {
-            MemoryApplicationModel.getInstance().logEvent("Rate Dialog", MemoryApplicationModel.ANALYTICS_CATEGORY_RATING, "Rate Us. Feedback No Click." + this.dialogType);
-            Answers.getInstance().logCustom(new CustomEvent("Rate Us. Feedback No Click." + this.dialogType));
             if (AppRater.editor != null) {
                 AppRater.editor.putLong("launch_count", 0);
                 AppRater.editor.putLong("date_firstlaunch", System.currentTimeMillis());
@@ -59,8 +47,6 @@ public class AppRater {
         }
 
         public void onClick(View v) {
-            MemoryApplicationModel.getInstance().logEvent("Rate Dialog", MemoryApplicationModel.ANALYTICS_CATEGORY_RATING, "Rate Us. Feedback Yes Click." + this.dialogType);
-            Answers.getInstance().logCustom(new CustomEvent("Rate Us. Feedback Yes Click." + this.dialogType));
             if (AppRater.editor != null) {
                 AppRater.editor.putBoolean("dontshowagain", true);
                 AppRater.editor.commit();
@@ -82,8 +68,6 @@ public class AppRater {
         }
 
         public void onClick(View v) {
-            MemoryApplicationModel.getInstance().logEvent("Rate Dialog", MemoryApplicationModel.ANALYTICS_CATEGORY_RATING, "Rate Us. No Click." + this.dialogType);
-            Answers.getInstance().logCustom(new CustomEvent("Rate Us. No Click." + this.dialogType));
             new RateDialog(this.context, R.string.dialog_feedback_title, R.string.dialog_leave_feedback_yes, R.string.dialog_leave_feedback_no, false, R.drawable.lionkid3, new LeaveFeedbackYesListener(this.context, this.dialogType), new LeaveFeedbackCancelListener(this.context, this.dialogType)).show();
         }
     }
@@ -98,9 +82,6 @@ public class AppRater {
         }
 
         public void onClick(View v) {
-            MemoryApplicationModel.getInstance().logEvent("Rate Dialog", MemoryApplicationModel.ANALYTICS_CATEGORY_RATING, "Rate Us. Yes Click." + this.dialogType);
-            Answers.getInstance().logCustom(new CustomEvent("Rate Us. Yes Click." + this.dialogType));
-            Answers.getInstance().logCustom(new CustomEvent("Rate Us NEW. YES"));
             if (AppRater.editor != null) {
                 AppRater.editor.putBoolean("dontshowagain", true);
                 AppRater.editor.commit();
@@ -137,8 +118,6 @@ public class AppRater {
     }
 
     private static void showRateDialog(Context context, String dialogType) {
-        MemoryApplicationModel.getInstance().logEvent("Rate Dialog", MemoryApplicationModel.ANALYTICS_CATEGORY_RATING, "Rate Us. Open." + dialogType);
-        Answers.getInstance().logCustom(new CustomEvent("Rate Us. Open." + dialogType));
         RateDialog likeUsDialog = new RateDialog(context, R.string.dialog_new_like_title, R.string.dialog_new_like_us_yes, R.string.dialog_new_like_us_no, true, R.drawable.lionkid2, new RateUsYesListener(context, dialogType), new LikeUsNoListener(context, dialogType));
         if (!((Activity) context).isFinishing()) {
             likeUsDialog.show();

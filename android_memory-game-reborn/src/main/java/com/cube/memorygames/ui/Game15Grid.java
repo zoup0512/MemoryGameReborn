@@ -21,12 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Game15Grid extends View implements GameGrid {
-    private static final int CLOUD_COUNT = 4;
-    private static final int CLOUD_SPEED = 4000;
     private static final int DEFAULT_SPEED = 2000;
-    private static final int FIGURES_COUNT = 6;
-    private static final int MAX_RETRY_COUNT = 100;
-    private static final int MILLISECONDS_TILL_UPDATE = 20;
     private Bitmap cloudBitmap;
     private int cloudSize;
     private List<Pair<Integer, Integer>> clouds;

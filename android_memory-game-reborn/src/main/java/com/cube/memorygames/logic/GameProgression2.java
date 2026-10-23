@@ -3,8 +3,6 @@ package com.cube.memorygames.logic;
 import com.cube.memorygames.Progression;
 
 public class GameProgression2 implements Progression {
-    private static final int START_GRID_SIZE = 2;
-    private static final int START_WIN_CELLS = 1;
     private int currentGridSize = 2;
     private int currentWinCells = 1;
     private int levelNumber = 0;

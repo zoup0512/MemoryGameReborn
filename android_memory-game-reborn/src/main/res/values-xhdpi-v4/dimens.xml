@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <dimen name="fail_dialog_title_offset">24.0dip</dimen>
-    <dimen name="offer_dialog_discount_font">80.0sp</dimen>
-    <dimen name="offer_dialog_discount_padding">150.0dip</dimen>
-    <dimen name="offer_dialog_item_size">62.0dip</dimen>
-</resources>

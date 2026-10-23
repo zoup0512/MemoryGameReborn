@@ -49,9 +49,6 @@ public class WorkoutWeekView extends FrameLayout {
         ButterKnife.bind((View) this);
     }
 
-    public DayInfo getDayInfo() {
-        return this.dayInfo;
-    }
 
     public void setDayInfo(DayInfo dayInfo) {
         this.dayInfo = dayInfo;

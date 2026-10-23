@@ -71,10 +71,6 @@ public final class AccountManager {
     }
     private AccountManager(Context context) { this.context=context; store=new SecureIdentityStore(context); }
     public boolean isBusy() { return busy; }
-    public boolean hasStoredIdentity() {
-        Identity value=identity;
-        return OnlineIdentity.hasLegacy(context) || store.exists();
-    }
     public UserProfile profile() { Identity value=identity; return value == null || value.auth == null ? null : value.auth.user; }
     public boolean needsLogin() { return identity != null && identity.requiresLogin; }
     public boolean usesV2() { return loaded ? identity != null : store.exists(); }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_round_confirming">正在确认本轮成绩…</string>
-    <string name="online_round_next_game">下一轮：%1$s</string>
     <string name="online_round_starts_in">%1$d 秒后进入下一轮准备…</string>
     <string name="online_round_waiting_start">正在等待服务器开始下一轮…</string>
     <string name="online_match_settling">正在结算最终成绩…</string>

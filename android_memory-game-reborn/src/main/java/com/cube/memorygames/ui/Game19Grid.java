@@ -21,11 +21,6 @@ import com.mopub.volley.DefaultRetryPolicy;
 import java.util.List;
 
 public class Game19Grid extends View implements GameGrid {
-    private static final int MAX_COLUMN_COUNT = 5;
-    private static final int MAX_ROW_COUNT = 7;
-    private static final int STATE_GAME = 1;
-    private static final int STATE_LOSE = 3;
-    private static final int STATE_WIN = 2;
     private List<Pair<Integer, Integer>> colorSets;
     private int columnCount;
     private List<Element> elements;

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="online_round_confirming">Confirming this round’s score…</string>
-    <string name="online_round_next_game">Next round: %1$s</string>
     <string name="online_round_starts_in">Preparing the next round in %1$d s…</string>
     <string name="online_round_waiting_start">Waiting for the server to start the next round…</string>
     <string name="online_match_settling">Calculating the final result…</string>

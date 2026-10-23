@@ -148,10 +148,6 @@ public class OnlineLobbyAdapter extends RecyclerView.Adapter<OnlineLobbyAdapter.
         OnlineSession.get().setProfileCallback(this.profileCallback);
     }
 
-    public void setProfile(OnlineMessages.AuthOk profile) {
-        this.profile = profile;
-        requestRefresh();
-    }
 
     /** Adapter state survives bottom-navigation detachment without relying on recycled views. */
     public int getSelectedPage() {

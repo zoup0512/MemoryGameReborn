@@ -45,9 +45,6 @@ public class Line {
         return this._start;
     }
 
-    public Point getEnd() {
-        return this._end;
-    }
 
     public String toString() {
         return String.format("%s-%s", new Object[]{this._start.toString(), this._end.toString()});

@@ -35,9 +35,6 @@ public final class AccountActivity extends AppCompatActivity {
     public static android.content.Intent nicknameIntent(android.content.Context context) {
         return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_NICKNAME,true);
     }
-    static android.content.Intent entryIntent(android.content.Context context,AccountEntry entry) {
-        return new android.content.Intent(context,AccountActivity.class).putExtra(EXTRA_ENTRY,entry.name());
-    }
     private AccountManager manager;
     private LinearLayout root, page;
     private TextView status;

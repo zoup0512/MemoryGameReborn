@@ -50,9 +50,6 @@ public class WorkoutGameView extends FrameLayout {
         ButterKnife.bind((View) this);
     }
 
-    public LevelInfo getLevelInfo() {
-        return this.levelInfo;
-    }
 
     public void setLevelInfo(LevelInfo levelInfo) {
         this.levelInfo = levelInfo;

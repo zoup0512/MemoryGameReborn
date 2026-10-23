@@ -10,10 +10,6 @@ package com.cube.memorygames;
 public final class SharingDialog {
     public static final int DOLLAR1_COINS = 700;
     public static final int DOLLAR2_COINS = 1600;
-    public static final int DOLLAR3_COINS = 2500;
-    public static final String SKU1 = "1dollars";
-    public static final String SKU2 = "2dollars";
-    public static final String SKU3 = "3dollars";
 
     private SharingDialog() {
     }

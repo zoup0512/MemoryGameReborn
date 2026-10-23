@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Game19FindAllActivity extends Game1MemoryGridActivity {
-    private static final int GAME_TIME = 60000;
     private long gameTime;
     private long startedTime;
     private Handler timerHandler = new Handler();

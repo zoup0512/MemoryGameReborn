@@ -9,9 +9,6 @@
     <color name="dialog_border">#FFD8E3ED</color>
     <color name="dialog_disabled_surface">#FFE1EAF2</color>
     <color name="dialog_disabled_text">#FF596579</color>
-    <dimen name="dialog_max_width">420dp</dimen>
-    <dimen name="dialog_edge_margin">16dp</dimen>
-    <dimen name="dialog_content_padding">24dp</dimen>
     <style name="AppDialogTheme" parent="Theme.AppCompat.Light.Dialog">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>

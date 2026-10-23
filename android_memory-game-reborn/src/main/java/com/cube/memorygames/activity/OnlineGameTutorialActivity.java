@@ -22,7 +22,6 @@ import com.viewpagerindicator.CirclePageIndicator;
 
 /** The original pre-round tutorial (activity_online_game_tutorial.xml), one-to-one. */
 public class OnlineGameTutorialActivity extends AppCompatActivity {
-    private static final int SLIDE_TIME = 2000;
     PagerAdapter adapter;
     @BindView(R.id.btnBack)
     ImageView btnBack;

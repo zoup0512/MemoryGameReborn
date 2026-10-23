@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.CustomEvent;
 import com.cube.memorygames.api.local.challenge.ChallengeJsonGame;
 import com.cube.memorygames.games.Game10OneAndOnlyActivity;
 import com.cube.memorygames.games.Game11CorrectlyActivity;
@@ -276,11 +274,6 @@ public class Games {
         return instance;
     }
 
-    public static Games resetGames() {
-        instance = new Games();
-        return instance;
-    }
-
     public GameInfo getGameByName(String gameName) {
         if (TextUtils.isEmpty(gameName)) {
             return null;
@@ -290,7 +283,6 @@ public class Games {
                 return gameInfo;
             }
         }
-        System.err.println("gameName = " + gameName);
         return null;
     }
 
@@ -349,8 +341,6 @@ public class Games {
     }
 
     public void startChallengeGame(Activity activity, ChallengeJsonGame challengeJsonGame, GameInfo gameInfo) {
-        MemoryApplicationModel.getInstance().logEvent("", MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE, "Game Started " + challengeJsonGame.getLevelNumber());
-        Answers.getInstance().logCustom((CustomEvent) ((CustomEvent) new CustomEvent("Challenge Game Started ").putCustomAttribute("number", Integer.valueOf(challengeJsonGame.getLevelNumber()))).putCustomAttribute("game", gameInfo.getAnalyticsName()));
         if (MemoryApplicationModel.getInstance().getLocalDataManager().wasChallengeTutorialShowed(activity, gameInfo.getAnalyticsName())) {
             forceStartChallengeGame(activity, challengeJsonGame, gameInfo);
         } else {

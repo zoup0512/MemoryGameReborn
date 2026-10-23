@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_ranking_subtitle">Ваш рейтинг, таблица лидеров и недавние матчи в одном месте.</string>
-    <string name="online_ranking_rating">Текущий рейтинг</string>
     <string name="online_ranking_snapshot">Последние синхронизированные результаты</string>
     <string name="online_ranking_no_profile">Нет синхронизированных результатов</string>
     <string name="online_ranking_no_profile_hint">Откройте таблицу лидеров или историю матчей, чтобы подключиться и загрузить результаты.</string>

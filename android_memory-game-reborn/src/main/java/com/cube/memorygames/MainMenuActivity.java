@@ -64,19 +64,15 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
     public static final String EXTRA_ONLINE = "onlineMode";
     public static final String EXTRA_SHOW_SECRET_GAME = "showSecretGame";
     public static final int HINT_COINS_GAME_COUNT = 2;
-    public static final int HINT_TOP_GAME_COUNT = 4;
     public static final String PREF_BADGE_CHALLENGE_CLICKED = "badgeChallengeClicked2";
     private static final String PREF_COINS_BUBBLE_SHOWED = "coinsBubbleShowedPrefs";
     public static final String PREF_GAMES_PLAYED = "gamesPlayedPrefs";
     private static final String PREF_LAST_TAB_POSITION = "lastTabPosition";
     private static final String STATE_ONLINE_MODE_PAGE = "onlineModePage";
     private static final String PREF_TOP_BUBBLE_SHOWED = "topBubbleShowedPrefs";
-    public static final int RESULT_LOGIN = 1001;
-    private static final int TAB_CHALLENGE = 2;
     private static final int TAB_ONLINE = 3;
     private static final int TAB_MENU = 4;
     private static final int TAB_SPRINT = 0;
-    private static final int TAB_WORKOUT = 1;
     private MemoryApplicationModel application;
     private ChallengeAdapter challengeAdapter;
     private ChallengeCLickListener challengeCLickListener = new ChallengeCLickListener();
@@ -130,7 +126,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             if (!gameInfo.hasLock() || localUser.parseUnlockedContent().contains(buyGameId) || localUser.vip || localUser.gamesUnlocked) {
                 MainMenuActivity.this.launchGame(gameInfo);
             } else {
-                MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_UNLOCK, MemoryApplicationModel.ANALYTICS_EVENT_TRY_UNLOCK_GAME_PREFIX + gameInfo.getId());
                 new UnlockDialog(MainMenuActivity.this, gameInfo, new OnClickListener() {
                     public void onClick(View view) {
                         MainMenuActivity.this.unlockGame(gameInfo, v);
@@ -255,10 +250,8 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         } else if (startsCount > 0) {
             prefs.edit().putInt(DialogTryWorkout.STARTS_COUNT_BEFORE_SHOW_KEY, startsCount - 1).apply();
         } else if (prefs.getBoolean(DialogTryWorkout.TRY_WORKOUT_DIALOG_SHOW_KEY, true)) {
-            MemoryApplicationModel.getInstance().logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_DIALOG_SHOWED);
             new DialogTryWorkout(this, new OnClickListener() {
                 public void onClick(View view) {
-                    MemoryApplicationModel.getInstance().logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_DIALOG_CLICKED);
                     MainMenuActivity.this.mBottomBar.selectTabAtPosition(1, false);
                 }
             }).show();
@@ -309,7 +302,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             MainMenuActivity.this.recyclerView.invalidateItemDecorations();
                             MainMenuActivity.this.panelHeader.setVisibility(0);
                             MainMenuActivity.this.divider.setVisibility(0);
-                            MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_CHALLENGE, MemoryApplicationModel.ANALYTICS_EVENT_CHALLENGE_TAB_CLICKED);
                         } else if (menuItemId == R.id.bottomBarOnline) {
                             newTab = TAB_ONLINE;
                             // The one full-height row is a viewport. Only its mode-page
@@ -357,7 +349,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             MainMenuActivity.this.panelHeader.setVisibility(8);
                             MainMenuActivity.this.divider.setVisibility(8);
                             sharedPreferences.edit().putBoolean(MainMenuActivity.PREF_BADGE_CHALLENGE_CLICKED, true).apply();
-                            MainMenuActivity.this.application.logEvent(MainMenuActivity.this, MemoryApplicationModel.ANALYTICS_CATEGORY_WORKOUT, MemoryApplicationModel.ANALYTICS_EVENT_WORKOUT_TAB_CLICKED);
                         }
                         MainMenuActivity.this.updateHeaderStatistics();
                         sharedPreferences.edit().putInt(MainMenuActivity.PREF_LAST_TAB_POSITION, newTab).apply();
@@ -419,7 +410,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
 
     @OnClick({R.id.rating_icon})
     public void topClick() {
-        this.application.logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_GENERAL, MemoryApplicationModel.ANALYTICS_EVENT_TOP_CLICKED);
         startActivity(new Intent(this, TrophiesActivity.class));
     }
 
@@ -460,13 +450,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         }
     }
 
-    public Point getWindowSize() {
-        Display display = ((WindowManager) getSystemService("window")).getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        return size;
-    }
-
     public void onStatisticUpdated() {
         updateStatistics();
     }
@@ -486,7 +469,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
         }
         this.localDataManager.addCoinsTransaction(LocalDataManager.TYPE_BUY_GAME + gameInfo.getId(), -gameInfo.getStarsToUnlock(), "game" + (Integer.parseInt(gameInfo.getId()) + 1));
         updateStatistics();
-        this.application.logEvent((Activity) this, MemoryApplicationModel.ANALYTICS_CATEGORY_UNLOCK, MemoryApplicationModel.ANALYTICS_EVENT_UNLOCKED_GAME_PREFIX + gameInfo.getId());
     }
 
     public static double round(double value, int places) {
@@ -521,7 +503,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             return false;
         }
         int gamePlayed = sharedPreferences.getStringSet(PREF_GAMES_PLAYED, new HashSet()).size();
-        System.err.println("gamePlayed = " + gamePlayed);
         if (gamePlayed < 2) {
             return false;
         }
@@ -545,7 +526,6 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
             return false;
         }
         int gamePlayed = sharedPreferences.getStringSet(PREF_GAMES_PLAYED, new HashSet()).size();
-        System.err.println("gamePlayed = " + gamePlayed);
         if (gamePlayed < 4) {
             return false;
         }

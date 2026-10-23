@@ -13,9 +13,6 @@ public class DbLevelInfo {
         return this.gameId;
     }
 
-    public void setGameId(String gameId) {
-        this.gameId = gameId;
-    }
 
     public int getLevel() {
         return this.level;

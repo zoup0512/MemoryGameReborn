@@ -121,9 +121,7 @@ public class SymmetryGrid extends GridLayout implements GameGrid {
                 button.setSoundEffectsEnabled(false);
                 button.setBackgroundResource(R.drawable.drawable_cell_wrong);
                 button.setOnCheckedChangeListener(this.wrongCellListener);
-                if (VERSION.SDK_INT >= 21) {
-                    button.setStateListAnimator(null);
-                }
+                button.setStateListAnimator(null);
                 button.setEnabled(true);
                 if (this.showAnimation) {
                     button.setAlpha(0.0f);

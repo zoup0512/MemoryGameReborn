@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="online_account_title">Account and security</string>
-    <string name="online_bind_progress">Bind email to protect your progress</string>
-    <string name="online_login_again">Log in again</string>
     <string name="online_account_busy">Finish matchmaking, your match, friend room or practice request first.</string>
     <string name="online_account_balance">Online balance: %1$d</string>
     <string name="account_guest">Guest account</string>
@@ -31,7 +29,6 @@
     <string name="account_code">Email verification code</string>
     <string name="account_nickname">Nickname</string>
     <string name="account_send_code">Send verification email</string>
-    <string name="account_confirm">Confirm</string>
     <string name="account_loading">Loading…</string>
     <string name="account_retry">Refresh account</string>
     <string name="account_success">Done</string>
@@ -50,18 +47,12 @@
     <string name="account_environment">Service environment</string>
     <string name="account_environment_note">WS/HTTP accounts are temporarily allowed when the server enables PK_AUTH_ALLOW_HTTP=true. Cleartext connections do not encrypt account data and are for temporary compatibility only; WSS/HTTPS is recommended.</string>
     <string name="account_registered_note">Your verified email account can be used on other devices. Online coins and rating belong to this account; offline progress remains separate.</string>
-    <string name="account_avatar">Avatar %1$d</string>
     <string name="account_migrate">Trust HTTPS address and migrate old guest</string>
     <string name="account_migrate_warning">Old environment: %1$s\nTrusted target: %2$s\nOld user ID: %3$d\nYour old credential will be sent to this target for one migration attempt. Only confirm if you trust its operator. Failure retains the old credential and environment; success preserves your user ID.</string>
     <string name="profile_format">Use 2–16 Unicode characters. Ordinary internal spaces are allowed; invisible characters and controls are not.</string>
     <string name="profile_invalid">Enter a nickname of 2–16 characters, without controls or invisible characters. Ordinary internal spaces are allowed.</string>
-    <string name="profile_save">Review and save</string>
-    <string name="profile_saving">Reviewing and saving…</string>
-    <string name="profile_inspiration">Nickname inspiration</string>
-    <string name="profile_inspiration_note">Inspiration only fills a draft. Any changed nickname still needs server review.</string>
     <string name="profile_choose_avatar">Choose avatar: %1$s</string>
     <string name="profile_cooldown">Nickname can be changed after %1$s. You can still change your avatar.</string>
-    <string name="profile_cooldown_ready">Nickname changes are subject to the server cooldown. Avatar changes do not require nickname review.</string>
     <string name="profile_cooldown_error">Your nickname is still on cooldown. Keep it unchanged to save only your avatar; refresh your profile for the latest time.</string>
     <string name="profile_rejected">This nickname was not approved. Try another. Your profile was not saved.</string>
     <string name="profile_pending">Nickname review is pending. Your profile was not saved. Keep your draft and try again later.</string>

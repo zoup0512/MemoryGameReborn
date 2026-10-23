@@ -10,7 +10,6 @@ import android.view.View;
 import com.memory.brain.training.games.R;
 
 public class WorkoutProgressView extends View {
-    private static final int DEFAULT_MAX = 50;
     private Paint emptyPaint;
     private int max = 50;
     private int progress = 0;
