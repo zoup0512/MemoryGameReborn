@@ -11,7 +11,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.support.v4.app.NotificationCompat.Builder;
+import androidx.core.app.NotificationCompat.Builder;
 import android.text.TextUtils;
 import com.cube.memorygames.reminder.AppReminder;
 import com.memory.brain.training.games.R;
@@ -151,7 +151,8 @@ public class NotificationManager {
 
     public void showRemindNotification(Context context, String message) {
         Bitmap largeIcon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, new Intent(INTENT_ACTION_PLAY_REMINDER), 0);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, new Intent(INTENT_ACTION_PLAY_REMINDER),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         ((android.app.NotificationManager) context.getSystemService("notification")).notify(NOTIFICATION_ID, new Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(context.getString(R.string.app_name)).setLargeIcon(largeIcon).setOngoing(false).setDefaults(1).setContentIntent(pendingIntent).addAction(0, context.getString(R.string.play), pendingIntent).setContentText(message).build());
     }
 
@@ -173,7 +174,7 @@ public class NotificationManager {
     }
 
     private void showNotifications(Context context, String intentAction, String buttonText, String message, Bitmap largeIcon) {
-        ((android.app.NotificationManager) context.getSystemService("notification")).notify(NOTIFICATION_ID, new Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(context.getString(R.string.app_name)).setLargeIcon(largeIcon).setOngoing(true).setContentIntent(PendingIntent.getBroadcast(context, 0, new Intent(INTENT_ACTION_VIEW), 0)).addAction(0, buttonText, PendingIntent.getBroadcast(context, 0, new Intent(intentAction), 0)).setContentText(message).build());
+        ((android.app.NotificationManager) context.getSystemService("notification")).notify(NOTIFICATION_ID, new Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(context.getString(R.string.app_name)).setLargeIcon(largeIcon).setOngoing(true).setContentIntent(PendingIntent.getBroadcast(context, 0, new Intent(INTENT_ACTION_VIEW), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).addAction(0, buttonText, PendingIntent.getBroadcast(context, 0, new Intent(intentAction), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).setContentText(message).build());
     }
 
     public void hideNotifications(Context context) {

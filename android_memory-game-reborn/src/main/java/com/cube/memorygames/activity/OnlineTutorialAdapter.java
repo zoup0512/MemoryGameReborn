@@ -1,7 +1,7 @@
 package com.cube.memorygames.activity;
 
 import android.graphics.Typeface;
-import android.support.v4.view.PagerAdapter;
+import androidx.viewpager.widget.PagerAdapter;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;

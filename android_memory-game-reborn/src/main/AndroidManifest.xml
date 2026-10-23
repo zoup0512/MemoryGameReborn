@@ -6,6 +6,8 @@
          modes still work fully offline; the Online tab degrades gracefully. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Reminder/match notifications; required to post on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name="com.cube.memorygames.MemoryApplicationModel"
@@ -41,6 +43,7 @@
         <activity
             android:name="com.cube.memorygames.SplashActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/SplashTheme">
             <intent-filter>
@@ -52,6 +55,7 @@
         <activity
             android:name="com.cube.memorygames.MainMenuActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
             android:screenOrientation="portrait" />
 
         <activity
@@ -85,9 +89,11 @@
             android:screenOrientation="portrait" />
         <activity
             android:name="com.cube.memorygames.api.online.OnlineHistoryActivity"
+            android:exported="false"
             android:screenOrientation="portrait" />
         <activity
             android:name="com.cube.memorygames.api.online.OnlineTopActivity"
+            android:exported="false"
             android:screenOrientation="portrait" />
         <activity
             android:name="com.cube.memorygames.activity.OnlineTutorialActivity"
@@ -100,6 +106,7 @@
         <activity
             android:name="com.cube.memorygames.api.online.OnlineMatchActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
             android:screenOrientation="portrait" />
 
         <activity
@@ -217,7 +224,8 @@
 
         <receiver
             android:name="com.cube.memorygames.reminder.DeviceBootReceiver"
-            android:enabled="false">
+            android:enabled="false"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

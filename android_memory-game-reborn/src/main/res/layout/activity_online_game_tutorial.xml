@@ -22,7 +22,7 @@
             android:contentDescription="@string/back"
             android:padding="12dp"
             android:src="@drawable/ic_arrow_back_white"
-            android:tint="@color/online_text_primary" />
+            app:tint="@color/online_text_primary" />
 
         <TextView
             android:id="@+id/title"

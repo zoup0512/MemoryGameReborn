@@ -11,7 +11,6 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
-import android.support.v4.internal.view.SupportMenu;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -316,7 +315,7 @@ public class RectangularCircleGrid extends GridLayout implements GameGrid {
                         applyTint(toggleButton, -16777216, 0);
                     }
                 } else if (i == indexOfChild) {
-                    applyTint(toggleButton, SupportMenu.CATEGORY_MASK, R.drawable.wronganswer);
+                    applyTint(toggleButton, Color.RED, R.drawable.wronganswer);
                 } else if (nextCellImage == toggleButton.getBackground()) {
                     applyTint(toggleButton, -16777216, 0);
                 }

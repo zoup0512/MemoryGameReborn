@@ -4,7 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface.OnDismissListener;
 import android.graphics.Typeface;
-import android.support.v7.app.AppCompatDialog;
+import androidx.appcompat.app.AppCompatDialog;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;

@@ -1,7 +1,7 @@
 package com.cube.memorygames.api.online;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;

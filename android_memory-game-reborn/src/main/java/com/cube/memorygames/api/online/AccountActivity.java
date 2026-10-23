@@ -1,8 +1,8 @@
 package com.cube.memorygames.api.online;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import android.text.InputType;
 import android.graphics.drawable.GradientDrawable;
 import com.cube.memorygames.ui.DialogUi;

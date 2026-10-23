@@ -181,7 +181,7 @@
                         android:layout_height="wrap_content"
                         android:padding="10.0dip"
                         android:src="@drawable/rightanswer"
-                        android:tint="@color/grid_correct" />
+                        app:tint="@color/grid_correct" />
                 </FrameLayout>
             </FrameLayout>
 
@@ -212,7 +212,7 @@
                         android:layout_height="wrap_content"
                         android:padding="10.0dip"
                         android:src="@drawable/rightanswer"
-                        android:tint="@color/grid_correct" />
+                        app:tint="@color/grid_correct" />
                 </FrameLayout>
             </FrameLayout>
         </RelativeLayout>

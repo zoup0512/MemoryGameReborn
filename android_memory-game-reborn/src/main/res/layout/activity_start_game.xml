@@ -21,7 +21,7 @@
             android:layout_marginRight="8.0dip"
             android:padding="8.0dip"
             android:src="@drawable/ic_arrow_back_white"
-            android:tint="@android:color/black" />
+            app:tint="@android:color/black" />
     </LinearLayout>
 
     <FrameLayout
@@ -29,7 +29,7 @@
         android:layout_height="0.0dip"
         android:layout_weight="1.0">
 
-        <android.support.v4.view.ViewPager
+        <androidx.viewpager.widget.ViewPager
             android:id="@id/view_pager"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />

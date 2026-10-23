@@ -25,13 +25,13 @@
                     <TextView android:textSize="@dimen/text_level_ready" android:textStyle="bold" android:textColor="@color/grid_correct" android:gravity="center" android:id="@id/text_level_ready" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/level_ready" />
                 </LinearLayout>
                 <FrameLayout android:layout_gravity="center" android:id="@id/level_hint" android:background="@drawable/drawable_white_circle_blue_check" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <ImageView android:padding="10.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/rightanswer" android:tint="@color/grid_correct" />
+                    <ImageView android:padding="10.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/rightanswer" app:tint="@color/grid_correct" />
                 </FrameLayout>
             </FrameLayout>
             <View android:id="@id/foreground" android:background="@color/background" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="fill_parent" />
             <FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_toRightOf="@id/correct_item" android:layout_alignParentTop="true" android:layout_toEndOf="@id/correct_item">
                 <FrameLayout android:layout_gravity="center" android:id="@id/correct_hint" android:background="@drawable/drawable_white_circle_blue_check" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <ImageView android:id="@id/correct_hint_ImageView" android:padding="10.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/rightanswer" android:tint="@color/grid_correct" />
+                    <ImageView android:id="@id/correct_hint_ImageView" android:padding="10.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/rightanswer" app:tint="@color/grid_correct" />
                 </FrameLayout>
             </FrameLayout>
         </RelativeLayout>

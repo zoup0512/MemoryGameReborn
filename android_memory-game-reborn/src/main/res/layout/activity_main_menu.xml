@@ -9,7 +9,7 @@
         <ImageView android:layout_gravity="center_vertical" android:id="@id/rating_icon" android:background="?selectableItemBackground" android:padding="10.0dip" android:layout_width="@dimen/top_bar_height" android:layout_height="@dimen/top_bar_height" android:src="@drawable/ic_reward" />
     </LinearLayout>
     <View android:id="@id/divider" android:background="@color/grid_stroke" android:layout_width="fill_parent" android:layout_height="1.0dip" android:layout_below="@id/panel_header" />
-    <android.support.v7.widget.RecyclerView android:id="@id/recyclerView" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_below="@id/divider" android:layout_above="@+id/bb_bottom_bar" android:layout_alignWithParentIfMissing="true" app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/recyclerView" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_below="@id/divider" android:layout_above="@+id/bb_bottom_bar" android:layout_alignWithParentIfMissing="true" app:layout_behavior="@string/appbar_scrolling_view_behavior" />
     <FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent">
         <include layout="@layout/view_coins_hint" />
         <FrameLayout android:orientation="vertical" android:id="@id/top_hint" android:visibility="invisible" android:layout_width="fill_parent" android:layout_height="wrap_content">

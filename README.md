@@ -50,7 +50,7 @@
   SHA-256（用于留存），最后把 `IntegrityAnchor.java` 还原为仓库中的占位版本。没有
   `keystore.properties` 时不要直接用 `assembleRelease` 当发行包：产物是 unsigned，且签名哨兵未生效。
   加固设计与发布注意见 [客户端加固设计](docs/android-client-hardening-design.md)
-- 支持库沿用原版 `com.android.support:26.1.0`（未迁移 AndroidX），依赖从 Google Maven / Maven Central 下载
+- Android 客户端使用 AndroidX + Material Components，ButterKnife 10.2.3 生成 AndroidX 绑定；不启用 Jetifier，依赖从 Google Maven / Maven Central 下载。`minSdk 21`、`targetSdk 35`、`compileSdk 36`；targetSdk 升级涉及的通知权限、PendingIntent、动态广播与 Android 15 边到边兼容见 [AndroidX 支持](docs/androidx-migration.md)
 
 
 ## HarmonyOS 元服务复刻
@@ -79,4 +79,4 @@
 ## 备注
 
 - 反编译产生的资源 ID / styleable / 代码伪影问题及修复脚本见 `android_memory-game-reborn/tools/` 内注释
-- 运行需要 Android 4.4（API 19）及以上
+- 运行需要 Android 5.0（API 21）及以上

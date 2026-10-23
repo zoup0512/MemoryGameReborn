@@ -43,7 +43,7 @@ scenarios = [
     ("Difficulty", "青铜", "Bronze"),
     ("Coins", "金币不足", "Not enough coins"),
     ("Result layout", "最佳到达第 10 关", "Best level: 10"),
-    ("Answer layout", "几个格子", "How many"),
+    ("Answer layout", "几个格子", "Number of Cells"),
     ("Unlock layout", "100", "100"),
 ]
 results = []

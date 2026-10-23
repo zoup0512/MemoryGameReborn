@@ -7,8 +7,8 @@ package com.roughike.bottombar;
  */
 public final class R {
     public static final class attr {
-        public static final int colorPrimary = android.support.v7.appcompat.R.attr.colorPrimary;
-        public static final int selectableItemBackgroundBorderless = android.support.v7.appcompat.R.attr.selectableItemBackgroundBorderless;
+        public static final int colorPrimary = androidx.appcompat.R.attr.colorPrimary;
+        public static final int selectableItemBackgroundBorderless = androidx.appcompat.R.attr.selectableItemBackgroundBorderless;
     }
     public static final class bool {
         public static final int bb_bottom_bar_is_portrait_mode = com.memory.brain.training.games.R.bool.bb_bottom_bar_is_portrait_mode;

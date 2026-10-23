@@ -2,7 +2,7 @@ package com.cube.memorygames;
 
 import android.app.Dialog;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;

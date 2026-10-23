@@ -3,7 +3,7 @@ package com.cube.memorygames.api.online;
 import com.cube.memorygames.diagnostics.DiagnosticLog;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;

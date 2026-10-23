@@ -26,6 +26,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import androidx.core.content.ContextCompat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -556,7 +557,10 @@ class Dispatcher {
       if (dispatcher.scansNetworkChanges) {
         filter.addAction(CONNECTIVITY_ACTION);
       }
-      dispatcher.context.registerReceiver(this, filter);
+      // Android 14 requires an explicit export flag for context-registered
+      // receivers; these are system broadcasts, so the receiver stays private.
+      ContextCompat.registerReceiver(dispatcher.context, this, filter,
+          ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     void unregister() {

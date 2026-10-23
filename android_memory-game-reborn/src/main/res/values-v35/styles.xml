@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 15 enforces edge-to-edge for apps targeting API 35. The
+         restored screens position content against fixed system-bar heights,
+         so keep the legacy window fitting until per-screen insets are added. -->
+    <style name="GdxTheme" parent="@style/GdxThemeBase">
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>

@@ -9,8 +9,7 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
-import android.support.v4.internal.view.SupportMenu;
-import android.support.v4.view.GestureDetectorCompat;
+import androidx.core.view.GestureDetectorCompat;
 import android.util.Log;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -379,7 +378,7 @@ public class TwoFoldGrid extends GridLayout implements GameGrid, OnGestureListen
     }
 
     public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
-        getChildAt(motionEvent1).setBackgroundColor(SupportMenu.CATEGORY_MASK);
+        getChildAt(motionEvent1).setBackgroundColor(Color.RED);
         return true;
     }
 

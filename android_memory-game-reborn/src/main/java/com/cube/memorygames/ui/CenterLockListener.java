@@ -1,8 +1,8 @@
 package com.cube.memorygames.ui;
 
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.RecyclerView.OnScrollListener;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener;
 import android.view.View;
 
 public class CenterLockListener extends OnScrollListener {
@@ -17,12 +17,12 @@ public class CenterLockListener extends OnScrollListener {
         super.onScrollStateChanged(recyclerView, newState);
         LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
         if (this.mCenterPivot == 0) {
-            this.mCenterPivot = lm.getOrientation() == 0 ? recyclerView.getLeft() + recyclerView.getRight() : recyclerView.getTop() + recyclerView.getBottom();
+            this.mCenterPivot = lm.getOrientation() == RecyclerView.HORIZONTAL ? recyclerView.getLeft() + recyclerView.getRight() : recyclerView.getTop() + recyclerView.getBottom();
         }
         if (!this.mAutoSet && newState == 0) {
             View view = findCenterView(lm);
-            int scrollNeeded = (lm.getOrientation() == 0 ? (view.getLeft() + view.getRight()) / 2 : (view.getTop() + view.getBottom()) / 2) - this.mCenterPivot;
-            if (lm.getOrientation() == 0) {
+            int scrollNeeded = (lm.getOrientation() == RecyclerView.HORIZONTAL ? (view.getLeft() + view.getRight()) / 2 : (view.getTop() + view.getBottom()) / 2) - this.mCenterPivot;
+            if (lm.getOrientation() == RecyclerView.HORIZONTAL) {
                 recyclerView.smoothScrollBy(scrollNeeded, 0);
             } else {
                 recyclerView.smoothScrollBy(0, scrollNeeded);
@@ -45,7 +45,7 @@ public class CenterLockListener extends OnScrollListener {
         int i = lm.findFirstVisibleItemPosition();
         while (i <= lm.findLastVisibleItemPosition() && notFound) {
             View view = lm.findViewByPosition(i);
-            int leastDifference = Math.abs(this.mCenterPivot - (lm.getOrientation() == 0 ? (view.getLeft() + view.getRight()) / 2 : (view.getTop() + view.getBottom()) / 2));
+            int leastDifference = Math.abs(this.mCenterPivot - (lm.getOrientation() == RecyclerView.HORIZONTAL ? (view.getLeft() + view.getRight()) / 2 : (view.getTop() + view.getBottom()) / 2));
             if (leastDifference <= minDistance || i == lm.findFirstVisibleItemPosition()) {
                 minDistance = leastDifference;
                 returnView = view;

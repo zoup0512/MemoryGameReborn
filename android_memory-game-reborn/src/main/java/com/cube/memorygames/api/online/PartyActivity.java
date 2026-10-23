@@ -15,7 +15,7 @@ import com.cube.memorygames.model.GameInfo;
 import com.memory.brain.training.games.R;
 
 /** Unified friends room entry, persistent lobby, round board and retained final results. */
-public final class PartyActivity extends android.support.v7.app.AppCompatActivity
+public final class PartyActivity extends androidx.appcompat.app.AppCompatActivity
         implements PartySession.Listener, OnlineSession.MatchListener {
     public static final String EXTRA_JOIN_CODE = "friendsJoinCode";
     public static final String EXTRA_ENTRY_ACTION = "friendsEntryAction";

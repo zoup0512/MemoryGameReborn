@@ -201,6 +201,15 @@ class CalligraphyLayoutInflater extends LayoutInflater implements CalligraphyAct
                 mConstructorArgs = ReflectionUtils.getField(LayoutInflater.class, "mConstructorArgs");
 
             final Object[] mConstructorArgsArr = (Object[]) ReflectionUtils.getValue(mConstructorArgs, this);
+            // Android 15 no longer exposes mConstructorArgs to reflection. Fall
+            // back to this inflater's context instead of crashing on the hook.
+            if (mConstructorArgsArr == null || mConstructorArgsArr.length == 0) {
+                try {
+                    return createView(name, null, attrs);
+                } catch (ClassNotFoundException ignored) {
+                    return view;
+                }
+            }
             final Object lastContext = mConstructorArgsArr[0];
             // The LayoutInflater actually finds out the correct context to use. We just need to set
             // it on the mConstructor for the internal method.

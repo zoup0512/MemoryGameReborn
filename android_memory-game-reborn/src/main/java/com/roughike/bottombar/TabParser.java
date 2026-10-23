@@ -3,14 +3,14 @@ package com.roughike.bottombar;
 import android.content.Context;
 import android.content.res.XmlResourceParser;
 import android.graphics.Color;
-import android.support.annotation.CheckResult;
-import android.support.annotation.ColorInt;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.StringDef;
-import android.support.annotation.XmlRes;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.CheckResult;
+import androidx.annotation.ColorInt;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
+import androidx.annotation.XmlRes;
+import androidx.core.content.ContextCompat;
 
 import org.xmlpull.v1.XmlPullParserException;
 

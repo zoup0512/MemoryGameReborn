@@ -37,7 +37,7 @@
         <item name="android:maxLines">1</item>
         <item name="android:singleLine">true</item>
     </style>
-    <style name="GdxTheme" parent="@style/Theme.AppCompat.Light.NoActionBar">
+    <style name="GdxThemeBase" parent="@style/Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -48,6 +48,7 @@
         <item name="colorAccent">@color/dialog_primary</item>
         <item name="android:colorAccent">@color/dialog_primary</item>
     </style>
+    <style name="GdxTheme" parent="@style/GdxThemeBase" />
     <style name="LoginButton">
         <item name="android:textColor">@color/login_button_text</item>
     </style>

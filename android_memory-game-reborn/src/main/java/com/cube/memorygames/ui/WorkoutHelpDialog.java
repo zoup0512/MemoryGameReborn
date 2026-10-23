@@ -2,7 +2,7 @@ package com.cube.memorygames.ui;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.support.v7.app.AppCompatDialog;
+import androidx.appcompat.app.AppCompatDialog;
 import android.view.View;
 import butterknife.BindView;
 import butterknife.ButterKnife;

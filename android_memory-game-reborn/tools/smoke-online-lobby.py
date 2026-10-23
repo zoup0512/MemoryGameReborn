@@ -103,6 +103,21 @@ def assert_stats(root, mode, values):
         "Offscreen mode statistics leaked into the visible page"
 
 
+def assert_friend_entry(root):
+    """Unified friend lobby: entry actions replace the old inline W/L/D card."""
+    pages = by_id(root, "online_friend_page")
+    assert len(pages) == 1, "Expected visible friend page"
+    for action in ("online_create_room", "online_join_room"):
+        assert by_id(pages[0], action), "Friend entry action missing: " + action
+    assert any(node.get("text") in ("亲友赛战绩", "Friends match history")
+               for node in pages[0].iter("node")), "Friend history entry missing"
+    for field in ("wins", "losses", "draws", "win_rate"):
+        assert not by_id(pages[0], "online_stat_" + field), \
+            "Inline friend statistic remains: " + field
+    assert not any(by_id(root, "online_" + other + "_page") for other in ("ranked", "practice")), \
+        "Offscreen mode page leaked into the visible friend page"
+
+
 def run(name, action):
     try:
         action()
@@ -138,7 +153,7 @@ def default_pager():
         left + (right - left) // 6, y, 350)
     time.sleep(0.7)
     xml, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
     capture("04-swipe-friend", xml)
     adb("shell", "input", "swipe", left + (right - left) // 6, y,
         right - (right - left) // 6, y, 350)
@@ -175,17 +190,17 @@ def action_dialogs():
     assert cancel, "Friend room cancel action missing"
     tap(cancel[0])
     _, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
 
 
 def recreation():
     _, root = launch(previewLanguage="zh", previewRecreate=True, previewRecreateDelayMs=14000)
     tap(tab(root, "亲友赛"))
     _, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
     time.sleep(14)
     xml, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
     capture("05-recreate-retains-friend", xml)
     sprint = by_id(root, "bottomBarCup")
     assert sprint, "Sprint bottom tab missing"
@@ -195,7 +210,7 @@ def recreation():
     assert online, "Online bottom tab missing"
     tap(online[0])
     xml, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
     capture("06-bottom-nav-retains-friend", xml)
 
 
@@ -254,7 +269,7 @@ def english():
             left + (right - left) // 6, top + (bottom - top) // 2, 350)
         time.sleep(0.7)
     xml, root = tree()
-    assert_stats(root, "friend", (1, 2, 1, "25%"))
+    assert_friend_entry(root)
     capture("14-english-friend", xml)
 
 

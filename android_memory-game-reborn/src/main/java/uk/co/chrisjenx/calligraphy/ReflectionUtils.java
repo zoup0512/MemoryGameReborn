@@ -25,6 +25,9 @@ class ReflectionUtils {
     }
 
     static Object getValue(Field field, Object obj) {
+        if (field == null || obj == null) {
+            return null;
+        }
         try {
             return field.get(obj);
         } catch (IllegalAccessException ignored) {
@@ -33,6 +36,9 @@ class ReflectionUtils {
     }
 
     static void setValue(Field field, Object obj, Object value) {
+        if (field == null || obj == null) {
+            return;
+        }
         try {
             field.set(obj, value);
         } catch (IllegalAccessException ignored) {

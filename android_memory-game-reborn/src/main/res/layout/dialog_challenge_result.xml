@@ -16,11 +16,11 @@
         android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
         android:importantForAccessibility="noHideDescendants">
         <ImageView android:id="@id/star1" android:layout_width="32dp" android:layout_height="32dp"
-            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
+            android:layout_margin="4dp" app:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
         <ImageView android:id="@id/star2" android:layout_width="32dp" android:layout_height="32dp"
-            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
+            android:layout_margin="4dp" app:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
         <ImageView android:id="@id/star3" android:layout_width="32dp" android:layout_height="32dp"
-            android:layout_margin="4dp" android:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
+            android:layout_margin="4dp" app:tint="@color/dialog_primary" app:srcCompat="@drawable/ic_star" />
     </LinearLayout>
     <TextView android:id="@+id/dg_challenge_stars" style="@style/AppDialogBody"
         android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" />

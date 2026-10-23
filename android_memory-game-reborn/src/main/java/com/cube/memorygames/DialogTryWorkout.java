@@ -3,7 +3,7 @@ package com.cube.memorygames;
 import android.app.Activity;
 import android.app.Dialog;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatDialog;
+import androidx.appcompat.app.AppCompatDialog;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;

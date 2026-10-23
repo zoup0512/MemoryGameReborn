@@ -9,14 +9,13 @@ import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.IdRes;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.OrientationHelper;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.IdRes;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.Display;
 import android.view.View;
@@ -316,7 +315,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
                             // The one full-height row is a viewport. Only its mode-page
                             // ScrollViews scroll vertically; the shared RecyclerView must not.
                             MainMenuActivity.this.recyclerView.setLayoutManager(new LinearLayoutManager(
-                                    MainMenuActivity.this, OrientationHelper.VERTICAL, false) {
+                                    MainMenuActivity.this, RecyclerView.VERTICAL, false) {
                                 @Override
                                 public boolean canScrollVertically() {
                                     return false;
@@ -391,7 +390,7 @@ public class MainMenuActivity extends AppCompatActivity implements StatisticList
 
     private void configureList(boolean alwaysList) {
         if (!getResources().getBoolean(R.bool.isTablet) || alwaysList) {
-            this.recyclerView.setLayoutManager(new LinearLayoutManager(this, OrientationHelper. VERTICAL, false));
+            this.recyclerView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
         } else {
             this.recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         }

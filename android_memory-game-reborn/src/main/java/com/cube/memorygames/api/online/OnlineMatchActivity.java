@@ -8,8 +8,8 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -1483,6 +1483,7 @@ public class OnlineMatchActivity extends AppCompatActivity implements OnlineSess
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         diagnostic("game_return","attempt",requestCode,"code",resultCode);
         if (requestCode == this.pendingTutorialRequestCode) {
             this.pendingTutorialRequestCode = -1;

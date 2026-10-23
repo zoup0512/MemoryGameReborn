@@ -14,7 +14,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.TextView;
 
-import android.support.annotation.IntRange;
+import androidx.annotation.IntRange;
 
 import java.util.ArrayList;
 import java.util.List;

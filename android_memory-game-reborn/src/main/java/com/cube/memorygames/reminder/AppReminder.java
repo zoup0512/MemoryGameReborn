@@ -42,8 +42,11 @@ public class AppReminder {
 
     public static void setAlarm(Context context) {
         Intent alarmIntent = new Intent(context, ReminderBroadcastReceiver.class);
-        if (PendingIntent.getBroadcast(context, 0, alarmIntent, 536870912) == null) {
-            ((AlarmManager) context.getSystemService("alarm")).setInexactRepeating(0, System.currentTimeMillis(), 86400000, PendingIntent.getBroadcast(context, 0, alarmIntent, 0));
+        if (PendingIntent.getBroadcast(context, 0, alarmIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) == null) {
+            ((AlarmManager) context.getSystemService("alarm")).setInexactRepeating(0, System.currentTimeMillis(), 86400000,
+                    PendingIntent.getBroadcast(context, 0, alarmIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
             context.getPackageManager().setComponentEnabledSetting(new ComponentName(context, DeviceBootReceiver.class), 1, 1);
         }
     }

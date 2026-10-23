@@ -9,7 +9,7 @@ import java.text.DateFormat;
 import java.util.Date;
 
 /** Server-owned independent party history, never mixed with duel/economy records. */
-public final class PartyHistoryActivity extends android.support.v7.app.AppCompatActivity implements PartySession.Listener {
+public final class PartyHistoryActivity extends androidx.appcompat.app.AppCompatActivity implements PartySession.Listener {
     private LinearLayout box;
     private final PartySession party = PartySession.get();
     @Override protected void onCreate(Bundle saved) {

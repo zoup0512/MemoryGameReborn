@@ -30,7 +30,7 @@
                 android:layout_gravity="top|center_horizontal"
                 android:layout_marginTop="14dp"
                 android:contentDescription="@null"
-                android:tint="@color/online_reward"
+                app:tint="@color/online_reward"
                 app:srcCompat="@drawable/ic_crown_new" />
 
             <TextView
@@ -52,7 +52,7 @@
                 android:layout_marginBottom="16dp"
                 android:contentDescription="@null"
                 android:rotation="90"
-                android:tint="@color/online_success"
+                app:tint="@color/online_success"
                 app:srcCompat="@drawable/ic_direction" />
         </FrameLayout>
 

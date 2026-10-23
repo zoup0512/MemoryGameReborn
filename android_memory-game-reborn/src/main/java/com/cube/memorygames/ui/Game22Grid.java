@@ -14,8 +14,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.internal.view.SupportMenu;
+import androidx.core.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -120,7 +119,7 @@ public class Game22Grid extends View implements GameGrid {
             if (CellType.BEGIN.equals(cell)) {
                 this.paint1.setColor(-16776961);
             } else if (CellType.END.equals(cell)) {
-                this.paint1.setColor(SupportMenu.CATEGORY_MASK);
+                this.paint1.setColor(Color.RED);
             } else if (CellType.EMPTY.equals(cell) || CellType.EMPTY_MIRROR1.equals(cell) || CellType.EMPTY_MIRROR2.equals(cell)) {
                 this.paint1.setColor(-1);
                 this.paint2.setStyle(Style.STROKE);

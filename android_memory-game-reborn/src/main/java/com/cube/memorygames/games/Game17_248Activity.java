@@ -3,8 +3,7 @@ package com.cube.memorygames.games;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.LayoutRes;
-import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.annotation.LayoutRes;
 import android.view.Display;
 import android.view.View;
 import android.widget.RelativeLayout.LayoutParams;
@@ -29,6 +28,7 @@ import java.util.List;
 
 public class Game17_248Activity extends Game1MemoryGridActivity {
     private static final int GAME_TIME = 60000;
+    private static final long FIRST_COIN_SCORE = 1024L;
     @BindView(R.id.currentScore)
     TextView currentScoreText;
     private long currentScoreValue;
@@ -258,11 +258,11 @@ public class Game17_248Activity extends Game1MemoryGridActivity {
     }
 
     private int getCoinsForScore(long score) {
-        if (score < PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID) {
+        if (score < FIRST_COIN_SCORE) {
             return 0;
         }
         int result = 1;
-        score -= PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID;
+        score -= FIRST_COIN_SCORE;
         for (int i = 0; i < ((int) (score / 512)); i++) {
             int i2;
             int i3 = result + 2;

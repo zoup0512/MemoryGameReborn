@@ -3,7 +3,7 @@
 #   - ActiveAndroid reflects over @Table/@Column models (TableInfo walks fields)
 #   - Gson field-name reflection for workout/challenge models and the
 #     OnlineMessages protocol DTOs (no @SerializedName annotations anywhere)
-#   - ButterKnife 8.5.1 generated $$ViewBinder classes are looked up reflectively
+#   - ButterKnife 10.2.3 generated _ViewBinding classes are looked up reflectively
 # Rules start broad (keep whole vendored packages) and should be tightened
 # only after a full regression pass; silent runtime breakage in a restored
 # codebase is far more expensive than over-keeping.
@@ -50,9 +50,7 @@
 -keep class com.activeandroid.** { *; }
 -dontwarn com.activeandroid.**
 
-# ---- ButterKnife 8.5.1 ----
--keep class **$$ViewBinder { *; }
--keep class **$$ViewBinder$InnerUnbinder { *; }
+# ---- ButterKnife 10.2.3 ----
 -keepclasseswithmembernames class * {
     @butterknife.* <fields>;
 }

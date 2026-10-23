@@ -2,7 +2,7 @@ package com.cube.memorygames.games;
 
 import android.graphics.Point;
 import android.os.Handler;
-import android.support.annotation.LayoutRes;
+import androidx.annotation.LayoutRes;
 import android.view.Display;
 import android.view.View;
 import android.widget.RelativeLayout.LayoutParams;

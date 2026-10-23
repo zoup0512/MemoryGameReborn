@@ -51,14 +51,14 @@ public class CalligraphyConfig {
      * this adds those classes to the style lookup map
      */
     private static void addAppCompatViews() {
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatTextView.class, android.R.attr.textViewStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatButton.class, android.R.attr.buttonStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatEditText.class, android.R.attr.editTextStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatAutoCompleteTextView.class, android.R.attr.autoCompleteTextViewStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatMultiAutoCompleteTextView.class, android.R.attr.autoCompleteTextViewStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatCheckBox.class, android.R.attr.checkboxStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatRadioButton.class, android.R.attr.radioButtonStyle);
-        DEFAULT_STYLES.put(android.support.v7.widget.AppCompatCheckedTextView.class, android.R.attr.checkedTextViewStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatTextView.class, android.R.attr.textViewStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatButton.class, android.R.attr.buttonStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatEditText.class, android.R.attr.editTextStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatAutoCompleteTextView.class, android.R.attr.autoCompleteTextViewStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView.class, android.R.attr.autoCompleteTextViewStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatCheckBox.class, android.R.attr.checkboxStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatRadioButton.class, android.R.attr.radioButtonStyle);
+        DEFAULT_STYLES.put(androidx.appcompat.widget.AppCompatCheckedTextView.class, android.R.attr.checkedTextViewStyle);
     }
 
     private static CalligraphyConfig sInstance;

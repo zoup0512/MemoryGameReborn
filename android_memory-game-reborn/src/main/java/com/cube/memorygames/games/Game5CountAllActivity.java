@@ -6,7 +6,7 @@ import android.content.DialogInterface;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Handler;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;

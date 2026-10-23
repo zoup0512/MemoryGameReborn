@@ -1,8 +1,8 @@
 package com.cube.memorygames.ui;
 
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
 import com.cube.memorygames.LastGameChartFragment;
 import com.cube.memorygames.TrophyInfoFragment;
 import com.cube.memorygames.model.GameInfo;
