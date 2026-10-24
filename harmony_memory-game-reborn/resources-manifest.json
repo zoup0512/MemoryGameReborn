@@ -1,13 +1,13 @@
 {
   "version": 2,
   "generator": "harmony_memory-game-reborn/tools/prepare_resources.py",
-  "sourcePolicy": "Repository Android assets only; no network or currency/purchase functionality",
+  "sourcePolicy": "Repository Android assets and local 1024px app icon master; no network or currency/purchase functionality",
   "sizePolicy": {
     "limits": null,
     "note": "Lossless image/font optimization; original dimensions preserved"
   },
   "imagePolicy": {
-    "sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
+    "sourceSelection": "App icon: local 1024px master; other PNGs: largest Android pixel area, deterministic lexical tie-break",
     "resize": false,
     "encoding": "All bitmaps except app_icon: lossless WebP at original dimensions; app icon: PNG; vectors: path/color-preserving SVG"
   },
@@ -31,9 +31,12 @@
     "writeScope": "media function only; GAMES, game parameters and other code preserved"
   },
   "applicationIconSource": {
-    "path": "android_memory-game-reborn/src/main/AndroidManifest.xml",
-    "line": 15,
-    "marker": "android:icon=\"@drawable/ic_launcher\""
+    "path": "harmony_memory-game-reborn/assets/app-icon-1024.png",
+    "size": [
+      1024,
+      1024
+    ],
+    "generator": "harmony_memory-game-reborn/tools/render_app_icon.py"
   },
   "images": [
     {
@@ -41,19 +44,19 @@
       "androidName": "ic_launcher",
       "kind": "app_icon",
       "sourceSize": [
-        192,
-        192
+        1024,
+        1024
       ],
       "size": [
-        192,
-        192
+        1024,
+        1024
       ],
       "format": "PNG",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/ic_launcher.png",
-      "sourceSha256": "1e397de8c47825f592d7af3d21ad9cb62a5ee26533ff244e7167df98028174f5",
+      "source": "harmony_memory-game-reborn/assets/app-icon-1024.png",
+      "sourceSha256": "0da4f296e86c8c61067d3c558da757ea283bb390e6beca43e710a26a14553a56",
       "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/app_icon.png",
-      "sha256": "1e397de8c47825f592d7af3d21ad9cb62a5ee26533ff244e7167df98028174f5",
-      "bytes": 7748,
+      "sha256": "0da4f296e86c8c61067d3c558da757ea283bb390e6beca43e710a26a14553a56",
+      "bytes": 27721,
       "encoding": "original-bytes"
     },
     {
@@ -5761,11 +5764,11 @@
   "appIcons": [
     {
       "name": "game_icon",
-      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/ic_launcher.png",
-      "sourceSha256": "1e397de8c47825f592d7af3d21ad9cb62a5ee26533ff244e7167df98028174f5",
+      "source": "harmony_memory-game-reborn/assets/app-icon-1024.png",
+      "sourceSha256": "0da4f296e86c8c61067d3c558da757ea283bb390e6beca43e710a26a14553a56",
       "output": "harmony_memory-game-reborn/AppScope/resources/base/media/game_icon.png",
-      "sha256": "1e397de8c47825f592d7af3d21ad9cb62a5ee26533ff244e7167df98028174f5",
-      "bytes": 7748,
+      "sha256": "0da4f296e86c8c61067d3c558da757ea283bb390e6beca43e710a26a14553a56",
+      "bytes": 27721,
       "encoding": "original-bytes"
     }
   ],
@@ -8376,15 +8379,15 @@
     }
   ],
   "summary": {
-    "totalAssetBytes": 1516870,
+    "totalAssetBytes": 1556874,
     "imagesCount": 284,
-    "imagesBytes": 1424925,
+    "imagesBytes": 1444956,
     "audioCount": 4,
     "audioBytes": 19197,
     "fontsCount": 4,
     "fontsBytes": 65000,
     "appIconsCount": 1,
-    "appIconsBytes": 7748,
+    "appIconsBytes": 27721,
     "imageCounts": {
       "app_icon": 1,
       "tutorial": 63,

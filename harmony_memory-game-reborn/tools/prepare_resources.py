@@ -9,7 +9,9 @@ XML is parsed only to build SVG media; its raw XML copies and the drawable JSON
 description are not packaged. Only GameCatalog.media is regenerated; game
 parameters and UI code are untouched.
 No network, purchases, dependency installation, config or Android source edits.
+The app icon comes from the local 1024px master in assets/.
 --check verifies exact reproducibility without writing or imposing a HAP budget.
+--icons-only updates or checks the app icons without audio/font dependencies.
 """
 from __future__ import annotations
 
@@ -37,6 +39,10 @@ RAW = HARMONY / "entry/src/main/resources/rawfile"
 CATALOG = HARMONY / "entry/src/main/ets/core/GameCatalog.ets"
 MANIFEST = HARMONY / "resources-manifest.json"
 APP_MEDIA = HARMONY / "AppScope/resources/base/media"
+APP_ICON = HARMONY / "assets/app-icon-1024.png"
+SOURCE_POLICY = "Repository Android assets and local 1024px app icon master; no network or currency/purchase functionality"
+ICON_SOURCE = {"path": APP_ICON.relative_to(REPO).as_posix(),
+               "size": [1024, 1024], "generator": "harmony_memory-game-reborn/tools/render_app_icon.py"}
 EXPECTED = {"tutorial": 63, "thumbnail": 23, "icon": 94, "app_icon": 1}
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 UI_BITMAPS = """arrow blue_background_2 menu_qhd logo home info next nextlevel
@@ -232,11 +238,13 @@ def webp_lossless(source: Path) -> tuple[bytes, list[int], list[int]]:
 def image_plan(assets: list[dict]) -> list[tuple[dict, bytes]]:
     result = []
     for asset in assets:
-        source = bitmap_source(asset["androidName"])
+        source = APP_ICON if asset["kind"] == "app_icon" else bitmap_source(asset["androidName"])
         if asset["kind"] == "app_icon":
             with Image.open(source) as image:
                 require(image.format == "PNG", f"Not a PNG: {source}")
                 image.load()
+                require(image.size == (1024, 1024), "App icon master must be 1024x1024")
+                require(image.mode == "RGB", "App icon master must be opaque RGB")
                 size = list(image.size)
             result.append(copied(source, MEDIA / (asset["name"] + ".png"), **asset,
                                  sourceSize=size, size=size, format="PNG"))
@@ -511,9 +519,9 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
             "Original 181-image inventory changed")
     manifest = {
         "version": 2, "generator": relative(Path(__file__)),
-        "sourcePolicy": "Repository Android assets only; no network or currency/purchase functionality",
+        "sourcePolicy": SOURCE_POLICY,
         "sizePolicy": {"limits": None, "note": "Lossless image/font optimization; original dimensions preserved"},
-        "imagePolicy": {"sourceSelection": "Largest Android PNG pixel area; deterministic lexical tie-break",
+        "imagePolicy": {"sourceSelection": "App icon: local 1024px master; other PNGs: largest Android pixel area, deterministic lexical tie-break",
                         "resize": False, "encoding": "All bitmaps except app_icon: lossless WebP at original dimensions; app icon: PNG; vectors: path/color-preserving SVG"},
         "audioPolicy": {"encoding": "MP3 mono VBR q7 (LAME), 44100Hz, metadata stripped",
                         "filenames": {"error": "error.mp3", "tap": "tap.mp3", "win": "win.mp3", "wrong": "wrong.mp3"},
@@ -523,7 +531,7 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
                            "statefulAndStretchable": "Parsed only to build SVG media; raw Android XML and drawable JSON are not packaged",
                            "currency": "No coin, reward, online, purchase, replay-for-currency assets or behavior introduced; gold trophy tier is original artwork"},
         "catalogPolicy": {"writeScope": "media function only; GAMES, game parameters and other code preserved"},
-        "applicationIconSource": evidence(ANDROID / "AndroidManifest.xml", 'android:icon="@drawable/ic_launcher"'),
+        "applicationIconSource": ICON_SOURCE,
         **{key: [record for record, _ in items] for key, items in groups.items()},
         "mediaMappings": {**{name: "app.media." + name for name in sorted(names)}, "ic_launcher": "app.media.app_icon"},
         "games": games, "summary": summary(groups),
@@ -593,10 +601,46 @@ def validate(manifest: dict, expected: dict, outputs: dict[str, bytes]) -> None:
     print(json.dumps({"validation": "passed", **manifest["summary"]}, ensure_ascii=False, indent=2), flush=True)
 
 
+def sync_icons(check: bool) -> None:
+    manifest = json.loads(text(MANIFEST))
+    images = image_plan([{"name": "app_icon", "androidName": "ic_launcher", "kind": "app_icon"}])
+    app_icons = [copied(APP_ICON, APP_MEDIA / "game_icon.png", name="game_icon")]
+    expected = json.loads(json.dumps(manifest))
+    expected["images"] = [images[0][0] if record["name"] == "app_icon" else record
+                          for record in expected["images"]]
+    expected["appIcons"] = [record for record, _ in app_icons]
+    expected["sourcePolicy"] = SOURCE_POLICY
+    expected["applicationIconSource"] = ICON_SOURCE
+    expected["imagePolicy"]["sourceSelection"] = (
+        "App icon: local 1024px master; other PNGs: largest Android pixel area, deterministic lexical tie-break")
+    groups = {key: [(record, (REPO / record["output"]).read_bytes())
+                    for record in manifest[key]] for key in ("images", "audio", "fonts", "appIcons")}
+    groups["images"] = [(images[0] if record["name"] == "app_icon" else (record, data))
+                        for record, data in groups["images"]]
+    groups["appIcons"] = app_icons
+    expected["summary"] = summary(groups)
+    outputs = {record["output"]: data for record, data in images + app_icons}
+    if not check:
+        cleanup_plan(manifest, {record["output"]: data for items in groups.values()
+                                for record, data in items})
+        for name, data in outputs.items():
+            (REPO / name).write_bytes(data)
+        MANIFEST.write_bytes(json_bytes(expected))
+        manifest = expected
+    require(manifest == expected, "Icon manifest differs from master")
+    for name, data in outputs.items():
+        require((REPO / name).read_bytes() == data, f"Icon differs from master: {name}")
+    print("App icons validated: 1024x1024 opaque RGB PNG; source and both resources match", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Verify reproducible assets; no writes or size limits")
+    parser.add_argument("--icons-only", action="store_true", help="Update/check app icons without regenerating other assets")
     args = parser.parse_args()
+    if args.icons_only:
+        sync_icons(args.check)
+        return
     games, assets = source_catalog()
     manifest, outputs = build_plan(games, assets)
     if args.check:

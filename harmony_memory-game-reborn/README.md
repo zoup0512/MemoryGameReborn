@@ -67,11 +67,27 @@ python tools/device-smoke.py
 
 ## 资源与包体
 
-图片与声音仅来自 `../android_memory-game-reborn/src/main/res`。
+游戏图片与声音来自 `../android_memory-game-reborn/src/main/res`；应用图标使用本工程的高清母版，不再从 Android 的 192px 图标放大。
+
+### 应用图标
+
+- 母版：[assets/app-icon-1024.png](assets/app-icon-1024.png)，1024×1024、不透明 RGB PNG，蓝底几何人头设计；不预裁圆角，由系统处理图标遮罩。
+- `AppScope/resources/base/media/game_icon.png` 与 `entry/src/main/resources/base/media/app_icon.png` 均由同一母版复制，应用、Ability 和启动窗口保持一致；Android 图标不受影响。源码资源保持1024×1024，当前SDK在HAP中将图标转换为512×512，这是打包器行为，商店母版不受影响。
+- 重新绘制、同步和独立校验（仅依赖 Pillow）：
+
+  ```sh
+  python tools/render_app_icon.py
+  python tools/prepare_resources.py --icons-only
+  python tools/prepare_resources.py --icons-only --check
+  python -m unittest discover -s tools/tests -p "test_app_icon.py"
+  ```
+
+### 游戏资源
+
 
 - 181张游戏图片中的180张（教程图63、缩略图23、icg图标94）以及74张UI原PNG全部转为无损WebP，仅保留app_icon为PNG；29个原矢量SVG，总284个media。所有WebP保持Android原始像素尺寸且逐像素一致。
 - 四个音效统一转为44.1kHz单声道MP3 VBR q7（LAME），保留原始时长，合计19,197字节；四套Roboto字体按ArkTS实际字符集subset为TTF，保留原字形与排版特性。
-- Entry资源合计1,516,870字节，其中图片1,424,925、音效19,197、字体65,000；图片未降采样且保持无损，音效为有损压缩。
+- 当前资源合计1,556,874字节（含AppScope图标27,721字节），其中Entry图片1,444,956、音效19,197、字体65,000；图片未降采样且保持无损，音效为有损压缩。
 - 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节）；Android drawable JSON/XML参考文件不再打包；奖杯图已转为无损WebP保留，待图形奖杯界面使用。
 - 每个资源的源路径、尺寸、编码、大小与哈希记录在 `resources-manifest.json`。
 - `tools/prepare_resources.py` 可重复生成WebP/SVG/字体子集/MP3，需Python Pillow + fontTools + ffmpeg（`python -m pip install pillow fonttools`，并确保`ffmpeg`在PATH）。
