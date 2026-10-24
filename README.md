@@ -53,24 +53,24 @@
 - Android 客户端使用 AndroidX + Material Components，ButterKnife 10.2.3 生成 AndroidX 绑定；不启用 Jetifier，依赖从 Google Maven / Maven Central 下载。`minSdk 21`、`targetSdk 35`、`compileSdk 36`；targetSdk 升级涉及的通知权限、PendingIntent、动态广播与 Android 15 边到边兼容见 [AndroidX 支持](docs/androidx-migration.md)
 
 
-## HarmonyOS 元服务复刻
+## HarmonyOS 手机 App
 
-`harmony_memory-game-reborn/` 是把 Android 单机版复刻成 HarmonyOS 元服务的独立工程：
+`harmony_memory-game-reborn/` 是把 Android 单机版复刻成 HarmonyOS 手机 App 的独立工程：
 23 款“冲刺”游戏、新手教学、关卡推进、暂停/失败/结算与音效均已移植。它不包含服务端、
 金币、广告、奖杯、战绩图表和底部菜单栏；全部游戏默认解锁，失败可免费重试当前关。
-`bundleType` 为 `atomicService`。当前 Release HAP：unsigned 1,919,239 字节，signed 1,958,889 字节，均低于 2,000,000 字节。
+`bundleType` 为 `app`，`installationFree: false`，仅面向 `phone`；包名为 `com.razor.memory.brain.training.games`，安装后从桌面启动。2026-10-24 Release 未签名 HAP 为 1,937,670 字节，真机与正式分发仍需配置签名。旧元服务保留在本地分支 `backup/main-atomic-service-20261024-46aa3f1`；新包名不自动继承旧元服务存档。
 
 构建、签名、与 Android 版的差异和验收截图见
 [harmony_memory-game-reborn/README.md](harmony_memory-game-reborn/README.md)。
 
 ## 目录说明
 
-仓库包含 `android_memory-game-reborn/`（Android 客户端）、`server_memory-game-reborn/`（在线 PK 服务端）与 `harmony_memory-game-reborn/`（HarmonyOS 元服务复刻），`docs/` 为共享文档。
+仓库包含 `android_memory-game-reborn/`（Android 客户端）、`server_memory-game-reborn/`（在线 PK 服务端）与 `harmony_memory-game-reborn/`（HarmonyOS 手机 App 复刻），`docs/` 为共享文档。
 
 - `android_memory-game-reborn/src/main/java/com/cube/memorygames` — 游戏本体（反编译还原 + 修复）
 - `android_memory-game-reborn/src/main/java/com/cube/memorygames/api/online` — 在线 PK 客户端（新增）
 - `server_memory-game-reborn/` — 在线 PK 服务端（Spring Boot 3，新增）
-- `harmony_memory-game-reborn/` — HarmonyOS 元服务复刻（ArkTS，单机 23 款游戏，新增）
+- `harmony_memory-game-reborn/` — HarmonyOS 手机 App 复刻（ArkTS，单机 23 款游戏，新增）
 - `docs/online-pk-prd.md` — 在线 PK 需求文档
 - `android_memory-game-reborn/src/main/java/com/activeandroid` 等 — 内嵌的第三方库（反编译修复版）
 - `android_memory-game-reborn/src/main/res/xml/bottombar_tabs.xml` — 底部导航定义（5 tab，含 Online）

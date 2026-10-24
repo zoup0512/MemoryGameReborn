@@ -1,6 +1,6 @@
-# 脑力训练大师 · HarmonyOS 元服务
+# 脑力训练大师 · HarmonyOS 手机 App
 
-以本仓库 Android 客户端为玩法与素材来源的纯本地 ArkTS / ArkUI Stage 元服务。原始需求保留在 [Harmony_README.md](Harmony_README.md)。
+以本仓库 Android 客户端为玩法与素材来源的纯本地 ArkTS / ArkUI Stage 手机应用，需要安装并从桌面启动，不再是免安装元服务。需求对应见 [Harmony_README.md](Harmony_README.md)。
 
 ## 已实现
 
@@ -17,8 +17,9 @@
 | 项目 | 配置 |
 | --- | --- |
 | 应用名 | 脑力训练大师 |
-| bundleName | `com.atomicservice.6917619386167723098` |
-| 包类型 | `atomicService`，`installationFree: true` |
+| bundleName | `com.razor.memory.brain.training.games` |
+| 包类型 | `app`，`installationFree: false`，`deliveryWithInstall: true` |
+| 设备类型 | `phone`，保留桌面 `EntryAbility` 入口 |
 | 最低版本 | HarmonyOS `5.1.1(19)` |
 | 编译 / 目标版本 | HarmonyOS `6.1.1(24)` |
 | 开发工具 | DevEco Studio 6.1.1，内置 Node / Hvigor / SDK |
@@ -35,13 +36,22 @@ node tools/build.mjs --release
 python tools/check-package.py
 ```
 
-输出：`entry/build/default/outputs/default/entry-default-unsigned.hap`。Debug / Release 使用相同输出路径；后一次构建会更新制品。`check-package.py` 校验打包后的 API 版本、元服务属性与权限，并报告实际 HAP 大小，**不设置大小上限**。取消本项目的包体预算不代表华为分发平台的元服务包体规则自动取消，正式分发仍需核对平台当期要求。
+输出：`entry/build/default/outputs/default/entry-default-unsigned.hap`。Debug / Release 使用相同输出路径；后一次构建会更新制品。`check-package.py` 同时校验源码与 HAP 中的普通 App 类型、包名、手机设备类型、安装属性、桌面入口、API 版本和离线权限，并报告实际 HAP 大小，**不设置大小上限**。
 
-当前不包含个人签名材料，输出是**未签名 HAP**。本机 HarmonyOS 6.1.1 开发模拟器可直接安装；真实设备与正式分发需在 DevEco 的 Signing Configs 配置该 bundleName 的开发/发布签名。不要将证书私钥、密码或本机签名配置提交进仓库。
+当前不包含个人签名材料，输出是**未签名 HAP**。支持未签名安装的开发模拟器可用于调试；真实设备与正式分发需在 DevEco 的 Signing Configs 配置该 bundleName 对应的开发/发布签名。不要将证书私钥、密码或本机签名配置提交进仓库。
+
+### 元服务迁移（2026-10-24）
+
+- 修改前的完整仓库提交 `46aa3f1` 已备份到本地分支 `backup/main-atomic-service-20261024-46aa3f1`，`main` 改为手机 App；未推送远端。
+- 包名从 `com.atomicservice.6917619386167723098` 改为 `com.razor.memory.brain.training.games`。这是独立应用身份和数据沙箱，旧元服务的最高关卡、历史和偏好**不会自动继承**；迁移操作不卸载旧元服务，也不清除其数据。
+- 移除根页面为元服务胶囊保留的 36vp 顶部空白。保留普通窗口的系统安全区、Stage UIAbility 生命周期、桌面入口及后台暂停/存档逻辑。
+- 面向手机，不再声明 `tablet`。玩法、高清图标、资源、离线零权限策略及 API 19–24 范围不变。
+- `device-smoke.py` 从应用配置读取包名；暂停按钮和 `device-play.py` 的棋盘取点改用可见无障碍节点，不再依赖旧胶囊高度下的固定坐标。迁移后设备脚本尚未运行。
 
 ## 自动测试
 
 ```sh
+python -m unittest discover -s tools/tests -p "test_app_*.py"
 node tools/test-core.cjs
 node tools/tests/memory-games.test.mjs
 node tools/tests/memory-board.test.mjs
@@ -91,7 +101,7 @@ python tools/device-smoke.py
 - 已移除Harmony端未使用的7张Android评分弹窗狮子图（198,059字节）；Android drawable JSON/XML参考文件不再打包；奖杯图已转为无损WebP保留，待图形奖杯界面使用。
 - 每个资源的源路径、尺寸、编码、大小与哈希记录在 `resources-manifest.json`。
 - `tools/prepare_resources.py` 可重复生成WebP/SVG/字体子集/MP3，需Python Pillow + fontTools + ffmpeg（`python -m pip install pillow fonttools`，并确保`ffmpeg`在PATH）。
-- HAP的最终大小以实际构建产物为准，而不是图片合计；当前本机Release HAP为unsigned 1,919,239字节、signed 1,958,889字节。
+- HAP的最终大小以实际构建产物为准，而不是图片合计；2026-10-24 手机 App Release 未签名 HAP 为 1,937,670 字节，Debug 未签名 HAP 为 2,520,736 字节。本次未配置签名，未生成 signed HAP。
 
 ## 与 Android 有意不同的边界
 
@@ -112,4 +122,6 @@ python tools/device-smoke.py
 
 ## 验证范围
 
-已使用本机 API 24 SDK 构建并在 HarmonyOS 6.1.1 手机模拟器运行。23款入口/暂停/结算/返回冒烟通过；Android与鸿蒙统一1320×2856、density560采集代表性中文画面。还原范围、截图覆盖及平台差异见[视觉还原记录](docs/android-visual-restoration-2026-10-18.md)。系统元服务胶囊、CJK回退字体、抗锯齿和随机题目仍不可能由源码对照证明全画面逐像素相同，未声称零像素差异。兼容 API 19 的配置及 API 使用由编译器检查，但尚未在 API 19 真机运行；正式签名、商店审核与真实设备的声音/触摸体验不属于当前自动验收证据。
+2026-10-24 手机 App 的 Debug / Release 均已通过本机 API 24 SDK 的真实 Hvigor / ArkTS 构建及包属性校验；应用配置与图标的 11 项 Python 测试、核心 1834 场景、MemoryGames 30882 断言、MemoryBoard 331498 断言，以及 Choice、QuickGames、Spatial、Session 专项均通过。QuickBoard 的 17 项中 16 项通过，1 项失败：既有测试要求 Android `Game23Colors` 使用 `nextInt(256)`，当前 Android 源码已采用固定调色板；本次不修改玩法或 Android 代码。完整资源重现检查也因 Android 缺少 `background_game12_white` XML 未通过，图标独立校验通过。详情见[手机 App 迁移验收记录](docs/phone-app-migration-2026-10-24.md)。
+
+本次 `hdc list targets` 无设备，未进行迁移后的安装、桌面启动或 23 款设备冒烟。此前元服务的模拟器运行、23 款入口/暂停/结算/返回冒烟和代表性截图仅属于历史证据，见[视觉还原记录](docs/android-visual-restoration-2026-10-18.md)，不能替代 App 的设备验收。CJK 回退字体、抗锯齿和随机题目仍有平台差异，未声称全画面逐像素一致。兼容 API 19 的配置及 API 使用由编译器检查，尚未在 API 19 真机运行；正式签名、商店审核与真实设备的声音/触摸体验未验证。

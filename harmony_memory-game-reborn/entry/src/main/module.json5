@@ -5,11 +5,10 @@
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [
-      "phone",
-      "tablet"
+      "phone"
     ],
     "deliveryWithInstall": true,
-    "installationFree": true,
+    "installationFree": false,
     "pages": "$profile:main_pages",
     "abilities": [
       {

@@ -1,11 +1,13 @@
-# Memory Games · HarmonyOS 元服务复刻
+# Memory Games · HarmonyOS 手机 App 复刻
 
-Android 客户端 `android_memory-game-reborn` 的 HarmonyOS（ArkTS / ArkUI）单机元服务复刻。
+Android 客户端 `android_memory-game-reborn` 的 HarmonyOS（ArkTS / ArkUI）单机手机 App 复刻。2026-10-24 从元服务改为需要安装、可从桌面启动的普通应用。
 只参考本仓库中的 Android 客户端源码与资源，没有引入外部 Harmony 实现。
 
 - 应用名：脑力训练大师
 - bundleName：`com.razor.memory.brain.training.games`
-- 包类型：`atomicService`（元服务，installationFree）
+- 包类型：`app`（需要安装，`installationFree: false`，`deliveryWithInstall: true`）
+- 设备：`phone`，保留桌面 EntryAbility 入口；不再预留元服务胶囊空间
+- 元服务备份：本地分支 `backup/main-atomic-service-20261024-46aa3f1`；旧包名 `com.atomicservice.6917619386167723098` 的本地数据不会自动迁入新 App
 - 兼容版本：`5.1.1(19)`，编译 / 目标版本 `6.1.1(24)`
 
 ## 需求对应

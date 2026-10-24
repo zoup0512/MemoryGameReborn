@@ -9,7 +9,7 @@ import { stripTypeScriptTypes } from 'node:module';
 // REAL ArkTS diagnostics (Node's TS stripper does not check ArkTS semantics).
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const core = join(project, 'entry/src/main/ets/core');
-const source = readFileSync(join(project, 'entry/src/main/ets/components/MemoryBoard.ets'), 'utf8');
+const source = readFileSync(join(project, 'entry/src/main/ets/components/MemoryBoard.ets'), 'utf8').replace(/\r\n/g, '\n');
 const moduleUrl = text => 'data:text/javascript;base64,' + Buffer.from(stripTypeScriptTypes(text)).toString('base64');
 const contract = moduleUrl(readFileSync(join(core, 'Contract.ets'), 'utf8').replace(/^@Observed\s*$/gm, ''));
 const engineUrl = moduleUrl(readFileSync(join(core, 'MemoryGames.ets'), 'utf8').replace("from './Contract'", `from '${contract}'`));

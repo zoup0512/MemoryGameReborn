@@ -11,7 +11,7 @@ HOME = Path(os.environ.get('DEVECO_HOME', 'C:/Program Files/Huawei/DevEco Studio
 HDC = HOME / 'sdk/default/openharmony/toolchains/hdc.exe'
 OUT = ROOT / 'entry/build/device-smoke'
 OUT.mkdir(parents=True, exist_ok=True)
-BUNDLE = 'com.razor.memory.brain.training.games'
+BUNDLE = json.loads((ROOT / 'AppScope/app.json5').read_text(encoding='utf-8'))['app']['bundleName']
 
 def hdc(*args):
     result = subprocess.run([str(HDC), *map(str, args)], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30)
@@ -78,14 +78,13 @@ if __name__ == '__main__':
         if any(n.get('text') == '再试一次？' for n in current):
             assert click('结束本局并查看成绩')
         else:
-            if not click('暂停'):
-                hdc('shell', 'uitest', 'uiInput', 'click', 105, 366)
+            assert click('暂停'), f'Pause missing: {name}'
             assert click('继续游戏'), f'Resume missing: {name}'
             if index == 0:
                 for _ in range(6):
-                    hdc('shell', 'uitest', 'uiInput', 'click', 105, 366)
+                    assert click('暂停'), f'Pause missing: {name}'
                     assert click('继续游戏')
-            hdc('shell', 'uitest', 'uiInput', 'click', 105, 366)
+            assert click('暂停'), f'Pause missing: {name}'
             assert click('结束本局并查看成绩')
         assert click('返回游戏列表')
         results.append({'id': index+1, 'name': name, 'entry': True, 'pauseResume': True, 'result': True})

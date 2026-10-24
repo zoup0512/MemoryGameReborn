@@ -1,11 +1,11 @@
 {
   "app": {
-    "bundleName": "com.atomicservice.6917619386167723098",
+    "bundleName": "com.razor.memory.brain.training.games",
     "vendor": "razor",
     "versionCode": 1000000,
     "versionName": "1.0.0",
     "icon": "$media:game_icon",
     "label": "$string:app_name",
-    "bundleType": "atomicService"
+    "bundleType": "app"
   }
 }
