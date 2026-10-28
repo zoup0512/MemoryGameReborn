@@ -397,6 +397,7 @@ export function media(name: string): Resource {
     case 'ic_challenge': return $r('app.media.ic_challenge');
     case 'ic_check': return $r('app.media.ic_check');
     case 'ic_close': return $r('app.media.ic_close');
+    case 'ic_coin': return $r('app.media.ic_coin');
     case 'ic_cup': return $r('app.media.ic_cup');
     case 'ic_direction': return $r('app.media.ic_direction');
     case 'ic_exit': return $r('app.media.ic_exit');

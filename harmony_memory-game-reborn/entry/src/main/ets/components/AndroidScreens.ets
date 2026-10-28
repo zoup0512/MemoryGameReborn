@@ -1,4 +1,5 @@
 import { GAMES, GameInfo, media } from '../core/GameCatalog';
+import { requiresUnlock, unlockCost } from '../core/Economy';
 
 // Android dp -> ArkUI vp; fonts are registered by the host Index.
 // Text is copied from res/values-zh/{strings,dialog_game_strings,dialog_common_strings}.xml.
@@ -127,6 +128,10 @@ export struct AndroidHome {
   // GAMES array order (23 entries), highest reached, not highest completed.
   @Prop records: number[] = [];
   @Prop lastGame: number = -1;
+  @Prop coins: number = 0;
+  // Contains every open GameInfo.id, not array indexes. Empty while loading:
+  // never infer ownership from a record, balance, or missing persisted data.
+  @Prop unlockedIds: number[] = [];
   onSelect: (index: number) => void = (_index: number): void => {};
   @State private viewportWidth: number = 360;
 
@@ -136,6 +141,22 @@ export struct AndroidHome {
 
   private thumbnailScale(game: GameInfo): number {
     return Math.min(1, this.viewportWidth / androidImageMetrics(game.thumbnail).logicalWidth);
+  }
+
+  private locked(game: GameInfo): boolean {
+    return requiresUnlock(game.id) && this.unlockedIds.indexOf(game.id) < 0;
+  }
+
+  private priced(game: GameInfo): boolean {
+    // Android's secret pyramid keeps the level badge even while locked.
+    return this.locked(game) && game.id !== 18;
+  }
+
+  private rowDescription(game: GameInfo, index: number): string {
+    const state: string = this.locked(game) ? '，未解锁' : '';
+    const detail: string = this.priced(game) ? `解锁价格 ${unlockCost(game.id)} 金币` :
+      `等级 ${this.recordAt(index)}`;
+    return `${game.name}，${game.category}${state}，${detail}`;
   }
 
   @Builder
@@ -150,18 +171,33 @@ export struct AndroidHome {
             this.thumbnailScale(game)) / 2, y: 0 })
           .draggable(false)
           .accessibilityLevel('no')
+        if (this.locked(game)) {
+          Stack() {
+            Image(media('ic_lock')).width(48).height(48).objectFit(ImageFit.Contain)
+              .fillColor('#FFFFFF').accessibilityLevel('no')
+          }.width('100%').height('100%').backgroundColor('#CC333333')
+            .hitTestBehavior(HitTestMode.None)
+        }
         Column() {
           Row() {
             Text(game.name)
-              .fontFamily('RobotoLight').fontSize(18).fontColor('#000000')
+              .fontFamily('RobotoLight').fontSize(18).fontColor(this.locked(game) ? '#FFFFFF' : '#000000')
               .layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-            Text('等级')
-              .fontFamily('RobotoLight').fontSize(16).fontColor('#000000').margin({ right: 4 })
-            Text(`${this.recordAt(index)}`)
-              .fontFamily('RobotoLight').fontSize(18).fontColor('#000000')
-              .width(32).height(32).textAlign(TextAlign.Center)
-              .backgroundColor('#F0FAFF').borderRadius(16)
-              .border({ width: 1, color: ANDROID_DIVIDER, radius: 16 }).borderRadius(16).clip(true)
+            if (this.priced(game)) {
+              Text(`${unlockCost(game.id)}`)
+                .fontFamily('RobotoLight').fontSize(16).fontColor('#FFFFFF').margin({ right: 4 })
+              Image(media('ic_coin')).width(22).height(22).objectFit(ImageFit.Contain)
+                .accessibilityLevel('no')
+            } else {
+              Text('等级')
+                .fontFamily('RobotoLight').fontSize(16)
+                .fontColor(this.locked(game) ? '#FFFFFF' : '#000000').margin({ right: 4 })
+              Text(`${this.recordAt(index)}`)
+                .fontFamily('RobotoLight').fontSize(18).fontColor('#000000')
+                .width(32).height(32).textAlign(TextAlign.Center)
+                .backgroundColor('#F0FAFF').borderRadius(16)
+                .border({ width: 1, color: ANDROID_DIVIDER, radius: 16 }).borderRadius(16).clip(true)
+            }
           }.width('100%').height(32).padding({ left: 16, right: 16 })
           Text(game.category)
             .fontFamily('RobotoBold').fontWeight(FontWeight.Bold).fontSize(12).fontColor(game.color)
@@ -175,7 +211,7 @@ export struct AndroidHome {
         .backgroundColor(ANDROID_BACKGROUND).clip(true)
       Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
     }.width('100%').onClick(() => this.onSelect(index))
-      .accessibilityText(`${game.name}，${game.category}，等级 ${this.recordAt(index)}`)
+      .accessibilityText(this.rowDescription(game, index))
       .accessibilityGroup(true)
   }
 
@@ -184,7 +220,13 @@ export struct AndroidHome {
       Row() {
         Text('脑力训练大师')
           .fontFamily('RobotoMedium').fontSize(20).fontColor('#000000')
-          .accessibilityText('脑力训练大师')
+          .accessibilityText('脑力训练大师').layoutWeight(1)
+        Row({ space: 4 }) {
+          Text(`${androidLevel(this.coins)}`).fontFamily('RobotoLight').fontSize(16).fontColor('#000000')
+          Image(media('ic_coin')).width(23).height(23).objectFit(ImageFit.Contain)
+            .accessibilityLevel('no')
+        }.height('100%').accessibilityGroup(true).id('coin-balance')
+          .accessibilityText(`金币余额 ${androidLevel(this.coins)}`)
       }.width('100%').height(45).justifyContent(FlexAlign.Center)
         .padding({ left: 15, right: 15 }).backgroundColor('#FFFFFF')
       Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
@@ -348,6 +390,7 @@ struct AndroidDialogAction {
   @Prop labelText: string = '';
   @Prop actionKind: string = 'primary';
   @Prop lightTypeface: boolean = false;
+  @Prop actionEnabled: boolean = true;
   onAction: () => void = (): void => {};
 
   build() {
@@ -362,7 +405,67 @@ struct AndroidDialogAction {
       .borderRadius(12)
       .border({ width: this.actionKind === 'secondary' ? 1 : 0, color: ANDROID_DIALOG_BORDER, radius: 12 })
       .borderRadius(12).clip(true)
-      .onClick(() => this.onAction()).accessibilityText(this.labelText)
+      .enabled(this.actionEnabled).opacity(this.actionEnabled ? 1 : 0.5)
+      .onClick(() => { if (this.actionEnabled) { this.onAction(); } }).accessibilityText(this.labelText)
+  }
+}
+
+@Component
+export struct AndroidUnlock {
+  @Prop @Watch('resetConfirmation') gameIndex: number = 0;
+  @Prop balance: number = 0;
+  @Prop @Watch('resetConfirmation') busy: boolean = false;
+  @Prop @Watch('resetConfirmation') errorText: string = '';
+  @Prop screenHeight: number = 0;
+  onConfirm: () => void = (): void => {};
+  onCancel: () => void = (): void => {};
+  @State private confirmPending: boolean = false;
+
+  private resetConfirmation(): void {
+    if (!this.busy) { this.confirmPending = false; }
+  }
+
+  private price(): number {
+    return unlockCost(androidGame(this.gameIndex).id);
+  }
+
+  private canConfirm(): boolean {
+    return !this.busy && !this.confirmPending && requiresUnlock(androidGame(this.gameIndex).id) &&
+      Number.isFinite(this.balance) && this.balance >= this.price();
+  }
+
+  private confirm(): void {
+    if (!this.canConfirm()) { return; }
+    // Protect a second tap before the parent's busy prop reaches this component.
+    this.confirmPending = true;
+    this.onConfirm();
+  }
+
+  @Builder
+  private UnlockContent() {
+    Column() {
+      Text('解锁游戏').width('100%').fontFamily('RobotoRegular').fontSize(22).fontColor(ANDROID_DIALOG_TEXT)
+      Text(`游戏：${androidGame(this.gameIndex).name}\n解锁价格：${this.price()} 金币\n当前余额：${androidLevel(this.balance)} 金币`)
+        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
+        .lineHeight(22).margin({ top: 16 })
+      if (androidLevel(this.balance) < this.price()) {
+        Text(`还差 ${this.price() - androidLevel(this.balance)} 金币，暂时无法解锁。可游玩已解锁的游戏来获得金币。`)
+          .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_DANGER)
+          .lineHeight(20).margin({ top: 8 })
+      }
+      if (this.errorText.length > 0) {
+        Text(this.errorText).width('100%').fontFamily('RobotoRegular').fontSize(15)
+          .fontColor(ANDROID_DIALOG_DANGER).lineHeight(20).margin({ top: 8 })
+      }
+      AndroidDialogAction({ labelText: this.busy ? '正在解锁…' : `解锁 · ${this.price()} 金币`,
+        actionEnabled: this.canConfirm(), onAction: () => this.confirm() }).margin({ top: 20 })
+      AndroidDialogAction({ labelText: '取消', actionKind: 'secondary', actionEnabled: !this.busy,
+        onAction: () => { if (!this.busy) { this.onCancel(); } } }).margin({ top: 8 })
+    }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
+  }
+
+  build() {
+    AndroidDialogFrame({ screenHeight: this.screenHeight, content: () => { this.UnlockContent(); } })
   }
 }
 

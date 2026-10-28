@@ -8,10 +8,12 @@ vectors become SVG without changing path geometry or colors. Stateful/stretchabl
 XML is parsed only to build SVG media; its raw XML copies and the drawable JSON
 description are not packaged. Only GameCatalog.media is regenerated; game
 parameters and UI code are untouched.
-No network, purchases, dependency installation, config or Android source edits.
+No network, real-money purchases, dependency installation, config or Android source edits.
+Coins support offline local rewards/unlocks only, not real-money in-app purchases.
 The app icon comes from the local 1024px master in assets/.
 --check verifies exact reproducibility without writing or imposing a HAP budget.
 --icons-only updates or checks the app icons without audio/font dependencies.
+--ui-bitmap NAME updates/checks just one UI bitmap, its mapping and manifest metadata.
 """
 from __future__ import annotations
 
@@ -40,7 +42,8 @@ CATALOG = HARMONY / "entry/src/main/ets/core/GameCatalog.ets"
 MANIFEST = HARMONY / "resources-manifest.json"
 APP_MEDIA = HARMONY / "AppScope/resources/base/media"
 APP_ICON = HARMONY / "assets/app-icon-1024.png"
-SOURCE_POLICY = "Repository Android assets and local 1024px app icon master; no network or currency/purchase functionality"
+SOURCE_POLICY = "Repository Android assets and local 1024px app icon master; offline local coin rewards/unlocks only; no network or real-money purchases"
+CURRENCY_POLICY = "Original coin artwork for offline local rewards and game unlocks; no real-money purchases, online currency or replay-for-currency behavior; gold trophy tier is original artwork"
 ICON_SOURCE = {"path": APP_ICON.relative_to(REPO).as_posix(),
                "size": [1024, 1024], "generator": "harmony_memory-game-reborn/tools/render_app_icon.py"}
 EXPECTED = {"tutorial": 63, "thumbnail": 23, "icon": 94, "app_icon": 1}
@@ -48,7 +51,7 @@ ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 UI_BITMAPS = """arrow blue_background_2 menu_qhd logo home info next nextlevel
 play play_press play_select play_unselected roundedbutton roundedbutton_inactive
 speaker mute soundon soundoff rightanswer wronganswer point_gray point_red
-ic_arrow_back_white ic_humburger ic_play ic_star_small icon_1 icon_2 icon_3 icon_4
+ic_arrow_back_white ic_coin ic_humburger ic_play ic_star_small icon_1 icon_2 icon_3 icon_4
 cupdialog paperplane_cyan paperplane_orange rain_cloud square laser laser_1 laser_2
 laser_3 laser_4 laser_5 laser_6 up up2 down down2 left left2 right right2""".split()
 UI_XML = """ic_pause ic_pause_new ic_exit ic_reload ic_cup ic_star ic_menu
@@ -529,7 +532,7 @@ def build_plan(games: list[dict], assets: list[dict]) -> tuple[dict, dict[str, b
         "fontPolicy": "Referenced Roboto fonts subset to ArkTS-used glyphs; TTF with original outlines and layout features",
         "drawablePolicy": {"vectors": "media SVG; exact path geometry, original dimensions and ARGB alpha",
                            "statefulAndStretchable": "Parsed only to build SVG media; raw Android XML and drawable JSON are not packaged",
-                           "currency": "No coin, reward, online, purchase, replay-for-currency assets or behavior introduced; gold trophy tier is original artwork"},
+                           "currency": CURRENCY_POLICY},
         "catalogPolicy": {"writeScope": "media function only; GAMES, game parameters and other code preserved"},
         "applicationIconSource": ICON_SOURCE,
         **{key: [record for record, _ in items] for key, items in groups.items()},
@@ -633,11 +636,79 @@ def sync_icons(check: bool) -> None:
     print("App icons validated: 1024x1024 opaque RGB PNG; source and both resources match", flush=True)
 
 
+def sync_ui_bitmap(name: str, check: bool) -> None:
+    """Synchronize one owned UI PNG without the full drawable/audio/font plan."""
+    require(name in UI_BITMAPS, f"Not an explicit UI_BITMAPS resource: {name}")
+    manifest = json.loads(text(MANIFEST))
+    require(manifest.get("generator") == relative(Path(__file__)), "Unrecognized manifest generator")
+    record, data = image_plan([{"name": name, "androidName": name, "kind": "ui_bitmap"}])[0]
+    matches = [r for r in manifest["images"] if r["name"] == name]
+    require(len(matches) <= 1, f"Duplicate manifest resource: {name}")
+    target = REPO / record["output"]
+    for existing in target.parent.glob(name + ".*"):
+        require(existing == target and bool(matches) and
+                digest(existing.read_bytes()) == matches[0]["sha256"],
+                f"Refusing to overwrite modified/unowned UI bitmap: {relative(existing)}")
+    expected = json.loads(json.dumps(manifest))
+    if matches:
+        expected["images"] = [record if r["name"] == name else r for r in expected["images"]]
+    else:
+        # Existing inventory has the original 181 images, then sorted UI bitmaps,
+        # then vectors. Insert without reordering any unrelated resource records.
+        index = next((i for i, r in enumerate(expected["images"])
+                      if r["kind"] == "ui_vector" or
+                      (r["kind"] == "ui_bitmap" and r["name"] > name)), len(expected["images"]))
+        expected["images"].insert(index, record)
+    if name not in expected["mediaMappings"]:
+        mappings = {}
+        for key, value in expected["mediaMappings"].items():
+            if name not in mappings and key > name:
+                mappings[name] = "app.media." + name
+            mappings[key] = value
+        mappings.setdefault(name, "app.media." + name)
+        expected["mediaMappings"] = mappings
+    else:
+        expected["mediaMappings"][name] = "app.media." + name
+    expected["sourcePolicy"] = SOURCE_POLICY
+    expected["drawablePolicy"]["currency"] = CURRENCY_POLICY
+    # Apply only this asset's delta. Existing totals reflect checked-out SVG
+    # line endings; do not normalize/rebuild unrelated manifest metadata.
+    totals = expected["summary"]
+    delta = len(data) - (matches[0]["bytes"] if matches else 0)
+    totals["imagesBytes"] += delta
+    totals["totalAssetBytes"] += delta
+    totals["imagesCount"] = len(expected["images"])
+    totals["imageCounts"] = dict(Counter(r["kind"] for r in expected["images"]))
+    catalog = text(CATALOG)
+    mapping = f"    case '{name}': return $r('app.media.{name}');"
+    if not re.search(r"case '" + re.escape(name) + r"':", catalog):
+        following = next((match for match in re.finditer(r"^    case '(\w+)': return", catalog, re.M)
+                          if match.group(1) > name), None)
+        require(following is not None, "Missing insertion point in catalog media mapping")
+        catalog = catalog[:following.start()] + mapping + "\n" + catalog[following.start():]
+    require(mapping in catalog, f"Unexpected catalog mapping: {name}")
+    if not check:
+        target.write_bytes(data)
+        if text(CATALOG) != catalog:
+            CATALOG.write_text(catalog, encoding="utf-8")
+        MANIFEST.write_bytes(json_bytes(expected))
+        manifest = expected
+    require(manifest == expected, f"UI bitmap manifest differs from source: {name}")
+    require(target.is_file() and target.read_bytes() == data, f"UI bitmap differs from source: {name}")
+    require(text(CATALOG) == catalog, f"UI bitmap catalog mapping missing: {name}")
+    print(f"UI bitmap validated: {name}; lossless WebP at {record['size']}; other assets preserved", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Verify reproducible assets; no writes or size limits")
-    parser.add_argument("--icons-only", action="store_true", help="Update/check app icons without regenerating other assets")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--icons-only", action="store_true", help="Update/check app icons without regenerating other assets")
+    modes.add_argument("--ui-bitmap", choices=UI_BITMAPS, help="Update/check only one UI bitmap, mapping and manifest")
     args = parser.parse_args()
+    if args.ui_bitmap:
+        sync_ui_bitmap(args.ui_bitmap, args.check)
+        return
     if args.icons_only:
         sync_icons(args.check)
         return

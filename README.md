@@ -56,9 +56,8 @@
 ## HarmonyOS 手机 App
 
 `harmony_memory-game-reborn/` 是把 Android 单机版复刻成 HarmonyOS 手机 App 的独立工程：
-23 款“冲刺”游戏、新手教学、关卡推进、暂停/失败/结算与音效均已移植。它不包含服务端、
-金币、广告、奖杯、战绩图表和底部菜单栏；全部游戏默认解锁，失败可免费重试当前关。
-`bundleType` 为 `app`，`installationFree: false`，仅面向 `phone`；包名为 `com.razor.memory.brain.training.games`，安装后从桌面启动。2026-10-24 Release 未签名 HAP 为 1,937,670 字节，真机与正式分发仍需配置签名。旧元服务保留在本地分支 `backup/main-atomic-service-20261024-46aa3f1`；新包名不自动继承旧元服务存档。
+23 款“冲刺”游戏、新手教学、关卡推进、暂停/失败/结算与音效均已移植。单机金币和永久解锁对齐 Android 正式版：首次 60 金币、13 款默认开放，其余按相同价格解锁，金字塔 0 金币确认解锁。不包含服务端、广告、充值、奖杯界面、战绩图表和底部菜单栏；保留免费重开与无限暂停，不增加金币续关。Harmony 使用独立 v2 存档，不导入旧存档。
+`bundleType` 为 `app`，`installationFree: false`，仅面向 `phone`；包名为 `com.razor.memory.brain.training.games`，安装后从桌面启动。当前金币解锁版 Release 未签名 HAP 为 1,972,340 字节，真机与正式分发仍需配置签名。旧元服务保留在本地分支 `backup/main-atomic-service-20261024-46aa3f1`；新包名不自动继承旧元服务存档。
 
 构建、签名、与 Android 版的差异和验收截图见
 [harmony_memory-game-reborn/README.md](harmony_memory-game-reborn/README.md)。

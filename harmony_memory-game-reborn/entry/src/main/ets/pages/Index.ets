@@ -9,7 +9,8 @@ import { SpatialBoard } from '../components/SpatialBoard';
 import { MemoryBoard } from '../components/MemoryBoard';
 import { QuickBoard } from '../components/QuickBoard';
 import { revealQuickPuzzle } from '../core/QuickGames';
-import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailure } from '../components/AndroidScreens';
+import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailure, AndroidUnlock } from '../components/AndroidScreens';
+import { levelCoins, scoreCoins248 } from '../core/Economy';
 import { ReadyIndicator } from '../components/ReadyIndicator';
 import { AndroidChoiceBoard } from '../components/AndroidChoiceBoard';
 
@@ -38,6 +39,13 @@ struct Index {
   @State boardHeight: number = 450;
   @State introElapsedMs: number = -1;
   @State tickVersion: number = 0;
+  @State coins: number = 0;
+  @State unlockedIds: number[] = [];
+  @State unlockIndex: number = -1;
+  @State purchasing: boolean = false;
+  @State purchaseError: string = '';
+  @State storageError: string = '';
+  @State retryingStorage: boolean = false;
   private store: ProgressStore = new ProgressStore();
   private sound: SoundService = new SoundService();
   private timer: number = -1;
@@ -59,7 +67,7 @@ struct Index {
     if (!this.alive) { return; }
     this.soundOn = this.store.soundEnabled();
     this.sound.enabled = this.soundOn;
-    this.loaded = true;
+    this.refreshEconomy();
     this.recordVersion++;
     this.sound.load(context);
     this.lastTick = Date.now();
@@ -74,6 +82,7 @@ struct Index {
   }
 
   onBackPress(): boolean {
+    if (this.unlockIndex >= 0) { this.cancelUnlock(); return true; }
     if (this.screen === 'game') { this.pause(); return true; }
     if (this.screen === 'tutorial') {
       if (this.tutorialFromPause) { this.screen = 'game'; }
@@ -97,8 +106,66 @@ struct Index {
 
   private game(): GameInfo { return GAMES[this.gameIndex]; }
 
+  private refreshEconomy(): void {
+    this.loaded = this.store.ready();
+    this.coins = this.store.coins();
+    this.unlockedIds = this.store.unlockedGames();
+    this.storageError = this.store.error;
+  }
+
+  private async retryStorage(): Promise<void> {
+    if (this.retryingStorage || this.purchasing) { return; }
+    this.retryingStorage = true;
+    if (this.store.ready()) {
+      this.store.flush();
+      await this.store.settled();
+    } else {
+      await this.store.load(this.getUIContext().getHostContext() as common.UIAbilityContext);
+      this.soundOn = this.store.soundEnabled();
+      this.sound.enabled = this.soundOn;
+    }
+    this.refreshEconomy();
+    this.retryingStorage = false;
+  }
+
+  private async reward(amount: number): Promise<void> {
+    if (amount <= 0) { return; }
+    const saved = this.store.earnCoins(amount);
+    this.refreshEconomy();
+    await saved;
+    this.refreshEconomy();
+  }
+
+  private cancelUnlock(): void {
+    if (this.purchasing) { return; }
+    this.unlockIndex = -1;
+    this.purchaseError = '';
+  }
+
+  private async confirmUnlock(): Promise<void> {
+    if (!this.loaded || this.unlockIndex < 0 || this.unlockIndex >= GAMES.length || this.purchasing) { return; }
+    const index = this.unlockIndex;
+    this.purchasing = true;
+    this.purchaseError = '';
+    const result = await this.store.purchase(GAMES[index].id);
+    this.refreshEconomy();
+    this.purchasing = false;
+    if (result === 'purchased' || result === 'owned') {
+      this.unlockIndex = -1;
+    } else if (result === 'error') {
+      this.purchaseError = this.store.error || '解锁保存失败，请重试';
+    } else if (result === 'invalid') {
+      this.purchaseError = '无法解锁此游戏';
+    }
+  }
+
   private selectGame(index: number): void {
-    if (!this.loaded) { return; }
+    if (!this.loaded || this.purchasing || this.unlockIndex >= 0 || index < 0 || index >= GAMES.length || !Number.isInteger(index)) { return; }
+    if (!this.store.isUnlocked(GAMES[index].id)) {
+      this.unlockIndex = index;
+      this.purchaseError = '';
+      return;
+    }
     this.gameIndex = index;
     this.tutorialPage = 0;
     this.tutorialFromPause = false;
@@ -107,6 +174,12 @@ struct Index {
   }
 
   private start(): void {
+    if (!this.loaded || this.purchasing || this.unlockIndex >= 0) { return; }
+    if (!this.store.isUnlocked(this.game().id)) {
+      this.unlockIndex = this.gameIndex;
+      this.purchaseError = '';
+      return;
+    }
     this.store.seenTutorial(this.game().id);
     this.level = this.store.startingLevel(this.game().id, this.game().adaptive);
     this.score = 0; this.lives = 2; this.remaining = 0;
@@ -216,6 +289,9 @@ struct Index {
     if (kind === 'tile' && (index < 0 || index >= this.puzzle.tiles.length || this.puzzle.tiles[index].disabled ||
       (this.puzzle.tiles[index].selected && this.game().id !== 17 && this.game().id !== 21))) { return; }
     const move = new Move(); move.kind = kind; move.index = index; move.direction = direction;
+    const previousScore = this.score;
+    const previousAnswers = this.puzzle.answers.length;
+    const completedLevel = this.level;
     const outcome = applyMove(this.puzzle, move);
     this.puzzle.tiles = this.puzzle.tiles.slice();
     this.tickVersion++;
@@ -227,13 +303,20 @@ struct Index {
       this.sound.play('tap');
       if (outcome.message.length > 0) { this.message = outcome.message; }
       this.score += outcome.points;
+      if (this.game().id === 17 && outcome.points > 0) {
+        this.reward(scoreCoins248(this.score) - scoreCoins248(previousScore));
+      }
       if (this.game().id === 23) {
+        if (this.puzzle.answers.length > previousAnswers) { this.reward(levelCoins(23, completedLevel)); }
         this.level = Math.min(48, this.puzzle.answers.length + 1);
         this.store.reached(this.game().id, this.level);
       }
       if (outcome.complete) {
         if (this.game().id === 23) { this.finish('48 个数字全部找到，挑战成功'); }
-        else { this.feedback(true, 0); }
+        else {
+          this.reward(levelCoins(this.game().id, completedLevel));
+          this.feedback(true, 0);
+        }
       }
     }
   }
@@ -424,34 +507,49 @@ struct Index {
   }
 
   build() {
-    Column() {
-      if (this.screen === 'home') {
-        AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame,
-          onSelect: (index: number) => this.selectGame(index) })
-      } else if (this.screen === 'tutorial') {
-        AndroidTutorial({ gameIndex: this.gameIndex, fromPause: this.tutorialFromPause,
-          onExit: () => { this.screen = this.tutorialFromPause ? 'game' : 'home'; },
-          onPlay: () => this.start() })
-      } else {
-        Stack() {
-          this.GameSurface()
-          if (this.paused && this.screen === 'game') {
-            AndroidPause({ onResume: () => this.resume(),
-              onRestart: () => { this.saveSession(); this.start(); }, onTutorial: () => this.openTutorial(),
-              onHome: () => { this.saveSession(); this.paused = false; this.screen = 'home'; },
-              onEnd: () => this.finish('训练记录已保存') })
+    Stack() {
+      Column() {
+        if (this.storageError.length > 0) {
+          Row({ space: 8 }) {
+            Text(this.storageError).fontSize(12).fontColor('#B3261E').layoutWeight(1)
+            Text(this.retryingStorage ? '正在重试' : '重试').fontSize(14).fontColor('#03A9F4')
+              .onClick(() => this.retryStorage()).enabled(!this.retryingStorage && !this.purchasing)
+          }.width('100%').padding(8).backgroundColor('#FFF3F0')
+        }
+        Column() {
+          if (this.screen === 'home') {
+            AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame, coins: this.coins, unlockedIds: this.unlockedIds,
+              onSelect: (index: number) => this.selectGame(index) })
+          } else if (this.screen === 'tutorial') {
+            AndroidTutorial({ gameIndex: this.gameIndex, fromPause: this.tutorialFromPause,
+              onExit: () => { this.screen = this.tutorialFromPause ? 'game' : 'home'; },
+              onPlay: () => this.start() })
+          } else {
+            Stack() {
+              this.GameSurface()
+              if (this.paused && this.screen === 'game') {
+                AndroidPause({ onResume: () => this.resume(),
+                  onRestart: () => { this.saveSession(); this.start(); }, onTutorial: () => this.openTutorial(),
+                  onHome: () => { this.saveSession(); this.paused = false; this.screen = 'home'; },
+                  onEnd: () => this.finish('训练记录已保存') })
+              }
+              if (this.screen === 'result') {
+                AndroidResult({ gameIndex: this.gameIndex, level: this.level, best: this.store.record(this.game().id).highest,
+                  title: this.resultTitle, onReplay: () => this.start(), onHome: () => { this.screen = 'home'; },
+                  onRecommend: (index: number) => this.selectGame(index) })
+              }
+              if (this.screen === 'failure') {
+                AndroidFailure({ gameIndex: this.gameIndex, level: this.level,
+                  onRestart: () => { this.saveSession(); this.start(); }, onEnd: () => this.finish('本局结束') })
+              }
+            }.width('100%').height('100%')
           }
-          if (this.screen === 'result') {
-            AndroidResult({ gameIndex: this.gameIndex, level: this.level, best: this.store.record(this.game().id).highest,
-              title: this.resultTitle, onReplay: () => this.start(), onHome: () => { this.screen = 'home'; },
-              onRecommend: (index: number) => this.selectGame(index) })
-          }
-          if (this.screen === 'failure') {
-            AndroidFailure({ gameIndex: this.gameIndex, level: this.level,
-              onRestart: () => { this.saveSession(); this.start(); }, onEnd: () => this.finish('本局结束') })
-          }
-        }.width('100%').height('100%')
+        }.width('100%').layoutWeight(1)
+      }.width('100%').height('100%').backgroundColor('#E5F6FE')
+      if (this.unlockIndex >= 0) {
+        AndroidUnlock({ gameIndex: this.unlockIndex, balance: this.coins, busy: this.purchasing,
+          errorText: this.purchaseError, onConfirm: () => this.confirmUnlock(), onCancel: () => this.cancelUnlock() })
       }
-    }.width('100%').height('100%').backgroundColor('#E5F6FE')
+    }.width('100%').height('100%')
   }
 }

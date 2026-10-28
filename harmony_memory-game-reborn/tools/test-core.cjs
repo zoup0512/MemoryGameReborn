@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const home = process.env.DEVECO_HOME || 'C:/Program Files/Huawei/DevEco Studio';
 const ts = require(path.join(home, 'tools/hvigor/hvigor-ohos-plugin/node_modules/typescript'));
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'harmony-memory-test-'));
-const files = ['Contract', 'MemoryGames', 'QuickGames', 'SpatialGames', 'GameEngine'];
+const files = ['Contract', 'MemoryGames', 'QuickGames', 'SpatialGames', 'GameEngine', 'Economy'];
 for (const name of files) {
   const source = fs.readFileSync(path.join(root, 'entry/src/main/ets/core', name + '.ets'), 'utf8').replace(/@Observed\s*/g, '');
   const result = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 }, fileName: name + '.ts', reportDiagnostics: true });
@@ -55,9 +55,9 @@ for (const game of [10, 11, 12, 14, 19, 20, 23]) {
   }
 }
 // Exercise platform storage through an in-memory Preferences replacement.
-let preferencesValue = '';
 const storeSource = fs.readFileSync(path.join(root, 'entry/src/main/ets/services/ProgressStore.ets'), 'utf8')
-  .replace(/^import .*;\r?\n/gm, '')
+  .replace(/^import .*from '@kit\.[^']+';\r?\n/gm, '')
+  .replace("'../core/Economy'", "'./Economy'")
   .replace(/preferences\.Preferences/g, 'Object')
   .replace(/common\.UIAbilityContext/g, 'Object');
 const storeJs = ts.transpileModule(storeSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;

@@ -38,6 +38,8 @@ deterministicMath.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223
 const contract = load('core/Contract', {}, { Math: deterministicMath });
 const quick = load('core/QuickGames', { './Contract': contract }, { Math: deterministicMath });
 const memory = load('core/MemoryGames', { './Contract': contract }, { Math: deterministicMath });
+const spatial = load('core/SpatialGames', { './Contract': contract }, { Math: deterministicMath });
+const economy = load('core/Economy', {});
 const indexPath = path.join(ets, 'pages/Index.ets');
 const indexSource = fs.readFileSync(indexPath, 'utf8');
 const boundary = indexSource.indexOf('@Builder');
@@ -57,10 +59,28 @@ const catalog = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, adaptive: fal
 
 function harness(game, startingLevel = 1) {
   const clock = { now: 100000 };
-  const calls = { create: [], apply: [], reveal: [], animate: [], finish: [], checkpoint: [], reached: [], sounds: [], intervals: [], cleared: [], fonts: [] };
+  const calls = { create: [], apply: [], reveal: [], animate: [], finish: [], checkpoint: [], reached: [], sounds: [], intervals: [], cleared: [], fonts: [], rewards: [], purchases: [] };
   class FakeDate extends Date { static now() { return clock.now; } }
   class Store {
+    balance = 60;
+    unlocked = new Set(catalog.map(game => game.id));
+    error = '';
+    available = true;
     async load() {}
+    ready() { return this.available; }
+    coins() { return this.balance; }
+    unlockedGames() { return Array.from(this.unlocked); }
+    isUnlocked(id) { return this.unlocked.has(id); }
+    async earnCoins(amount) { this.balance += amount; calls.rewards.push(amount); return true; }
+    async purchase(id) {
+      calls.purchases.push(id);
+      if (this.unlocked.has(id)) { return 'owned'; }
+      const cost = economy.unlockCost(id);
+      if (this.balance < cost) { return 'insufficient'; }
+      this.balance -= cost; this.unlocked.add(id); return 'purchased';
+    }
+    flush() {}
+    async settled() {}
     soundEnabled() { return true; }
     seenTutorial() {}
     startingLevel() { return startingLevel; }
@@ -80,21 +100,21 @@ function harness(game, startingLevel = 1) {
     createPuzzle(id, level, previous) {
       calls.create.push({ id, level, previous });
       if (id <= 9) { return memory.createMemoryPuzzle(id, level, previous); }
-      if ([15, 17, 18, 21, 22].includes(id)) {
-        const p = new contract.Puzzle(); p.game = id; p.level = level; return p;
-      }
+      if ([15, 17, 18, 21, 22].includes(id)) { return spatial.createSpatialPuzzle(id, level, previous); }
       return quick.createQuickPuzzle(id, level, previous);
     },
     applyMove(p, move) {
       calls.apply.push(move);
-      return p.game <= 9 ? memory.applyMemoryMove(p, move) : quick.applyQuickMove(p, move);
+      if (p.game <= 9) { return memory.applyMemoryMove(p, move); }
+      if ([15, 17, 18, 21, 22].includes(p.game)) { return spatial.applySpatialMove(p, move); }
+      return quick.applyQuickMove(p, move);
     },
     reveal(p) { calls.reveal.push(p); if (p.game <= 9) { memory.revealMemory(p); } },
     animate(p, elapsed) { calls.animate.push({ p, elapsed }); if (p.game <= 9) { memory.animateMemory(p, elapsed); } }
   };
   const dependencies = {
     '@kit.AbilityKit': { common: {} }, '../core/GameCatalog': { GAMES: catalog, media: value => value },
-    '../core/Contract': contract, '../core/GameEngine': engine, '../core/MemoryGames': memory,
+    '../core/Contract': contract, '../core/GameEngine': engine, '../core/MemoryGames': memory, '../core/Economy': economy,
     '../services/ProgressStore': { ProgressStore: Store }, '../services/SoundService': { SoundService: Sound },
     '../components/GameTile': {}, '../components/SpatialBoard': {}, '../components/MemoryBoard': {},
     '../components/QuickBoard': {}, '../core/QuickGames': quick
@@ -382,4 +402,124 @@ test('lifecycle interval is stubbed and disposed; disappearance while load is pe
   const appearing = late.app.aboutToAppear();
   late.app.aboutToDisappear(); release(); await appearing;
   assert.equal(late.calls.intervals.length, 0); assert.equal(late.calls.finish.length, 1);
+});
+
+test('ordinary coins accrue on a real successful answer once, not feedback/save/restart/background', () => {
+  const h = harness(11, 4); const { app, calls } = h;
+  app.move('choice', app.puzzle.target[0]);
+  assert.deepEqual(calls.rewards, [1]); assert.equal(app.coins, 61);
+  app.move('choice', app.puzzle.target[0]); app.feedback(true, 0);
+  app.pause(); app.appActive = false; app.activeChanged();
+  app.saveSession(); app.saveSession();
+  assert.deepEqual(calls.rewards, [1]);
+  app.appActive = true; app.start();
+  assert.equal(app.store.coins(), 61);
+  app.feedback(false, 0); app.finish('结束'); app.aboutToDisappear();
+  assert.deepEqual(calls.rewards, [1]);
+});
+
+test('real memory partial picks and auto-completing image samples do not earn coins', () => {
+  const h = harness(1, 4); h.begin();
+  h.advance(h.app.puzzle.previewMs + 500);
+  const targets = Array.from(h.app.puzzle.target);
+  assert.ok(targets.length > 1);
+  h.app.move('tile', targets[0]); assert.deepEqual(h.calls.rewards, []);
+  for (const target of targets.slice(1)) { h.app.move('tile', target); }
+  assert.deepEqual(h.calls.rewards, [1]);
+  const sample = harness(7); sample.begin(); sample.app.level = 15;
+  sample.advance(sample.app.puzzle.previewMs);
+  assert.equal(sample.app.phase, 'feedback'); assert.deepEqual(sample.calls.rewards, []);
+  const previous = harness(16); previous.begin(); previous.advance(800);
+  assert.deepEqual(previous.calls.rewards, []);
+});
+
+test('special success rewards use current level before advancing', () => {
+  for (const game of [15, 16, 20]) {
+    const h = harness(game, 15); h.begin();
+    if (h.app.phase === 'preview') { h.advance(h.app.puzzle.previewMs); }
+    const currentLevel = h.app.level;
+    const answer = game === 15 ? h.app.puzzle.answers[0] : h.app.puzzle.target[0];
+    h.app.move('choice', answer);
+    assert.deepEqual(h.calls.rewards, [1], 'special game ' + game);
+    assert.equal(h.app.level, currentLevel);
+  }
+  const newcomer = harness(4, 15); newcomer.begin();
+  newcomer.advance(newcomer.app.puzzle.previewMs + 500);
+  newcomer.app.move('tile', newcomer.app.puzzle.target[0]);
+  assert.deepEqual(newcomer.calls.rewards, [1]);
+  const lower = harness(11, 3);
+  lower.app.move('choice', lower.app.puzzle.target[0]);
+  assert.deepEqual(lower.calls.rewards, []);
+});
+
+test('Schulte awards exactly sixteen coins including number 48, never a wrong/duplicate number', () => {
+  const h = harness(23); const { app } = h; const puzzle = app.puzzle;
+  app.move('tile', puzzle.target[1]); assert.deepEqual(h.calls.rewards, []);
+  h.advance(1400);
+  for (let i = 0; i < 48; i++) {
+    app.move('tile', puzzle.target[i]);
+    assert.equal(h.calls.rewards.length, Math.floor((i + 1) / 3));
+    app.move('tile', puzzle.target[i]);
+    assert.equal(h.calls.rewards.length, Math.floor((i + 1) / 3));
+  }
+  assert.equal(app.screen, 'result'); assert.equal(app.store.coins(), 76);
+});
+
+test('248 credits only banked cumulative-score threshold differences, not drag/cancel/duplicate banking', () => {
+  const h = harness(17); const { app } = h;
+  for (const tile of app.puzzle.tiles) { tile.value = 0; }
+  const chain = [0, 1, 2, 3, 4, 5, 11, 10, 9, 8];
+  for (const index of chain) { app.move('tile', index); }
+  assert.deepEqual(h.calls.rewards, []);
+  app.move('choice', 0); assert.equal(app.score, 1024); assert.deepEqual(h.calls.rewards, [1]);
+  app.move('choice', 0); assert.deepEqual(h.calls.rewards, [1]);
+  for (const tile of app.puzzle.tiles) { tile.value = 0; }
+  for (const index of chain) { app.move('tile', index); }
+  app.move('choice', 1); assert.deepEqual(h.calls.rewards, [1]);
+  for (const index of chain) { app.move('tile', index); }
+  app.move('choice', 0); assert.equal(app.score, 2048); assert.deepEqual(h.calls.rewards, [1, 5]);
+  app.finish('时间到'); assert.equal(app.store.coins(), 66);
+});
+
+test('locked home/recommendation/start paths open purchase without changing the underlying game', () => {
+  const h = harness(1); const { app } = h;
+  app.screen = 'home'; app.store.unlocked.delete(8);
+  const creates = h.calls.create.length;
+  app.selectGame(7); assert.equal(app.unlockIndex, 7); assert.equal(app.gameIndex, 0);
+  assert.equal(app.screen, 'home'); assert.equal(h.calls.create.length, creates);
+  assert.equal(app.onBackPress(), true); assert.equal(app.unlockIndex, -1);
+  app.screen = 'result'; app.selectGame(7); assert.equal(app.screen, 'result');
+  app.cancelUnlock(); app.gameIndex = 7; app.start();
+  assert.equal(app.unlockIndex, 7); assert.equal(h.calls.create.length, creates);
+  app.cancelUnlock(); app.loaded = false; app.start(); app.selectGame(0);
+  assert.equal(h.calls.create.length, creates);
+});
+
+test('purchase is guarded against double clicks, remains on home, and free unlock charges zero', async () => {
+  const h = harness(1); const { app } = h;
+  app.screen = 'home'; app.store.unlocked.delete(8); app.store.balance = 150;
+  app.selectGame(7);
+  const first = app.confirmUnlock(); const duplicate = app.confirmUnlock();
+  assert.equal(app.purchasing, true);
+  app.onBackPress(); assert.equal(app.unlockIndex, 7);
+  await Promise.all([first, duplicate]);
+  assert.deepEqual(h.calls.purchases, [8]); assert.equal(app.coins, 0);
+  assert.equal(app.screen, 'home'); assert.equal(app.gameIndex, 0); assert.equal(app.unlockIndex, -1);
+  app.selectGame(7); assert.equal(app.screen, 'game'); assert.equal(app.gameIndex, 7);
+  app.screen = 'home'; app.store.unlocked.delete(18); app.selectGame(17);
+  await app.confirmUnlock(); assert.equal(app.coins, 0); assert.equal(app.store.isUnlocked(18), true);
+  assert.equal(app.screen, 'home');
+});
+
+test('insufficient purchase and persistence errors retain dialog and retry without auto-start', async () => {
+  const h = harness(1); const { app } = h;
+  app.screen = 'home'; app.store.unlocked.delete(8); app.selectGame(7);
+  await app.confirmUnlock(); assert.equal(app.unlockIndex, 7); assert.equal(app.coins, 60);
+  app.store.purchase = async () => { app.store.error = '保存失败'; return 'error'; };
+  await app.confirmUnlock(); assert.equal(app.purchaseError, '保存失败'); assert.equal(app.purchasing, false);
+  assert.equal(app.unlockIndex, 7); assert.equal(app.store.isUnlocked(8), false);
+  app.cancelUnlock(); assert.equal(app.screen, 'home'); assert.equal(app.unlockIndex, -1);
+  app.store.available = false; app.loaded = false;
+  app.store.load = async () => { app.store.available = true; app.store.error = ''; };
+  await app.retryStorage(); assert.equal(app.loaded, true); assert.equal(app.storageError, '');
 });

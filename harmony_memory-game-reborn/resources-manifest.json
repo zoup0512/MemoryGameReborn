@@ -1,7 +1,7 @@
 {
   "version": 2,
   "generator": "harmony_memory-game-reborn/tools/prepare_resources.py",
-  "sourcePolicy": "Repository Android assets and local 1024px app icon master; no network or currency/purchase functionality",
+  "sourcePolicy": "Repository Android assets and local 1024px app icon master; offline local coin rewards/unlocks only; no network or real-money purchases",
   "sizePolicy": {
     "limits": null,
     "note": "Lossless image/font optimization; original dimensions preserved"
@@ -25,7 +25,7 @@
   "drawablePolicy": {
     "vectors": "media SVG; exact path geometry, original dimensions and ARGB alpha",
     "statefulAndStretchable": "Parsed only to build SVG media; raw Android XML and drawable JSON are not packaged",
-    "currency": "No coin, reward, online, purchase, replay-for-currency assets or behavior introduced; gold trophy tier is original artwork"
+    "currency": "Original coin artwork for offline local rewards and game unlocks; no real-money purchases, online currency or replay-for-currency behavior; gold trophy tier is original artwork"
   },
   "catalogPolicy": {
     "writeScope": "media function only; GAMES, game parameters and other code preserved"
@@ -4280,6 +4280,26 @@
       "encoding": "lossless WebP, original dimensions"
     },
     {
+      "name": "ic_coin",
+      "androidName": "ic_coin",
+      "kind": "ui_bitmap",
+      "source": "android_memory-game-reborn/src/main/res/drawable-xxxhdpi-v4/ic_coin.png",
+      "sourceSha256": "13c820714382d96c75f56d0a3f6bea192dada9575f9e69d5de5bee9781d5921e",
+      "output": "harmony_memory-game-reborn/entry/src/main/resources/base/media/ic_coin.webp",
+      "sha256": "8a9c8409281df980aa703716a05275beb3858d4fcf5b81aac4690e571bdf8bae",
+      "bytes": 2508,
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "format": "WEBP",
+      "encoding": "lossless WebP, original dimensions"
+    },
+    {
       "name": "ic_humburger",
       "androidName": "ic_humburger",
       "kind": "ui_bitmap",
@@ -5871,6 +5891,7 @@
     "ic_challenge": "app.media.ic_challenge",
     "ic_check": "app.media.ic_check",
     "ic_close": "app.media.ic_close",
+    "ic_coin": "app.media.ic_coin",
     "ic_cup": "app.media.ic_cup",
     "ic_direction": "app.media.ic_direction",
     "ic_exit": "app.media.ic_exit",
@@ -8379,9 +8400,9 @@
     }
   ],
   "summary": {
-    "totalAssetBytes": 1556874,
-    "imagesCount": 284,
-    "imagesBytes": 1444956,
+    "totalAssetBytes": 1559382,
+    "imagesCount": 285,
+    "imagesBytes": 1447464,
     "audioCount": 4,
     "audioBytes": 19197,
     "fontsCount": 4,
@@ -8393,7 +8414,7 @@
       "tutorial": 63,
       "icon": 94,
       "thumbnail": 23,
-      "ui_bitmap": 74,
+      "ui_bitmap": 75,
       "ui_vector": 29
     }
   }
