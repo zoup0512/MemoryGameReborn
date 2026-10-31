@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { window } from '@kit.ArkUI';
 import { GAMES, GameInfo, media } from '../core/GameCatalog';
 import { Puzzle, Move } from '../core/Contract';
 import { createPuzzle, applyMove, reveal, animate } from '../core/GameEngine';
@@ -14,11 +15,15 @@ import { levelCoins, scoreCoins248 } from '../core/Economy';
 import { ReadyIndicator } from '../components/ReadyIndicator';
 import { AndroidChoiceBoard } from '../components/AndroidChoiceBoard';
 
+// Game surfaces keep the Android light palette in both color modes.
+const GAME_INK: string = '#13171C';
+
 @Entry
 @Component
 struct Index {
   @StorageLink('appActive') @Watch('activeChanged') appActive: boolean = true;
-  @State screen: string = 'home';
+  @StorageLink('darkMode') @Watch('syncSystemBar') darkMode: boolean = false;
+  @State @Watch('syncSystemBar') screen: string = 'home';
   @State gameIndex: number = 0;
   @State puzzle: Puzzle = new Puzzle();
   @State phase: string = 'ready';
@@ -398,28 +403,32 @@ struct Index {
   private gameBackground(): string { return '#E9F5FB'; }
 
   @Builder
+  private HeaderButton(symbol: Resource, label: string, action: () => void) {
+    Button({ type: ButtonType.Circle }) {
+      SymbolGlyph(symbol).fontSize(20).fontColor([GAME_INK])
+    }.width(40).height(40).backgroundColor('#CCFFFFFF')
+      .onClick(action).accessibilityText(label)
+  }
+
+  @Builder
   private Header() {
     Stack({ alignContent: Alignment.Center }) {
-      Text(this.game().name).fontFamily('RobotoLight').fontSize(18).fontColor('#000000').padding({ top: 12 })
-      Row() {
-        Column() {
-          Image(media('ic_pause_new')).width(28).height(28).objectFit(ImageFit.Contain)
-        }.width(48).height(48).padding({ left: 12, top: 12 }).justifyContent(FlexAlign.Center)
-          .onClick(() => this.pause()).accessibilityText('暂停')
-        Column() {
-          Image(media(this.soundOn ? 'speaker' : 'mute')).width(24).height(24).objectFit(ImageFit.Contain)
-        }.width(44).height(48).padding({ top: 12 }).justifyContent(FlexAlign.Center)
-          .onClick(() => this.toggleSound())
-          .accessibilityText(this.soundOn ? '关闭声音' : '开启声音')
+      Text(this.game().name).fontSize(17).fontWeight(FontWeight.Medium).fontColor(GAME_INK)
+        .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis }).constraintSize({ maxWidth: '50%' })
+      Row({ space: 8 }) {
+        this.HeaderButton($r('sys.symbol.pause'), '暂停', () => this.pause())
+        this.HeaderButton(this.soundOn ? $r('sys.symbol.speaker_wave_2') : $r('sys.symbol.speaker_slash'),
+          this.soundOn ? '关闭声音' : '开启声音', () => this.toggleSound())
         Blank()
         if (this.showsLives()) {
           Row({ space: 4 }) {
-            Image(media('ic_life')).width(24).height(24).opacity(this.lives >= 2 ? 1 : 0)
-            Image(media('ic_life')).width(24).height(24).opacity(this.lives >= 1 ? 1 : 0)
-          }.height(48).padding({ right: 12, top: 12 })
+            Image(media('ic_life')).width(22).height(22).opacity(this.lives >= 2 ? 1 : 0.25)
+            Image(media('ic_life')).width(22).height(22).opacity(this.lives >= 1 ? 1 : 0.25)
+          }.height(40).padding({ left: 10, right: 10 }).borderRadius(20).backgroundColor('#CCFFFFFF')
+            .accessibilityGroup(true).accessibilityText(`剩余机会 ${Math.max(0, this.lives)}`)
         }
-      }.width('100%').height(48)
-    }.width('100%').height(48)
+      }.width('100%').height(56).padding({ left: 12, right: 12 })
+    }.width('100%').height(56)
   }
 
   @Builder
@@ -443,8 +452,10 @@ struct Index {
     Column() {
       this.Header()
       if (this.game().id === 17) { this.ProgressBar() }
-      Text(this.game().id === 17 ? `得分：${this.score}` : `第 ${this.level} 关`).fontFamily('RobotoLight').fontSize(14).fontColor('#000000')
-        .width('100%').textAlign(TextAlign.Center).height(this.game().id === 17 ? 38 : 24)
+      Row() {
+        Text(this.game().id === 17 ? `得分 ${this.score}` : `第 ${this.level} 关`).fontSize(13).fontWeight(FontWeight.Medium)
+          .fontColor('#0277BD').height(24).padding({ left: 12, right: 12 }).borderRadius(12).backgroundColor('#DDEFFA')
+      }.width('100%').justifyContent(FlexAlign.Center).height(this.game().id === 17 ? 38 : 30)
       if (this.game().id !== 17 && this.game().id !== 19) { this.ProgressBar() }
       if (this.game().id === 17) {
         Text(`${this.puzzle.data.length > 0 ? this.puzzle.data[0] : 0}`).width(48).height(48).textAlign(TextAlign.Center)
@@ -496,7 +507,7 @@ struct Index {
         if (this.phase === 'ready') {
           Column() {
             ReadyIndicator({ progress: this.countdown })
-            Text('准备！').fontSize(34).fontFamily('RobotoLight').fontColor('#03A9F4')
+            Text('准备！').fontSize(32).fontWeight(FontWeight.Medium).fontColor('#0288D1').margin({ top: 8 })
           }.width('100%').height('100%').justifyContent(FlexAlign.Center).backgroundColor('#AAE9F5FB')
         }
         if (this.screen === 'result') { Row().width('100%').height('100%').backgroundColor('#E5F6FE') }
@@ -506,15 +517,33 @@ struct Index {
     }.width('100%').height('100%')
   }
 
+  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial'; }
+
+  private syncSystemBar(): void {
+    const ink: string = this.darkMode && this.shellScreen() ? '#FFFFFF' : '#000000';
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    window.getLastWindow(context)
+      .then((win: window.Window) => win.setWindowSystemBarProperties({ statusBarContentColor: ink, navigationBarContentColor: ink }))
+      .catch(() => {});
+  }
+
   build() {
     Stack() {
+      Column().width('100%').height('100%')
+        .backgroundColor(this.shellScreen() ? $r('app.color.page_background') : this.gameBackground())
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       Column() {
         if (this.storageError.length > 0) {
-          Row({ space: 8 }) {
-            Text(this.storageError).fontSize(12).fontColor('#B3261E').layoutWeight(1)
-            Text(this.retryingStorage ? '正在重试' : '重试').fontSize(14).fontColor('#03A9F4')
-              .onClick(() => this.retryStorage()).enabled(!this.retryingStorage && !this.purchasing)
-          }.width('100%').padding(8).backgroundColor('#FFF3F0')
+          Column() {
+            Row({ space: 8 }) {
+              SymbolGlyph($r('sys.symbol.exclamationmark_circle')).fontSize(18).fontColor([$r('app.color.danger')])
+              Text(this.storageError).fontSize(13).fontColor($r('app.color.danger')).layoutWeight(1)
+              Button(this.retryingStorage ? '正在重试' : '重试', { type: ButtonType.Capsule })
+                .height(30).fontSize(13).fontColor($r('app.color.on_brand')).backgroundColor($r('app.color.brand'))
+                .onClick(() => this.retryStorage()).enabled(!this.retryingStorage && !this.purchasing)
+            }.width('100%').padding({ left: 12, right: 8, top: 8, bottom: 8 })
+              .borderRadius(16).backgroundColor($r('app.color.danger_soft'))
+          }.width('100%').padding({ left: 12, right: 12, top: 8 })
         }
         Column() {
           if (this.screen === 'home') {
@@ -545,11 +574,12 @@ struct Index {
             }.width('100%').height('100%')
           }
         }.width('100%').layoutWeight(1)
-      }.width('100%').height('100%').backgroundColor('#E5F6FE')
+      }.width('100%').height('100%')
       if (this.unlockIndex >= 0) {
         AndroidUnlock({ gameIndex: this.unlockIndex, balance: this.coins, busy: this.purchasing,
           errorText: this.purchaseError, onConfirm: () => this.confirmUnlock(), onCancel: () => this.cancelUnlock() })
       }
     }.width('100%').height('100%')
+    .onAppear(() => this.syncSystemBar())
   }
 }

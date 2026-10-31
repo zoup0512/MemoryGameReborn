@@ -111,8 +111,8 @@ if __name__ == '__main__':
         assert '解锁游戏' not in text_values(), 'This smoke mode requires the game to be already unlocked: ' + name
         for _ in range(5):
             state = list(nodes(layout()))
-            if not any(n.get('text') in ['下一步', '开始'] for n in state): break
-            if click('开始'): break
+            if not any(n.get('text') in ['下一步', '开始训练'] for n in state): break
+            if click('开始训练'): break
             if not click('下一步'): break
         time.sleep(4.4 if name not in ['旋转网格', '抓住它们'] else 7.5)
         game_layout = layout()

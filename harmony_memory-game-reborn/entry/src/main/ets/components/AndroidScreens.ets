@@ -1,119 +1,11 @@
 import { GAMES, GameInfo, media } from '../core/GameCatalog';
 import { requiresUnlock, unlockCost } from '../core/Economy';
 
-// Android dp -> ArkUI vp; fonts are registered by the host Index.
-// Text is copied from res/values-zh/{strings,dialog_game_strings,dialog_common_strings}.xml.
-const ANDROID_BACKGROUND: string = '#E5F6FE';
-const ANDROID_DIVIDER: string = '#D9D9D9';
-const ANDROID_DIALOG_TEXT: string = '#182230';
-const ANDROID_DIALOG_BODY: string = '#596579';
-const ANDROID_DIALOG_BLUE: string = '#087CAF';
-const ANDROID_DIALOG_BORDER: string = '#D8E3ED';
-const ANDROID_DIALOG_DANGER: string = '#BD3045';
-
-class AndroidImageMetrics {
-  logicalWidth: number;
-  logicalHeight: number;
-
-  constructor(logicalWidth: number, logicalHeight: number) {
-    this.logicalWidth = logicalWidth;
-    this.logicalHeight = logicalHeight;
-  }
-}
-
-// Original highest-density PNG dimensions / 4, including their transparent margins.
-// CENTER_INSIDE must not enlarge these images to the viewport's bounds.
-function androidImageMetrics(assetName: string): AndroidImageMetrics {
-  switch (assetName) {
-    case 'th1':
-    case 'th4': return new AndroidImageMetrics(203.75, 192);
-    case 'th2': return new AndroidImageMetrics(239, 192);
-    case 'th3': return new AndroidImageMetrics(212.75, 192);
-    case 'th5': return new AndroidImageMetrics(160, 192);
-    case 'th6': return new AndroidImageMetrics(202.75, 192);
-    case 'th7': return new AndroidImageMetrics(200.5, 192);
-    case 'th8': return new AndroidImageMetrics(154, 192);
-    case 'th9': return new AndroidImageMetrics(204, 192);
-    case 'th10': return new AndroidImageMetrics(205.5, 192);
-    case 'th11':
-    case 'th12': return new AndroidImageMetrics(155, 192);
-    case 'th13': return new AndroidImageMetrics(193, 192);
-    case 'th14': return new AndroidImageMetrics(216, 192);
-    case 'th15': return new AndroidImageMetrics(172.5, 192);
-    case 'th16': return new AndroidImageMetrics(236, 192);
-    case 'th17': return new AndroidImageMetrics(185.5, 192);
-    case 'th18': return new AndroidImageMetrics(220.25, 192);
-    case 'th19': return new AndroidImageMetrics(212.25, 192);
-    case 'th20': return new AndroidImageMetrics(165.75, 192);
-    case 'th21':
-    case 'preview_laser':
-    case 'preview_table': return new AndroidImageMetrics(360, 192);
-    case 'game1_1':
-    case 'game1_2':
-    case 'game1_3': return new AndroidImageMetrics(152, 204);
-    case 'game2_1': return new AndroidImageMetrics(204, 204);
-    case 'game2_2': return new AndroidImageMetrics(279, 278.75);
-    case 'game2_3': return new AndroidImageMetrics(204.25, 204.25);
-    case 'game3_1':
-    case 'game3_2':
-    case 'game3_3': return new AndroidImageMetrics(213.5, 154.75);
-    case 'game4_1':
-    case 'game4_2':
-    case 'game4_3': return new AndroidImageMetrics(152, 204.25);
-    case 'game5_1': return new AndroidImageMetrics(152.25, 204);
-    case 'game5_2': return new AndroidImageMetrics(120.5, 241);
-    case 'game6_1':
-    case 'game6_2':
-    case 'game6_3': return new AndroidImageMetrics(202.75, 203.25);
-    case 'game7_1': return new AndroidImageMetrics(244.25, 244.25);
-    case 'game7_2':
-    case 'game7_3': return new AndroidImageMetrics(244.25, 252.75);
-    case 'game8_1': return new AndroidImageMetrics(100, 100);
-    case 'game8_2':
-    case 'game8_3':
-    case 'game8_4': return new AndroidImageMetrics(204, 204);
-    case 'game9_1': return new AndroidImageMetrics(140.5, 140.25);
-    case 'game9_2': return new AndroidImageMetrics(140.5, 226.25);
-    case 'game9_3': return new AndroidImageMetrics(146.5, 232);
-    case 'game10_1': return new AndroidImageMetrics(139.75, 140);
-    case 'game10_2': return new AndroidImageMetrics(142.25, 142);
-    case 'game11_1':
-    case 'game11_2':
-    case 'game11_3': return new AndroidImageMetrics(287.25, 227);
-    case 'game12_1':
-    case 'game12_2':
-    case 'game12_3': return new AndroidImageMetrics(287.25, 235.5);
-    case 'game13_1':
-    case 'game13_2': return new AndroidImageMetrics(172.5, 172.75);
-    case 'game13_3': return new AndroidImageMetrics(171, 171.25);
-    case 'game14_1': return new AndroidImageMetrics(175.25, 174.75);
-    case 'game14_2': return new AndroidImageMetrics(175.25, 184.75);
-    case 'game14_3': return new AndroidImageMetrics(184.5, 184.5);
-    case 'game15_1': return new AndroidImageMetrics(194.75, 168.75);
-    case 'game15_2': return new AndroidImageMetrics(195.25, 212.5);
-    case 'game15_3': return new AndroidImageMetrics(199.75, 184.75);
-    case 'game16_1':
-    case 'game16_2': return new AndroidImageMetrics(159, 208);
-    case 'game16_3': return new AndroidImageMetrics(174.5, 223.5);
-    case 'game17_1':
-    case 'game17_2': return new AndroidImageMetrics(253, 249.5);
-    case 'game17_3': return new AndroidImageMetrics(259.25, 249.5);
-    case 'game18_1': return new AndroidImageMetrics(184, 277.25);
-    case 'game18_2': return new AndroidImageMetrics(189.5, 277.25);
-    case 'game19_1':
-    case 'game19_2': return new AndroidImageMetrics(224.25, 269);
-    case 'game20_1':
-    case 'game20_2': return new AndroidImageMetrics(266.75, 378.25);
-    case 'game21_1':
-    case 'game21_2': return new AndroidImageMetrics(203.75, 204);
-    case 'tutorial_laser_1':
-    case 'tutorial_laser_2':
-    case 'tutorial_table_1':
-    case 'tutorial_table_2':
-    case 'tutorial_table_3': return new AndroidImageMetrics(250, 350);
-    default: return new AndroidImageMetrics(192, 192);
-  }
-}
+// App shell (home, tutorial, dialogs). Game boards keep the Android visuals;
+// shell colors come from resources/{base,dark}/element/color.json.
+const ALL_CATEGORIES: string = '全部';
+const CATEGORIES: string[] = [ALL_CATEGORIES, '记忆力', '注意力', '速度', '灵活性', '问题解决', '想象力'];
+const LAST_PLAYED: string = '#FFA000';
 
 function androidGame(gameIndex: number): GameInfo {
   return GAMES[Math.max(0, Math.min(GAMES.length - 1, Math.floor(gameIndex)))];
@@ -121,6 +13,11 @@ function androidGame(gameIndex: number): GameInfo {
 
 function androidLevel(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
+// '#RRGGBB' -> translucent '#AARRGGBB' tint for category tags.
+function tint(color: string, alpha: string): string {
+  return color.length === 7 ? `#${alpha}${color.substring(1)}` : color;
 }
 
 @Component
@@ -133,14 +30,10 @@ export struct AndroidHome {
   // never infer ownership from a record, balance, or missing persisted data.
   @Prop unlockedIds: number[] = [];
   onSelect: (index: number) => void = (_index: number): void => {};
-  @State private viewportWidth: number = 360;
+  @State private category: string = ALL_CATEGORIES;
 
   private recordAt(index: number): number {
     return androidLevel(index < this.records.length ? this.records[index] : 0);
-  }
-
-  private thumbnailScale(game: GameInfo): number {
-    return Math.min(1, this.viewportWidth / androidImageMetrics(game.thumbnail).logicalWidth);
   }
 
   private locked(game: GameInfo): boolean {
@@ -159,58 +52,80 @@ export struct AndroidHome {
     return `${game.name}，${game.category}${state}，${detail}`;
   }
 
+  private visibleIndexes(): number[] {
+    const result: number[] = [];
+    GAMES.forEach((game: GameInfo, index: number) => {
+      if (this.category === ALL_CATEGORIES || game.category === this.category) { result.push(index); }
+    });
+    return result;
+  }
+
+  private openCount(): number {
+    return GAMES.filter((game: GameInfo) => !this.locked(game)).length;
+  }
+
   @Builder
-  private GameRow(game: GameInfo, index: number) {
+  private CategoryChip(name: string) {
+    Text(name)
+      .fontSize(14).fontWeight(this.category === name ? FontWeight.Medium : FontWeight.Normal)
+      .fontColor(this.category === name ? $r('app.color.on_brand') : $r('app.color.text_secondary'))
+      .height(34).padding({ left: 16, right: 16 }).borderRadius(17)
+      .backgroundColor(this.category === name ? $r('app.color.brand') : $r('app.color.chip_background'))
+      .onClick(() => { this.category = name; })
+      .accessibilityText(`${name}分类`)
+      .accessibilitySelected(this.category === name)
+  }
+
+  @Builder
+  private GameCard(game: GameInfo, index: number) {
     Column() {
-      Stack({ alignContent: Alignment.Top }) {
+      Stack({ alignContent: Alignment.TopStart }) {
         Image(media(game.thumbnail))
-          .width(androidImageMetrics(game.thumbnail).logicalWidth * this.thumbnailScale(game))
-          .height(androidImageMetrics(game.thumbnail).logicalHeight * this.thumbnailScale(game))
-          .objectFit(ImageFit.Contain)
-          .position({ x: (this.viewportWidth - androidImageMetrics(game.thumbnail).logicalWidth *
-            this.thumbnailScale(game)) / 2, y: 0 })
-          .draggable(false)
-          .accessibilityLevel('no')
+          .width('100%').height('100%').padding(8)
+          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
         if (this.locked(game)) {
-          Stack() {
-            Image(media('ic_lock')).width(48).height(48).objectFit(ImageFit.Contain)
-              .fillColor('#FFFFFF').accessibilityLevel('no')
-          }.width('100%').height('100%').backgroundColor('#CC333333')
-            .hitTestBehavior(HitTestMode.None)
+          Column({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.lock_fill')).fontSize(26).fontColor(['#FFFFFF'])
+              .accessibilityLevel('no')
+            Row({ space: 4 }) {
+              if (this.priced(game)) {
+                Image(media('ic_coin')).width(16).height(16).objectFit(ImageFit.Contain)
+                  .accessibilityLevel('no')
+                Text(`${unlockCost(game.id)}`).fontSize(14).fontWeight(FontWeight.Medium).fontColor('#FFFFFF')
+              } else {
+                Text('免费解锁').fontSize(13).fontWeight(FontWeight.Medium).fontColor('#FFFFFF')
+              }
+            }.height(26).padding({ left: 10, right: 10 }).borderRadius(13).backgroundColor('#33FFFFFF')
+          }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+            .backgroundColor('#A6101820').hitTestBehavior(HitTestMode.None)
         }
-        Column() {
-          Row() {
-            Text(game.name)
-              .fontFamily('RobotoLight').fontSize(18).fontColor(this.locked(game) ? '#FFFFFF' : '#000000')
-              .layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-            if (this.priced(game)) {
-              Text(`${unlockCost(game.id)}`)
-                .fontFamily('RobotoLight').fontSize(16).fontColor('#FFFFFF').margin({ right: 4 })
-              Image(media('ic_coin')).width(22).height(22).objectFit(ImageFit.Contain)
-                .accessibilityLevel('no')
-            } else {
-              Text('等级')
-                .fontFamily('RobotoLight').fontSize(16)
-                .fontColor(this.locked(game) ? '#FFFFFF' : '#000000').margin({ right: 4 })
-              Text(`${this.recordAt(index)}`)
-                .fontFamily('RobotoLight').fontSize(18).fontColor('#000000')
-                .width(32).height(32).textAlign(TextAlign.Center)
-                .backgroundColor('#F0FAFF').borderRadius(16)
-                .border({ width: 1, color: ANDROID_DIVIDER, radius: 16 }).borderRadius(16).clip(true)
-            }
-          }.width('100%').height(32).padding({ left: 16, right: 16 })
-          Text(game.category)
-            .fontFamily('RobotoBold').fontWeight(FontWeight.Bold).fontSize(12).fontColor(game.color)
-            .lineHeight(16).padding({ left: 16, right: 16, bottom: 4 })
-        }.width('100%').height(52).alignItems(HorizontalAlign.Start)
-          .position({ x: 0, y: Math.max(0, Math.floor(this.viewportWidth / 1.875) - 52) })
         if (this.lastGame === index) {
-          Rect().width(6).height('100%').fill('#FFC109').position({ x: 0, y: 0 })
+          Text('上次训练').fontSize(11).fontWeight(FontWeight.Medium).fontColor('#FFFFFF')
+            .height(22).padding({ left: 8, right: 8 }).borderRadius(11).backgroundColor(LAST_PLAYED)
+            .margin({ left: 8, top: 8 }).hitTestBehavior(HitTestMode.None)
         }
-      }.width('100%').height(Math.floor(this.viewportWidth / 1.875))
-        .backgroundColor(ANDROID_BACKGROUND).clip(true)
-      Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
-    }.width('100%').onClick(() => this.onSelect(index))
+      }.width('100%').aspectRatio(1.3).borderRadius(16).clip(true)
+        .backgroundColor($r('app.color.thumb_background'))
+      Text(game.name)
+        .width('100%').margin({ top: 10 }).fontSize(16).fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_primary')).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+      Row() {
+        Text(game.category)
+          .fontSize(11).fontWeight(FontWeight.Medium).fontColor(game.color)
+          .height(20).padding({ left: 6, right: 6 }).borderRadius(6).backgroundColor(tint(game.color, '1F'))
+        Blank()
+        if (this.priced(game)) {
+          Text('未解锁').fontSize(12).fontColor($r('app.color.text_tertiary'))
+        } else {
+          Text(`Lv.${this.recordAt(index)}`).fontSize(13).fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_secondary'))
+        }
+      }.width('100%').height(20).margin({ top: 6 })
+    }.width('100%').padding({ left: 8, right: 8, top: 8, bottom: 12 })
+      .backgroundColor($r('app.color.card_background')).borderRadius(22)
+      .shadow({ radius: 16, color: $r('app.color.card_shadow'), offsetY: 4 })
+      .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.96 })
+      .onClick(() => this.onSelect(index))
       .accessibilityText(this.rowDescription(game, index))
       .accessibilityGroup(true)
   }
@@ -218,28 +133,34 @@ export struct AndroidHome {
   build() {
     Column() {
       Row() {
-        Text('脑力训练大师')
-          .fontFamily('RobotoMedium').fontSize(20).fontColor('#000000')
-          .accessibilityText('脑力训练大师').layoutWeight(1)
-        Row({ space: 4 }) {
-          Text(`${androidLevel(this.coins)}`).fontFamily('RobotoLight').fontSize(16).fontColor('#000000')
-          Image(media('ic_coin')).width(23).height(23).objectFit(ImageFit.Contain)
+        Column() {
+          Text('脑力训练大师').fontSize(26).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
+          Text(`已开放 ${this.openCount()} / ${GAMES.length} 款训练`)
+            .fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
+        }.layoutWeight(1).alignItems(HorizontalAlign.Start)
+        Row({ space: 6 }) {
+          Image(media('ic_coin')).width(20).height(20).objectFit(ImageFit.Contain)
             .accessibilityLevel('no')
-        }.height('100%').accessibilityGroup(true).id('coin-balance')
+          Text(`${androidLevel(this.coins)}`).fontSize(16).fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.coin_text'))
+        }.height(36).padding({ left: 10, right: 14 }).borderRadius(18)
+          .backgroundColor($r('app.color.coin_background'))
+          .accessibilityGroup(true).id('coin-balance')
           .accessibilityText(`金币余额 ${androidLevel(this.coins)}`)
-      }.width('100%').height(45).justifyContent(FlexAlign.Center)
-        .padding({ left: 15, right: 15 }).backgroundColor('#FFFFFF')
-      Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
-      List({ space: 0 }) {
-        ForEach(GAMES, (game: GameInfo, index: number) => {
-          ListItem() { this.GameRow(game, index) }
-        }, (game: GameInfo) => `${game.id}`)
-      }.width('100%').layoutWeight(1).scrollBar(BarState.Off)
-    }.width('100%').height('100%').backgroundColor(ANDROID_BACKGROUND)
-      .onAreaChange((_oldArea: Area, newArea: Area) => {
-        const measured: number = Number(newArea.width);
-        if (measured > 0) { this.viewportWidth = measured; }
-      })
+      }.width('100%').padding({ left: 20, right: 16, top: 16, bottom: 12 })
+      Scroll() {
+        Row({ space: 8 }) {
+          ForEach(CATEGORIES, (name: string) => { this.CategoryChip(name) }, (name: string) => name)
+        }.padding({ left: 16, right: 16 })
+      }.width('100%').height(34).scrollable(ScrollDirection.Horizontal).scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring)
+      List({ space: 12 }) {
+        ForEach(this.visibleIndexes(), (index: number) => {
+          ListItem() { this.GameCard(GAMES[index], index) }
+        }, (index: number) => `${GAMES[index].id}`)
+      }.width('100%').layoutWeight(1).lanes(2, 12).scrollBar(BarState.Off).edgeEffect(EdgeEffect.Spring)
+        .padding({ left: 16, right: 16 }).contentStartOffset(16).contentEndOffset(24)
+    }.width('100%').height('100%')
   }
 }
 
@@ -250,8 +171,6 @@ export struct AndroidTutorial {
   onExit: () => void = (): void => {};
   onPlay: () => void = (): void => {};
   @State private pageIndex: number = 0;
-  @State private viewportWidth: number = 360;
-  @State private tutorialAreaHeight: number = 560;
   private pager: SwiperController = new SwiperController();
 
   private resetPages(): void {
@@ -259,88 +178,67 @@ export struct AndroidTutorial {
     this.pager.changeIndex(0, false);
   }
 
-  private squareExtent(): number {
-    // On short screens shrink only, and keep clear of the 70dp text / 72dp dots.
-    return Math.max(0, Math.min(this.viewportWidth, this.tutorialAreaHeight - 144));
+  private lastPage(): boolean {
+    return this.pageIndex >= androidGame(this.gameIndex).tutorialImages.length - 1;
   }
 
-  private imageScale(assetName: string): number {
-    const metrics: AndroidImageMetrics = androidImageMetrics(assetName);
-    return Math.min(1, this.squareExtent() / metrics.logicalWidth,
-      this.squareExtent() / metrics.logicalHeight);
+  private actionLabel(): string {
+    if (!this.lastPage()) { return '下一步'; }
+    return this.fromPause ? '返回游戏' : '开始训练';
   }
 
   private nextOrPlay(): void {
-    if (this.pageIndex < androidGame(this.gameIndex).tutorialImages.length - 1) {
-      this.pager.showNext();
-    } else {
-      this.onPlay();
-    }
+    if (!this.lastPage()) { this.pager.showNext(); }
+    else if (this.fromPause) { this.onExit(); }
+    else { this.onPlay(); }
   }
 
   build() {
     Column() {
       Row() {
-        Button({ type: ButtonType.Normal }) {
-          Image(media('ic_arrow_back_white')).width(29).height(29)
-            // Preserve the original PNG alpha/geometry; force RGB to black.
-            .objectFit(ImageFit.Contain).colorFilter([
-              0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0,
-              0, 0, 0, 1, 0
-            ]).accessibilityLevel('no')
-        }.width(45).height(45).padding(8).margin({ left: 8, right: 8 })
-          .borderRadius(0).backgroundColor(Color.Transparent)
+        Button({ type: ButtonType.Circle }) {
+          SymbolGlyph($r('sys.symbol.chevron_left')).fontSize(22).fontColor([$r('app.color.text_primary')])
+        }.width(40).height(40).backgroundColor($r('app.color.card_background'))
           .accessibilityText('返回').onClick(() => this.onExit())
-      }.width('100%').height(45)
-      Stack() {
+        Column() {
+          Text(androidGame(this.gameIndex).name).fontSize(18).fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary')).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text('玩法教程').fontSize(12).fontColor($r('app.color.text_secondary'))
+        }.layoutWeight(1).padding({ left: 12, right: 12 })
+        Text(this.fromPause || this.lastPage() ? '' : '跳过')
+          .width(48).height(40).textAlign(TextAlign.Center).fontSize(15).fontColor($r('app.color.brand'))
+          .enabled(!this.fromPause && !this.lastPage())
+          .onClick(() => this.onPlay())
+      }.width('100%').height(56)
+      Column() {
         Swiper(this.pager) {
           ForEach(androidGame(this.gameIndex).tutorialImages, (assetName: string) => {
-            Stack() {
-              Image(media(assetName))
-                .width(androidImageMetrics(assetName).logicalWidth * this.imageScale(assetName))
-                .height(androidImageMetrics(assetName).logicalHeight * this.imageScale(assetName))
-                .objectFit(ImageFit.Contain).draggable(false)
-            }.width('100%').height('100%')
+            Image(media(assetName)).width('100%').height('100%').padding(16)
+              .objectFit(ImageFit.Contain).draggable(false)
           }, (assetName: string) => assetName)
-        }.width('100%').height('100%').index(this.pageIndex).loop(false)
-          .indicator(false).duration(250)
+        }.width('100%').layoutWeight(1).index(this.pageIndex).loop(false)
+          .indicator(false).duration(250).curve(Curve.Friction)
+          .backgroundColor($r('app.color.thumb_background')).borderRadius(20).clip(true)
           .onChange((index: number) => { this.pageIndex = index; })
         Text(androidGame(this.gameIndex).tutorialText[this.pageIndex])
-          .width('100%').height(70).padding({ left: 32, right: 32 })
-          .fontFamily('RobotoRegular').fontSize(20).fontStyle(FontStyle.Italic).fontColor('#000000')
-          .textAlign(TextAlign.Center).maxLines(3).minFontSize(12).maxFontSize(20)
+          .width('100%').height(84).padding({ left: 8, right: 8 }).margin({ top: 16 })
+          .fontSize(17).lineHeight(25).fontColor($r('app.color.text_primary'))
+          .textAlign(TextAlign.Center).maxLines(3).minFontSize(12).maxFontSize(17)
           .heightAdaptivePolicy(TextHeightAdaptivePolicy.MIN_FONT_SIZE_FIRST)
-          .position({ x: 0, y: 0 }).hitTestBehavior(HitTestMode.None)
-        Row({ space: 4 }) {
+        Row({ space: 6 }) {
           ForEach(androidGame(this.gameIndex).tutorialImages, (_assetName: string, index: number) => {
-            Circle().width(8).height(8).fill(index === this.pageIndex ? '#8C8C8C' : ANDROID_DIVIDER)
+            Row().width(index === this.pageIndex ? 18 : 6).height(6).borderRadius(3)
+              .backgroundColor(index === this.pageIndex ? $r('app.color.brand') : $r('app.color.divider'))
+              .animation({ duration: 200, curve: Curve.Friction })
           }, (_assetName: string, index: number) => `${index}`)
-        }.width('100%').height(72).padding(32).justifyContent(FlexAlign.Center)
-          .position({ x: 0, y: Math.max(0, this.tutorialAreaHeight - 72) }).hitTestBehavior(HitTestMode.None)
-      }.width('100%').layoutWeight(1).clip(true)
-        .onAreaChange((_oldArea: Area, newArea: Area) => {
-          const measured: number = Number(newArea.height);
-          if (measured > 0) { this.tutorialAreaHeight = measured; }
-        })
-      // INVISIBLE, not GONE: pause tutorial reserves the entire original action region.
-      Column() {
-        Rect().width('100%').height(1).fill(ANDROID_DIVIDER)
-        Row() {
-          Button(this.pageIndex < androidGame(this.gameIndex).tutorialImages.length - 1 ? '下一步' : '开始',
-            { type: ButtonType.Normal })
-            .height(42).padding({ left: 36, right: 36 }).borderRadius(2)
-            .fontFamily('RobotoRegular').fontSize(20).fontWeight(FontWeight.Normal).fontColor('#FFFFFF')
-            .backgroundColor('#03A9F4').onClick(() => this.nextOrPlay())
-        }.width('100%').padding({ top: 24, bottom: 24 }).justifyContent(FlexAlign.Center)
-          .backgroundColor('#FFFFFF')
-      }.width('100%').visibility(this.fromPause ? Visibility.Hidden : Visibility.Visible)
-    }.width('100%').height('100%').backgroundColor(ANDROID_BACKGROUND)
-      .onAreaChange((_oldArea: Area, newArea: Area) => {
-        const measured: number = Number(newArea.width);
-        if (measured > 0) { this.viewportWidth = measured; }
-      })
+        }.height(24).justifyContent(FlexAlign.Center).accessibilityLevel('no')
+      }.width('100%').layoutWeight(1).padding(12).margin({ top: 4 })
+        .backgroundColor($r('app.color.card_background')).borderRadius(28)
+      Button(this.actionLabel(), { type: ButtonType.Capsule })
+        .width('100%').height(48).margin({ top: 16, bottom: 16 }).constraintSize({ maxWidth: 420 })
+        .fontSize(17).fontWeight(FontWeight.Medium).fontColor($r('app.color.on_brand'))
+        .backgroundColor($r('app.color.brand')).onClick(() => this.nextOrPlay())
+    }.width('100%').height('100%').padding({ left: 16, right: 16 })
   }
 }
 
@@ -355,6 +253,7 @@ function androidEmptyDialogContent() {
 struct AndroidDialogFrame {
   @Prop screenHeight: number = 0;
   @State private measuredViewportHeight: number = 0;
+  @State private shown: boolean = false;
   @BuilderParam content: () => void = androidEmptyDialogContent;
 
   private maximumCardHeight(): number {
@@ -366,18 +265,24 @@ struct AndroidDialogFrame {
     Stack() {
       // A sibling backdrop consumes outside taps without suppressing the card's
       // descendants. HitTestMode.Block on an ancestor also blocks its buttons.
-      Column() {}.width('100%').height('100%').backgroundColor('#73000000')
+      Column() {}.width('100%').height('100%').backgroundColor($r('app.color.scrim'))
+        .opacity(this.shown ? 1 : 0)
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
         .onClick(() => {})
       Column() {
         Scroll() {
           this.content()
-        }.width('100%').constraintSize({ maxWidth: 420, maxHeight: this.maximumCardHeight() })
+        }.width('100%').constraintSize({ maxWidth: 400, maxHeight: this.maximumCardHeight() })
           .scrollBar(BarState.Off).align(Alignment.Top)
-          .backgroundColor('#FFFFFF').borderRadius(20).clip(true)
-      }.width('100%').height('100%').padding({ left: 16, right: 16 })
+          .backgroundColor($r('app.color.card_background')).borderRadius(32).clip(true)
+          .opacity(this.shown ? 1 : 0).scale({ x: this.shown ? 1 : 0.92, y: this.shown ? 1 : 0.92 })
+      }.width('100%').height('100%').padding({ left: 20, right: 20 })
         .justifyContent(FlexAlign.Center)
     }.width('100%').height('100%')
       .onClick(() => {})
+      .onAppear(() => {
+        this.getUIContext().animateTo({ duration: 220, curve: Curve.Friction }, () => { this.shown = true; });
+      })
       .onAreaChange((_oldArea: Area, newArea: Area) => {
         const measured: number = Number(newArea.height);
         if (measured > 0) { this.measuredViewportHeight = measured; }
@@ -389,24 +294,53 @@ struct AndroidDialogFrame {
 struct AndroidDialogAction {
   @Prop labelText: string = '';
   @Prop actionKind: string = 'primary';
-  @Prop lightTypeface: boolean = false;
   @Prop actionEnabled: boolean = true;
   onAction: () => void = (): void => {};
 
+  private labelColor(): ResourceColor {
+    if (this.actionKind === 'primary') { return $r('app.color.on_brand'); }
+    return this.actionKind === 'danger' ? $r('app.color.danger') : $r('app.color.brand');
+  }
+
+  private fillColor(): ResourceColor {
+    if (this.actionKind === 'primary') { return $r('app.color.brand'); }
+    return this.actionKind === 'secondary' ? $r('app.color.brand_soft') : Color.Transparent;
+  }
+
   build() {
-    Button({ type: ButtonType.Normal }) {
-      Text(this.labelText).fontFamily(this.lightTypeface ? 'RobotoLight' : 'RobotoMedium')
-        .fontSize(16).fontWeight(FontWeight.Normal)
-        .fontColor(this.actionKind === 'primary' ? '#FFFFFF' :
-          (this.actionKind === 'danger' ? ANDROID_DIALOG_DANGER : ANDROID_DIALOG_BLUE))
-        .textAlign(TextAlign.Center)
-    }.width('100%').height(52).padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor(this.actionKind === 'primary' ? ANDROID_DIALOG_BLUE : Color.Transparent)
-      .borderRadius(12)
-      .border({ width: this.actionKind === 'secondary' ? 1 : 0, color: ANDROID_DIALOG_BORDER, radius: 12 })
-      .borderRadius(12).clip(true)
+    Button({ type: ButtonType.Capsule }) {
+      Text(this.labelText).fontSize(16).fontWeight(FontWeight.Medium)
+        .fontColor(this.labelColor()).textAlign(TextAlign.Center)
+    }.width('100%').height(48).padding({ left: 16, right: 16 })
+      .backgroundColor(this.fillColor())
       .enabled(this.actionEnabled).opacity(this.actionEnabled ? 1 : 0.5)
       .onClick(() => { if (this.actionEnabled) { this.onAction(); } }).accessibilityText(this.labelText)
+  }
+}
+
+@Builder
+function dialogBadge(symbol: Resource, foreground: ResourceColor, background: ResourceColor) {
+  Stack() {
+    SymbolGlyph(symbol).fontSize(28).fontColor([foreground])
+  }.width(60).height(60).borderRadius(30).backgroundColor(background).accessibilityLevel('no')
+}
+
+@Component
+struct PauseShortcut {
+  symbol: Resource = $r('sys.symbol.arrow_clockwise');
+  labelText: string = '';
+  descriptionText: string = '';
+  onAction: () => void = (): void => {};
+
+  build() {
+    Column({ space: 6 }) {
+      SymbolGlyph(this.symbol).fontSize(22).fontColor([$r('app.color.brand')])
+      Text(this.labelText).fontSize(13).fontColor($r('app.color.text_primary')).maxLines(1)
+    }.layoutWeight(1).height(76).justifyContent(FlexAlign.Center)
+      .borderRadius(18).backgroundColor($r('app.color.brand_soft'))
+      .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.95 })
+      .onClick(() => this.onAction())
+      .accessibilityGroup(true).accessibilityText(this.descriptionText)
   }
 }
 
@@ -444,23 +378,28 @@ export struct AndroidUnlock {
   @Builder
   private UnlockContent() {
     Column() {
-      Text('解锁游戏').width('100%').fontFamily('RobotoRegular').fontSize(22).fontColor(ANDROID_DIALOG_TEXT)
+      Stack() {
+        Image(media(androidGame(this.gameIndex).thumbnail)).width('100%').height('100%').padding(8)
+          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+      }.width('100%').height(132).borderRadius(20).clip(true).backgroundColor($r('app.color.thumb_background'))
+      Text('解锁游戏').width('100%').margin({ top: 20 }).textAlign(TextAlign.Center)
+        .fontSize(22).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
       Text(`游戏：${androidGame(this.gameIndex).name}\n解锁价格：${this.price()} 金币\n当前余额：${androidLevel(this.balance)} 金币`)
-        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-        .lineHeight(22).margin({ top: 16 })
+        .width('100%').margin({ top: 12 }).padding(14).borderRadius(16)
+        .backgroundColor($r('app.color.page_background'))
+        .fontSize(15).fontColor($r('app.color.text_secondary')).lineHeight(24)
       if (androidLevel(this.balance) < this.price()) {
         Text(`还差 ${this.price() - androidLevel(this.balance)} 金币，暂时无法解锁。可游玩已解锁的游戏来获得金币。`)
-          .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_DANGER)
-          .lineHeight(20).margin({ top: 8 })
+          .width('100%').fontSize(14).fontColor($r('app.color.danger')).lineHeight(20).margin({ top: 10 })
       }
       if (this.errorText.length > 0) {
-        Text(this.errorText).width('100%').fontFamily('RobotoRegular').fontSize(15)
-          .fontColor(ANDROID_DIALOG_DANGER).lineHeight(20).margin({ top: 8 })
+        Text(this.errorText).width('100%').fontSize(14)
+          .fontColor($r('app.color.danger')).lineHeight(20).margin({ top: 10 })
       }
       AndroidDialogAction({ labelText: this.busy ? '正在解锁…' : `解锁 · ${this.price()} 金币`,
         actionEnabled: this.canConfirm(), onAction: () => this.confirm() }).margin({ top: 20 })
       AndroidDialogAction({ labelText: '取消', actionKind: 'secondary', actionEnabled: !this.busy,
-        onAction: () => { if (!this.busy) { this.onCancel(); } } }).margin({ top: 8 })
+        onAction: () => { if (!this.busy) { this.onCancel(); } } }).margin({ top: 10 })
     }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
   }
 
@@ -481,21 +420,24 @@ export struct AndroidPause {
   @Builder
   private PauseContent() {
     Column() {
-      Text('游戏已暂停').width('100%').fontFamily('RobotoLight').fontSize(22).fontColor(ANDROID_DIALOG_TEXT)
+      dialogBadge($r('sys.symbol.pause'), $r('app.color.brand'), $r('app.color.brand_soft'))
+      Text('游戏已暂停').margin({ top: 16 }).fontSize(22).fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
       Text('准备好后可继续游戏。结束本局将进入成绩结算。')
-        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-        .lineHeight(20).margin({ top: 8 })
-      AndroidDialogAction({ labelText: '继续游戏', lightTypeface: true, onAction: () => this.onResume() })
-        .margin({ top: 20 })
-      AndroidDialogAction({ labelText: '重新开始本局', actionKind: 'secondary', lightTypeface: true,
-        onAction: () => this.onRestart() }).margin({ top: 8 })
-      AndroidDialogAction({ labelText: '查看玩法教程', actionKind: 'secondary', lightTypeface: true,
-        onAction: () => this.onTutorial() }).margin({ top: 8 })
-      AndroidDialogAction({ labelText: '返回游戏列表', actionKind: 'secondary', lightTypeface: true,
-        onAction: () => this.onHome() }).margin({ top: 8 })
-      AndroidDialogAction({ labelText: '结束本局并查看成绩', actionKind: 'danger', lightTypeface: true,
+        .width('100%').textAlign(TextAlign.Center).margin({ top: 8 })
+        .fontSize(14).fontColor($r('app.color.text_secondary')).lineHeight(20)
+      AndroidDialogAction({ labelText: '继续游戏', onAction: () => this.onResume() }).margin({ top: 24 })
+      Row({ space: 10 }) {
+        PauseShortcut({ symbol: $r('sys.symbol.arrow_clockwise'), labelText: '重新开始',
+          descriptionText: '重新开始本局', onAction: () => this.onRestart() })
+        PauseShortcut({ symbol: $r('sys.symbol.questionmark_circle'), labelText: '玩法教程',
+          descriptionText: '查看玩法教程', onAction: () => this.onTutorial() })
+        PauseShortcut({ symbol: $r('sys.symbol.square_grid_2x2'), labelText: '游戏列表',
+          descriptionText: '返回游戏列表', onAction: () => this.onHome() })
+      }.width('100%').margin({ top: 12 })
+      AndroidDialogAction({ labelText: '结束本局并查看成绩', actionKind: 'danger',
         onAction: () => this.onEnd() }).margin({ top: 8 })
-    }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
+    }.width('100%').padding({ left: 24, right: 24, top: 28, bottom: 16 })
   }
 
   build() {
@@ -521,31 +463,45 @@ export struct AndroidResult {
   @Builder
   private ResultContent() {
     Column() {
-      Text(this.title).width('100%').fontFamily('RobotoRegular').fontSize(22).fontColor(ANDROID_DIALOG_TEXT)
-      Text(`本局到达第 ${androidLevel(this.level)} 关`)
-        .width('100%').fontFamily('RobotoMedium').fontSize(22).fontColor(ANDROID_DIALOG_BLUE)
-        .margin({ top: 20 })
-      Text(`最佳到达第 ${androidLevel(this.best)} 关`)
-        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-        .lineHeight(20).margin({ top: 6 })
-      AndroidDialogAction({ labelText: '再玩一次', onAction: () => this.onReplay() }).margin({ top: 24 })
+      dialogBadge($r('sys.symbol.flag_checkered'), '#FFFFFF', $r('app.color.brand'))
+      Text(this.title).margin({ top: 16 }).fontSize(22).fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
+      Column() {
+        Text('本局到达').fontSize(13).fontColor($r('app.color.text_secondary'))
+        Row({ space: 4 }) {
+          Text('第').fontSize(16).fontColor($r('app.color.brand'))
+          Text(`${androidLevel(this.level)}`).fontSize(48).fontWeight(FontWeight.Bold).fontColor($r('app.color.brand'))
+          Text('关').fontSize(16).fontColor($r('app.color.brand'))
+        }.alignItems(VerticalAlign.Bottom).margin({ top: 2 })
+        Text(`最佳到达第 ${androidLevel(this.best)} 关`)
+          .fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 4 })
+      }.width('100%').margin({ top: 16 }).padding({ top: 14, bottom: 14 }).borderRadius(20)
+        .backgroundColor($r('app.color.page_background'))
+        .accessibilityGroup(true)
+        .accessibilityText(`本局到达第 ${androidLevel(this.level)} 关，最佳到达第 ${androidLevel(this.best)} 关`)
+      AndroidDialogAction({ labelText: '再玩一次', onAction: () => this.onReplay() }).margin({ top: 20 })
       AndroidDialogAction({ labelText: '返回游戏列表', actionKind: 'secondary', onAction: () => this.onHome() })
         .margin({ top: 10 })
-      Text('试试其他游戏').width('100%').fontFamily('RobotoLight').fontSize(15)
-        .fontColor(ANDROID_DIALOG_BODY).lineHeight(20).margin({ top: 24 })
-      Button({ type: ButtonType.Normal }) {
-        // Android timeout uses FIT_CENTER here (unlike the home CENTER_INSIDE).
+      Text('试试其他游戏').width('100%').fontSize(13)
+        .fontColor($r('app.color.text_secondary')).margin({ top: 20 })
+      Row({ space: 12 }) {
         Image(media(androidGame(this.recommendedIndex()).thumbnail))
-          .width('100%').height('100%').objectFit(ImageFit.Contain).draggable(false)
-      }.width('100%').height(112).padding(8).margin({ top: 8 })
-        .backgroundColor('#FFFFFF').border({ width: 1, color: ANDROID_DIALOG_BORDER, radius: 12 })
-        .borderRadius(12).clip(true)
+          .width(76).height(58).padding(4).borderRadius(12).backgroundColor($r('app.color.thumb_background'))
+          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+        Column({ space: 4 }) {
+          Text(androidGame(this.recommendedIndex()).name).fontSize(16).fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary')).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(androidGame(this.recommendedIndex()).category).fontSize(12)
+            .fontColor(androidGame(this.recommendedIndex()).color)
+        }.layoutWeight(1).alignItems(HorizontalAlign.Start)
+        SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(18).fontColor([$r('app.color.text_tertiary')])
+      }.width('100%').padding(8).margin({ top: 8 }).borderRadius(18)
+        .border({ width: 1, color: $r('app.color.divider') })
+        .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.97 })
         .onClick(() => this.onRecommend(this.recommendedIndex()))
+        .accessibilityGroup(true)
         .accessibilityText(`试试其他游戏，${androidGame(this.recommendedIndex()).name}`)
-      Text(androidGame(this.recommendedIndex()).name)
-        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-        .lineHeight(20).textAlign(TextAlign.Center).margin({ top: 6 })
-    }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
+    }.width('100%').padding({ left: 24, right: 24, top: 28, bottom: 24 })
   }
 
   build() {
@@ -565,14 +521,16 @@ export struct AndroidFailure {
   @Builder
   private FailureContent() {
     Column() {
-      Text('再试一次？').width('100%').fontFamily('RobotoMedium').fontSize(22).fontColor(ANDROID_DIALOG_TEXT)
+      dialogBadge($r('sys.symbol.heart_fill'), $r('app.color.danger'), $r('app.color.danger_soft'))
+      Text('再试一次？').margin({ top: 16 }).fontSize(22).fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
       Text('请选择接下来的操作，无需倒计时内做决定。')
-        .width('100%').fontFamily('RobotoRegular').fontSize(15).fontColor(ANDROID_DIALOG_BODY)
-        .lineHeight(20).margin({ top: 8 })
-      AndroidDialogAction({ labelText: '重新开始本局', onAction: () => this.onRestart() }).margin({ top: 20 })
+        .width('100%').textAlign(TextAlign.Center).margin({ top: 8 })
+        .fontSize(14).fontColor($r('app.color.text_secondary')).lineHeight(20)
+      AndroidDialogAction({ labelText: '重新开始本局', onAction: () => this.onRestart() }).margin({ top: 24 })
       AndroidDialogAction({ labelText: '结束本局并查看成绩', actionKind: 'danger', onAction: () => this.onEnd() })
         .margin({ top: 8 })
-    }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
+    }.width('100%').padding({ left: 24, right: 24, top: 28, bottom: 16 })
   }
 
   build() {

@@ -5,7 +5,6 @@
       {
         "name": "default",
         "runtimeOS": "HarmonyOS",
-        "compileSdkVersion": "6.1.1(24)",
         "compatibleSdkVersion": "5.1.1(19)",
         "targetSdkVersion": "6.1.1(24)",
         "buildOption": {

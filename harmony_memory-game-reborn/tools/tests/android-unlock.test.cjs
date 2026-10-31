@@ -85,9 +85,9 @@ test('locked card price and pyramid level exception match Android; purchased row
     assert.doesNotMatch(home.rowDescription(game, index), /未解锁|解锁价格/);
     home.unlockedIds = [];
   });
-  assert.match(source, /backgroundColor\('#CC333333'\)/);
-  assert.match(source, /Image\(media\('ic_lock'\)\)\.width\(48\)\.height\(48\)/);
-  assert.match(source, /fillColor\('#FFFFFF'\)/);
+  assert.match(source, /if \(this\.locked\(game\)\) \{[\s\S]*?sys\.symbol\.lock_fill/);
+  assert.match(source, /if \(this\.priced\(game\)\) \{\s*Image\(media\('ic_coin'\)\)[\s\S]*?Text\(`\$\{unlockCost\(game\.id\)\}`\)/);
+  assert.match(source, /Text\('免费解锁'\)/);
   assert.match(source, /Image\(media\('ic_coin'\)\)/);
 });
 

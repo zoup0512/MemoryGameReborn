@@ -1,8 +1,22 @@
 {
   "color": [
-    {
-      "name": "start_background",
-      "value": "#F4F6FC"
-    }
+    { "name": "start_background", "value": "#EEF4F8" },
+    { "name": "page_background", "value": "#EEF4F8" },
+    { "name": "card_background", "value": "#FFFFFF" },
+    { "name": "thumb_background", "value": "#E5F6FE" },
+    { "name": "text_primary", "value": "#13171C" },
+    { "name": "text_secondary", "value": "#5F6B7A" },
+    { "name": "text_tertiary", "value": "#8A95A3" },
+    { "name": "brand", "value": "#0277BD" },
+    { "name": "brand_soft", "value": "#DDEFFA" },
+    { "name": "on_brand", "value": "#FFFFFF" },
+    { "name": "danger", "value": "#C62F45" },
+    { "name": "danger_soft", "value": "#FDECEE" },
+    { "name": "divider", "value": "#E3E8EE" },
+    { "name": "scrim", "value": "#66000000" },
+    { "name": "chip_background", "value": "#FFFFFF" },
+    { "name": "coin_background", "value": "#FFF3D1" },
+    { "name": "coin_text", "value": "#7A4F00" },
+    { "name": "card_shadow", "value": "#140B2A45" }
   ]
 }
