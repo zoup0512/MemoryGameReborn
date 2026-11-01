@@ -29,10 +29,14 @@ function evaluate(code, imports) {
   return exports;
 }
 const economy = evaluate(compile('core/Economy'), {});
+const stages = evaluate(compile('core/StageCatalog'), {});
 const storeCode = compile('services/ProgressStore');
 const { requiresUnlock, unlockCost, levelCoins, scoreCoins248 } = economy;
+// Every game is discovered on the level map or bought early. Former Android
+// paid games keep their price; former free games cost 100.
 const prices = new Map([[8, 150], [9, 300], [10, 400], [12, 500], [14, 600],
   [17, 1000], [18, 0], [19, 600], [22, 300], [23, 300]]);
+const priceOf = id => (prices.has(id) ? prices.get(id) : 100);
 const plain = value => JSON.parse(JSON.stringify(value));
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 function fixture(initial) {
@@ -55,7 +59,8 @@ function fixture(initial) {
       }
     };
   } };
-  const { ProgressStore } = evaluate(storeCode, { '@kit.ArkData': { preferences }, '@kit.AbilityKit': {}, '../core/Economy': economy });
+  const { ProgressStore } = evaluate(storeCode, { '@kit.ArkData': { preferences }, '@kit.AbilityKit': {},
+    '../core/Economy': economy, '../core/StageCatalog': stages });
   return { state, disk, v1, store: new ProgressStore(), make: () => new ProgressStore(),
     saved: () => JSON.parse(disk.get(namespace)), cached: () => JSON.parse(cache.get(namespace)) };
 }
@@ -67,8 +72,8 @@ async function fresh(amount = 0) {
 
 test('all 23 Harmony ids have exactly the approved unlock requirements and costs', () => {
   for (let id = 1; id <= 23; id++) {
-    assert.equal(requiresUnlock(id), prices.has(id), 'require ' + id);
-    assert.equal(unlockCost(id), prices.get(id) || 0, 'cost ' + id);
+    assert.equal(requiresUnlock(id), true, 'require ' + id);
+    assert.equal(unlockCost(id), priceOf(id), 'cost ' + id);
   }
   assert.equal(requiresUnlock(18), true); assert.equal(unlockCost(18), 0);
   for (const id of [0, -1, 24, 8.5, NaN, Infinity]) {
@@ -107,14 +112,14 @@ test('248 cumulative rewards and skipped-score threshold differences are constan
   for (const level of [1, 4, 15, 3072]) assert.equal(levelCoins(17, level), 0);
 });
 
-test('fresh load immediately persists 60 in v2; v1 is neither read, migrated nor deleted', async () => {
+test('fresh load immediately persists 60 in v3; v1 is neither read, migrated nor deleted', async () => {
   const f = await fresh();
   assert.equal(f.store.ready(), true); assert.equal(f.store.coins(), 60); assert.equal(f.saved().coins, 60);
-  assert.equal(f.saved().version, 2); assert.equal(f.state.puts.length, 1);
+  assert.equal(f.saved().version, 3); assert.deepEqual(f.saved().stages, []); assert.equal(f.state.puts.length, 1);
   assert.deepEqual(f.state.opens, ['memory_training_v2']);
   assert.equal(f.disk.get('memory_training_v1'), f.v1);
-  const defaults = Array.from({ length: 23 }, (_, i) => i + 1).filter(id => !prices.has(id));
-  assert.deepEqual(plain(f.store.unlockedGames()), defaults);
+  // Only the first map stage is open, so only its game is discovered.
+  assert.deepEqual(plain(f.store.unlockedGames()), [stages.STAGES[0].gameId]);
   const copy = f.store.unlockedGames(); copy.push(8);
   assert.equal(f.store.isUnlocked(8), false);
   for (const id of [0, 24, 1.5, NaN]) assert.equal(f.store.isUnlocked(id), false);
@@ -167,7 +172,8 @@ test('concurrent duplicate purchases debit once; competing purchases recheck the
 
 test('all prices debit exactly their cost and owned games stay owned without repeated charge', async () => {
   const f = await fresh(10000); let remaining = 10060;
-  for (const [id, cost] of prices) {
+  for (let id = 2; id <= 23; id++) {
+    const cost = priceOf(id);
     assert.equal(await f.store.purchase(id), 'purchased'); remaining -= cost;
     assert.equal(f.store.coins(), remaining); assert.equal(await f.store.purchase(id), 'owned');
   }
@@ -216,8 +222,11 @@ test('malformed or unsupported saves never reset an existing wallet', async () =
   const template = (await fresh()).saved();
   const invalid = ['not json', 'null', '42', '[]', '{}', { ...template, version: 1 },
     { ...template, coins: -1 }, { ...template, coins: 1.5 }, { ...template, coins: '60' },
-    { ...template, unlocked: [18, 18] }, { ...template, unlocked: [24] }, { ...template, unlocked: [1] },
-    { ...template, records: [null] }, { ...template, records: [{}] }, { ...template, pendingId: 24 }];
+    { ...template, unlocked: [18, 18] }, { ...template, unlocked: [24] }, { ...template, unlocked: [0] },
+    { ...template, records: [null] }, { ...template, records: [{}] }, { ...template, pendingId: 24 },
+    { ...template, version: 4 }, { ...template, stages: null }, { ...template, stages: [4] },
+    { ...template, stages: [1.5] }, { ...template, stages: [-1] },
+    { ...template, stages: new Array(stages.STAGES.length + 1).fill(0) }];
   for (const initial of invalid) {
     const f = fixture(initial); const original = f.disk.get('memory_training_v2'); await f.store.load({});
     assert.equal(f.store.ready(), false, JSON.stringify(initial)); assert.ok(f.store.error);

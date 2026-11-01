@@ -40,6 +40,7 @@ const quick = load('core/QuickGames', { './Contract': contract }, { Math: determ
 const memory = load('core/MemoryGames', { './Contract': contract }, { Math: deterministicMath });
 const spatial = load('core/SpatialGames', { './Contract': contract }, { Math: deterministicMath });
 const economy = load('core/Economy', {});
+const stageCatalog = load('core/StageCatalog', {});
 const indexPath = path.join(ets, 'pages/Index.ets');
 const indexSource = fs.readFileSync(indexPath, 'utf8');
 const boundary = indexSource.indexOf('@Builder');
@@ -89,6 +90,16 @@ function harness(game, startingLevel = 1) {
     finish(...args) { calls.finish.push(args); }
     checkpoint(...args) { calls.checkpoint.push(args); }
     setSound() {}
+    stages = [];
+    stageStars(i) { return this.stages[i] || 0; }
+    stageOpen(i) { return i === 0 || this.stageStars(i - 1) >= 1; }
+    stageStarList() { return stageCatalog.STAGES.map((_s, i) => this.stageStars(i)); }
+    currentStage() { const i = stageCatalog.STAGES.findIndex((_s, k) => this.stageOpen(k) && !this.stageStars(k)); return i < 0 ? stageCatalog.STAGES.length - 1 : i; }
+    completeStage(i, stars) {
+      const gain = Math.max(0, stars - this.stageStars(i));
+      if (gain > 0) { this.stages[i] = stars; this.balance += gain * economy.STAR_COINS; }
+      return gain * economy.STAR_COINS;
+    }
   }
   class Sound {
     load() {}
@@ -115,6 +126,7 @@ function harness(game, startingLevel = 1) {
   const dependencies = {
     '@kit.AbilityKit': { common: {} }, '../core/GameCatalog': { GAMES: catalog, media: value => value },
     '../core/Contract': contract, '../core/GameEngine': engine, '../core/MemoryGames': memory, '../core/Economy': economy,
+    '../core/StageCatalog': stageCatalog,
     '../services/ProgressStore': { ProgressStore: Store }, '../services/SoundService': { SoundService: Sound },
     '../components/GameTile': {}, '../components/SpatialBoard': {}, '../components/MemoryBoard': {},
     '../components/QuickBoard': {}, '../core/QuickGames': quick
@@ -358,10 +370,12 @@ test('failure restart/end execute actual UI callbacks, save once, and reset only
   }
 });
 
-test('bottom tabs: back on growth goes to training then exits; results return to the originating tab', () => {
+test('bottom tabs: back on growth/training goes to the map then exits; results return to the originating tab', () => {
   const { app } = harness(10);
-  app.screen = 'growth'; app.tab = 'growth';
-  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'home'); assert.equal(app.tab, 'home');
+  for (const tab of ['growth', 'training']) {
+    app.screen = tab; app.tab = tab;
+    assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'map'); assert.equal(app.tab, 'map');
+  }
   assert.equal(app.onBackPress(), false);
   app.tab = 'growth'; app.start(); app.finish('done');
   assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'growth');
@@ -375,10 +389,10 @@ test('feedback is idempotent; finalization/disappear/back never save the same se
   assert.equal(app.lives, 1);
   app.finish('done'); app.finish('done again'); app.saveSession(); app.aboutToDisappear();
   assert.equal(h.calls.finish.length, 1);
-  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'home');
+  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'map');
   app.saveSession(); assert.equal(h.calls.finish.length, 1);
   app.start(); app.finish('new session'); assert.equal(h.calls.finish.length, 2);
-  const home = harness(10); home.app.screen = 'home'; home.app.saveSession();
+  const home = harness(10); home.app.screen = 'map'; home.app.saveSession();
   assert.equal(home.calls.finish.length, 0);
 });
 
@@ -397,7 +411,7 @@ test('background checkpoints without finalizing, freezes session, and foreground
   assert.equal(h.calls.checkpoint.length, 2); assert.equal(h.calls.finish.length, 0);
   app.screen = 'game'; app.finish('done'); app.activeChanged();
   assert.equal(h.calls.checkpoint.length, 2); assert.equal(h.calls.finish.length, 1);
-  const home = harness(10); home.app.screen = 'home'; home.app.appActive = false; home.app.activeChanged();
+  const home = harness(10); home.app.screen = 'map'; home.app.appActive = false; home.app.activeChanged();
   assert.equal(home.calls.checkpoint.length, 0);
 });
 

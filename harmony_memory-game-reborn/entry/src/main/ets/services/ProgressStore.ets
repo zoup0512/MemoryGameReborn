@@ -1,6 +1,7 @@
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import { requiresUnlock, unlockCost } from '../core/Economy';
+import { requiresUnlock, unlockCost, STAR_COINS } from '../core/Economy';
+import { STAGES, StageInfo, introStageOf, validStage } from '../core/StageCatalog';
 
 export class GameRecord {
   id: number = 0;
@@ -12,7 +13,7 @@ export class GameRecord {
 }
 
 class SaveData {
-  version: number = 2;
+  version: number = 3;
   sound: boolean = true;
   records: GameRecord[] = [];
   pendingId: number = 0;
@@ -20,6 +21,17 @@ class SaveData {
   pendingScore: number = 0;
   coins: number = 60;
   unlocked: number[] = [];
+  // Best stars (0..3) per STAGES index; shorter than STAGES means 0 for the rest.
+  stages: number[] = [];
+}
+
+// Pre-release v2 saves only lack stage stars. Not a general migration path.
+function upgradeSave(saved: SaveData): SaveData {
+  if (saved !== null && typeof saved === 'object' && saved.version === 2 && !Array.isArray(saved.stages)) {
+    saved.version = 3;
+    saved.stages = [];
+  }
+  return saved;
 }
 
 function validId(id: number): boolean {
@@ -30,9 +42,10 @@ function nonnegative(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
-// A malformed v2 save must not silently become a fresh wallet.
+// A malformed save must not silently become a fresh wallet.
 function validSave(saved: SaveData): boolean {
-  if (saved === null || saved.version !== 2 || typeof saved.sound !== 'boolean' ||
+  if (saved === null || saved.version !== 3 || typeof saved.sound !== 'boolean' ||
+    !Array.isArray(saved.stages) || saved.stages.length > STAGES.length ||
     !nonnegative(saved.coins) || !Array.isArray(saved.unlocked) ||
     !Array.isArray(saved.records) || !nonnegative(saved.pendingId) || saved.pendingId > 23 ||
     !nonnegative(saved.pendingScore) || !Number.isSafeInteger(saved.pendingLevel) ||
@@ -41,6 +54,9 @@ function validSave(saved: SaveData): boolean {
   for (const id of saved.unlocked) {
     if (!requiresUnlock(id) || owned.indexOf(id) >= 0) { return false; }
     owned.push(id);
+  }
+  for (const stars of saved.stages) {
+    if (!Number.isInteger(stars) || stars < 0 || stars > 3) { return false; }
   }
   const ids: number[] = [];
   for (const record of saved.records) {
@@ -89,7 +105,7 @@ export class ProgressStore {
       this.database = await preferences.getPreferences(context, { name: 'memory_training_v2' });
       const raw = await this.database.get('progress', '') as string;
       if (typeof raw !== 'string') { throw new Error('Invalid progress value'); }
-      const saved: SaveData = raw.length === 0 ? new SaveData() : JSON.parse(raw) as SaveData;
+      const saved: SaveData = raw.length === 0 ? new SaveData() : upgradeSave(JSON.parse(raw) as SaveData);
       if (!validSave(saved)) { throw new Error('Invalid progress data'); }
       this.data = saved;
       this.loaded = true;
@@ -115,8 +131,58 @@ export class ProgressStore {
 
   coins(): number { return this.data.coins; }
 
+  // Playable: discovered on the map, or bought early with coins.
   isUnlocked(id: number): boolean {
-    return validId(id) && (!requiresUnlock(id) || this.data.unlocked.indexOf(id) >= 0);
+    return validId(id) && (this.discovered(id) || this.data.unlocked.indexOf(id) >= 0);
+  }
+
+  // A game is discovered once its intro stage is open on the map.
+  discovered(id: number): boolean {
+    return validId(id) && this.stageOpen(introStageOf(id));
+  }
+
+  discoveredGames(): number[] {
+    const result: number[] = [];
+    for (let id = 1; id <= 23; id++) {
+      if (this.discovered(id)) { result.push(id); }
+    }
+    return result;
+  }
+
+  stageStars(index: number): number {
+    return validStage(index) && index < this.data.stages.length ? this.data.stages[index] : 0;
+  }
+
+  stageStarList(): number[] {
+    return STAGES.map((_stage: StageInfo, index: number) => this.stageStars(index));
+  }
+
+  stageOpen(index: number): boolean {
+    return validStage(index) && (index === 0 || this.stageStars(index - 1) >= 1);
+  }
+
+  // First open stage without a star; the last stage once everything is cleared.
+  currentStage(): number {
+    for (let i = 0; i < STAGES.length; i++) {
+      if (this.stageOpen(i) && this.stageStars(i) === 0) { return i; }
+    }
+    return STAGES.length - 1;
+  }
+
+  // Keeps the best stars and credits STAR_COINS per new star in the same save.
+  // Returns the coins credited; 0 when nothing improved or storage is unusable.
+  completeStage(index: number, stars: number): number {
+    if (!this.ready() || !validStage(index) || !this.stageOpen(index) || !Number.isInteger(stars)) { return 0; }
+    const earned = Math.max(0, Math.min(3, stars));
+    const previous = this.stageStars(index);
+    if (earned <= previous) { return 0; }
+    const coins = (earned - previous) * STAR_COINS;
+    if (!Number.isSafeInteger(this.data.coins + coins)) { return 0; }
+    while (this.data.stages.length <= index) { this.data.stages.push(0); }
+    this.data.stages[index] = earned;
+    this.data.coins += coins;
+    this.flush();
+    return coins;
   }
 
   unlockedGames(): number[] {

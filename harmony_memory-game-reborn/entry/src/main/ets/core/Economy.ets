@@ -1,13 +1,12 @@
 // Harmony game ids are Android ids + 1. A zero price does not imply ownership.
+// Every game starts hidden: the level map discovers it for free, or coins
+// unlock it early for free training.
 export function requiresUnlock(id: number): boolean {
-  switch (id) {
-    case 8: case 9: case 10: case 12: case 14:
-    case 17: case 18: case 19: case 22: case 23: return true;
-    default: return false;
-  }
+  return Number.isInteger(id) && id >= 1 && id <= 23;
 }
 
 export function unlockCost(id: number): number {
+  if (!requiresUnlock(id)) { return 0; }
   switch (id) {
     case 8: return 150;
     case 9: case 22: case 23: return 300;
@@ -15,9 +14,13 @@ export function unlockCost(id: number): number {
     case 12: return 500;
     case 14: case 19: return 600;
     case 17: return 1000;
-    default: return 0;
+    case 18: return 0;
+    default: return 100;
   }
 }
+
+// Paid once for every star above a stage's previous best.
+export const STAR_COINS: number = 10;
 
 // Call only for a successful level. 248 uses the difference of scoreCoins248
 // before/after a move, never a level reward. Schulte rewards every third number.

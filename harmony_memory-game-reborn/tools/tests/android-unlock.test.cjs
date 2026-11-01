@@ -28,6 +28,7 @@ function evaluate(code, dependencies = {}) {
 }
 const catalog = evaluate(fs.readFileSync(path.join(ets, 'core/GameCatalog.ets'), 'utf8'));
 const economy = evaluate(fs.readFileSync(path.join(ets, 'core/Economy.ets'), 'utf8'));
+const stages = evaluate(fs.readFileSync(path.join(ets, 'core/StageCatalog.ets'), 'utf8'));
 const startHome = source.indexOf('export struct AndroidHome');
 const startUnlock = source.indexOf('export struct AndroidUnlock');
 function method(start, name) {
@@ -43,9 +44,17 @@ function method(start, name) {
   assert.equal(depth, 0, name);
   return source.slice(at, end);
 }
+function helper(name) {
+  const at = source.indexOf(`function ${name}(`);
+  assert.notEqual(at, -1, name);
+  const end = /\r?\n\}\r?\n/g; end.lastIndex = at;
+  const match = end.exec(source);
+  assert.ok(match, name);
+  return source.slice(at, match.index + match[0].length);
+}
 const imports = `import { GAMES } from './catalog'; import { requiresUnlock, unlockCost } from './economy';
-function androidGame(index:number) { return GAMES[Math.max(0, Math.min(GAMES.length - 1, Math.floor(index)))]; }
-function androidLevel(value:number) { return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0; }`;
+import { STAGES, introStageOf } from './stages';
+${['androidGame', 'androidLevel', 'discoveryChapter'].map(helper).join('\n')}`;
 const logic = evaluate(imports + `
 export class Home {
   records:number[]=[]; unlockedIds:number[]=[];
@@ -54,7 +63,7 @@ export class Home {
 export class Unlock {
   gameIndex=0; balance=0; busy=false; errorText=''; confirmPending=false; onConfirm=()=>{};
   ${['resetConfirmation', 'price', 'canConfirm', 'confirm'].map(name => method(startUnlock, name)).join('\n')}
-}`, { './catalog': catalog, './economy': economy });
+}`, { './catalog': catalog, './economy': economy, './stages': stages });
 
 test('home defaults fail closed for locked games, uses IDs rather than array indexes', () => {
   assert.match(source, /@Prop coins: number = 0/);
@@ -69,23 +78,28 @@ test('home defaults fail closed for locked games, uses IDs rather than array ind
   assert.match(source, /onClick\(\(\) => this\.onSelect\(index\)\)/);
 });
 
-test('locked card price and pyramid level exception match Android; purchased rows keep levels', () => {
+test('undiscovered cards hide the game and show chapter and price; unlocked rows keep levels', () => {
   const home = new logic.Home();
   catalog.GAMES.forEach((game, index) => {
     home.records[index] = 7;
     const locked = economy.requiresUnlock(game.id);
     assert.equal(home.priced(game), locked && game.id !== 18);
     const description = home.rowDescription(game, index);
-    if (locked) assert.match(description, /未解锁/);
+    const chapter = stages.STAGES[stages.introStageOf(game.id)].chapter + 1;
+    if (locked) {
+      assert.match(description, /未解锁/);
+      assert.match(description, new RegExp(`第 ${chapter} 章发现`));
+      assert.ok(!description.includes(game.name), 'mystery card must not reveal ' + game.name);
+    }
     if (locked && game.id !== 18) assert.match(description, new RegExp(`解锁价格 ${economy.unlockCost(game.id)} 金币`));
-    else assert.match(description, /等级 7/);
+    else assert.match(description, /免费/);
     home.unlockedIds = [game.id];
     assert.equal(home.priced(game), false);
     assert.match(home.rowDescription(game, index), /等级 7/);
     assert.doesNotMatch(home.rowDescription(game, index), /未解锁|解锁价格/);
     home.unlockedIds = [];
   });
-  assert.match(source, /if \(this\.locked\(game\)\) \{[\s\S]*?sys\.symbol\.lock_fill/);
+  assert.match(source, /if \(this\.locked\(game\)\) \{\s*Column\(\{ space: 8 \}\) \{\s*Text\('\?'\)/);
   assert.match(source, /if \(this\.priced\(game\)\) \{\s*Image\(media\('ic_coin'\)\)[\s\S]*?Text\(`\$\{unlockCost\(game\.id\)\}`\)/);
   assert.match(source, /Text\('免费解锁'\)/);
   assert.match(source, /Image\(media\('ic_coin'\)\)/);
@@ -107,8 +121,9 @@ test('confirmation requires enough balance and a purchasable game, blocks repeat
   unlock.balance = cost; unlock.confirm(); assert.equal(confirmations, 2);
   unlock.busy = true; unlock.resetConfirmation(); assert.equal(unlock.confirmPending, true);
   unlock.busy = false; unlock.resetConfirmation(); assert.equal(unlock.confirmPending, false);
-  unlock.gameIndex = catalog.GAMES.findIndex(game => !economy.requiresUnlock(game.id));
-  unlock.balance = 100000; assert.equal(unlock.canConfirm(), false);
+  // Every game can be bought early; the store answers 'owned' for discovered ones.
+  unlock.balance = 100000;
+  catalog.GAMES.forEach((_game, index) => { unlock.gameIndex = index; assert.equal(unlock.canConfirm(), true); });
 });
 
 test('secret pyramid remains locked in the list yet can be unlocked at zero balance for zero coins', () => {
@@ -117,7 +132,7 @@ test('secret pyramid remains locked in the list yet can be unlocked at zero bala
   const pyramid = catalog.GAMES[index];
   assert.equal(home.locked(pyramid), true);
   assert.equal(home.priced(pyramid), false);
-  assert.match(home.rowDescription(pyramid, index), /等级/);
+  assert.match(home.rowDescription(pyramid, index), /可免费提前解锁/);
   assert.doesNotMatch(home.rowDescription(pyramid, index), /金币/);
   const unlock = new logic.Unlock(); unlock.gameIndex = index; unlock.balance = 0;
   assert.equal(unlock.price(), 0);
@@ -128,9 +143,10 @@ test('secret pyramid remains locked in the list yet can be unlocked at zero bala
 
 test('unlock has Chinese price, current balance, exact shortfall and error copy; cancellation only disabled while busy', () => {
   const unlock = source.slice(startUnlock, source.indexOf('export struct AndroidPause'));
-  assert.match(unlock, /Text\('解锁游戏'\)/);
+  assert.match(unlock, /Text\('提前解锁'\)/);
   for (const text of ['解锁价格：${this.price()} 金币', '当前余额：${androidLevel(this.balance)} 金币',
-    '还差 ${this.price() - androidLevel(this.balance)} 金币', '可游玩已解锁的游戏来获得金币。', '解锁 · ${this.price()} 金币']) {
+    '还差 ${this.price() - androidLevel(this.balance)} 金币', '可通过闯关和训练获得金币。', '解锁 · ${this.price()} 金币',
+    '也可以在闯关第 ${discoveryChapter(androidGame(this.gameIndex))} 章免费发现它']) {
     assert.ok(unlock.includes(text), text);
   }
   assert.match(unlock, /Text\(this\.errorText\)/);
@@ -149,7 +165,8 @@ test('official SDK parses and semantically checks AndroidScreens, including unlo
   if (!ark.ArkTSLinter_1_1 || !fs.existsSync(path.join(loader, 'declarations'))) {
     t.skip('Official SDK declarations/linter unavailable'); return;
   }
-  const inputs = ['core/GameCatalog.ets', 'core/Economy.ets', 'components/AndroidScreens.ets'].map(name => path.join(ets, name));
+  const inputs = ['core/GameCatalog.ets', 'core/Economy.ets', 'core/StageCatalog.ets', 'components/AndroidScreens.ets',
+    'components/StageMap.ets'].map(name => path.join(ets, name));
   const declarations = fs.readdirSync(path.join(loader, 'declarations')).filter(name => name.endsWith('.d.ts'))
     .map(name => path.join(loader, 'declarations', name));
   const config = ark.readConfigFile(path.join(loader, 'tsconfig.json'), ark.sys.readFile).config;

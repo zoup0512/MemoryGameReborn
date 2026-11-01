@@ -10,8 +10,11 @@ import { SpatialBoard } from '../components/SpatialBoard';
 import { MemoryBoard } from '../components/MemoryBoard';
 import { QuickBoard } from '../components/QuickBoard';
 import { revealQuickPuzzle } from '../core/QuickGames';
-import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailure, AndroidUnlock } from '../components/AndroidScreens';
+import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailure, AndroidUnlock,
+  StageDetail, StageResult, AndroidDiscovery } from '../components/AndroidScreens';
+import { StageMap } from '../components/StageMap';
 import { levelCoins, scoreCoins248 } from '../core/Economy';
+import { STAGES, StageInfo, stageScore, starsFor, stageUnit, validStage } from '../core/StageCatalog';
 import { ReadyIndicator } from '../components/ReadyIndicator';
 import { AndroidChoiceBoard } from '../components/AndroidChoiceBoard';
 import { AbilityGrowth } from '../components/AbilityScreen';
@@ -19,13 +22,16 @@ import { GameStat } from '../core/BrainProfile';
 
 // Game surfaces keep the Android light palette in both color modes.
 const GAME_INK: string = '#13171C';
+// Bottom tab order; the screen value of each tab.
+const TAB_SCREENS: string[] = ['map', 'training', 'growth'];
 
 @Entry
 @Component
 struct Index {
   @StorageLink('appActive') @Watch('activeChanged') appActive: boolean = true;
   @StorageLink('darkMode') @Watch('syncSystemBar') darkMode: boolean = false;
-  @State @Watch('syncSystemBar') screen: string = 'home';
+  // 'map' | 'training' | 'growth' tabs, then 'tutorial' | 'game' | 'result' | 'failure'.
+  @State @Watch('syncSystemBar') screen: string = 'map';
   @State gameIndex: number = 0;
   @State puzzle: Puzzle = new Puzzle();
   @State phase: string = 'ready';
@@ -53,6 +59,21 @@ struct Index {
   @State purchaseError: string = '';
   @State storageError: string = '';
   @State retryingStorage: boolean = false;
+  // Level map. stageIndex -1 means free training (endless rules).
+  @State stageIndex: number = -1;
+  @State stageDetail: number = -1;
+  @State stageStars: number[] = [];
+  @State currentStage: number = 0;
+  @State stageEarned: number = 0;
+  @State stageBest: number = 0;
+  @State stageValue: number = 0;
+  @State stageCoins: number = 0;
+  @State discoveryIndex: number = -1;
+  private stageSettled: boolean = false;
+  // GAMES index revealed by the last clear, shown when the player returns to the map.
+  private pendingDiscovery: number = -1;
+  // Stage whose detail opens after the discovery dialog closes.
+  private pendingStage: number = -1;
   private store: ProgressStore = new ProgressStore();
   private sound: SoundService = new SoundService();
   private timer: number = -1;
@@ -62,8 +83,8 @@ struct Index {
   private feedbackCorrect: boolean = false;
   private savedSession: boolean = false;
   private alive: boolean = false;
-  // Bottom tab ('home' | 'growth') to return to after a tutorial or game.
-  private tab: string = 'home';
+  // Bottom tab ('map' | 'training' | 'growth') to return to after a tutorial or game.
+  private tab: string = 'map';
 
   async aboutToAppear(): Promise<void> {
     this.alive = true;
@@ -92,15 +113,17 @@ struct Index {
 
   onBackPress(): boolean {
     if (this.unlockIndex >= 0) { this.cancelUnlock(); return true; }
+    if (this.discoveryIndex >= 0) { this.closeDiscovery(); return true; }
+    if (this.stageDetail >= 0) { this.stageDetail = -1; return true; }
     if (this.screen === 'game') { this.pause(); return true; }
     if (this.screen === 'tutorial') {
       if (this.tutorialFromPause) { this.screen = 'game'; }
-      else { this.screen = this.tab; }
+      else { this.leaveSession(); }
       return true;
     }
-    if (this.screen === 'result') { this.screen = this.tab; return true; }
-    // Back on the growth tab first returns to the training tab, then exits.
-    if (this.screen === 'growth') { this.screen = 'home'; this.tab = 'home'; return true; }
+    if (this.screen === 'result') { this.leaveSession(); return true; }
+    // Back on the training or growth tab first returns to the map, then exits.
+    if (this.screen === 'growth' || this.screen === 'training') { this.screen = 'map'; this.tab = 'map'; return true; }
     if (this.screen === 'failure') { return true; }
     return false;
   }
@@ -121,6 +144,8 @@ struct Index {
     this.loaded = this.store.ready();
     this.coins = this.store.coins();
     this.unlockedIds = this.store.unlockedGames();
+    this.stageStars = this.store.stageStarList();
+    this.currentStage = this.store.currentStage();
     this.storageError = this.store.error;
   }
 
@@ -170,6 +195,7 @@ struct Index {
     }
   }
 
+  // Free training entry (training tab, growth practice, result recommendation).
   private selectGame(index: number): void {
     if (!this.loaded || this.purchasing || this.unlockIndex >= 0 || index < 0 || index >= GAMES.length || !Number.isInteger(index)) { return; }
     if (!this.store.isUnlocked(GAMES[index].id)) {
@@ -177,6 +203,93 @@ struct Index {
       this.purchaseError = '';
       return;
     }
+    this.stageIndex = -1;
+    this.enterGame(index);
+  }
+
+  private openStage(index: number): void {
+    if (!this.loaded || this.purchasing || this.unlockIndex >= 0 || !validStage(index) || !this.store.stageOpen(index)) { return; }
+    this.stageDetail = index;
+  }
+
+  // An open stage implies its game is discovered, so no purchase is involved.
+  private playStage(index: number): void {
+    if (!this.loaded || this.purchasing || this.unlockIndex >= 0 || !validStage(index) || !this.store.stageOpen(index)) { return; }
+    const gameIndex = GAMES.findIndex((game: GameInfo) => game.id === STAGES[index].gameId);
+    if (gameIndex < 0) { return; }
+    this.stageDetail = -1;
+    this.stageIndex = index;
+    this.tab = 'map';
+    this.enterGame(gameIndex);
+  }
+
+  private stage(): StageInfo { return STAGES[validStage(this.stageIndex) ? this.stageIndex : 0]; }
+
+  private stageMode(): boolean { return validStage(this.stageIndex); }
+
+  private stageProgress(): number {
+    return stageScore(this.game().id, this.level, this.score, this.puzzle.answers.length);
+  }
+
+  private stageGoalReached(): boolean {
+    return this.stageMode() && this.screen === 'game' && this.stageProgress() >= this.stage().stars[2];
+  }
+
+  // Runs once per stage session, after the record was saved.
+  private settleStage(): void {
+    if (!this.stageMode() || this.stageSettled) { return; }
+    this.stageSettled = true;
+    const index = this.stageIndex;
+    const previous = this.store.stageStars(index);
+    this.stageValue = this.stageProgress();
+    this.stageEarned = starsFor(this.stage(), this.stageValue);
+    this.stageCoins = this.store.completeStage(index, this.stageEarned);
+    this.stageBest = Math.max(previous, this.stageEarned);
+    const next = index + 1;
+    if (previous === 0 && this.stageEarned > 0 && validStage(next) && STAGES[next].intro) {
+      this.pendingDiscovery = GAMES.findIndex((game: GameInfo) => game.id === STAGES[next].gameId);
+    }
+    this.refreshEconomy();
+  }
+
+  private hasNextStage(): boolean { return validStage(this.stageIndex + 1); }
+
+  private tabScreen(): boolean { return TAB_SCREENS.indexOf(this.screen) >= 0; }
+
+  // In-game badge, e.g. "1 星 · 6/9 级": progress toward the next unmet star.
+  private stageGoalText(): string {
+    const value = this.stageProgress();
+    const stars = starsFor(this.stage(), value);
+    const target = this.stage().stars[Math.min(2, stars)];
+    return `${stars} 星 · ${Math.min(value, target)}/${target} ${stageUnit(this.game().id)}`;
+  }
+
+  // Leaves a result or tutorial: stage sessions go back to the map.
+  private leaveSession(): void {
+    if (this.stageMode()) { this.toMap(false); }
+    else { this.screen = this.tab; }
+  }
+
+  private toMap(openNext: boolean): void {
+    const next = this.stageIndex + 1;
+    this.screen = 'map'; this.tab = 'map';
+    const target = openNext && validStage(next) && this.store.stageOpen(next) ? next : -1;
+    if (this.pendingDiscovery >= 0) {
+      this.discoveryIndex = this.pendingDiscovery;
+      this.pendingDiscovery = -1;
+      this.pendingStage = target;
+    } else if (target >= 0) {
+      this.stageDetail = target;
+    }
+  }
+
+  private closeDiscovery(): void {
+    this.discoveryIndex = -1;
+    if (this.pendingStage >= 0) { this.stageDetail = this.pendingStage; }
+    this.pendingStage = -1;
+  }
+
+  private enterGame(index: number): void {
     this.gameIndex = index;
     this.tutorialPage = 0;
     this.tutorialFromPause = false;
@@ -192,9 +305,12 @@ struct Index {
       return;
     }
     this.store.seenTutorial(this.game().id);
-    this.level = this.store.startingLevel(this.game().id, this.game().adaptive);
+    // Stage sessions always climb from level 1 so star targets mean the same for everyone.
+    this.level = this.stageMode() ? 1 : this.store.startingLevel(this.game().id, this.game().adaptive);
     this.score = 0; this.lives = 2; this.remaining = 0;
     this.savedSession = false;
+    this.stageSettled = false;
+    this.stageEarned = 0; this.stageValue = 0; this.stageCoins = 0;
     this.paused = false;
     this.screen = 'game';
     this.puzzle = createPuzzle(this.game().id, this.level, null);
@@ -255,7 +371,11 @@ struct Index {
     }
     if (this.phase === 'feedback') {
       if (this.phaseElapsed >= (this.game().id === 5 ? (this.feedbackCorrect ? 200 : 2000) : (this.feedbackCorrect ? 650 : 1400))) {
-        if (!this.feedbackCorrect && this.lives <= 0) { this.screen = 'failure'; }
+        if (!this.feedbackCorrect && this.lives <= 0) {
+          // A stage is judged by what was reached; there is nothing to restart into.
+          if (this.stageMode()) { this.finish('本局结束'); }
+          else { this.screen = 'failure'; }
+        }
         else { this.nextRound(this.feedbackCorrect); }
       }
       return;
@@ -286,6 +406,11 @@ struct Index {
     }
     const previous = this.puzzle;
     if (success) { this.level++; }
+    if (success && this.stageGoalReached()) {
+      this.store.reached(this.game().id, this.level);
+      this.finish('满星通关');
+      return;
+    }
     this.puzzle = createPuzzle(this.game().id, this.level, success || this.game().id === 16 ? previous : null);
     this.store.reached(this.game().id, this.level);
     this.recordVersion++;
@@ -316,11 +441,13 @@ struct Index {
       this.score += outcome.points;
       if (this.game().id === 17 && outcome.points > 0) {
         this.reward(scoreCoins248(this.score) - scoreCoins248(previousScore));
+        if (this.stageGoalReached()) { this.finish('满星通关'); return; }
       }
       if (this.game().id === 23) {
         if (this.puzzle.answers.length > previousAnswers) { this.reward(levelCoins(23, completedLevel)); }
         this.level = Math.min(48, this.puzzle.answers.length + 1);
         this.store.reached(this.game().id, this.level);
+        if (!outcome.complete && this.stageGoalReached()) { this.finish('满星通关'); return; }
       }
       if (outcome.complete) {
         if (this.game().id === 23) { this.finish('48 个数字全部找到，挑战成功'); }
@@ -365,8 +492,10 @@ struct Index {
     this.message = text;
     this.resultTitle = text.indexOf('时间') >= 0 ? '时间到' : '你完成了本局';
     this.saveSession();
+    this.settleStage();
     this.screen = 'result'; this.paused = false;
-    this.sound.play(this.lives <= 0 ? 'error' : 'win');
+    const failed = this.stageMode() ? this.stageEarned === 0 : this.lives <= 0;
+    this.sound.play(failed ? 'error' : 'win');
   }
 
   private pause(): void {
@@ -458,9 +587,16 @@ struct Index {
     Column() {
       this.Header()
       if (this.game().id === 17) { this.ProgressBar() }
-      Row() {
-        Text(this.game().id === 17 ? `得分 ${this.score}` : `第 ${this.level} 关`).fontSize(13).fontWeight(FontWeight.Medium)
+      Row({ space: 8 }) {
+        Text(this.game().id === 17 ? `得分 ${this.score}` : `第 ${this.level} 级`).fontSize(13).fontWeight(FontWeight.Medium)
           .fontColor('#0277BD').height(24).padding({ left: 12, right: 12 }).borderRadius(12).backgroundColor('#DDEFFA')
+        if (this.stageMode()) {
+          Row({ space: 4 }) {
+            SymbolGlyph($r('sys.symbol.star_fill')).fontSize(13).fontColor(['#FFB300'])
+            Text(this.stageGoalText()).fontSize(13).fontWeight(FontWeight.Medium).fontColor('#8D5A00')
+          }.height(24).padding({ left: 10, right: 12 }).borderRadius(12).backgroundColor('#FFF1CC')
+            .accessibilityGroup(true).accessibilityText(this.stageGoalText())
+        }
       }.width('100%').justifyContent(FlexAlign.Center).height(this.game().id === 17 ? 38 : 30)
       if (this.game().id !== 17 && this.game().id !== 19) { this.ProgressBar() }
       if (this.game().id === 17) {
@@ -523,7 +659,7 @@ struct Index {
     }.width('100%').height('100%')
   }
 
-  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial' || this.screen === 'growth'; }
+  private shellScreen(): boolean { return this.tabScreen() || this.screen === 'tutorial'; }
 
   @Builder
   private TabItem(target: string, symbol: Resource, label: string) {
@@ -573,12 +709,16 @@ struct Index {
           }.width('100%').padding({ left: 12, right: 12, top: 8 })
         }
         Column() {
-          if (this.screen === 'home' || this.screen === 'growth') {
-            Tabs({ barPosition: BarPosition.End, index: this.screen === 'growth' ? 1 : 0 }) {
+          if (this.tabScreen()) {
+            Tabs({ barPosition: BarPosition.End, index: TAB_SCREENS.indexOf(this.screen) }) {
+              TabContent() {
+                StageMap({ stars: this.stageStars, coins: this.coins, current: this.currentStage,
+                  onOpen: (index: number) => this.openStage(index) })
+              }.tabBar(this.TabItem('map', $r('sys.symbol.flag'), '闯关'))
               TabContent() {
                 AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame, coins: this.coins,
                   unlockedIds: this.unlockedIds, onSelect: (index: number) => this.selectGame(index) })
-              }.tabBar(this.TabItem('home', $r('sys.symbol.square_grid_2x2'), '训练'))
+              }.tabBar(this.TabItem('training', $r('sys.symbol.square_grid_2x2'), '训练'))
               TabContent() {
                 AbilityGrowth({ stats: this.brainStats(), unlockedIds: this.unlockedIds, darkMode: this.darkMode,
                   active: this.screen === 'growth', onPractice: (index: number) => this.selectGame(index) })
@@ -586,7 +726,10 @@ struct Index {
             }.width('100%').height('100%').barHeight(56).barMode(BarMode.Fixed).scrollable(false)
               .animationDuration(0).barBackgroundColor($r('app.color.card_background'))
               .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
-              .onChange((index: number) => { this.screen = index === 1 ? 'growth' : 'home'; this.tab = this.screen; })
+              .onChange((index: number) => {
+                this.screen = TAB_SCREENS[Math.max(0, Math.min(TAB_SCREENS.length - 1, index))];
+                this.tab = this.screen;
+              })
           } else if (this.screen === 'tutorial') {
             AndroidTutorial({ gameIndex: this.gameIndex, fromPause: this.tutorialFromPause,
               onExit: () => { this.screen = this.tutorialFromPause ? 'game' : this.tab; },
@@ -595,12 +738,16 @@ struct Index {
             Stack() {
               this.GameSurface()
               if (this.paused && this.screen === 'game') {
-                AndroidPause({ onResume: () => this.resume(),
+                AndroidPause({ homeLabel: this.stageMode() ? '返回地图' : '游戏列表', onResume: () => this.resume(),
                   onRestart: () => { this.saveSession(); this.start(); }, onTutorial: () => this.openTutorial(),
                   onHome: () => { this.saveSession(); this.paused = false; this.screen = this.tab; },
                   onEnd: () => this.finish('训练记录已保存') })
               }
-              if (this.screen === 'result') {
+              if (this.screen === 'result' && this.stageMode()) {
+                StageResult({ stageIndex: this.stageIndex, stars: this.stageEarned, best: this.stageBest,
+                  value: this.stageValue, coins: this.stageCoins, hasNext: this.hasNextStage(),
+                  onNext: () => this.toMap(true), onRetry: () => this.start(), onMap: () => this.toMap(false) })
+              } else if (this.screen === 'result') {
                 AndroidResult({ gameIndex: this.gameIndex, level: this.level, best: this.store.record(this.game().id).highest,
                   title: this.resultTitle, onReplay: () => this.start(), onHome: () => { this.screen = this.tab; },
                   onRecommend: (index: number) => this.selectGame(index) })
@@ -613,6 +760,13 @@ struct Index {
           }
         }.width('100%').layoutWeight(1)
       }.width('100%').height('100%')
+      if (this.stageDetail >= 0 && this.screen === 'map') {
+        StageDetail({ stageIndex: this.stageDetail, best: this.store.stageStars(this.stageDetail),
+          onStart: () => this.playStage(this.stageDetail), onCancel: () => { this.stageDetail = -1; } })
+      }
+      if (this.discoveryIndex >= 0 && this.screen === 'map') {
+        AndroidDiscovery({ gameIndex: this.discoveryIndex, onContinue: () => this.closeDiscovery() })
+      }
       if (this.unlockIndex >= 0) {
         AndroidUnlock({ gameIndex: this.unlockIndex, balance: this.coins, busy: this.purchasing,
           errorText: this.purchaseError, onConfirm: () => this.confirmUnlock(), onCancel: () => this.cancelUnlock() })

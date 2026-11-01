@@ -1,5 +1,6 @@
 import { GAMES, GameInfo, media } from '../core/GameCatalog';
 import { requiresUnlock, unlockCost } from '../core/Economy';
+import { STAGES, StageInfo, introStageOf, stageUnit, validStage } from '../core/StageCatalog';
 
 // App shell (home, tutorial, dialogs). Game boards keep the Android visuals;
 // shell colors come from resources/{base,dark}/element/color.json.
@@ -13,6 +14,33 @@ function androidGame(gameIndex: number): GameInfo {
 
 function androidLevel(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
+function stageAt(index: number): StageInfo {
+  return STAGES[validStage(index) ? index : 0];
+}
+
+function stageGameIndex(stage: StageInfo): number {
+  return Math.max(0, GAMES.findIndex((game: GameInfo) => game.id === stage.gameId));
+}
+
+// Chapter (1-based) whose intro stage reveals the game on the map.
+function discoveryChapter(game: GameInfo): number {
+  const intro = introStageOf(game.id);
+  return intro >= 0 ? STAGES[intro].chapter + 1 : 1;
+}
+
+const STAR_ON: string = '#FFB300';
+const STAR_OFF: string = '#33808A99';
+
+@Builder
+function starRow(earned: number, size: number) {
+  Row({ space: size / 4 }) {
+    ForEach([1, 2, 3], (star: number) => {
+      SymbolGlyph($r('sys.symbol.star_fill')).fontSize(size)
+        .fontColor([star <= earned ? STAR_ON : STAR_OFF])
+    }, (star: number) => `${star}`)
+  }.accessibilityLevel('no')
 }
 
 // '#RRGGBB' -> translucent '#AARRGGBB' tint for category tags.
@@ -41,15 +69,17 @@ export struct AndroidHome {
   }
 
   private priced(game: GameInfo): boolean {
-    // Android's secret pyramid keeps the level badge even while locked.
-    return this.locked(game) && game.id !== 18;
+    // The secret pyramid stays a zero-coin, confirmed unlock.
+    return this.locked(game) && unlockCost(game.id) > 0;
   }
 
+  // Undiscovered games stay mysteries: only category and chapter are shown.
   private rowDescription(game: GameInfo, index: number): string {
-    const state: string = this.locked(game) ? '，未解锁' : '';
-    const detail: string = this.priced(game) ? `解锁价格 ${unlockCost(game.id)} 金币` :
-      `等级 ${this.recordAt(index)}`;
-    return `${game.name}，${game.category}${state}，${detail}`;
+    if (this.locked(game)) {
+      const price: string = this.priced(game) ? `提前解锁价格 ${unlockCost(game.id)} 金币` : '可免费提前解锁';
+      return `神秘训练，${game.category}，未解锁，第 ${discoveryChapter(game)} 章发现，${price}`;
+    }
+    return `${game.name}，${game.category}，等级 ${this.recordAt(index)}`;
   }
 
   private visibleIndexes(): number[] {
@@ -80,12 +110,14 @@ export struct AndroidHome {
   private GameCard(game: GameInfo, index: number) {
     Column() {
       Stack({ alignContent: Alignment.TopStart }) {
-        Image(media(game.thumbnail))
-          .width('100%').height('100%').padding(8)
-          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+        if (!this.locked(game)) {
+          Image(media(game.thumbnail))
+            .width('100%').height('100%').padding(8)
+            .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+        }
         if (this.locked(game)) {
           Column({ space: 8 }) {
-            SymbolGlyph($r('sys.symbol.lock_fill')).fontSize(26).fontColor(['#FFFFFF'])
+            Text('?').fontSize(40).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
               .accessibilityLevel('no')
             Row({ space: 4 }) {
               if (this.priced(game)) {
@@ -97,7 +129,8 @@ export struct AndroidHome {
               }
             }.height(26).padding({ left: 10, right: 10 }).borderRadius(13).backgroundColor('#33FFFFFF')
           }.width('100%').height('100%').justifyContent(FlexAlign.Center)
-            .backgroundColor('#A6101820').hitTestBehavior(HitTestMode.None)
+            .linearGradient({ angle: 135, colors: [[tint(game.color, 'CC'), 0], ['#E6101820', 1]] })
+            .hitTestBehavior(HitTestMode.None)
         }
         if (this.lastGame === index) {
           Text('上次训练').fontSize(11).fontWeight(FontWeight.Medium).fontColor('#FFFFFF')
@@ -106,16 +139,17 @@ export struct AndroidHome {
         }
       }.width('100%').aspectRatio(1.3).borderRadius(16).clip(true)
         .backgroundColor($r('app.color.thumb_background'))
-      Text(game.name)
+      Text(this.locked(game) ? `第 ${discoveryChapter(game)} 章发现` : game.name)
         .width('100%').margin({ top: 10 }).fontSize(16).fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.text_primary')).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+        .fontColor(this.locked(game) ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
+        .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
       Row() {
         Text(game.category)
           .fontSize(11).fontWeight(FontWeight.Medium).fontColor(game.color)
           .height(20).padding({ left: 6, right: 6 }).borderRadius(6).backgroundColor(tint(game.color, '1F'))
         Blank()
-        if (this.priced(game)) {
-          Text('未解锁').fontSize(12).fontColor($r('app.color.text_tertiary'))
+        if (this.locked(game)) {
+          Text('未发现').fontSize(12).fontColor($r('app.color.text_tertiary'))
         } else {
           Text(`Lv.${this.recordAt(index)}`).fontSize(13).fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_secondary'))
@@ -134,7 +168,7 @@ export struct AndroidHome {
     Column() {
       Row() {
         Column() {
-          Text('脑力训练大师').fontSize(26).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
+          Text('自由训练').fontSize(26).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
           Text(`已开放 ${this.openCount()} / ${GAMES.length} 款训练`)
             .fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
         }.layoutWeight(1).alignItems(HorizontalAlign.Start)
@@ -382,14 +416,14 @@ export struct AndroidUnlock {
         Image(media(androidGame(this.gameIndex).thumbnail)).width('100%').height('100%').padding(8)
           .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
       }.width('100%').height(132).borderRadius(20).clip(true).backgroundColor($r('app.color.thumb_background'))
-      Text('解锁游戏').width('100%').margin({ top: 20 }).textAlign(TextAlign.Center)
+      Text('提前解锁').width('100%').margin({ top: 20 }).textAlign(TextAlign.Center)
         .fontSize(22).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
-      Text(`游戏：${androidGame(this.gameIndex).name}\n解锁价格：${this.price()} 金币\n当前余额：${androidLevel(this.balance)} 金币`)
+      Text(`游戏：${androidGame(this.gameIndex).name}\n解锁价格：${this.price()} 金币\n当前余额：${androidLevel(this.balance)} 金币\n也可以在闯关第 ${discoveryChapter(androidGame(this.gameIndex))} 章免费发现它`)
         .width('100%').margin({ top: 12 }).padding(14).borderRadius(16)
         .backgroundColor($r('app.color.page_background'))
         .fontSize(15).fontColor($r('app.color.text_secondary')).lineHeight(24)
       if (androidLevel(this.balance) < this.price()) {
-        Text(`还差 ${this.price() - androidLevel(this.balance)} 金币，暂时无法解锁。可游玩已解锁的游戏来获得金币。`)
+        Text(`还差 ${this.price() - androidLevel(this.balance)} 金币，暂时无法解锁。可通过闯关和训练获得金币。`)
           .width('100%').fontSize(14).fontColor($r('app.color.danger')).lineHeight(20).margin({ top: 10 })
       }
       if (this.errorText.length > 0) {
@@ -416,6 +450,7 @@ export struct AndroidPause {
   onTutorial: () => void = (): void => {};
   onHome: () => void = (): void => {};
   onEnd: () => void = (): void => {};
+  @Prop homeLabel: string = '游戏列表';
 
   @Builder
   private PauseContent() {
@@ -432,8 +467,9 @@ export struct AndroidPause {
           descriptionText: '重新开始本局', onAction: () => this.onRestart() })
         PauseShortcut({ symbol: $r('sys.symbol.questionmark_circle'), labelText: '玩法教程',
           descriptionText: '查看玩法教程', onAction: () => this.onTutorial() })
-        PauseShortcut({ symbol: $r('sys.symbol.square_grid_2x2'), labelText: '游戏列表',
-          descriptionText: '返回游戏列表', onAction: () => this.onHome() })
+        PauseShortcut({ symbol: $r('sys.symbol.square_grid_2x2'), labelText: this.homeLabel,
+          descriptionText: this.homeLabel.startsWith('返回') ? this.homeLabel : `返回${this.homeLabel}`,
+          onAction: () => this.onHome() })
       }.width('100%').margin({ top: 12 })
       AndroidDialogAction({ labelText: '结束本局并查看成绩', actionKind: 'danger',
         onAction: () => this.onEnd() }).margin({ top: 8 })
@@ -471,16 +507,16 @@ export struct AndroidResult {
         Row({ space: 4 }) {
           Text('第').fontSize(16).fontColor($r('app.color.brand'))
           Text(`${androidLevel(this.level)}`).fontSize(48).fontWeight(FontWeight.Bold).fontColor($r('app.color.brand'))
-          Text('关').fontSize(16).fontColor($r('app.color.brand'))
+          Text('级').fontSize(16).fontColor($r('app.color.brand'))
         }.alignItems(VerticalAlign.Bottom).margin({ top: 2 })
-        Text(`最佳到达第 ${androidLevel(this.best)} 关`)
+        Text(`最佳到达第 ${androidLevel(this.best)} 级`)
           .fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 4 })
       }.width('100%').margin({ top: 16 }).padding({ top: 14, bottom: 14 }).borderRadius(20)
         .backgroundColor($r('app.color.page_background'))
         .accessibilityGroup(true)
-        .accessibilityText(`本局到达第 ${androidLevel(this.level)} 关，最佳到达第 ${androidLevel(this.best)} 关`)
+        .accessibilityText(`本局到达第 ${androidLevel(this.level)} 级，最佳到达第 ${androidLevel(this.best)} 级`)
       AndroidDialogAction({ labelText: '再玩一次', onAction: () => this.onReplay() }).margin({ top: 20 })
-      AndroidDialogAction({ labelText: '返回游戏列表', actionKind: 'secondary', onAction: () => this.onHome() })
+      AndroidDialogAction({ labelText: '返回训练列表', actionKind: 'secondary', onAction: () => this.onHome() })
         .margin({ top: 10 })
       Text('试试其他游戏').width('100%').fontSize(13)
         .fontColor($r('app.color.text_secondary')).margin({ top: 20 })
@@ -535,5 +571,179 @@ export struct AndroidFailure {
 
   build() {
     AndroidDialogFrame({ screenHeight: this.screenHeight, content: () => { this.FailureContent(); } })
+  }
+}
+
+@Component
+export struct StageDetail {
+  @Prop stageIndex: number = 0;
+  @Prop best: number = 0;
+  @Prop screenHeight: number = 0;
+  onStart: () => void = (): void => {};
+  onCancel: () => void = (): void => {};
+
+  private target(star: number): string {
+    const stage = stageAt(this.stageIndex);
+    const unit = stageUnit(stage.gameId);
+    const value = stage.stars[star - 1];
+    if (unit === '分') { return `得到 ${value} 分`; }
+    if (unit === '个') { return `找到 ${value} 个数字`; }
+    return `完成 ${value} 级`;
+  }
+
+  @Builder
+  private DetailContent() {
+    Column() {
+      Row({ space: 8 }) {
+        Text(`第 ${this.stageIndex + 1} 关`).fontSize(22).fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
+        if (stageAt(this.stageIndex).challenge) {
+          Text('章节挑战').fontSize(12).fontWeight(FontWeight.Medium).fontColor('#FFFFFF')
+            .height(22).padding({ left: 8, right: 8 }).borderRadius(11).backgroundColor(STAR_ON)
+        }
+        Blank()
+        starRow(this.best, 18)
+      }.width('100%')
+      Row({ space: 12 }) {
+        Image(media(androidGame(stageGameIndex(stageAt(this.stageIndex))).thumbnail))
+          .width(84).height(64).padding(4).borderRadius(14).backgroundColor($r('app.color.thumb_background'))
+          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+        Column({ space: 6 }) {
+          Text(androidGame(stageGameIndex(stageAt(this.stageIndex))).name).fontSize(17).fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary')).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(androidGame(stageGameIndex(stageAt(this.stageIndex))).category).fontSize(12).fontWeight(FontWeight.Medium)
+            .fontColor(androidGame(stageGameIndex(stageAt(this.stageIndex))).color)
+        }.layoutWeight(1).alignItems(HorizontalAlign.Start)
+      }.width('100%').margin({ top: 16 })
+      Column() {
+        ForEach([1, 2, 3], (star: number) => {
+          Row({ space: 10 }) {
+            starRow(star, 14)
+            Text(this.target(star)).fontSize(15).fontColor($r('app.color.text_primary')).layoutWeight(1)
+            if (this.best >= star) {
+              Text('已达成').fontSize(12).fontWeight(FontWeight.Medium).fontColor(STAR_ON)
+            }
+          }.width('100%').height(36)
+        }, (star: number) => `${star}`)
+      }.width('100%').margin({ top: 16 }).padding({ left: 14, right: 14, top: 6, bottom: 6 }).borderRadius(16)
+        .backgroundColor($r('app.color.page_background'))
+        .accessibilityGroup(true)
+        .accessibilityText(`一星${this.target(1)}，二星${this.target(2)}，三星${this.target(3)}，当前最佳 ${this.best} 星`)
+      Text('达到一星即可通关并开放下一关，达到三星自动结束本局。')
+        .width('100%').margin({ top: 10 }).fontSize(13).lineHeight(19).fontColor($r('app.color.text_secondary'))
+      AndroidDialogAction({ labelText: '开始闯关', onAction: () => this.onStart() }).margin({ top: 20 })
+      AndroidDialogAction({ labelText: '取消', actionKind: 'secondary', onAction: () => this.onCancel() })
+        .margin({ top: 10 })
+    }.width('100%').padding(24).alignItems(HorizontalAlign.Start)
+  }
+
+  build() {
+    AndroidDialogFrame({ screenHeight: this.screenHeight, content: () => { this.DetailContent(); } })
+  }
+}
+
+@Component
+export struct StageResult {
+  @Prop stageIndex: number = 0;
+  @Prop stars: number = 0;
+  @Prop best: number = 0;
+  @Prop value: number = 0;
+  @Prop coins: number = 0;
+  @Prop hasNext: boolean = false;
+  @Prop screenHeight: number = 0;
+  onNext: () => void = (): void => {};
+  onRetry: () => void = (): void => {};
+  onMap: () => void = (): void => {};
+
+  private title(): string {
+    if (this.stars >= 3) { return '完美通关'; }
+    return this.stars > 0 ? '闯关成功' : '未达成目标';
+  }
+
+  private valueText(): string {
+    const unit = stageUnit(stageAt(this.stageIndex).gameId);
+    if (unit === '分') { return `本局得分 ${androidLevel(this.value)}`; }
+    if (unit === '个') { return `本局找到 ${androidLevel(this.value)} 个数字`; }
+    return `本局完成 ${androidLevel(this.value)} 级`;
+  }
+
+  private nextGoal(): string {
+    const stage = stageAt(this.stageIndex);
+    const star = Math.min(3, Math.max(0, this.stars));
+    if (star >= 3) { return '已获得全部星星'; }
+    return `距离 ${star + 1} 星还差 ${Math.max(0, stage.stars[star] - androidLevel(this.value))}`;
+  }
+
+  @Builder
+  private ResultContent() {
+    Column() {
+      Text(`第 ${this.stageIndex + 1} 关`).fontSize(14).fontColor($r('app.color.text_secondary'))
+      Text(this.title()).margin({ top: 4 }).fontSize(24).fontWeight(FontWeight.Bold)
+        .fontColor(this.stars > 0 ? $r('app.color.text_primary') : $r('app.color.danger'))
+      Row() { starRow(this.stars, 44) }.margin({ top: 16 })
+      Column({ space: 4 }) {
+        Text(this.valueText()).fontSize(16).fontWeight(FontWeight.Medium).fontColor($r('app.color.text_primary'))
+        Text(this.nextGoal()).fontSize(13).fontColor($r('app.color.text_secondary'))
+        if (this.coins > 0) {
+          Row({ space: 4 }) {
+            Image(media('ic_coin')).width(16).height(16).objectFit(ImageFit.Contain).accessibilityLevel('no')
+            Text(`星级奖励 +${this.coins}`).fontSize(14).fontWeight(FontWeight.Medium).fontColor($r('app.color.coin_text'))
+          }.margin({ top: 4 })
+        }
+      }.width('100%').margin({ top: 16 }).padding({ top: 14, bottom: 14 }).borderRadius(20)
+        .backgroundColor($r('app.color.page_background'))
+        .accessibilityGroup(true)
+        .accessibilityText(`${this.title()}，获得 ${this.stars} 星，最佳 ${this.best} 星，${this.valueText()}` +
+          (this.coins > 0 ? `，星级奖励 ${this.coins} 金币` : ''))
+      if (this.stars > 0 && this.hasNext) {
+        AndroidDialogAction({ labelText: '下一关', onAction: () => this.onNext() }).margin({ top: 20 })
+        AndroidDialogAction({ labelText: '再玩一次', actionKind: 'secondary', onAction: () => this.onRetry() })
+          .margin({ top: 10 })
+        AndroidDialogAction({ labelText: '返回地图', actionKind: 'plain', onAction: () => this.onMap() })
+          .margin({ top: 4 })
+      } else {
+        AndroidDialogAction({ labelText: this.stars > 0 ? '再玩一次' : '重试', onAction: () => this.onRetry() })
+          .margin({ top: 20 })
+        AndroidDialogAction({ labelText: '返回地图', actionKind: 'secondary', onAction: () => this.onMap() })
+          .margin({ top: 10 })
+      }
+    }.width('100%').padding({ left: 24, right: 24, top: 28, bottom: 20 })
+  }
+
+  build() {
+    AndroidDialogFrame({ screenHeight: this.screenHeight, content: () => { this.ResultContent(); } })
+  }
+}
+
+@Component
+export struct AndroidDiscovery {
+  @Prop gameIndex: number = 0;
+  @Prop screenHeight: number = 0;
+  onContinue: () => void = (): void => {};
+
+  @Builder
+  private DiscoveryContent() {
+    Column() {
+      Text('发现新训练').fontSize(14).fontWeight(FontWeight.Medium).fontColor(STAR_ON)
+      Text(androidGame(this.gameIndex).name).margin({ top: 6 }).fontSize(24).fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
+      Stack() {
+        Image(media(androidGame(this.gameIndex).thumbnail)).width('100%').height('100%').padding(8)
+          .objectFit(ImageFit.Contain).draggable(false).accessibilityLevel('no')
+      }.width('100%').height(150).margin({ top: 16 }).borderRadius(20).clip(true)
+        .backgroundColor($r('app.color.thumb_background'))
+      Text(androidGame(this.gameIndex).category)
+        .margin({ top: 14 }).fontSize(12).fontWeight(FontWeight.Medium).fontColor(androidGame(this.gameIndex).color)
+        .height(22).padding({ left: 8, right: 8 }).borderRadius(8).backgroundColor(tint(androidGame(this.gameIndex).color, '1F'))
+      Text(`${androidGame(this.gameIndex).tutorialText.join('，').replace(/\n/g, '')}。已加入自由训练。`)
+        .width('100%').margin({ top: 10 }).textAlign(TextAlign.Center)
+        .fontSize(14).lineHeight(20).fontColor($r('app.color.text_secondary'))
+      AndroidDialogAction({ labelText: '去挑战', onAction: () => this.onContinue() }).margin({ top: 20 })
+    }.width('100%').padding({ left: 24, right: 24, top: 28, bottom: 20 })
+      .accessibilityGroup(false)
+  }
+
+  build() {
+    AndroidDialogFrame({ screenHeight: this.screenHeight, content: () => { this.DiscoveryContent(); } })
   }
 }
