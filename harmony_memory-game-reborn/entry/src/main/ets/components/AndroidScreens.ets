@@ -29,8 +29,34 @@ export struct AndroidHome {
   // Contains every open GameInfo.id, not array indexes. Empty while loading:
   // never infer ownership from a record, balance, or missing persisted data.
   @Prop unlockedIds: number[] = [];
+  // Sum of the six 0..100 脑洞 dimensions.
+  @Prop brainScore: number = 0;
   onSelect: (index: number) => void = (_index: number): void => {};
+  onBrain: () => void = (): void => {};
   @State private category: string = ALL_CATEGORIES;
+  private bannerIcon: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true));
+
+  // Static mini radar: outer hexagon plus an uneven "profile" polygon.
+  private drawBannerIcon(): void {
+    const c = this.bannerIcon;
+    const outer: number[] = [1, 1, 1, 1, 1, 1];
+    const inner: number[] = [0.75, 0.6, 0.5, 0.7, 0.55, 0.8];
+    const shapes: number[][] = [outer, inner];
+    c.clearRect(0, 0, 40, 40);
+    shapes.forEach((values: number[], shape: number) => {
+      c.beginPath();
+      values.forEach((value: number, i: number) => {
+        const angle = -Math.PI / 2 + i * Math.PI / 3;
+        const x = 20 + Math.cos(angle) * 18 * value;
+        const y = 20 + Math.sin(angle) * 18 * value;
+        if (i === 0) { c.moveTo(x, y); } else { c.lineTo(x, y); }
+      });
+      c.closePath();
+      c.fillStyle = shape === 0 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.75)';
+      c.fill();
+      if (shape === 0) { c.strokeStyle = '#FFFFFF'; c.lineWidth = 1.5; c.stroke(); }
+    });
+  }
 
   private recordAt(index: number): number {
     return androidLevel(index < this.records.length ? this.records[index] : 0);
@@ -130,6 +156,28 @@ export struct AndroidHome {
       .accessibilityGroup(true)
   }
 
+  @Builder
+  private BrainBanner() {
+    Row({ space: 14 }) {
+      Canvas(this.bannerIcon).width(40).height(40).accessibilityLevel('no')
+        .onReady(() => this.drawBannerIcon())
+      Column({ space: 2 }) {
+        Text('我的脑洞').fontSize(17).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
+        Text('六维脑力雷达，发现你的超能力').fontSize(12).fontColor('#E6FFFFFF')
+          .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+      }.layoutWeight(1).alignItems(HorizontalAlign.Start)
+      Column() {
+        Text(`${androidLevel(this.brainScore)}`).fontSize(22).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
+        Text('脑洞值').fontSize(11).fontColor('#D9FFFFFF')
+      }
+      SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(18).fontColor(['#FFFFFF'])
+    }.width('100%').padding({ left: 16, right: 12, top: 14, bottom: 14 }).borderRadius(22)
+      .linearGradient({ angle: 135, colors: [['#2B8CEB', 0], ['#7C4DFF', 1]] })
+      .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.97 })
+      .onClick(() => this.onBrain())
+      .accessibilityGroup(true).accessibilityText(`我的脑洞，脑洞值 ${androidLevel(this.brainScore)}`)
+  }
+
   build() {
     Column() {
       Row() {
@@ -148,6 +196,7 @@ export struct AndroidHome {
           .accessibilityGroup(true).id('coin-balance')
           .accessibilityText(`金币余额 ${androidLevel(this.coins)}`)
       }.width('100%').padding({ left: 20, right: 16, top: 16, bottom: 12 })
+      Column() { this.BrainBanner() }.width('100%').padding({ left: 16, right: 16, bottom: 12 })
       Scroll() {
         Row({ space: 8 }) {
           ForEach(CATEGORIES, (name: string) => { this.CategoryChip(name) }, (name: string) => name)

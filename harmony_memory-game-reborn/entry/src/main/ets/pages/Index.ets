@@ -14,6 +14,8 @@ import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailu
 import { levelCoins, scoreCoins248 } from '../core/Economy';
 import { ReadyIndicator } from '../components/ReadyIndicator';
 import { AndroidChoiceBoard } from '../components/AndroidChoiceBoard';
+import { BrainHole } from '../components/BrainScreen';
+import { GameStat, buildProfile } from '../core/BrainProfile';
 
 // Game surfaces keep the Android light palette in both color modes.
 const GAME_INK: string = '#13171C';
@@ -94,7 +96,7 @@ struct Index {
       else { this.screen = 'home'; }
       return true;
     }
-    if (this.screen === 'result') { this.screen = 'home'; return true; }
+    if (this.screen === 'result' || this.screen === 'brain') { this.screen = 'home'; return true; }
     if (this.screen === 'failure') { return true; }
     return false;
   }
@@ -517,7 +519,17 @@ struct Index {
     }.width('100%').height('100%')
   }
 
-  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial'; }
+  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial' || this.screen === 'brain'; }
+
+  private brainStats(): GameStat[] {
+    return GAMES.map((game: GameInfo) => {
+      const record = this.store.record(game.id);
+      const stat = new GameStat();
+      stat.id = game.id; stat.highest = record.highest; stat.plays = record.plays;
+      stat.sessions = record.sessions.slice();
+      return stat;
+    });
+  }
 
   private syncSystemBar(): void {
     const ink: string = this.darkMode && this.shellScreen() ? '#FFFFFF' : '#000000';
@@ -548,7 +560,11 @@ struct Index {
         Column() {
           if (this.screen === 'home') {
             AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame, coins: this.coins, unlockedIds: this.unlockedIds,
-              onSelect: (index: number) => this.selectGame(index) })
+              brainScore: buildProfile(this.brainStats(), this.unlockedIds).total,
+              onSelect: (index: number) => this.selectGame(index), onBrain: () => { this.screen = 'brain'; } })
+          } else if (this.screen === 'brain') {
+            BrainHole({ stats: this.brainStats(), unlockedIds: this.unlockedIds, darkMode: this.darkMode,
+              onBack: () => { this.screen = 'home'; }, onPractice: (index: number) => this.selectGame(index) })
           } else if (this.screen === 'tutorial') {
             AndroidTutorial({ gameIndex: this.gameIndex, fromPause: this.tutorialFromPause,
               onExit: () => { this.screen = this.tutorialFromPause ? 'game' : 'home'; },
