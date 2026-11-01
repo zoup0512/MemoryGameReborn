@@ -358,6 +358,17 @@ test('failure restart/end execute actual UI callbacks, save once, and reset only
   }
 });
 
+test('bottom tabs: back on growth goes to training then exits; results return to the originating tab', () => {
+  const { app } = harness(10);
+  app.screen = 'growth'; app.tab = 'growth';
+  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'home'); assert.equal(app.tab, 'home');
+  assert.equal(app.onBackPress(), false);
+  app.tab = 'growth'; app.start(); app.finish('done');
+  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'growth');
+  app.tab = 'growth'; app.screen = 'tutorial'; app.tutorialFromPause = false;
+  assert.equal(app.onBackPress(), true); assert.equal(app.screen, 'growth');
+});
+
 test('feedback is idempotent; finalization/disappear/back never save the same session twice', () => {
   const h = harness(10); const { app } = h; h.begin();
   app.feedback(false, 0); app.feedback(false, 0);

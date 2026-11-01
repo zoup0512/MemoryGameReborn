@@ -14,8 +14,8 @@ import { AndroidHome, AndroidTutorial, AndroidPause, AndroidResult, AndroidFailu
 import { levelCoins, scoreCoins248 } from '../core/Economy';
 import { ReadyIndicator } from '../components/ReadyIndicator';
 import { AndroidChoiceBoard } from '../components/AndroidChoiceBoard';
-import { BrainHole } from '../components/BrainScreen';
-import { GameStat, buildProfile } from '../core/BrainProfile';
+import { AbilityGrowth } from '../components/AbilityScreen';
+import { GameStat } from '../core/BrainProfile';
 
 // Game surfaces keep the Android light palette in both color modes.
 const GAME_INK: string = '#13171C';
@@ -62,6 +62,8 @@ struct Index {
   private feedbackCorrect: boolean = false;
   private savedSession: boolean = false;
   private alive: boolean = false;
+  // Bottom tab ('home' | 'growth') to return to after a tutorial or game.
+  private tab: string = 'home';
 
   async aboutToAppear(): Promise<void> {
     this.alive = true;
@@ -93,10 +95,12 @@ struct Index {
     if (this.screen === 'game') { this.pause(); return true; }
     if (this.screen === 'tutorial') {
       if (this.tutorialFromPause) { this.screen = 'game'; }
-      else { this.screen = 'home'; }
+      else { this.screen = this.tab; }
       return true;
     }
-    if (this.screen === 'result' || this.screen === 'brain') { this.screen = 'home'; return true; }
+    if (this.screen === 'result') { this.screen = this.tab; return true; }
+    // Back on the growth tab first returns to the training tab, then exits.
+    if (this.screen === 'growth') { this.screen = 'home'; this.tab = 'home'; return true; }
     if (this.screen === 'failure') { return true; }
     return false;
   }
@@ -519,7 +523,18 @@ struct Index {
     }.width('100%').height('100%')
   }
 
-  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial' || this.screen === 'brain'; }
+  private shellScreen(): boolean { return this.screen === 'home' || this.screen === 'tutorial' || this.screen === 'growth'; }
+
+  @Builder
+  private TabItem(target: string, symbol: Resource, label: string) {
+    Column({ space: 2 }) {
+      SymbolGlyph(symbol).fontSize(24)
+        .fontColor([this.screen === target ? $r('app.color.brand') : $r('app.color.text_tertiary')])
+      Text(label).fontSize(11).fontWeight(this.screen === target ? FontWeight.Medium : FontWeight.Normal)
+        .fontColor(this.screen === target ? $r('app.color.brand') : $r('app.color.text_tertiary'))
+    }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+    .accessibilityText(label).accessibilitySelected(this.screen === target)
+  }
 
   private brainStats(): GameStat[] {
     return GAMES.map((game: GameInfo) => {
@@ -558,16 +573,23 @@ struct Index {
           }.width('100%').padding({ left: 12, right: 12, top: 8 })
         }
         Column() {
-          if (this.screen === 'home') {
-            AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame, coins: this.coins, unlockedIds: this.unlockedIds,
-              brainScore: buildProfile(this.brainStats(), this.unlockedIds).total,
-              onSelect: (index: number) => this.selectGame(index), onBrain: () => { this.screen = 'brain'; } })
-          } else if (this.screen === 'brain') {
-            BrainHole({ stats: this.brainStats(), unlockedIds: this.unlockedIds, darkMode: this.darkMode,
-              onBack: () => { this.screen = 'home'; }, onPractice: (index: number) => this.selectGame(index) })
+          if (this.screen === 'home' || this.screen === 'growth') {
+            Tabs({ barPosition: BarPosition.End, index: this.screen === 'growth' ? 1 : 0 }) {
+              TabContent() {
+                AndroidHome({ records: this.highestLevels(), lastGame: this.lastGame, coins: this.coins,
+                  unlockedIds: this.unlockedIds, onSelect: (index: number) => this.selectGame(index) })
+              }.tabBar(this.TabItem('home', $r('sys.symbol.square_grid_2x2'), '训练'))
+              TabContent() {
+                AbilityGrowth({ stats: this.brainStats(), unlockedIds: this.unlockedIds, darkMode: this.darkMode,
+                  active: this.screen === 'growth', onPractice: (index: number) => this.selectGame(index) })
+              }.tabBar(this.TabItem('growth', $r('sys.symbol.star'), '成长'))
+            }.width('100%').height('100%').barHeight(56).barMode(BarMode.Fixed).scrollable(false)
+              .animationDuration(0).barBackgroundColor($r('app.color.card_background'))
+              .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
+              .onChange((index: number) => { this.screen = index === 1 ? 'growth' : 'home'; this.tab = this.screen; })
           } else if (this.screen === 'tutorial') {
             AndroidTutorial({ gameIndex: this.gameIndex, fromPause: this.tutorialFromPause,
-              onExit: () => { this.screen = this.tutorialFromPause ? 'game' : 'home'; },
+              onExit: () => { this.screen = this.tutorialFromPause ? 'game' : this.tab; },
               onPlay: () => this.start() })
           } else {
             Stack() {
@@ -575,12 +597,12 @@ struct Index {
               if (this.paused && this.screen === 'game') {
                 AndroidPause({ onResume: () => this.resume(),
                   onRestart: () => { this.saveSession(); this.start(); }, onTutorial: () => this.openTutorial(),
-                  onHome: () => { this.saveSession(); this.paused = false; this.screen = 'home'; },
+                  onHome: () => { this.saveSession(); this.paused = false; this.screen = this.tab; },
                   onEnd: () => this.finish('训练记录已保存') })
               }
               if (this.screen === 'result') {
                 AndroidResult({ gameIndex: this.gameIndex, level: this.level, best: this.store.record(this.game().id).highest,
-                  title: this.resultTitle, onReplay: () => this.start(), onHome: () => { this.screen = 'home'; },
+                  title: this.resultTitle, onReplay: () => this.start(), onHome: () => { this.screen = this.tab; },
                   onRecommend: (index: number) => this.selectGame(index) })
               }
               if (this.screen === 'failure') {

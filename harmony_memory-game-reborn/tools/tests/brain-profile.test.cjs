@@ -1,5 +1,5 @@
 // node --test tools/tests/brain-profile.test.cjs
-// Executes the real ArkTS BrainProfile scoring used by the 脑洞 radar page.
+// Executes the real ArkTS BrainProfile scoring used by the 成长 (ability growth) radar tab.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');

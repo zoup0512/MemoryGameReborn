@@ -1,6 +1,6 @@
 import { GAMES, GameInfo } from './GameCatalog';
 
-// Offline "脑洞" profile: six radar dimensions derived only from local records.
+// Offline ability-growth profile: six radar dimensions derived only from local records.
 // A game's 0..100 score maps completed levels onto its four trophy thresholds
 // (25 points per trophy, linear in between), so every game shares one scale.
 

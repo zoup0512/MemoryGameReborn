@@ -35,11 +35,12 @@ class RadarPoint {
 }
 
 @Component
-export struct BrainHole {
+export struct AbilityGrowth {
   @Prop @Watch('rebuild') stats: GameStat[] = [];
   @Prop @Watch('rebuild') unlockedIds: number[] = [];
   @Prop @Watch('draw') darkMode: boolean = false;
-  onBack: () => void = (): void => {};
+  // Tabs keep this page alive; replay the radar each time its tab is shown.
+  @Prop @Watch('activeChanged') active: boolean = false;
   onPractice: (index: number) => void = (_index: number): void => {};
   @State private profile: BrainProfile = new BrainProfile();
   @State @Watch('draw') private selected: number = 0;
@@ -61,6 +62,10 @@ export struct BrainHole {
     this.profile = buildProfile(this.stats, this.unlockedIds);
     if (this.profile.strongest >= 0 && this.progress === 0) { this.selected = this.profile.strongest; }
     this.startAnimation();
+  }
+
+  private activeChanged(): void {
+    if (this.active) { this.startAnimation(); }
   }
 
   private stopAnimation(): void {
@@ -202,7 +207,7 @@ export struct BrainHole {
     Column() {
       Row() {
         Column({ space: 4 }) {
-          Text('脑洞值').fontSize(14).fontColor('#E6FFFFFF')
+          Text('脑力值').fontSize(14).fontColor('#E6FFFFFF')
           Row({ space: 4 }) {
             Text(`${this.profile.total}`).fontSize(44).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
             Text(`/ ${DIMENSIONS.length * 100}`).fontSize(14).fontColor('#B3FFFFFF').margin({ bottom: 8 })
@@ -215,7 +220,7 @@ export struct BrainHole {
             .backgroundColor('#33FFFFFF')
         }.alignItems(HorizontalAlign.End)
       }.width('100%').accessibilityGroup(true)
-        .accessibilityText(`脑洞值 ${this.profile.total}，称号 ${brainTitle(this.profile.average, this.profile.explored)}`)
+        .accessibilityText(`脑力值 ${this.profile.total}，称号 ${brainTitle(this.profile.average, this.profile.explored)}`)
       Row() {
         this.Stat(`${this.profile.plays}`, '训练次数')
         Divider().vertical(true).height(28).color('#40FFFFFF')
@@ -316,7 +321,7 @@ export struct BrainHole {
         .fontSize(15).lineHeight(22).fontColor($r('app.color.text_primary'))
       Row({ space: 8 }) {
         SymbolGlyph($r('sys.symbol.star_fill')).fontSize(16).fontColor([this.info(this.selected).color])
-        Text(`脑洞小贴士：${this.info(this.selected).tip}`).fontSize(13).lineHeight(19)
+        Text(`训练小贴士：${this.info(this.selected).tip}`).fontSize(13).lineHeight(19)
           .fontColor($r('app.color.text_secondary')).layoutWeight(1)
       }.width('100%').margin({ top: 10 }).padding(12).borderRadius(16)
         .backgroundColor(tintOf(this.info(this.selected).color, '14'))
@@ -340,7 +345,7 @@ export struct BrainHole {
   @Builder
   private Insight() {
     Column({ space: 12 }) {
-      Text('脑洞发现').width('100%').fontSize(17).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
+      Text('能力发现').width('100%').fontSize(17).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
       if (this.profile.explored === 0) {
         Text('你的小脑袋还在等待唤醒！玩一局任意游戏，雷达图就会长出来。')
           .width('100%').fontSize(14).lineHeight(21).fontColor($r('app.color.text_secondary'))
@@ -384,23 +389,17 @@ export struct BrainHole {
 
   build() {
     Column() {
-      Row() {
-        Button({ type: ButtonType.Circle }) {
-          SymbolGlyph($r('sys.symbol.chevron_left')).fontSize(22).fontColor([$r('app.color.text_primary')])
-        }.width(40).height(40).backgroundColor($r('app.color.card_background'))
-          .accessibilityText('返回').onClick(() => this.onBack())
-        Column() {
-          Text('我的脑洞').fontSize(20).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
-          Text('看看你的六维脑力超能力').fontSize(12).fontColor($r('app.color.text_secondary'))
-        }.alignItems(HorizontalAlign.Start).padding({ left: 12 }).layoutWeight(1)
-      }.width('100%').height(56).padding({ left: 16, right: 16 })
+      Column() {
+        Text('能力成长').fontSize(26).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary'))
+        Text('看看你的六维脑力超能力').fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
+      }.width('100%').alignItems(HorizontalAlign.Start).padding({ left: 20, right: 16, top: 16, bottom: 12 })
       Scroll() {
         Column({ space: 14 }) {
           this.Hero()
           this.Radar()
           this.Detail()
           this.Insight()
-          Text('脑洞数据只保存在本机，根据每款游戏到达的关卡计算。').fontSize(11)
+          Text('成长数据只保存在本机，根据每款游戏到达的关卡计算。').fontSize(11)
             .fontColor($r('app.color.text_tertiary')).margin({ top: 2, bottom: 24 })
         }.padding({ left: 16, right: 16, top: 4 })
       }.width('100%').layoutWeight(1).scrollBar(BarState.Off).edgeEffect(EdgeEffect.Spring).align(Alignment.Top)
