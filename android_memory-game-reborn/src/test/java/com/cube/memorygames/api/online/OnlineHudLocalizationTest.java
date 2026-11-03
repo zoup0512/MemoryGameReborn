@@ -38,6 +38,36 @@ public class OnlineHudLocalizationTest {
         assertTrue(source.contains("if (self) row.setTypeface(OnlineUi.medium(c))"));
     }
 
+    @Test public void standingsLocalizeTiedSingleAndUnknownRanks() throws Exception {
+        assertEquals("并列第1名", format("values-zh", "strings_party.xml", "party_rank_tied", "1"));
+        assertEquals("Tied #1", format("values", "strings_party.xml", "party_rank_tied", "1"));
+        assertEquals("第3名", format("values-zh", "strings_party.xml", "party_rank", "3"));
+        assertEquals("#3", format("values", "strings_party.xml", "party_rank", "3"));
+        assertEquals("第—名", format("values-zh", "strings_party.xml", "party_rank", "—"));
+        assertEquals("#—", format("values", "strings_party.xml", "party_rank", "—"));
+        String source = source("PartyUi.java");
+        assertTrue(source.contains("s.tiedRank(p.rank) ? R.string.party_rank_tied : R.string.party_rank"));
+        assertTrue(source.contains("p.rank > 0 ? Integer.toString(p.rank) : \"—\""));
+    }
+
+    @Test public void finalStandingsDistinguishLastRoundScoreInBothLanguages() throws Exception {
+        assertEquals("并列第1名 小鹿（我）\n最后一轮原始分 106 · 累计积分 7.5 · 第一名次数 3 ",
+                format("values-zh", "strings_party.xml", "party_final_score_row",
+                        "并列第1名", "小鹿（我）", 106, PartyState.points(15), 3, ""));
+        assertEquals("Tied #1 Alice (You)\nLast round score 106 · Total points 7.5 · First places 3 ",
+                format("values", "strings_party.xml", "party_final_score_row",
+                        "Tied #1", "Alice (You)", 106, PartyState.points(15), 3, ""));
+        assertEquals("第3名 山雀\n本轮原始分 98 · 累计积分 0 · 第一名次数 0 已断线",
+                format("values-zh", "strings_party.xml", "party_score_row",
+                        "第3名", "山雀", 98, PartyState.points(0), 0, "已断线"));
+        assertEquals("#3 Bob\nRound score 98 · Total points 0 · First places 0 Disconnected",
+                format("values", "strings_party.xml", "party_score_row",
+                        "#3", "Bob", 98, PartyState.points(0), 0, "Disconnected"));
+        String source = source("PartyUi.java");
+        assertTrue(source.contains("s.completed() ? R.string.party_final_score_row : R.string.party_score_row"));
+        assertTrue(source.contains("c.getString(scoreRow, rank, nickname,"));
+    }
+
     @Test public void hudUsesLocalizedScoresAndKeepsPartyStandingsClickable() throws Exception {
         String source = source("OnlineHud.java");
         assertTrue(source.contains("getString(R.string.online_hud_score, oppScore, myScore)"));

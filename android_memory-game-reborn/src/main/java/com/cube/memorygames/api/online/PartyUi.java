@@ -25,13 +25,15 @@ final class PartyUi {
     }
     static void standings(Context c, LinearLayout box, PartyState s) {
         box.addView(OnlineUi.sectionTitle(c, R.string.party_standings));
+        int scoreRow = s.completed() ? R.string.party_final_score_row : R.string.party_score_row;
         for (PartyState.Participant p : s.leaderboard()) {
-            String rank = p.rank > 0 ? Integer.toString(p.rank) : "—";
+            String rank = c.getString(s.tiedRank(p.rank) ? R.string.party_rank_tied : R.string.party_rank,
+                    p.rank > 0 ? Integer.toString(p.rank) : "—");
             String suffix = p.withdrawn ? c.getString(R.string.party_withdrawn)
                     : !p.connected ? c.getString(R.string.party_offline) : "";
             boolean self = p.playerId == PartySession.get().userId();
             String nickname = self ? c.getString(R.string.party_self_name, p.nickname) : p.nickname;
-            TextView row = text(c, c.getString(R.string.party_score_row, rank, nickname,
+            TextView row = text(c, c.getString(scoreRow, rank, nickname,
                     p.score, PartyState.points(p.points2), p.firstPlaces, suffix));
             if (self) row.setTypeface(OnlineUi.medium(c));
             box.addView(row);

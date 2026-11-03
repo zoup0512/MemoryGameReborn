@@ -52,6 +52,14 @@ public final class PartyState {
     }
     public boolean is(String value) { return value.equals(phase); }
     public boolean activeRound() { return is("LOADING") || is("COUNTDOWN") || is("PLAYING"); }
+    public boolean completed() { return is("FINISHED") && "COMPLETED".equals(status); }
+    public boolean tiedRank(int rank) {
+        if (rank <= 0) return false;
+        int count = 0;
+        if (participants != null) for (Participant p : participants)
+            if (p != null && p.rank == rank && ++count > 1) return true;
+        return false;
+    }
     public boolean canStart(long playerId) {
         // capacity=0 means unlimited. Never impose a client-side maximum roster size.
         if (!is("LOBBY") || hostId != playerId || members == null || members.length < 2) return false;
@@ -66,8 +74,7 @@ public final class PartyState {
             if (a.withdrawn != b.withdrawn) return a.withdrawn ? 1 : -1;
             int points = Long.compare(b.points2, a.points2);
             if (points != 0) return points;
-            int first = Integer.compare(b.firstPlaces, a.firstPlaces);
-            return first != 0 ? first : Integer.compare(b.score, a.score);
+            return Integer.compare(b.firstPlaces, a.firstPlaces);
         });
         return list;
     }

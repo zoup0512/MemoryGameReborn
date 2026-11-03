@@ -38,7 +38,10 @@
     <string name="party_resume_wait">恢复后不重刷本轮题目。可查看实时排行，等待下一轮自动加载。</string>
     <string name="party_unsupported">当前版本无法加载此游戏，请更新应用。本轮不能参与。</string>
     <string name="party_standings">全员排行榜</string>
-    <string name="party_score_row">第%1$s名 %2$s\n本轮原始分 %3$d · 累计积分 %4$s · 第一名次数 %5$d %6$s</string>
+    <string name="party_rank">第%1$s名</string>
+    <string name="party_rank_tied">并列第%1$s名</string>
+    <string name="party_score_row">%1$s %2$s\n本轮原始分 %3$d · 累计积分 %4$s · 第一名次数 %5$d %6$s</string>
+    <string name="party_final_score_row">%1$s %2$s\n最后一轮原始分 %3$d · 累计积分 %4$s · 第一名次数 %5$d %6$s</string>
     <string name="party_result_round">第%1$d轮 · %2$s</string>
     <string name="party_result_entry">%1$s · 原始分 %2$d · 第%3$s名 · +%4$s积分 %5$s</string>
     <string name="party_ineligible">未取得本轮资格</string>

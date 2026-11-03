@@ -38,7 +38,10 @@ Free entry: no coins charged and no rating changes. Positive scores earn placeme
     <string name="party_resume_wait">This round cannot be replayed after recovery. Watch the standings and wait for the next round.</string>
     <string name="party_unsupported">This game is unavailable. Update the app; this round cannot be loaded.</string>
     <string name="party_standings">All-player standings</string>
-    <string name="party_score_row">#%1$s %2$s\nRound score %3$d · Total points %4$s · First places %5$d %6$s</string>
+    <string name="party_rank">#%1$s</string>
+    <string name="party_rank_tied">Tied #%1$s</string>
+    <string name="party_score_row">%1$s %2$s\nRound score %3$d · Total points %4$s · First places %5$d %6$s</string>
+    <string name="party_final_score_row">%1$s %2$s\nLast round score %3$d · Total points %4$s · First places %5$d %6$s</string>
     <string name="party_result_round">Round %1$d · %2$s</string>
     <string name="party_result_entry">%1$s · Score %2$d · #%3$s · +%4$s points %5$s</string>
     <string name="party_ineligible">Not eligible</string>

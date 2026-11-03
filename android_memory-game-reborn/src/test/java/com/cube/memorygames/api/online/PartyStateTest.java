@@ -134,6 +134,59 @@ public class PartyStateTest {
         assertEquals(22, s.leaderboard().get(0).playerId);
         assertEquals(23, s.leaderboard().get(23).playerId);
     }
+    @Test public void screenshotTiesKeepSnapshotOrderRegardlessOfLastScoreOrConnection() {
+        PartyState s = state("room", 1); s.phase = "FINISHED"; s.status = "COMPLETED";
+        PartyState.Participant self = participant(1, 15, 3, 106, 1);
+        PartyState.Participant other = participant(2, 15, 3, 186, 1);
+        PartyState.Participant third = participant(3, 0, 0, 98, 3);
+        self.connected = true; other.connected = false;
+        s.participants = new PartyState.Participant[]{self, third, other};
+        assertArrayEquals(new Object[]{self, other, third}, s.leaderboard().toArray());
+        assertTrue(s.tiedRank(1)); assertFalse(s.tiedRank(3));
+        assertEquals("7.5", PartyState.points(self.points2));
+        assertEquals("7.5", PartyState.points(other.points2));
+        assertEquals(1, self.rank); assertEquals(1, other.rank); assertEquals(3, third.rank);
+        self.score = 999; self.connected = false; other.connected = true;
+        s.participants = new PartyState.Participant[]{other, third, self};
+        assertArrayEquals(new Object[]{other, self, third}, s.leaderboard().toArray());
+        assertSame(third, s.participants[1]);
+    }
+    @Test public void standingsComparePointsThenFirstPlacesAndKeepWithdrawnLast() {
+        PartyState s = state("room", 1);
+        PartyState.Participant lower = participant(1, 14, 9, 999, 3);
+        PartyState.Participant fewerFirsts = participant(2, 15, 2, 999, 2);
+        PartyState.Participant winner = participant(3, 15, 3, 1, 1);
+        PartyState.Participant withdrawn = participant(4, 100, 10, 999, 4);
+        withdrawn.withdrawn = true;
+        s.participants = new PartyState.Participant[]{withdrawn, lower, fewerFirsts, winner};
+        assertArrayEquals(new Object[]{winner, fewerFirsts, lower, withdrawn}, s.leaderboard().toArray());
+    }
+    @Test public void onlySharedPositiveAuthoritativeRanksAreTies() {
+        PartyState s = state("room", 1);
+        assertFalse(s.tiedRank(1));
+        s.participants = null; assertFalse(s.tiedRank(1));
+        PartyState.Participant a = participant(1, 0, 0, 0, 0);
+        PartyState.Participant b = participant(2, 0, 0, 0, 0);
+        s.participants = new PartyState.Participant[]{null, a, b};
+        assertFalse(s.tiedRank(0)); assertFalse(s.tiedRank(-1)); assertFalse(s.tiedRank(1));
+        a.rank = 2; assertFalse(s.tiedRank(2));
+        b.rank = 2; assertTrue(s.tiedRank(2));
+        b.rank = 3; assertFalse(s.tiedRank(2)); assertFalse(s.tiedRank(3));
+    }
+    @Test public void lastRoundLabelRequiresFinishedAndCompletedSnapshot() {
+        PartyState s = state("room", 1);
+        for (String phase : new String[]{"LOBBY", "LOADING", "COUNTDOWN", "PLAYING", "ROUND_RESULT", "FINISHED"}) {
+            s.phase = phase;
+            for (String status : new String[]{null, "IN_PROGRESS", "INTERRUPTED", "COMPLETED"}) {
+                s.status = status;
+                assertEquals("FINISHED".equals(phase) && "COMPLETED".equals(status), s.completed());
+            }
+        }
+    }
+    private PartyState.Participant participant(long id, long points2, int firstPlaces, int score, int rank) {
+        PartyState.Participant p = new PartyState.Participant(); p.playerId = id;
+        p.points2 = points2; p.firstPlaces = firstPlaces; p.score = score; p.rank = rank; return p;
+    }
     @Test public void unifiedCodeValidationKeepsLegacyFourAndNewSixDigitProtocols() {
         assertEquals(4, PartyState.roomCodeDigits("0123"));
         assertEquals(6, PartyState.roomCodeDigits("012345"));
